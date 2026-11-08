@@ -11,6 +11,7 @@ gaps (the gates') still leave an attempt clean for the model.
 from __future__ import annotations
 
 from .events import EventLog
+from .landing import plan_match
 
 # How many decimals precision and mean elapsed time are reported with.
 _DIGITS = 3
@@ -196,6 +197,7 @@ def build_report(events: list[dict], precision_bar: float = 0.5,
     return {"by_class": by_class, "by_model": by_model,
             "fix_classes": fix_classes, "stop_conditions": stop_conditions,
             "planner_flags": planner_flags, "gate_flags": gate_flags,
+            "landing_shadow": plan_match(events),
             "precision_bar": precision_bar, "min_ruled": min_ruled}
 
 
@@ -239,6 +241,12 @@ def format_report(report: dict) -> str:
     if report["gate_flags"]:
         lines.append("gate_flags:")
         lines += [f"  {s}" for s in report["gate_flags"]]
+    shadow = report.get("landing_shadow") or {}
+    agreement = shadow.get("agreement")
+    lines.append("")
+    lines.append(f"landing_shadow: trains={shadow.get('trains', 0)} "
+                 f"matched={shadow.get('matched', 0)} "
+                 f"agreement={_fmt_precision(agreement)}")
     return "\n".join(lines)
 
 
