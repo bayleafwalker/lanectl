@@ -1,17 +1,18 @@
 # Allocation policy: how capacity is budgeted, reserved and burned down.
 # Every number here is a placeholder the planner revises from usage evidence.
-revision = 1
+# rev 2 (2026-11-08): key renamed to "opencode" = provider recorded by the opencode adapter.
+revision = 2
 
-[providers.opencode-go]
+[providers.opencode]
 unit = "output_tokens"
 expiring = true
 
 # One fixed-length window; anchor defaults to the Unix epoch so 5h windows
 # tile the UTC day (00:00, 05:00, 10:00, 15:00, 20:00).
-[[providers.opencode-go.windows]]
+[[providers.opencode.windows]]
 name = "5h"
 length_s = 18000
 budget = 2000000
 
-[providers.opencode-go.reservations]
+[providers.opencode.reservations]
 interactive = 0.0
