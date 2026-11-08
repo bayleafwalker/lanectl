@@ -23,13 +23,19 @@ def test_status_metrics_split_planner_and_model_fixes():
     m = metrics(ev)
     assert "model_precision" in m and "fix_classes" in m
     assert m["precision"] == 0.25                      # unchanged raw metric
-    assert m["model_precision"] == 0.5                 # aa clean, bb planner-only
+    assert m["model_precision"] == 0.75                # only cc (model-error) counts against the model
     assert m["fix_classes"] == {"spec-gap": 2, "model-error": 1, "gate-gap": 1}
     assert m["per_model"]["M1"]["model_precision"] == round(2 / 3, 3)
-    assert m["per_model"]["M2"]["model_precision"] == 0.0
+    assert m["per_model"]["M2"]["model_precision"] == 1.0   # gate-gap is the gates' fault
     assert m["per_model"]["M1"]["attempts"] == 3       # existing keys kept
 
 
 def test_status_metrics_no_ruled_items():
     m = metrics([])
     assert m["model_precision"] is None and m["fix_classes"] == {}
+
+
+def test_gate_accepted_counts_pending_candidates():
+    pending = _landed("ee", [])[:2]                    # gate candidate, not yet ruled
+    m = metrics(_landed("aa", []) + pending)
+    assert m["gate_accepted"] == 2 and m["ruled"] == 1
