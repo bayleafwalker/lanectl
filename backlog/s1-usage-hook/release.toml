@@ -1,10 +1,10 @@
 id = "s1-usage-hook"
 repo = "lanectl"
-base_sha = "50dfdde87609acaa5ad18217cad9d445d2d31b40"
+base_sha = "f3293080eda8e7fcf4bc41146f914add74553e7b"
 title = "Claude Code Stop hook that records interactive-session usage"
 task_class = "hook"
 size = "M"
-revision = 3
+revision = 4
 data_class = "public"
 outcome = """
 Interactive sessions draw from the same subscription windows as lanes, so they must report usage.

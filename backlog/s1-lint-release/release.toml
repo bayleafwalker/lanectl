@@ -1,0 +1,23 @@
+id = "s1-lint-release"
+repo = "lanectl"
+base_sha = "cb742281274749a4e41f68025add1a0d903ba930"
+revision = 2
+title = "lint-release: acceptance must fail on base for the expected reason"
+task_class = "tooling"
+size = "M"
+data_class = "public"
+outcome = """
+Planner acceptance tests twice failed on base for the wrong reason (a ContractError in the test's own
+fixtures), which wasted attempts. Add src/lanectl/lint_release.py with classify_failure(output) ->
+"expected" | "spec-gap" | "passes-on-base" and lint_release(release_dir) -> list of "kind: detail"
+problems (empty = OK): load the release, run its acceptance files that match test globs on base_sha
+via lanectl.gates.failonbase.run_tests_at with the repo's test_cmd, and classify the result per the
+acceptance test. Add `lanectl lint-release <release-dir>...` (plugin at a NEW anchor line you add after
+the last spacer in src/lanectl/cli.py), exit 1 when any problem is found.
+"""
+constraints = ["stdlib only", "do not change lanectl.gates.*; call it"]
+[scope]
+paths = ["src/lanectl/lint_release.py", "src/lanectl/cli.py", "tests/stage1/**"]
+[acceptance]
+exec = ["uv run --no-sync pytest -q -p no:cacheprovider"]
+files = ["tests/stage1/test_acc_lint_release.py"]

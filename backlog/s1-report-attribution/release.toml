@@ -1,0 +1,19 @@
+id = "s1-report-attribution"
+repo = "lanectl"
+base_sha = "cb742281274749a4e41f68025add1a0d903ba930"
+revision = 1
+title = "Report precision attributed to model vs planner"
+task_class = "view"
+size = "S"
+data_class = "public"
+outcome = """
+Extend src/lanectl/report.py: every group (by_class, by_model) gains model_precision, where a ruled
+attempt whose integrator fixes are all spec-gap counts as clean (spec gaps are planner errors).
+Stop conditions use model_precision. Add a top-level planner_flags list naming task classes where
+spec-gap fixes were needed, in the exact format the acceptance test shows. Show MPREC in the text table.
+"""
+[scope]
+paths = ["src/lanectl/report.py", "tests/stage1/**"]
+[acceptance]
+exec = ["uv run --no-sync pytest -q -p no:cacheprovider"]
+files = ["tests/stage1/test_acc_report_attribution.py"]

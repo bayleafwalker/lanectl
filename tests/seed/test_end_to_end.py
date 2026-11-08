@@ -69,6 +69,12 @@ def estate(tmp_path, monkeypatch):
     return repo, release, EventLog(tmp_path / "state" / "events.jsonl")
 
 
+def _no_sandbox():
+    import os
+    p = Path(os.environ["LANECTL_HOME"]) / "governance" / "lanes" / "implement.toml"
+    p.write_text(p.read_text().replace('mode = "systemd-run"', 'mode = "none"'))
+
+
 SUB_TEST = "from calc import sub\n\ndef test_sub():\n    assert sub(5, 3) == 2\n"
 
 
@@ -144,6 +150,7 @@ def test_infra_failure_does_not_consume_attempts(estate):
 
 def test_attempt_runs_in_standalone_clone_and_breach_trips_breaker(estate):
     repo, release, log = estate
+    _no_sandbox()   # scripted adapters run in-process; the guard is the defence
     release("iso", SUB_TEST)
     seen = {}
 
@@ -162,6 +169,7 @@ def test_attempt_runs_in_standalone_clone_and_breach_trips_breaker(estate):
 
 def test_commit_onto_main_is_a_breach(estate):
     repo, release, log = estate
+    _no_sandbox()   # scripted adapters run in-process; the guard is the defence
     release("sneaky", SUB_TEST)
 
     def commit_main(*, worktree, **_):
@@ -172,3 +180,18 @@ def test_commit_onto_main_is_a_breach(estate):
 
     out = runner.execute(runner.admit("implement", log), log, adapter_fn=commit_main)
     assert "isolation breach" in out, out
+
+
+def test_main_change_under_sandbox_is_recorded_not_failed(estate):
+    repo, release, log = estate
+    release("busy", SUB_TEST)
+
+    def planner_busy(*, worktree, **_):
+        (Path(repo) / "notes.md").write_text("planner edit\n")    # integrator working on main meanwhile
+        (Path(worktree) / "src" / "calc.py").write_text("def add(a, b):\n    return a + b\n\n\ndef sub(a, b):\n    return a - b\n")
+        return AdapterResult("done", 0, "ok", None)
+
+    out = runner.execute(runner.admit("implement", log), log, adapter_fn=planner_busy)
+    assert "-> candidate" in out, out
+    fin = [e for e in log.read() if e["type"] == "attempt.finished"][-1]["data"]
+    assert fin["main_changed"] is True and fin["isolation_breach"] is False

@@ -1,10 +1,10 @@
 id = "s1-report"
 repo = "lanectl"
-base_sha = "50dfdde87609acaa5ad18217cad9d445d2d31b40"
+base_sha = "f3293080eda8e7fcf4bc41146f914add74553e7b"
 title = "Precision and cost report with stop-condition flags"
 task_class = "view"
 size = "M"
-revision = 4
+revision = 5
 data_class = "public"
 outcome = """
 Add src/lanectl/report.py with build_report(events, precision_bar, min_ruled) -> dict and a

@@ -16,10 +16,16 @@ from .ready import readiness
 PLUGINS: list = []
 
 # @anchor usage-hook
+from . import usage_hook as usage_hook_plugin
+
+PLUGINS.append(usage_hook_plugin)
 
 # spacer
 
 # @anchor report
+from . import report as report_plugin
+
+PLUGINS.append(report_plugin)
 
 # spacer
 
@@ -27,6 +33,13 @@ PLUGINS: list = []
 from . import reap as reap_plugin
 
 PLUGINS.append(reap_plugin)
+
+# spacer
+
+# @anchor lint-release
+from . import lint_release as lint_release_plugin
+
+PLUGINS.append(lint_release_plugin)
 
 # spacer
 

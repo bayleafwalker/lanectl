@@ -46,7 +46,9 @@ Rules: after any seed/runner change lands, rebase pending releases (set
 `base_sha` to current main and bump `revision`) — stale bases caused the first
 three spec-gap fixes. Acceptance tests must fail on `base_sha` *for the expected
 reason* (missing module/feature, not a contract error in the test itself: use
-ids of 2+ chars); run `uv run pytest <acceptance file>` on base before publishing; scope globs are explicit;
+ids of 2+ chars); run `lanectl lint-release backlog/<id>` before publishing (must print OK; it
+flags passes-on-base and spec-gap failures); an import failure at collection hides
+fixture bugs below it, so also dry-run the test body against a stub or the expected API; scope globs are explicit;
 size ≤ M; `data_class = "restricted"` for anything private, credential- or
 served-state-bearing (it will never go to an external model). Give the
 outcome and acceptance, not an implementation plan. Bump `revision` to reissue
@@ -55,7 +57,9 @@ a parked item. Commit releases to lanectl main.
 ## 4. Ratchet
 
 Promote or demote task classes between manual review and rule-based acceptance
-by their precision in `lanectl status`. This decision stays with the operator.
+by their **model precision** (`MPREC` in `lanectl report`): spec-gap fixes are planner
+errors and count against the release template, not the model (see `planner_flags`).
+Raw `PREC` measures the whole pipeline. This decision stays with the operator.
 
 ## 5. Run
 
