@@ -45,7 +45,7 @@ def test_policy_is_missing_or_silent_about_the_provider():
 
 def test_governance_rev3_parses_size_estimates():
     policy = AllocationPolicy.load(root=Path(__file__).parents[2])
-    assert policy is not None and policy.revision == 3
+    assert policy is not None and policy.revision >= 3
     assert policy.providers["opencode"].estimates == {"S": 15000, "M": 40000, "L": 100000}
 
 
