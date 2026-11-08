@@ -43,6 +43,13 @@ PLUGINS.append(lint_release_plugin)
 
 # spacer
 
+# @anchor capacity
+from . import capacity as capacity_plugin
+
+PLUGINS.append(capacity_plugin)
+
+# spacer
+
 
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(prog="lanectl", description=__doc__)

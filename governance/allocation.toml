@@ -1,0 +1,17 @@
+# Allocation policy: how capacity is budgeted, reserved and burned down.
+# Every number here is a placeholder the planner revises from usage evidence.
+revision = 1
+
+[providers.opencode-go]
+unit = "output_tokens"
+expiring = true
+
+# One fixed-length window; anchor defaults to the Unix epoch so 5h windows
+# tile the UTC day (00:00, 05:00, 10:00, 15:00, 20:00).
+[[providers.opencode-go.windows]]
+name = "5h"
+length_s = 18000
+budget = 2000000
+
+[providers.opencode-go.reservations]
+interactive = 0.0
