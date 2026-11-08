@@ -1,0 +1,23 @@
+id = "s6-boundary-first-party"
+repo = "lanectl"
+base_sha = "613e56f7645602bc42b0bd1a26e5adfa80c7fb2b"
+revision = 1
+title = "Restricted work routes only to first-party models (allowlist, not denylist)"
+task_class = "semantic"
+size = "S"
+data_class = "public"
+outcome = """
+The data boundary is a denylist: eligible_models drops lane.external_models for restricted work,
+so a repo routing overlay that names any other non-Claude model (for example
+"opencode-go/deepseek-v4-pro-2" or "gpt-5") would receive restricted data. Make it an allowlist:
+for an effective restricted class (release data_class or repo data_class_floor), keep only models
+for which adapters.worker_for(model) == "claude" and which are not in lane.external_models. A model
+worker_for cannot map (ValueError) is dropped, never routed. Public behaviour is unchanged.
+readiness keeps reporting "no eligible model" when nothing with positive weight is left.
+ready.py is protected: the attempt waits for planner review.
+"""
+[scope]
+paths = ["src/lanectl/ready.py", "tests/stage6/**"]
+[acceptance]
+exec = ["uv run --no-sync pytest -q -p no:cacheprovider"]
+files = ["tests/stage6/test_acc_boundary_first_party.py"]
