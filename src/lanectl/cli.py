@@ -24,6 +24,9 @@ PLUGINS: list = []
 # spacer
 
 # @anchor reap
+from . import reap as reap_plugin
+
+PLUGINS.append(reap_plugin)
 
 # spacer
 
