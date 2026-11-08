@@ -4,6 +4,7 @@ base_sha = "50dfdde87609acaa5ad18217cad9d445d2d31b40"
 title = "Reap abandoned attempts so caps recover"
 task_class = "recovery"
 size = "S"
+revision = 2
 data_class = "public"
 outcome = """
 A runner that dies leaves an item 'claimed' forever and holds a concurrency slot. Add

@@ -4,6 +4,7 @@ base_sha = "50dfdde87609acaa5ad18217cad9d445d2d31b40"
 title = "Native OpenCode adapter that captures token usage"
 task_class = "adapter"
 size = "M"
+revision = 2
 data_class = "public"
 outcome = """
 Add src/lanectl/adapters_opencode.py with parse_stream(text) -> (final_text, usage) and

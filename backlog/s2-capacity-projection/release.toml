@@ -1,0 +1,25 @@
+id = "s2-capacity-projection"
+repo = "lanectl"
+base_sha = "6b42633dad2244927bb8864b7bb25031540da777"
+revision = 1
+title = "Capacity ledger and allocation projection"
+task_class = "projection"
+size = "M"
+data_class = "public"
+outcome = """
+Add src/lanectl/capacity.py: AllocationPolicy (from_dict, and load from governance/allocation.toml
+when present) and project(events, policy, now) -> {provider: {window_name: view}} where each view has
+window_start, window_end (UTC Z strings), used, remaining, reserved_effective, burnable and
+burn_down_allowed. Semantics are pinned by tests/stage2/test_acc_capacity.py (read its docstring).
+Also add `lanectl capacity [--json]` (plugin at a NEW anchor line you add after the '# @anchor reap'
+spacer in src/lanectl/cli.py) and a default governance/allocation.toml with the opencode-go provider
+(unit output_tokens, expiring, one 5h window, budget 2000000, interactive reservation 0) - the
+numbers are placeholders the planner will revise.
+"""
+constraints = ["stdlib only at runtime", "pure projection: no I/O in project()"]
+escalate_when = ["the pinned semantics contradict each other"]
+[scope]
+paths = ["src/lanectl/capacity.py", "src/lanectl/cli.py", "governance/allocation.toml", "tests/stage2/**"]
+[acceptance]
+exec = ["uv run --no-sync pytest -q -p no:cacheprovider"]
+files = ["tests/stage2/test_acc_capacity.py"]
