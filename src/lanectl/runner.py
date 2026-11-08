@@ -418,31 +418,28 @@ def metrics(events: list[dict]) -> dict:
     """Precision = gate-accepted attempts that landed with no integrator fix,
     over gate-accepted attempts the integrator has ruled on.
 
-    ``model_precision`` uses report.py's attribution rule: fixes the planner
-    owns (``spec-gap``) do not count against the model.  ``fix_classes`` counts
-    integrator fixes by class."""
-    gate_ok, landed, landed_clean, int_rejected, per_model = set(), set(), set(), set(), {}
+    Gate acceptance and ruling come from report.py's shared attribution, so an
+    attempt the gates parked as review-required and the integrator then approved
+    counts here exactly as it does in the report.  ``model_precision`` uses the
+    same attribution rule: fixes the planner owns (``spec-gap``) do not count
+    against the model.  ``fix_classes`` counts integrator fixes by class."""
+    attributed = report.attribution(events)
+    gate_ok = attributed["gate_ok"]
+    ruled = attributed["ruled"]
+    landed = set(attributed["landed"])
+    landed_clean = attributed["clean"]
+    model_clean = attributed["model_clean"]
     attempt_model = {}
+    per_model = {}
     for e in events:
         d = e["data"]
-        if e["type"] == "decision.recorded" and d.get("by") == "gates" and d["decision"] == "candidate":
-            gate_ok.add(d["attempt_id"])
-        elif e["type"] == "decision.recorded" and d.get("by") == "integrator":
-            int_rejected.add(d["attempt_id"])
-        elif e["type"] == "item.landed":
-            landed.add(d["attempt_id"])
-            if not d["fix_commits"]:
-                landed_clean.add(d["attempt_id"])
-        elif e["type"] == "experiment.recorded":
+        if e["type"] == "experiment.recorded":
             attempt_model[d["attempt_id"]] = d["model"]
             m = per_model.setdefault(d["model"], {"attempts": 0, "candidate": 0, "rejected": 0,
                                                   "parked": 0, "elapsed_s": 0.0})
             m["attempts"] += 1
             m[d["decision"]] = m.get(d["decision"], 0) + 1
             m["elapsed_s"] += d["elapsed_s"]
-    ruled = (landed | int_rejected) & gate_ok
-    attributed = report.attribution(events)
-    model_clean = attributed["model_clean"]
     for model, m in per_model.items():
         ids = [aid for aid, mod in attempt_model.items() if mod == model]
         model_ruled = sum(1 for aid in ids if aid in ruled)
@@ -454,7 +451,9 @@ def metrics(events: list[dict]) -> dict:
             for cls, n in attributed["fixes"].get(aid, {}).items():
                 classes[cls] = classes.get(cls, 0) + n
         m["fix_classes"] = classes
-    return {"gate_accepted": len(gate_ok), "ruled": len(ruled), "landed": len(landed),
+    # ``gate_accepted`` is the precision population: accepted attempts the
+    # integrator has ruled on, so status cannot count an attempt report ignores.
+    return {"gate_accepted": len(gate_ok & ruled), "ruled": len(ruled), "landed": len(landed),
             "landed_clean": len(landed_clean),
             "precision": round(len(landed_clean & gate_ok) / len(ruled), 3) if ruled else None,
             "model_precision": (round(len(model_clean & ruled) / len(ruled), 3)

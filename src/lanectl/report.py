@@ -40,8 +40,12 @@ def _below_bar(precision: float | None, ruled: int, bar: float, min_ruled: int) 
 def attribution(events: list[dict]) -> dict:
     """Attempt-level fix attribution shared by the report and status metrics.
 
-    ``clean`` is a landing with no fix commits at all; ``model_clean`` treats
-    fixes the planner owns (``spec-gap``) as not the model's fault.
+    Gate acceptance is a gates ``candidate`` decision, or the integrator's
+    approval of an attempt the gates parked as review-required (the integrator
+    is the judgment plane, so its approval makes protected-path work gate
+    accepted too).  ``clean`` is a landing with no fix commits at all;
+    ``model_clean`` treats fixes the planner owns (``spec-gap``) as not the
+    model's fault.
     """
     gate_ok: set[str] = set()
     integrator_rejected: set[str] = set()
@@ -52,8 +56,8 @@ def attribution(events: list[dict]) -> dict:
     for ev in events:
         t, d = ev["type"], ev["data"]
         if t == "decision.recorded":
-            if d.get("by") == "gates" and d.get("decision") == "candidate":
-                gate_ok.add(d["attempt_id"])
+            if d.get("decision") == "candidate" and d.get("by") in ("gates", "integrator"):
+                gate_ok.add(d["attempt_id"])   # integrator approvals count too
             elif d.get("by") == "integrator" and d.get("decision") != "candidate":
                 integrator_rejected.add(d["attempt_id"])   # approvals are not rejections
         elif t == "item.landed":
