@@ -7,11 +7,10 @@ is closed as failed and the item gets a follow-up (requeue or park).
 """
 from __future__ import annotations
 
-from collections import Counter
 from datetime import datetime, timezone
 
 from .config import load_lane
-from .events import EventLog
+from .events import EventLog, project_items
 
 RULES_REVISION = "reaper/v1"
 
@@ -30,7 +29,7 @@ def reap(log: EventLog, *, now: datetime, older_than_s: float,
         events = log.read()
         claims = [e for e in events if e["type"] == "item.claimed" and e["item_id"]]
         finished = {e["data"]["attempt_id"] for e in events if e["type"] == "attempt.finished"}
-        used = Counter((e["item_id"], e["data"].get("release_revision")) for e in claims)
+        views = project_items(events)
         for e in claims:
             d, iid, aid = e["data"], e["item_id"], e["data"]["attempt_id"]
             if aid in finished:
@@ -48,7 +47,10 @@ def reap(log: EventLog, *, now: datetime, older_than_s: float,
                 "worker": d.get("worker", "unknown"),
                 "task_class": d.get("task_class", "unknown"), "decision": "rejected",
                 "elapsed_s": 0.0, "rules_revision": RULES_REVISION, "by": "reaper"}, item_id=iid)
-            if used[(iid, d.get("release_revision"))] >= max_attempts:
+            # same counting as admission: this revision, infra failures excluded
+            used = len([a for a in views[iid].attempts if a.get("release_revision") == d.get("release_revision")
+                        and not a.get("infra")])
+            if used >= max_attempts:
                 log.append("item.parked", {"reason": "abandoned: attempts exhausted"}, item_id=iid)
             else:
                 log.append("item.requeued", {"reason": "abandoned"}, item_id=iid)
