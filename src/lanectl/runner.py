@@ -226,13 +226,17 @@ def execute(c: Claim, log: EventLog, adapter_fn=None) -> str:
     except Exception as exc:  # adapter crash is an attempt outcome, not a runner crash
         res = adapters.AdapterResult("failed", 1, f"adapter error: {exc}", None)
     elapsed = round(time.monotonic() - started, 1)
-    breach = _main_fingerprint(repo) != main_before
+    main_changed = _main_fingerprint(repo) != main_before
+    # With a write sandbox the worker cannot touch main, so a change there is the
+    # planner/integrator working concurrently: record it, do not fail the attempt.
+    breach = main_changed and sb.mode == "none"
     # a worker may leave build junk; collect only what git would track
     head = _commit_all(wt, f"lane(attempt): {c.attempt_id} [{c.model}]")
     log.append("attempt.finished", {"attempt_id": c.attempt_id, "outcome": res.outcome,
                "exit_code": res.exit_code, "head_sha": head, "seed_sha": seed_sha,
                "elapsed_s": elapsed, "escalation_reason": res.escalation_reason,
-               "final_tail": res.final_tail[-1500:], "isolation_breach": breach}, item_id=rel.id)
+               "final_tail": res.final_tail[-1500:], "isolation_breach": breach,
+               "main_changed": main_changed}, item_id=rel.id)
     git(repo.path, "fetch", "-q", str(wt), f"+{branch}:{branch}")
     if res.usage:
         log.append("usage.recorded", {"provider": c.worker, "source": "adapter",
