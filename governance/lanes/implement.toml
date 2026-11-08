@@ -1,0 +1,42 @@
+# Lane revision (a RecipeRevision). Governance path: interactive changes only.
+# Every number here is a placeholder policy value, revised from ExperimentRecords.
+lane = "implement"
+revision = 1
+
+[eligibility]
+size_max = "M"
+
+[routing]
+# Operator direction 2026-11-08: OpenCode Go DeepSeek V4.1 Flash is the bulk implementer.
+weights = { "opencode-go/deepseek-v4.1-flash" = 1.0 }
+external_models = ["opencode-go/deepseek-v4.1-flash", "opencode-go/deepseek-v4-pro"]
+retry = "different_model"     # falls back to the same model while only one is routed
+max_attempts = 2
+timeout_s = 2700
+
+[caps]
+concurrency = 3
+items_per_day = 24
+accepted_unlanded_max = 8     # pull system: the lane idles when review falls behind
+
+[gates]
+size_budget_lines = { S = 250, M = 700, L = 1500 }
+protected_paths = [
+  "governance/**", "backlog/**", "contracts/**",
+  "src/lanectl/contracts.py", "src/lanectl/ready.py", "src/lanectl/gates/**",
+  ".github/**", ".forgejo/**", "pyproject.toml", "uv.lock",
+  "tests/seed/**", "**/conftest.py", "AGENTS.md", "CLAUDE.md", ".claude/**",
+]
+dependency_manifests = [
+  "**/pyproject.toml", "**/uv.lock", "**/requirements*.txt", "**/package.json",
+  "**/package-lock.json", "**/pnpm-lock.yaml", "**/go.mod", "**/Cargo.toml",
+]
+test_globs = ["tests/**/test_*.py", "**/tests/**/test_*.py", "**/*.test.ts", "**/*_test.go"]
+forbidden_added_patterns = [
+  'pytest\.mark\.(skip|xfail)', 'pytest\.skip\(', 'unittest\.skip', '@skip\b',
+  '\b(it|test|describe)\.(skip|only)\(', 't\.Skip\(', '#\s*type:\s*ignore',
+  '#\s*noqa', '#\s*pragma:\s*no cover',
+]
+
+[effects]
+push = "lane/*"

@@ -1,0 +1,19 @@
+[project]
+name = "lanectl"
+version = "0.1.0"
+description = "Autonomous implementation lanes: deterministic admission, gates and trains around cheap workers"
+requires-python = ">=3.13"
+dependencies = []
+
+[project.scripts]
+lanectl = "lanectl.cli:main"
+
+[dependency-groups]
+dev = ["pytest>=8", "hypothesis>=6"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

@@ -1,0 +1,52 @@
+"""Definition of Ready: decides lane eligibility deterministically.
+
+Governance path. Returns reasons, never a judgement call.
+"""
+from __future__ import annotations
+
+import re
+import subprocess
+from pathlib import Path
+
+from .config import RepoSpec
+from .contracts import SIZE_CLASSES, LaneRevision, WorkRelease
+
+_SHA = re.compile(r"^[0-9a-f]{40}$")
+
+
+def readiness(rel: WorkRelease, lane: LaneRevision, repos: dict[str, RepoSpec]) -> list[str]:
+    """Empty list = ready for this lane. Each string is a blocking reason."""
+    r: list[str] = []
+    if lane.lane not in rel.eligible_lanes:
+        r.append(f"lane {lane.lane} not in eligible_lanes")
+    if SIZE_CLASSES.index(rel.size) > SIZE_CLASSES.index(lane.size_max):
+        r.append(f"size {rel.size} exceeds lane size_max {lane.size_max}")
+    if not rel.acceptance.exec:
+        r.append("acceptance.exec is empty")
+    if not rel.scope_paths:
+        r.append("scope.paths is empty")
+    if not rel.outcome.strip():
+        r.append("outcome is empty")
+    if not _SHA.match(rel.base_sha):
+        r.append("base_sha must be a full 40-hex commit")
+    repo = repos.get(rel.repo)
+    if repo is None:
+        r.append(f"repo {rel.repo!r} not in governance/repos.toml")
+    elif _SHA.match(rel.base_sha):
+        ok = subprocess.run(["git", "-C", str(repo.path), "cat-file", "-e", f"{rel.base_sha}^{{commit}}"],
+                            capture_output=True).returncode == 0
+        if not ok:
+            r.append("base_sha not found in repo")
+    for f in rel.acceptance.files:
+        if not (Path(rel.release_dir) / "files" / f).is_file():
+            r.append(f"acceptance file missing: files/{f}")
+    if rel.data_class == "restricted" and all(m in lane.external_models for m in lane.routing):
+        r.append("restricted data_class but every routed model is external")
+    return r
+
+
+def eligible_models(rel: WorkRelease, lane: LaneRevision) -> dict[str, float]:
+    """Routing weights after the data boundary is applied."""
+    if rel.data_class == "restricted":
+        return {m: w for m, w in lane.routing.items() if m not in lane.external_models}
+    return dict(lane.routing)

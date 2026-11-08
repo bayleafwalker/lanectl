@@ -1,0 +1,8 @@
+# Repositories a lane may target. Governance path.
+[repos.lanectl]
+path = "/projects/dev/lanectl"
+main = "main"
+setup_cmd = "uv sync -q"
+test_cmd = "uv run --no-sync pytest -q -p no:cacheprovider {files}"
+check_cmd = "uv run pytest -q"
+worktree_root = "/projects/dev/_wt/lanes"
