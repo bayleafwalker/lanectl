@@ -4,3 +4,5 @@ __pycache__/
 .pytest_cache/
 .hypothesis/
 dist/
+.auditctl/
+_artifacts/

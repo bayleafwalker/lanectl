@@ -34,10 +34,10 @@ def test_reap_closes_only_stale_open_attempts(tmp_path):
 
 def test_reap_parks_when_attempts_exhausted(tmp_path):
     log = EventLog(tmp_path / "e.jsonl")
-    _claim(log, "x", 1)
+    _claim(log, "xx", 1)
     later = datetime.now(timezone.utc) + timedelta(hours=2)
     reap(log, now=later, older_than_s=60, max_attempts=1)
-    assert project_items(log.read())["x"].state == "parked"
+    assert project_items(log.read())["xx"].state == "parked"
 
 
 def test_cli_reap_help():

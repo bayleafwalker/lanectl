@@ -126,7 +126,7 @@ def admit(lane_name: str, log: EventLog, only: str | None = None) -> Claim | str
 
 def render_prompt(rel: WorkRelease, lane: LaneRevision) -> str:
     bullets = lambda xs: "\n".join(f"- {x}" for x in xs) or "- (none)"
-    return f"""You own one bounded outcome in this git worktree. Work autonomously:
+    return f"""You own one bounded outcome in this git checkout (your working directory; stay inside it). Work autonomously:
 discover, plan, implement and verify. Do not ask questions.
 
 # Outcome: {rel.title}
@@ -177,15 +177,28 @@ def _commit_all(wt: Path, msg: str) -> str:
     return git(wt, "rev-parse", "HEAD")
 
 
+def _discard(repo: RepoSpec, path: Path) -> None:
+    git(repo.path, "worktree", "remove", "--force", str(path), check=False)
+    shutil.rmtree(path, ignore_errors=True)
+    git(repo.path, "worktree", "prune", check=False)
+
+
+def _main_fingerprint(repo: RepoSpec) -> str:
+    """Tracked + untracked state of the main checkout, ignoring gitignored files."""
+    return git(repo.path, "status", "--porcelain", "--untracked-files=all", check=False)
+
+
 def execute(c: Claim, log: EventLog, adapter_fn=None) -> str:
     rel, repo, lane = c.rel, c.repo, c.lane
     wt = repo.worktree_root / c.attempt_id
     branch = f"lane/{c.attempt_id}"
     repo.worktree_root.mkdir(parents=True, exist_ok=True)
-    if wt.exists():
-        git(repo.path, "worktree", "remove", "--force", str(wt), check=False)
+    _discard(repo, wt)
     git(repo.path, "branch", "-D", branch, check=False)
-    git(repo.path, "worktree", "add", "-q", "-b", branch, str(wt), rel.base_sha)
+    # A standalone clone, not a linked worktree: harnesses such as OpenCode resolve a
+    # linked worktree to the main repository root and write there (2026-11-08 breach).
+    git(repo.path, "clone", "-q", "--shared", "--no-checkout", str(repo.path), str(wt))
+    git(wt, "checkout", "-q", "-b", branch, rel.base_sha)
     acc = _copy_acceptance(rel, wt)
     seed_sha = _commit_all(wt, f"lane(acceptance): {rel.id} r{rel.revision}")
     if repo.setup_cmd:
@@ -193,6 +206,7 @@ def execute(c: Claim, log: EventLog, adapter_fn=None) -> str:
 
     runs = state_dir() / "runs"
     runs.mkdir(exist_ok=True)
+    main_before = _main_fingerprint(repo)
     started = time.monotonic()
     fn = adapter_fn or adapters.ADAPTERS[c.worker]
     try:
@@ -202,17 +216,23 @@ def execute(c: Claim, log: EventLog, adapter_fn=None) -> str:
     except Exception as exc:  # adapter crash is an attempt outcome, not a runner crash
         res = adapters.AdapterResult("failed", 1, f"adapter error: {exc}", None)
     elapsed = round(time.monotonic() - started, 1)
+    breach = _main_fingerprint(repo) != main_before
     # a worker may leave build junk; collect only what git would track
     head = _commit_all(wt, f"lane(attempt): {c.attempt_id} [{c.model}]")
     log.append("attempt.finished", {"attempt_id": c.attempt_id, "outcome": res.outcome,
                "exit_code": res.exit_code, "head_sha": head, "seed_sha": seed_sha,
                "elapsed_s": elapsed, "escalation_reason": res.escalation_reason,
-               "final_tail": res.final_tail[-1500:]}, item_id=rel.id)
+               "final_tail": res.final_tail[-1500:], "isolation_breach": breach}, item_id=rel.id)
+    git(repo.path, "fetch", "-q", str(wt), f"+{branch}:{branch}")
     if res.usage:
         log.append("usage.recorded", {"provider": c.worker, "source": "adapter",
                    "units": res.usage, "attempt_id": c.attempt_id, "model": c.model}, item_id=rel.id)
 
-    if res.outcome == "failed" and head == seed_sha:
+    if breach:
+        res = adapters.AdapterResult("failed", res.exit_code, res.final_tail, None)
+        gates = {}
+        head = seed_sha   # never gate or land work produced during a breach
+    elif res.outcome == "failed" and head == seed_sha:
         gates = {}   # nothing to gate; decide() classifies this as infra
     else:
         gates = run_gates(c, wt, seed_sha, head, acc, res.outcome)
@@ -223,6 +243,8 @@ def execute(c: Claim, log: EventLog, adapter_fn=None) -> str:
     used = attempts_used(view, rel.revision)
     dec, reasons, follow = decision.decide(gates, res.outcome, used, lane.max_attempts,
                                            changed=head != seed_sha)
+    if breach:
+        reasons = ["infra: isolation breach - main checkout changed during the attempt; inspect it"]
     log.append("decision.recorded", {"attempt_id": c.attempt_id, "decision": dec, "reasons": reasons,
                "rules_revision": decision.RULES_REVISION, "by": "gates"}, item_id=rel.id)
     log.append("experiment.recorded", {"attempt_id": c.attempt_id, "model": c.model, "worker": c.worker,
@@ -234,7 +256,7 @@ def execute(c: Claim, log: EventLog, adapter_fn=None) -> str:
     elif follow == "park":
         log.append("item.parked", {"reason": "; ".join(reasons)[:500]}, item_id=rel.id)
     if dec != "candidate":
-        git(repo.path, "worktree", "remove", "--force", str(wt), check=False)
+        _discard(repo, wt)
     return f"{c.attempt_id} [{c.model}] -> {dec}: {'; '.join(reasons)[:400]}"
 
 
@@ -345,9 +367,9 @@ def land(log: EventLog, train_id: str) -> str:
     for aid in d["attempts"]:
         log.append("item.landed", {"attempt_id": aid, "train_id": train_id,
                                    "fix_commits": fixes.get(aid, [])}, item_id=by_attempt[aid])
-    git(repo.path, "worktree", "remove", "--force", d["worktree"], check=False)
+    _discard(repo, Path(d["worktree"]))
     for aid in d["attempts"]:
-        git(repo.path, "worktree", "remove", "--force", str(repo.worktree_root / aid), check=False)
+        _discard(repo, repo.worktree_root / aid)
     return f"landed {d['attempts']} on {repo.main} at {tip[:12]}; fixes={ {k: len(v) for k, v in fixes.items()} }"
 
 

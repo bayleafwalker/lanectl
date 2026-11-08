@@ -71,7 +71,7 @@ def main(argv: list[str] | None = None) -> int:
             print(f"claimed {c.attempt_id} -> {c.model}", flush=True)
             out = runner.execute(c, log)
             print(out, flush=True)
-            if "-> rejected: infra:" in out:
+            if "-> rejected: infra:" in out or "-> rejected: infra" in out:
                 print("breaker: worker infrastructure failure; stopping this run loop", flush=True)
                 return 3
         return 0

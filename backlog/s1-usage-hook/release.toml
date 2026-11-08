@@ -4,7 +4,7 @@ base_sha = "50dfdde87609acaa5ad18217cad9d445d2d31b40"
 title = "Claude Code Stop hook that records interactive-session usage"
 task_class = "hook"
 size = "M"
-revision = 2
+revision = 3
 data_class = "public"
 outcome = """
 Interactive sessions draw from the same subscription windows as lanes, so they must report usage.

@@ -140,3 +140,21 @@ def test_infra_failure_does_not_consume_attempts(estate):
         assert "-> rejected: infra:" in out, out
     v = project_items(log.read())["infra"]
     assert v.state == "requeued" and runner.attempts_used(v, 1) == 0
+
+
+def test_attempt_runs_in_standalone_clone_and_breach_trips_breaker(estate):
+    repo, release, log = estate
+    release("iso", SUB_TEST)
+    seen = {}
+
+    def leak(*, worktree, **_):
+        seen["git_dir"] = subprocess.run(["git", "-C", worktree, "rev-parse", "--git-common-dir"],
+                                         capture_output=True, text=True).stdout.strip()
+        (Path(repo) / "src" / "leaked.py").write_text("x = 1\n")   # writes into the main checkout
+        return AdapterResult("done", 0, "ok", None)
+
+    out = runner.execute(runner.admit("implement", log), log, adapter_fn=leak)
+    assert seen["git_dir"] == ".git"            # its own repository, not a linked worktree
+    assert "-> rejected: infra: isolation breach" in out, out
+    v = project_items(log.read())["iso"]
+    assert v.state == "requeued" and runner.attempts_used(v, 1) == 0

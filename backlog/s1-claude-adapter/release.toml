@@ -4,7 +4,7 @@ base_sha = "50dfdde87609acaa5ad18217cad9d445d2d31b40"
 title = "Headless Claude Code adapter"
 task_class = "adapter"
 size = "M"
-revision = 2
+revision = 3
 data_class = "public"
 outcome = """
 Add src/lanectl/adapters_claude.py with build_command(model, prompt), parse_result(stdout) ->
