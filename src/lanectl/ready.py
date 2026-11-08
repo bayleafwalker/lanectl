@@ -40,13 +40,25 @@ def readiness(rel: WorkRelease, lane: LaneRevision, repos: dict[str, RepoSpec]) 
     for f in rel.acceptance.files:
         if not (Path(rel.release_dir) / "files" / f).is_file():
             r.append(f"acceptance file missing: files/{f}")
-    if rel.data_class == "restricted" and all(m in lane.external_models for m in lane.routing):
-        r.append("restricted data_class but every routed model is external")
+    weights = eligible_models(rel, lane, repo)
+    if not any(w > 0 for w in weights.values()):
+        if rel.data_class == "restricted" and all(m in lane.external_models for m in lane.routing):
+            r.append("restricted data_class but every routed model is external")
+        r.append("no eligible model")
     return r
 
 
-def eligible_models(rel: WorkRelease, lane: LaneRevision) -> dict[str, float]:
-    """Routing weights after the data boundary is applied."""
-    if rel.data_class == "restricted":
-        return {m: w for m, w in lane.routing.items() if m not in lane.external_models}
-    return dict(lane.routing)
+def eligible_models(rel: WorkRelease, lane: LaneRevision,
+                    repo: RepoSpec | None = None) -> dict[str, float]:
+    """Routing weights after the repo overlay and the data boundary are applied.
+
+    A repo routing table replaces the lane's weights; an empty table keeps the
+    lane's.  The effective data class is the stricter of the release's own class
+    and the repo's floor; restricted releases drop every external model.
+    """
+    routing = dict(repo.routing) if repo is not None and repo.routing else dict(lane.routing)
+    restricted = rel.data_class == "restricted" or (
+        repo is not None and repo.data_class_floor == "restricted")
+    if restricted:
+        return {m: w for m, w in routing.items() if m not in lane.external_models}
+    return routing
