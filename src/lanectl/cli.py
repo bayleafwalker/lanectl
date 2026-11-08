@@ -20,6 +20,9 @@ PLUGINS: list = []
 # spacer
 
 # @anchor report
+from . import report as report_plugin
+
+PLUGINS.append(report_plugin)
 
 # spacer
 
