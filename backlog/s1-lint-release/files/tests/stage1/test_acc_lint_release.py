@@ -37,7 +37,7 @@ def _repo(tmp_path):
 
 def _release(tmp_path, repo_name, sha, test_body):
     d = tmp_path / "home" / "backlog" / "it-1"
-    (d / "files" / "tests").mkdir(parents=True)
+    (d / "files" / "tests").mkdir(parents=True, exist_ok=True)
     (d / "files" / "tests" / "test_acc_it.py").write_text(test_body)
     (d / "release.toml").write_text(textwrap.dedent(f"""
         id = "it-1"

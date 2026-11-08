@@ -1,7 +1,7 @@
 # Lane revision (a RecipeRevision). Governance path: interactive changes only.
 # Every number here is a placeholder policy value, revised from ExperimentRecords.
 lane = "implement"
-revision = 1
+revision = 2
 
 [eligibility]
 size_max = "M"
@@ -16,7 +16,7 @@ timeout_s = 2700
 
 [caps]
 concurrency = 3
-items_per_day = 24
+items_per_day = 48     # placeholder; 24 was hit on the bootstrap day (planner, 2026-11-08)
 accepted_unlanded_max = 8     # pull system: the lane idles when review falls behind
 
 [gates]

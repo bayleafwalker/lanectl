@@ -1,7 +1,7 @@
 id = "s1-lint-release"
 repo = "lanectl"
 base_sha = "cb742281274749a4e41f68025add1a0d903ba930"
-revision = 1
+revision = 2
 title = "lint-release: acceptance must fail on base for the expected reason"
 task_class = "tooling"
 size = "M"
