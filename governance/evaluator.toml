@@ -5,22 +5,10 @@
 #   changed_lines_ratio  changed_lines / size budget of the release size
 #   new_test_files       added files matching the lane's test globs
 #   files_touched        files changed
-revision = 1
+revision = 2
+# rev 2 (2026-11-08): dropped near-size-budget (2/2 false rejects: tests count toward the
+# budget) and no-new-tests (1/1 false reject on a docs-only item). Re-add rules only with evidence.
 default = "accept"
-
-[[rules]]
-name = "near-size-budget"
-feature = "changed_lines_ratio"
-op = ">"
-value = 0.8
-verdict = "reject"
-
-[[rules]]
-name = "no-new-tests"
-feature = "new_test_files"
-op = "=="
-value = 0
-verdict = "reject"
 
 [[rules]]
 name = "sprawl"
