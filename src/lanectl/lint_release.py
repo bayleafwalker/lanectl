@@ -29,6 +29,9 @@ _EXPECTED = (
     re.compile(r"\bImportError\b"),
     re.compile(r"\bAttributeError\b"),
     re.compile(r"\bAssertionError\b"),
+    # argparse rejects a command or flag that the CLI does not implement yet.
+    re.compile(r"\bunrecognized arguments\b"),
+    re.compile(r"\binvalid choice\b"),
 )
 
 # Failures raised by the test itself rather than by missing product code.
@@ -41,9 +44,40 @@ _SPEC_GAP = (
 _PASSED = re.compile(r"\b\d+ passed\b")
 _FAILED = re.compile(r"\b\d+ (?:failed|errors?)\b")
 
+# pytest separates the traceback for each failing test with an underscored
+# heading naming that test. Splitting on it keeps one test's errors from
+# deciding the classification of every other test in the run.
+_SECTION_HEADING = re.compile(r"^_{5,}\s+.+?\s+_{5,}$")
+
 
 def _passed(output: str) -> bool:
     return bool(_PASSED.search(output)) and not _FAILED.search(output)
+
+
+def _sections(output: str) -> list[str]:
+    """Split pytest output into per-test failure/error sections."""
+    sections: list[str] = []
+    current: list[str] | None = None
+    for line in output.splitlines():
+        if _SECTION_HEADING.match(line):
+            if current is not None:
+                sections.append("\n".join(current))
+            current = [line]
+        elif current is not None:
+            current.append(line)
+    if current is not None:
+        sections.append("\n".join(current))
+    return sections
+
+
+def _classify_one(output: str) -> str:
+    if any(p.search(output) for p in _SPEC_GAP):
+        return "spec-gap"
+    if any(p.search(output) for p in _EXPECTED):
+        return "expected"
+    # Unknown failure shapes are treated conservatively: something in the test
+    # or its fixtures is not understood yet, so a planner should look at it.
+    return "spec-gap"
 
 
 def classify_failure(output: str) -> str:
@@ -51,12 +85,9 @@ def classify_failure(output: str) -> str:
     output = output or ""
     if _passed(output):
         return "passes-on-base"
-    if any(p.search(output) for p in _SPEC_GAP):
-        return "spec-gap"
-    if any(p.search(output) for p in _EXPECTED):
+    sections = _sections(output) or [output]
+    if all(_classify_one(section) == "expected" for section in sections):
         return "expected"
-    # Unknown failure shapes are treated conservatively: something in the test
-    # or its fixtures is not understood yet, so a planner should look at it.
     return "spec-gap"
 
 
@@ -113,7 +144,7 @@ def lint_release(release_dir) -> list[str]:
     for name, data in files.items():
         try:
             code, output = run_tests_at(repo.path, release.base_sha, {name: data},
-                                        repo.test_cmd, repo.setup_cmd)
+                                        repo.test_cmd, repo.setup_cmd, tail=None)
         except (OSError, subprocess.SubprocessError) as exc:
             problems.append(f"spec-gap: {name} :: base run failed: {exc}")
             continue
