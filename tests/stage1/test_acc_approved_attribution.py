@@ -33,6 +33,6 @@ def test_approved_attempts_are_ruled_everywhere():
 
 
 def test_parked_without_approval_is_not_gate_accepted():
-    ev = _attempt("dd", [])[:2]          # gates parked it; integrator never approved
+    ev = _attempt("dd", [], approved=True)[:2]   # gates parked it; integrator never approved
     m = metrics(ev)
     assert m["ruled"] == 0 and m["gate_accepted"] == 0
