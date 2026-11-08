@@ -16,6 +16,8 @@ gates/failonbase.py is a protected gate: changing it parks the attempt for plann
 acceptable; keep its existing behaviour for the fail-on-base gate.
 """
 # lint-release cannot lint this release fairly (it is the tool under repair); verified by hand.
+# Known limit (2026-11-08): pytest echoes test source in tracebacks, so a test whose own
+# source names an error type (here a comment mentioning NameError) reads as spec-gap.
 [scope]
 paths = ["src/lanectl/lint_release.py", "src/lanectl/gates/failonbase.py", "tests/stage1/**"]
 [acceptance]
