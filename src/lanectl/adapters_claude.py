@@ -196,7 +196,8 @@ def _record(outcome: str, exit_code: int, final_tail: str, reason: str | None,
     }
 
 
-def _run_child(cmd: list[str], worktree: Path, timeout_s: float) -> tuple[str, str, int, bool]:
+def _run_child(cmd: list[str], worktree: Path, timeout_s: float,
+               env: dict | None = None) -> tuple[str, str, int, bool]:
     """Run the CLI in its own process group so a timeout kills descendants."""
     proc = subprocess.Popen(
         cmd,
@@ -206,6 +207,7 @@ def _run_child(cmd: list[str], worktree: Path, timeout_s: float) -> tuple[str, s
         stderr=subprocess.PIPE,
         text=True,
         start_new_session=True,
+        env=env,
     )
     try:
         stdout, stderr = proc.communicate(timeout=timeout_s)
@@ -220,7 +222,7 @@ def _run_child(cmd: list[str], worktree: Path, timeout_s: float) -> tuple[str, s
 
 
 def run_claude(*, model: str, worktree: Path, prompt: str, status_file: Path,
-               timeout_s: float, external: bool) -> AdapterResult:
+               timeout_s: float, external: bool, env: dict | None = None) -> AdapterResult:
     """Run Claude Code headless and return a normalised result.
 
     A timeout is recorded as ``failed`` with exit code 124.  The status file is
@@ -236,7 +238,7 @@ def run_claude(*, model: str, worktree: Path, prompt: str, status_file: Path,
         "started_at": started_at, "ended_at": None,
     })
 
-    exe = shutil.which(WORKER)
+    exe = shutil.which(WORKER, path=(env or os.environ).get("PATH"))   # honour sandbox shims
     if not exe:
         result = _result("failed", 127, "claude CLI not found on PATH", None)
         _write_status(status_file, _record(
@@ -248,7 +250,7 @@ def run_claude(*, model: str, worktree: Path, prompt: str, status_file: Path,
     cmd = build_command(model, prompt)
     cmd[0] = exe
     try:
-        stdout, stderr, exit_code, timed_out = _run_child(cmd, worktree, timeout_s)
+        stdout, stderr, exit_code, timed_out = _run_child(cmd, worktree, timeout_s, env)
     except OSError as exc:
         result = _result("failed", 1, f"claude launch failed: {exc}", None)
         _write_status(status_file, _record(
