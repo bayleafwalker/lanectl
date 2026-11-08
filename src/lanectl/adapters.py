@@ -68,6 +68,9 @@ ADAPTERS: dict[str, Adapter] = {
 # Replace only your own anchor; leave the spacer lines so trains merge cleanly.
 
 # @anchor opencode-native
+from .adapters_opencode import run_opencode
+
+ADAPTERS["opencode"] = run_opencode
 
 # spacer
 
