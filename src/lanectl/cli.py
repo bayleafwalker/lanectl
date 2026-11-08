@@ -33,6 +33,13 @@ PLUGINS.append(reap_plugin)
 
 # spacer
 
+# @anchor lint-release
+from . import lint_release as lint_release_plugin
+
+PLUGINS.append(lint_release_plugin)
+
+# spacer
+
 
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(prog="lanectl", description=__doc__)
