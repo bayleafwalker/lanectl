@@ -2,7 +2,8 @@
 
 A failed train is evidence of work to do. Instead of an operator noticing it
 by hand, ``scan --record`` emits one ``triage.proposed`` event per failing
-pytest node id, and :func:`proposals` folds the log into the open list,
+pytest node id and per excluded attempt (a merge conflict is work to do, not
+a check failure), and :func:`proposals` folds the log into the open list,
 deduplicated by fingerprint. Every recorded proposal stays open until a later
 resolution event exists; there is none in contract v1 yet.
 """
@@ -28,11 +29,27 @@ def failing_tests(output: str) -> list[str]:
     return sorted(node for node in nodes if node)
 
 
+def _excluded(d: dict) -> list[dict]:
+    """Excluded-attempt entries with a reason and an attempt id, in order."""
+    out = []
+    for entry in d.get("excluded") or ():
+        if not isinstance(entry, dict):
+            continue
+        attempt_id = entry.get("attempt_id")
+        if not attempt_id:
+            continue
+        out.append({"attempt_id": attempt_id,
+                    "reason": entry.get("reason") or "excluded"})
+    return out
+
+
 def from_train(event: dict) -> list[dict]:
     """``triage.proposed`` payloads for one failed ``train.built`` event.
 
-    One proposal per failing node id parsed from ``check_tail``; when the tail
-    names none (a setup or infrastructure failure), one proposal for the whole
+    One proposal per failing node id parsed from ``check_tail`` and one per
+    excluded attempt (an attempt dropped for a merge conflict is work to do,
+    not a check failure). When the tail names no nodes and nothing was
+    excluded (a setup or infrastructure failure), one proposal for the whole
     train keyed by its id.
     """
     if event.get("type") != "train.built":
@@ -43,14 +60,22 @@ def from_train(event: dict) -> list[dict]:
     repo = d.get("repo") or ""
     train_id = d.get("train_id") or ""
     nodes = failing_tests(d.get("check_tail") or "")
-    whole_train = not nodes
+    excluded = _excluded(d)
     out = []
-    for node in nodes or [train_id]:
-        summary = (f"check failed in train {train_id}" if whole_train
-                   else f"{node} failed in train {train_id}")
+    for node in nodes:
         out.append({"source": "train", "fingerprint": _fingerprint(repo, node),
-                    "summary": summary, "repo": repo, "node_id": node,
-                    "train_id": train_id})
+                    "summary": f"{node} failed in train {train_id}",
+                    "repo": repo, "node_id": node, "train_id": train_id})
+    for entry in excluded:
+        attempt_id = entry["attempt_id"]
+        out.append({"source": "train",
+                    "fingerprint": _fingerprint(repo, f"excluded:{attempt_id}"),
+                    "summary": f"{entry['reason']}: {attempt_id} in train {train_id}",
+                    "repo": repo, "node_id": attempt_id, "train_id": train_id})
+    if not nodes and not excluded:
+        out.append({"source": "train", "fingerprint": _fingerprint(repo, train_id),
+                    "summary": f"check failed in train {train_id}",
+                    "repo": repo, "node_id": train_id, "train_id": train_id})
     return out
 
 
