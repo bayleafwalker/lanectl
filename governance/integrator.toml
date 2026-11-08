@@ -1,0 +1,10 @@
+# Integrator authority v1 (planner-owned). Stage 4 runs the integrator in shadow:
+# it plans landings; the operator (planner session) still lands.
+revision = 1
+# Task classes whose landing the shadow integrator may plan as "land" on an
+# evaluator accept. Empty = every plan is advisory; promotion is the operator's call.
+autonomous_classes = []
+# An integrator fix larger than this (added + deleted lines) should be a requeue instead.
+fix_budget_lines = 30
+# Fix classes the integrator may apply itself; anything else goes back to a lane.
+allowed_fix_classes = ["spec-gap", "gate-gap"]

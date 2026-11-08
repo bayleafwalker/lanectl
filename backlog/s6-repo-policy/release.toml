@@ -1,0 +1,30 @@
+id = "s6-repo-policy"
+repo = "lanectl"
+base_sha = "3a104b3016aeba444cb07fa3059f6ed24b235e6d"
+revision = 1
+title = "Per-repo policy overlay for fan-out"
+task_class = "semantic"
+size = "M"
+data_class = "public"
+outcome = """
+Stage 6 wires lanes into other repositories, each with its own protected paths and data boundary.
+In governance/repos.toml a repo may add: protected_paths = [globs] (in addition to the lane's),
+data_class_floor = "public"|"restricted" (default "public"; a restricted floor treats every release
+for that repo as restricted), and [repos.<name>.routing] model = weight, which replaces the lane's
+routing weights for that repo's releases (the data boundary still applies on top). RepoSpec gains
+protected_paths (tuple), data_class_floor (str) and routing (dict), defaulting to (), "public", {}.
+ready.eligible_models(rel, lane, repo=None) applies routing override then the boundary (lane
+external_models are dropped when the effective class is restricted); without repo it behaves as
+today. ready.readiness blocks with a reason containing "no eligible model" when that leaves no model
+with positive weight. diffpolicy.evaluate(changes, rel, lane, acceptance_paths=(),
+repo_protected=()) treats repo_protected like lane.protected_paths. runner passes the release's
+repo to eligible_models and its protected_paths to the gate and to the worker prompt's do-not-touch
+list. ready.py and gates/** are protected: the attempt waits for planner review.
+"""
+# lint-release override (planner, 2026-11-08): base failures are AttributeError x2 and
+# TypeError x2 from the new eligible_models/RepoSpec signatures (missing feature, unclassified).
+[scope]
+paths = ["src/lanectl/config.py", "src/lanectl/ready.py", "src/lanectl/gates/diffpolicy.py", "src/lanectl/runner.py", "tests/stage6/**"]
+[acceptance]
+exec = ["uv run --no-sync pytest -q -p no:cacheprovider"]
+files = ["tests/stage6/test_acc_repo_policy.py"]

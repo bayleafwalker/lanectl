@@ -1,0 +1,26 @@
+id = "s5-burn-down"
+repo = "lanectl"
+base_sha = "999c872674fba2dcd5dfd299a5fdc270bd550a6f"
+revision = 1
+title = "Burn-down: plan spending expiring capacity within WIP caps"
+task_class = "projection"
+size = "M"
+data_class = "public"
+outcome = """
+Stage 5 burns expiring capacity that would reset unused. Add src/lanectl/burn.py (command plugin).
+plan_burn(events, policy_raw, now, ready, caps, running, unlanded) -> {"provider", "window",
+"burnable", "items", "reasons"} or None, where ready is [(release_id, size)] in backlog order and
+policy_raw is the allocation dict (governance/allocation.toml; read [burn] and
+providers.<p>.estimates). For each expiring provider window from capacity.project: plan only when
+window_end - now <= burn.start_within_s and burnable >= burn.min_burnable; take ready items in
+order while the summed policy estimate fits burnable and the count stays within
+min(caps.concurrency - running, caps.accepted_unlanded_max - unlanded). No qualifying window or
+no slots -> None. `lanectl burn [--record]` prints the plan for the implement lane (records
+burn.planned); `--execute` then runs the planned items through runner.admit(only=...) and
+runner.execute one at a time, stopping at the first string (cap) result.
+"""
+[scope]
+paths = ["src/lanectl/burn.py", "tests/stage5/**"]
+[acceptance]
+exec = ["uv run --no-sync pytest -q -p no:cacheprovider"]
+files = ["tests/stage5/test_acc_burn.py"]

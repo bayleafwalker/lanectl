@@ -1,0 +1,28 @@
+id = "s4-landing-plan"
+repo = "lanectl"
+base_sha = "999c872674fba2dcd5dfd299a5fdc270bd550a6f"
+revision = 1
+title = "Shadow integrator: landing plans and their match rate"
+task_class = "semantic"
+size = "M"
+data_class = "public"
+outcome = """
+Stage 4 runs the integrator in shadow. Add src/lanectl/landing.py (command plugin).
+load_authority(path=None) reads governance/integrator.toml (planner-owned; read its comments).
+plan_landing(events, train_id, authority) -> [{"attempt_id", "action"}] for one train.built:
+excluded attempts -> "reject"; included attempts on a failed train -> "hold"; on a passed train ->
+"land" when the attempt's latest evaluation.recorded verdict is "accept" (no evaluation, or
+"reject" -> "hold"). Order: included first (train order), then excluded. `lanectl plan-landing
+<train_id> [--record]` prints it and records landing.planned {train_id, plan, by:
+"integrator-shadow"}. plan_match(events) -> {"trains", "matched", "agreement"} over trains with a
+recorded shadow plan that have since been decided: a plan matches when every "land" attempt
+landed with no model-error fix and no other planned attempt landed. fix_budget(events, authority,
+fix_lines) -> list of warnings for integrator.fix events whose class is not in
+allowed_fix_classes or whose fix_lines[commit] exceeds fix_budget_lines. The report gains
+landing_shadow = plan_match(events) and prints it.
+"""
+[scope]
+paths = ["src/lanectl/landing.py", "src/lanectl/report.py", "tests/stage4/**"]
+[acceptance]
+exec = ["uv run --no-sync pytest -q -p no:cacheprovider"]
+files = ["tests/stage4/test_acc_landing.py"]

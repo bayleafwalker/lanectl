@@ -1,6 +1,6 @@
 id = "s2-shadow-admission"
 repo = "lanectl"
-base_sha = "f0c0f78f044273f8154e6b9fd2aaef8dafbf2955"
+base_sha = "30042d0209bcfbd360c5160ca86fd3db7fbb3dc1"
 revision = 1
 title = "Shadow admission from capacity projection"
 task_class = "projection"
