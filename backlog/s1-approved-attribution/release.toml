@@ -1,0 +1,19 @@
+id = "s1-approved-attribution"
+repo = "lanectl"
+base_sha = "6a3518e7af761485b06eeae89a7e558b20afeec5"
+revision = 1
+title = "Approved review-required attempts count in precision"
+task_class = "view"
+size = "S"
+data_class = "public"
+outcome = """
+An attempt the gates parked as review-required and the integrator then approved (decision.recorded
+by=integrator, decision=candidate) is gate-accepted for precision purposes. Today report.attribution
+only counts by=gates candidates, so approved protected-path work never appears in precision,
+model_precision, report groups or lanectl status. Fix the shared attribution so both views agree.
+"""
+[scope]
+paths = ["src/lanectl/report.py", "src/lanectl/runner.py", "tests/stage1/**"]
+[acceptance]
+exec = ["uv run --no-sync pytest -q -p no:cacheprovider"]
+files = ["tests/stage1/test_acc_approved_attribution.py"]
