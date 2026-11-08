@@ -1,6 +1,6 @@
 id = "s2-stats-probe"
 repo = "lanectl"
-base_sha = "f0c0f78f044273f8154e6b9fd2aaef8dafbf2955"
+base_sha = "30042d0209bcfbd360c5160ca86fd3db7fbb3dc1"
 revision = 1
 title = "Probe: provider-wide OpenCode usage vs the ledger"
 task_class = "projection"
