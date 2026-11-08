@@ -23,7 +23,7 @@ accepted_unlanded_max = 8     # pull system: the lane idles when review falls be
 size_budget_lines = { S = 250, M = 700, L = 1500 }
 protected_paths = [
   "governance/**", "backlog/**", "contracts/**",
-  "src/lanectl/contracts.py", "src/lanectl/ready.py", "src/lanectl/gates/**",
+  "src/lanectl/contracts.py", "src/lanectl/ready.py", "src/lanectl/gates/**", "src/lanectl/sandbox.py",
   ".github/**", ".forgejo/**", "pyproject.toml", "uv.lock",
   "tests/seed/**", "**/conftest.py", "AGENTS.md", "CLAUDE.md", ".claude/**",
 ]
@@ -40,3 +40,9 @@ forbidden_added_patterns = [
 
 [effects]
 push = "lane/*"
+
+[sandbox]
+# Workers and worker-written code run with these roots read-only; only the
+# attempt checkout is writable (added 2026-11-08 after main-checkout writes).
+mode = "systemd-run"
+readonly = ["/projects"]

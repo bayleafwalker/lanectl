@@ -61,6 +61,7 @@ def load_lane(name: str, root: Path | None = None) -> LaneRevision:
             external_models=tuple(raw["routing"].get("external_models", ())),
             timeout_s=int(raw["routing"].get("timeout_s", 2700)),
             effects=dict(raw.get("effects", {})),
+            sandbox=dict(raw.get("sandbox", {})),
             digest=_digest(path),
         )
     except KeyError as exc:

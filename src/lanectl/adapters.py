@@ -36,7 +36,7 @@ def worker_for(model: str) -> str:
 
 
 def agentops_dispatch(worker: str, model: str, worktree: Path, prompt: str, status_file: Path,
-                      timeout_s: int, external: bool) -> AdapterResult:
+                      timeout_s: int, external: bool, env: dict | None = None) -> AdapterResult:
     exe = shutil.which("agentops")
     if not exe:
         raise RuntimeError("agentops CLI not on PATH")
@@ -46,7 +46,7 @@ def agentops_dispatch(worker: str, model: str, worktree: Path, prompt: str, stat
     if external:
         cmd.append("--data-boundary-attested")
     cmd.append(prompt)
-    p = subprocess.run(cmd, capture_output=True, text=True)
+    p = subprocess.run(cmd, capture_output=True, text=True, env=env)
     try:
         rec = json.loads(status_file.read_text())
     except (OSError, ValueError):

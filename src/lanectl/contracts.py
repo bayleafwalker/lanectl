@@ -145,4 +145,5 @@ class LaneRevision:
     external_models: tuple[str, ...]      # models that leave the estate (data boundary)
     timeout_s: int = 2700
     effects: dict[str, str] = field(default_factory=dict)
+    sandbox: dict = field(default_factory=dict)     # see lanectl.sandbox
     digest: str = ""

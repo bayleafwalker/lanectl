@@ -6,6 +6,7 @@ deterministic; no agent chooses what runs next.
 from __future__ import annotations
 
 import hashlib
+import os
 import shutil
 import subprocess
 import time
@@ -13,7 +14,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 
-from . import adapters
+from . import adapters, sandbox as sandboxing
 from .config import RepoSpec, load_lane, load_releases, load_repos, match
 from .contracts import LaneRevision, WorkRelease
 from .events import EventLog, ItemView, project_items, state_dir
@@ -184,8 +185,11 @@ def _discard(repo: RepoSpec, path: Path) -> None:
 
 
 def _main_fingerprint(repo: RepoSpec) -> str:
-    """Tracked + untracked state of the main checkout, ignoring gitignored files."""
-    return git(repo.path, "status", "--porcelain", "--untracked-files=all", check=False)
+    """Main checkout state: HEAD, the main ref, tracked and untracked files.
+    (2026-11-08: a leaked session committed straight onto main; status alone missed it.)"""
+    return "\n".join((git(repo.path, "rev-parse", "HEAD", check=False),
+                       git(repo.path, "rev-parse", f"refs/heads/{repo.main}", check=False),
+                       git(repo.path, "status", "--porcelain", "--untracked-files=all", check=False)))
 
 
 def execute(c: Claim, log: EventLog, adapter_fn=None) -> str:
@@ -199,6 +203,8 @@ def execute(c: Claim, log: EventLog, adapter_fn=None) -> str:
     # linked worktree to the main repository root and write there (2026-11-08 breach).
     git(repo.path, "clone", "-q", "--shared", "--no-checkout", str(repo.path), str(wt))
     git(wt, "checkout", "-q", "-b", branch, rel.base_sha)
+    git(wt, "remote", "remove", "origin", check=False)   # do not advertise the main checkout
+    sb = sandboxing.from_lane(lane.sandbox, (str(wt),), lane.timeout_s + 120)
     acc = _copy_acceptance(rel, wt)
     seed_sha = _commit_all(wt, f"lane(acceptance): {rel.id} r{rel.revision}")
     if repo.setup_cmd:
@@ -206,13 +212,15 @@ def execute(c: Claim, log: EventLog, adapter_fn=None) -> str:
 
     runs = state_dir() / "runs"
     runs.mkdir(exist_ok=True)
+    shims = sb.shim_dir(state_dir() / "shims" / c.attempt_id, ("opencode", "codex", "claude"))
+    env = dict(os.environ, PATH=f"{shims}{os.pathsep}{os.environ.get('PATH', '')}") if shims else None
     main_before = _main_fingerprint(repo)
     started = time.monotonic()
     fn = adapter_fn or adapters.ADAPTERS[c.worker]
     try:
         res = fn(model=c.model, worktree=wt, prompt=render_prompt(rel, lane),
                  status_file=runs / f"{c.attempt_id}.json", timeout_s=lane.timeout_s,
-                 external=c.model in lane.external_models)
+                 external=c.model in lane.external_models, env=env)
     except Exception as exc:  # adapter crash is an attempt outcome, not a runner crash
         res = adapters.AdapterResult("failed", 1, f"adapter error: {exc}", None)
     elapsed = round(time.monotonic() - started, 1)
@@ -235,7 +243,7 @@ def execute(c: Claim, log: EventLog, adapter_fn=None) -> str:
     elif res.outcome == "failed" and head == seed_sha:
         gates = {}   # nothing to gate; decide() classifies this as infra
     else:
-        gates = run_gates(c, wt, seed_sha, head, acc, res.outcome)
+        gates = run_gates(c, wt, seed_sha, head, acc, res.outcome, sb)
     for g, vs in gates.items():
         log.append("gate.result", {"attempt_id": c.attempt_id, "gate": g, "passed": not vs,
                                    "violations": vs}, item_id=rel.id)
@@ -261,7 +269,8 @@ def execute(c: Claim, log: EventLog, adapter_fn=None) -> str:
 
 
 def run_gates(c: Claim, wt: Path, seed_sha: str, head: str, acc: dict[str, bytes],
-              worker_outcome: str) -> dict[str, list[str]]:
+              worker_outcome: str, sb=None) -> dict[str, list[str]]:
+    wrap = sb.wrap_shell if sb else None
     rel, repo, lane = c.rel, c.repo, c.lane
     changes = diffpolicy.collect(wt, seed_sha, head)
     gates = {"diff-policy": diffpolicy.evaluate(changes, rel, lane, rel.acceptance.files)}
@@ -270,16 +279,17 @@ def run_gates(c: Claim, wt: Path, seed_sha: str, head: str, acc: dict[str, bytes
     new_tests = {ch.path: (wt / ch.path).read_bytes() for ch in changes
                  if ch.status == "A" and match(ch.path, lane.test_globs) and (wt / ch.path).is_file()}
     gates["fail-on-base"] = failonbase.check(repo.path, rel.base_sha, new_tests, repo.test_cmd,
-                                             repo.setup_cmd)
+                                             repo.setup_cmd, wrap=wrap)
     acc_tests = {f: d for f, d in acc.items() if match(f, lane.test_globs)}
     if rel.acceptance.fail_on_base and acc_tests:
         gates["acceptance-on-base"] = [f"spec-gap {v}" for v in failonbase.check(
-            repo.path, rel.base_sha, acc_tests, repo.test_cmd, repo.setup_cmd)]
+            repo.path, rel.base_sha, acc_tests, repo.test_cmd, repo.setup_cmd, wrap=wrap)]
     for f, data in acc.items():   # belt and braces: gate the planner's bytes, not the worker's
         (wt / f).write_bytes(data)
     fails = []
     for cmd in rel.acceptance.exec:
-        p = subprocess.run(cmd, shell=True, cwd=wt, capture_output=True, text=True, timeout=1800)
+        p = subprocess.run(wrap(cmd, wt) if wrap else cmd, shell=True, cwd=wt,
+                           capture_output=True, text=True, timeout=1800)
         if p.returncode:
             fails.append(f"exit {p.returncode}: {cmd} :: {(p.stdout + p.stderr)[-600:]}")
     gates["acceptance"] = fails

@@ -12,7 +12,7 @@ from pathlib import Path
 
 
 def run_tests_at(repo: Path, rev: str, test_files: dict[str, bytes], test_cmd: str,
-                 setup_cmd: str = "", timeout: int = 900) -> tuple[int, str]:
+                 setup_cmd: str = "", timeout: int = 900, wrap=None) -> tuple[int, str]:
     """Check out `rev` in a throwaway worktree, drop in `test_files`, run them."""
     tmp = Path(tempfile.mkdtemp(prefix="lanectl-base-"))
     wt = tmp / "wt"
@@ -26,6 +26,8 @@ def run_tests_at(repo: Path, rev: str, test_files: dict[str, bytes], test_cmd: s
         if setup_cmd:
             subprocess.run(setup_cmd, shell=True, cwd=wt, capture_output=True, timeout=timeout)
         cmd = test_cmd.replace("{files}", " ".join(shlex.quote(f) for f in test_files))
+        if wrap:   # worker-written tests are untrusted code: run them sandboxed
+            cmd = wrap(cmd, wt)
         p = subprocess.run(cmd, shell=True, cwd=wt, capture_output=True, text=True, timeout=timeout)
         return p.returncode, (p.stdout + p.stderr)[-2000:]
     finally:
@@ -35,10 +37,10 @@ def run_tests_at(repo: Path, rev: str, test_files: dict[str, bytes], test_cmd: s
 
 
 def check(repo: Path, base: str, test_files: dict[str, bytes], test_cmd: str,
-          setup_cmd: str = "") -> list[str]:
+          setup_cmd: str = "", wrap=None) -> list[str]:
     if not test_files:
         return []
-    code, tail = run_tests_at(repo, base, test_files, test_cmd, setup_cmd)
+    code, tail = run_tests_at(repo, base, test_files, test_cmd, setup_cmd, wrap=wrap)
     if code == 0:
         return [f"passes-on-base: {sorted(test_files)}"]
     if code == 5:  # pytest: no tests collected

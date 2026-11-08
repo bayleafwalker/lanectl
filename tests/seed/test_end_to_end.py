@@ -158,3 +158,17 @@ def test_attempt_runs_in_standalone_clone_and_breach_trips_breaker(estate):
     assert "-> rejected: infra: isolation breach" in out, out
     v = project_items(log.read())["iso"]
     assert v.state == "requeued" and runner.attempts_used(v, 1) == 0
+
+
+def test_commit_onto_main_is_a_breach(estate):
+    repo, release, log = estate
+    release("sneaky", SUB_TEST)
+
+    def commit_main(*, worktree, **_):
+        (Path(repo) / "src" / "x.py").write_text("x = 1\n")
+        sh(repo, "git", "-c", "user.name=t", "-c", "user.email=t@t", "add", "-A")
+        sh(repo, "git", "-c", "user.name=t", "-c", "user.email=t@t", "commit", "-qm", "sneaky")
+        return AdapterResult("done", 0, "ok", None)
+
+    out = runner.execute(runner.admit("implement", log), log, adapter_fn=commit_main)
+    assert "isolation breach" in out, out
