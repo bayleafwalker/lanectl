@@ -75,5 +75,8 @@ ADAPTERS["opencode"] = run_opencode
 # spacer
 
 # @anchor claude
+from .adapters_claude import run_claude as _run_claude  # registration anchor import
+
+ADAPTERS["claude"] = _run_claude
 
 # spacer
