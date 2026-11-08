@@ -1,0 +1,21 @@
+id = "s4-evaluate-approved"
+repo = "lanectl"
+base_sha = "d1bc9747929202b991432a1228f1ce7dc5601dca"
+revision = 1
+title = "Evaluate attempts when the integrator approves them"
+task_class = "glue"
+size = "S"
+data_class = "public"
+outcome = """
+The evaluator runs only when the gates decide candidate, so a review-required attempt that the
+integrator later approves never gets an evaluation.recorded; landing.plan_landing then plans
+"hold" for it and the landing shadow disagrees with every approved landing (2 of 4 trains on
+2026-11-08). runner.approve must call evaluator.evaluate_attempt(log, attempt_id) after recording
+the integrator's candidate decision (it is idempotent, so an existing evaluation is kept).
+Approving a non-parked attempt still records nothing.
+"""
+[scope]
+paths = ["src/lanectl/runner.py", "tests/stage4/**"]
+[acceptance]
+exec = ["uv run --no-sync pytest -q -p no:cacheprovider"]
+files = ["tests/stage4/test_acc_evaluate_approved.py"]
