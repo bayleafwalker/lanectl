@@ -2,7 +2,9 @@
 from __future__ import annotations
 
 import argparse
+import importlib
 import json
+import pkgutil
 import sys
 
 from . import runner
@@ -11,44 +13,19 @@ from .events import EventLog, project_items
 from .ready import readiness
 
 
-# Command plugins: modules exposing register(subparsers) -> {cmd: handler(args, log) -> int}.
-# Add one import per anchor line; keep the spacer lines so trains merge cleanly.
-PLUGINS: list = []
+def discover_plugins(package_name: str) -> list:
+    """Return direct submodules of *package_name* exposing a callable ``register``.
 
-# @anchor usage-hook
-from . import usage_hook as usage_hook_plugin
-
-PLUGINS.append(usage_hook_plugin)
-
-# spacer
-
-# @anchor report
-from . import report as report_plugin
-
-PLUGINS.append(report_plugin)
-
-# spacer
-
-# @anchor reap
-from . import reap as reap_plugin
-
-PLUGINS.append(reap_plugin)
-
-# spacer
-
-# @anchor lint-release
-from . import lint_release as lint_release_plugin
-
-PLUGINS.append(lint_release_plugin)
-
-# spacer
-
-# @anchor capacity
-from . import capacity as capacity_plugin
-
-PLUGINS.append(capacity_plugin)
-
-# spacer
+    Ordering is by submodule name so parsing is deterministic regardless of
+    filesystem order. Adding a command plugin only requires adding its module.
+    """
+    package = importlib.import_module(package_name)
+    found = []
+    for info in pkgutil.iter_modules(package.__path__, package_name + "."):
+        module = importlib.import_module(info.name)
+        if callable(getattr(module, "register", None)):
+            found.append(module)
+    return sorted(found, key=lambda module: module.__name__.rsplit(".", 1)[-1])
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -77,8 +54,10 @@ def main(argv: list[str] | None = None) -> int:
     ev = sub.add_parser("events", help="print the log tail")
     ev.add_argument("-n", type=int, default=30)
     ev.add_argument("--item")
+    ev.add_argument("--type", action="append", dest="types", metavar="EVENT_TYPE",
+                    help="only print events of this type (repeatable)")
     handlers = {}
-    for plugin in PLUGINS:
+    for plugin in discover_plugins("lanectl"):
         handlers.update(plugin.register(sub))
     a = p.parse_args(argv)
     log = EventLog()
@@ -130,7 +109,9 @@ def main(argv: list[str] | None = None) -> int:
         print(runner.integrator_reject(log, a.attempt_id, a.reason, a.park))
         return 0
     if a.cmd == "events":
-        evs = [e for e in log.read() if not a.item or e["item_id"] == a.item]
+        evs = [e for e in log.read()
+               if (not a.item or e["item_id"] == a.item)
+               and (not a.types or e["type"] in a.types)]
         for e in evs[-a.n:]:
             print(json.dumps(e, sort_keys=True))
         return 0
