@@ -85,8 +85,10 @@ def admit(lane_name: str, log: EventLog, only: str | None = None) -> Claim | str
         items = project_items(events)
         today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
         running = sum(1 for v in items.values() if v.state == "claimed")
-        claimed_today = sum(1 for e in events if e["type"] == "item.claimed"
-                            and e["ts"].startswith(today) and e["data"]["lane"] == lane.lane)
+        infra = {a["attempt_id"] for v in items.values() for a in v.attempts if a.get("infra")}
+        claimed_today = sum(1 for e in events if e["type"] == "item.claimed"   # infra failures cost nothing
+                            and e["ts"].startswith(today) and e["data"]["lane"] == lane.lane
+                            and e["data"]["attempt_id"] not in infra)
         unlanded = sum(1 for v in items.values() if v.state in ("candidate", "in-train"))
         if running >= lane.caps["concurrency"]:
             return f"cap: concurrency {running}/{lane.caps['concurrency']}"

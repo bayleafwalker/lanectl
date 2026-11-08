@@ -42,7 +42,11 @@ backlog/<id>/release.toml       # see existing items for the shape
 backlog/<id>/files/<repo-path>  # planner-owned acceptance tests
 ```
 
-Rules: acceptance tests must fail on `base_sha`; scope globs are explicit;
+Rules: after any seed/runner change lands, rebase pending releases (set
+`base_sha` to current main and bump `revision`) — stale bases caused the first
+three spec-gap fixes. Acceptance tests must fail on `base_sha` *for the expected
+reason* (missing module/feature, not a contract error in the test itself: use
+ids of 2+ chars); run `uv run pytest <acceptance file>` on base before publishing; scope globs are explicit;
 size ≤ M; `data_class = "restricted"` for anything private, credential- or
 served-state-bearing (it will never go to an external model). Give the
 outcome and acceptance, not an implementation plan. Bump `revision` to reissue
