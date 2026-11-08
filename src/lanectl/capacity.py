@@ -365,6 +365,31 @@ def capacity_admission(events: list[dict], policy: AllocationPolicy | None,
             "reasons": reasons}
 
 
+def shadow_admission(events: list[dict]) -> dict:
+    """Aggregate ``admission.shadow`` events: recorded, agreed and agreement."""
+    recorded = agreed = 0
+    for ev in events:
+        if not isinstance(ev, dict) or ev.get("type") != "admission.shadow":
+            continue
+        recorded += 1
+        if (ev.get("data") or {}).get("agree"):
+            agreed += 1
+    return {"recorded": recorded, "agreed": agreed,
+            "agreement": round(agreed / recorded, 3) if recorded else None}
+
+
+def _fmt_shadow_admission(value: dict) -> list[str]:
+    agreement = value.get("agreement")
+    rendered = "-" if agreement is None else f"{agreement:.3f}"
+    return ["", f"shadow_admission: recorded={value.get('recorded', 0)} "
+                f"agreed={value.get('agreed', 0)} agreement={rendered}"]
+
+
+def report_section():
+    """Report section: shadow admission agreement."""
+    return "shadow_admission", shadow_admission, _fmt_shadow_admission
+
+
 def register(sub) -> dict:
     p = sub.add_parser("capacity", help="project capacity headroom and burnable allocation")
     p.add_argument("--json", action="store_true", help="emit the projection as JSON")

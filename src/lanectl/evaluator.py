@@ -219,6 +219,20 @@ def agreement(events: list[dict]) -> dict[str, dict]:
     return groups
 
 
+def _fmt_agreement(groups: dict[str, dict]) -> list[str]:
+    lines = ["evaluator:"]
+    for cls in sorted(groups or {}):
+        g = groups[cls]
+        lines.append(f"  {cls}: evaluated_ruled={g['evaluated_ruled']} "
+                     f"agreed={g['agreed']} agreement={g['agreement']:.3f}")
+    return lines
+
+
+def report_section():
+    """Report section: evaluator agreement per task class."""
+    return "evaluator", agreement, _fmt_agreement
+
+
 def _gate_accepted(events: list[dict]) -> set[str]:
     accepted = {ev["data"]["attempt_id"] for ev in events
                 if ev["type"] == "decision.recorded"
