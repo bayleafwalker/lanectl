@@ -16,6 +16,9 @@ from .ready import readiness
 PLUGINS: list = []
 
 # @anchor usage-hook
+from . import usage_hook as usage_hook_plugin
+
+PLUGINS.append(usage_hook_plugin)
 
 # spacer
 
