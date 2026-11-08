@@ -73,6 +73,10 @@ it is `model-error` even when a gate could have caught it. This decision stays w
 lanectl run --max 3        # one lane worker, sequential; start up to caps.concurrency in parallel
 ```
 
+Release the runner after landing governance, runner or contract changes, and before
+running any main-branch command that writes a new event type: an older runner
+refuses a log it cannot validate (crashed two workers 2026-11-08). Keep forbidden
+patterns (`# noqa`, skip markers) out of acceptance tests: lanes copy them.
 Release the runner after landing governance or runner changes:
 `git tag vX.Y.Z && uv tool install --force git+file:///projects/dev/lanectl@vX.Y.Z`.
 

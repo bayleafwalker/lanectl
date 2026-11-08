@@ -1,0 +1,27 @@
+id = "s4-reap-undecided"
+repo = "lanectl"
+base_sha = "4e92331049e7f63eb3fc6d5fd53a2d4f28342273"
+revision = 1
+title = "Reap attempts the runner finished but never decided"
+task_class = "recovery"
+size = "S"
+data_class = "public"
+outcome = """
+A runner that dies after attempt.finished but before decision.recorded (seen 2026-11-08: an old
+runner hit a newer event type in the log) leaves the item stuck in implemented/gated forever;
+reap only handles claims with no attempt.finished. Extend reap.reap: an attempt with
+attempt.finished older than the threshold and no decision.recorded is decided now. With recorded
+gate.result events: gates = {gate: violations}, then the same decision.decide call the runner makes
+(worker outcome from attempt.finished, attempts_used as admission counts it, changed =
+head_sha != seed_sha), recorded by "gates" with decision.RULES_REVISION plus "recovered_by":
+"reaper/v2", followed by what the runner records after a decision (evaluator for candidates,
+experiment.recorded with task_class and size from the release, requeue/park follow-up). Without
+gate results: rejected, reasons ["infra: runner died before gates"], requeued without consuming
+an attempt. Prefer extracting the runner's post-decision recording into one function both use.
+Reaped ids are returned as today.
+"""
+[scope]
+paths = ["src/lanectl/reap.py", "src/lanectl/runner.py", "tests/stage4/**"]
+[acceptance]
+exec = ["uv run --no-sync pytest -q -p no:cacheprovider"]
+files = ["tests/stage4/test_acc_reap_undecided.py"]
