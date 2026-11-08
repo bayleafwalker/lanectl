@@ -1,0 +1,22 @@
+id = "s4-triage-conflicts"
+repo = "lanectl"
+base_sha = "8cfba286a720fc0fceec2b2009cb515f7b7cb868"
+revision = 1
+title = "Triage merge-conflict exclusions as conflicts, not check failures"
+task_class = "projection"
+size = "S"
+data_class = "public"
+outcome = """
+A train.built with passed=false often has a passing check and fails only because attempts were
+excluded (data.excluded = [{attempt_id, reason}], reason "merge conflict"). triage.from_train
+currently reports these as "check failed in train <id>". Change from_train: one proposal per
+excluded attempt, summary "<reason>: <attempt_id> in train <train_id>", node_id = the attempt id,
+fingerprint sha1("<repo>:excluded:<attempt_id>"), in addition to one proposal per failing pytest
+node id. The whole-train proposal ("check failed in train <id>") is emitted only when there are
+neither failing node ids nor exclusions. Proposals keep the existing payload keys.
+"""
+[scope]
+paths = ["src/lanectl/triage.py", "tests/stage4/**"]
+[acceptance]
+exec = ["uv run --no-sync pytest -q -p no:cacheprovider"]
+files = ["tests/stage4/test_acc_triage_conflicts.py"]
