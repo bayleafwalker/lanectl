@@ -12,8 +12,13 @@ from pathlib import Path
 
 
 def run_tests_at(repo: Path, rev: str, test_files: dict[str, bytes], test_cmd: str,
-                 setup_cmd: str = "", timeout: int = 900, wrap=None) -> tuple[int, str]:
-    """Check out `rev` in a throwaway worktree, drop in `test_files`, run them."""
+                 setup_cmd: str = "", timeout: int = 900, wrap=None,
+                 tail: int | None = 2000) -> tuple[int, str]:
+    """Check out `rev` in a throwaway worktree, drop in `test_files`, run them.
+
+    `tail` keeps the last N characters of output; pass None for the full output
+    when a caller needs to inspect every failure rather than the final one.
+    """
     tmp = Path(tempfile.mkdtemp(prefix="lanectl-base-"))
     wt = tmp / "wt"
     subprocess.run(["git", "-C", str(repo), "worktree", "add", "--detach", str(wt), rev],
@@ -29,7 +34,8 @@ def run_tests_at(repo: Path, rev: str, test_files: dict[str, bytes], test_cmd: s
         if wrap:   # worker-written tests are untrusted code: run them sandboxed
             cmd = wrap(cmd, wt)
         p = subprocess.run(cmd, shell=True, cwd=wt, capture_output=True, text=True, timeout=timeout)
-        return p.returncode, (p.stdout + p.stderr)[-2000:]
+        output = p.stdout + p.stderr
+        return p.returncode, output if tail is None else output[-tail:]
     finally:
         subprocess.run(["git", "-C", str(repo), "worktree", "remove", "--force", str(wt)],
                        capture_output=True)
