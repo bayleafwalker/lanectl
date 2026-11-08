@@ -52,8 +52,8 @@ def build_report(events: list[dict], precision_bar: float = 0.5,
         elif t == "decision.recorded":
             if d.get("by") == "gates" and d.get("decision") == "candidate":
                 gate_ok.add(d["attempt_id"])
-            elif d.get("by") == "integrator":
-                integrator_rejected.add(d["attempt_id"])
+            elif d.get("by") == "integrator" and d.get("decision") != "candidate":
+                integrator_rejected.add(d["attempt_id"])   # approvals are not rejections
         elif t == "item.landed":
             landed[d["attempt_id"]] = list(d.get("fix_commits") or [])
         elif t == "integrator.fix":
