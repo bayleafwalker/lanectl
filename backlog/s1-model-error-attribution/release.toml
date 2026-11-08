@@ -1,0 +1,22 @@
+id = "s1-model-error-attribution"
+repo = "lanectl"
+base_sha = "1e29d427abea6ab6b9123d542b4f3437d239b709"
+revision = 1
+title = "Only model-error fixes count against the model"
+task_class = "view"
+size = "S"
+data_class = "public"
+outcome = """
+Flip the attribution criterion in report.attribution (shared by lanectl report and status): an
+attempt is model-clean unless one of its integrator fixes is classed model-error. spec-gap fixes are
+the planner's, gate-gap fixes the gates'. Add a top-level gate_flags list to the report, the
+gate-gap counterpart of planner_flags, in the format the acceptance tests show, and print it in the
+text report. Restore status gate_accepted to count every gate-accepted attempt (pending ones
+included). The four acceptance files are planner-rewritten for the new rule; keep them as given.
+"""
+[scope]
+paths = ["src/lanectl/report.py", "src/lanectl/runner.py", "tests/stage1/**"]
+[acceptance]
+exec = ["uv run --no-sync pytest -q -p no:cacheprovider"]
+files = ["tests/stage1/test_acc_report_attribution.py", "tests/stage1/test_acc_status_attribution.py",
+         "tests/stage1/test_report_model_precision.py", "tests/stage1/test_status_attribution.py"]

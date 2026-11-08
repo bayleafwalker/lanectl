@@ -44,7 +44,8 @@ is a lane-built replacement that runs in shadow mode against its scaffold.
    main it is building. Lanes build N+1 while N runs.
 9. Integrator fixes are separate commits titled `fix(<attempt>): [<class>] ...`
    with class `spec-gap | model-error | gate-gap`, so the learning signal
-   survives integration.
+   survives integration. Attribution (operator, 2026-11-08): only `model-error`
+   counts against the model; `spec-gap` is the planner's, `gate-gap` the gates'.
 
 ## Contracts v1 (`src/lanectl/contracts.py`)
 
@@ -102,8 +103,10 @@ the code, governance code included, under review.
 
 ## Stop conditions
 
-- A task class leaves the autonomous lane if precision (gate-accepted items that
-  land with no integrator fix) stays under ~50% across ~20 ruled items.
+- A task class leaves the autonomous lane if model precision (ruled items that
+  land with no `model-error` fix) stays under ~50% across ~20 ruled items.
+  Spec-gap and gate-gap fixes instead flag the planner (`planner_flags`) and the
+  gates (`gate_flags`); repeated flags mean fix the release template or add a gate.
 - Pause the lane if integrator minutes per landed item exceed the cost of doing
   the work interactively.
 - `accepted_unlanded_max` caps WIP: review capacity sets the pace.

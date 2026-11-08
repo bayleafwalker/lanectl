@@ -57,9 +57,11 @@ a parked item. Commit releases to lanectl main.
 ## 4. Ratchet
 
 Promote or demote task classes between manual review and rule-based acceptance
-by their **model precision** (`MPREC` in `lanectl report`): spec-gap fixes are planner
-errors and count against the release template, not the model (see `planner_flags`).
-Raw `PREC` measures the whole pipeline. This decision stays with the operator.
+by their **model precision** (`MPREC` in `lanectl report`): only `model-error` fixes
+count against the model. Spec-gap fixes are planner errors (`planner_flags`: fix the
+release template); gate-gap fixes are gate errors (`gate_flags`: add a gate rule).
+Raw `PREC` measures the whole pipeline. Classify honestly: if the worker got it wrong,
+it is `model-error` even when a gate could have caught it. This decision stays with the operator.
 
 ## 5. Run
 
