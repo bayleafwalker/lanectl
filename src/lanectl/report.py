@@ -10,12 +10,38 @@ gaps (the gates') still leave an attempt clean for the model.
 """
 from __future__ import annotations
 
-from .evaluator import agreement
+import importlib
+import pkgutil
+
 from .events import EventLog
-from .landing import plan_match
 
 # How many decimals precision and mean elapsed time are reported with.
 _DIGITS = 3
+
+#: Section registry: name -> ``(build, fmt)``.  Stage features add a section by
+#: exposing a module-level ``report_section()`` instead of editing this module.
+_SECTIONS: dict[str, tuple] = {}
+
+
+def register_section(name: str, build, fmt=None) -> None:
+    """Register a report section.
+
+    ``build(events)`` produces the section value and ``fmt(value)`` renders it
+    as report lines; ``fmt`` may be ``None`` for a JSON-only section.
+    """
+    _SECTIONS[name] = (build, fmt)
+
+
+def _discover_sections() -> None:
+    """Import every lanectl submodule and register its ``report_section()``."""
+    package = importlib.import_module(__package__)
+    for info in sorted(pkgutil.iter_modules(package.__path__, package.__name__ + "."),
+                       key=lambda info: info.name):
+        module = importlib.import_module(info.name)
+        section = getattr(module, "report_section", None)
+        if callable(section):
+            register_section(*section())
+
 
 # Fix classes by owner.  Only model-error counts against the model; the
 # planner owns spec gaps and the gates own gate gaps.
@@ -102,16 +128,10 @@ def build_report(events: list[dict], precision_bar: float = 0.5,
     model_clean_ids = attributed["model_clean"]
     usage_events: list[dict] = []
     experiments: list[dict] = []
-    shadow_recorded = 0
-    shadow_agreed = 0
 
     for ev in events:
         t, d = ev["type"], ev["data"]
-        if t == "admission.shadow":
-            shadow_recorded += 1
-            if d.get("agree"):
-                shadow_agreed += 1
-        elif t == "experiment.recorded":
+        if t == "experiment.recorded":
             experiments.append({"attempt_id": d["attempt_id"], "model": d["model"],
                                 "task_class": d["task_class"],
                                 "elapsed_s": d.get("elapsed_s", 0.0)})
@@ -201,18 +221,14 @@ def build_report(events: list[dict], precision_bar: float = 0.5,
                 f"task_class {cls}: {gate_gap_ruled} of {g['ruled']} ruled "
                 f"items needed gate-gap fixes")
 
-    return {"by_class": by_class, "by_model": by_model,
-            "fix_classes": fix_classes, "stop_conditions": stop_conditions,
-            "planner_flags": planner_flags, "gate_flags": gate_flags,
-            "evaluator": agreement(events),
-            "landing_shadow": plan_match(events),
-            "shadow_admission": {
-                "recorded": shadow_recorded,
-                "agreed": shadow_agreed,
-                "agreement": (round(shadow_agreed / shadow_recorded, _DIGITS)
-                              if shadow_recorded else None),
-            },
-            "precision_bar": precision_bar, "min_ruled": min_ruled}
+    report = {"by_class": by_class, "by_model": by_model,
+              "fix_classes": fix_classes, "stop_conditions": stop_conditions,
+              "planner_flags": planner_flags, "gate_flags": gate_flags,
+              "precision_bar": precision_bar, "min_ruled": min_ruled}
+    _discover_sections()
+    for name, (build, _fmt) in _SECTIONS.items():
+        report[name] = build(events)
+    return report
 
 
 def _fmt_precision(p: float | None) -> str:
@@ -242,11 +258,6 @@ def format_report(report: dict) -> str:
     lines = _table("CLASS", report["by_class"])
     lines.append("")
     lines += _table("MODEL", report["by_model"])
-    shadow = report.get("shadow_admission") or {}
-    lines.append("")
-    lines.append(f"shadow_admission: recorded={shadow.get('recorded', 0)} "
-                 f"agreed={shadow.get('agreed', 0)} "
-                 f"agreement={_fmt_precision(shadow.get('agreement'))}")
     if report["fix_classes"]:
         lines.append("")
         lines.append("fix_classes: " + ", ".join(
@@ -260,17 +271,10 @@ def format_report(report: dict) -> str:
     if report["gate_flags"]:
         lines.append("gate_flags:")
         lines += [f"  {s}" for s in report["gate_flags"]]
-    lines.append("evaluator:")
-    for cls in sorted(report.get("evaluator") or {}):
-        g = report["evaluator"][cls]
-        lines.append(f"  {cls}: evaluated_ruled={g['evaluated_ruled']} "
-                     f"agreed={g['agreed']} agreement={g['agreement']:.3f}")
-    shadow = report.get("landing_shadow") or {}
-    shadow_agreement = shadow.get("agreement")
-    lines.append("")
-    lines.append(f"landing_shadow: trains={shadow.get('trains', 0)} "
-                 f"matched={shadow.get('matched', 0)} "
-                 f"agreement={_fmt_precision(shadow_agreement)}")
+    for name in sorted(_SECTIONS):
+        _build, fmt = _SECTIONS[name]
+        if fmt is not None and name in report:
+            lines += fmt(report[name])
     return "\n".join(lines)
 
 

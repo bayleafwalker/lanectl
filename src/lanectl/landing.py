@@ -148,6 +148,18 @@ def plan_match(events: list[dict]) -> dict:
             "agreement": round(matched / trains, 3) if trains else None}
 
 
+def _fmt_plan_match(value: dict) -> list[str]:
+    agreement = value.get("agreement")
+    rendered = "-" if agreement is None else f"{agreement:.3f}"
+    return ["", f"landing_shadow: trains={value.get('trains', 0)} "
+                f"matched={value.get('matched', 0)} agreement={rendered}"]
+
+
+def report_section():
+    """Report section: shadow landing plan agreement."""
+    return "landing_shadow", plan_match, _fmt_plan_match
+
+
 def fix_budget(events: list[dict], authority: dict, fix_lines: dict) -> list[str]:
     """Warn about integrator fixes outside the authority's class or size budget."""
     allowed = set(authority.get("allowed_fix_classes") or ())
