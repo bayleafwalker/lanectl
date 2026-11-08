@@ -14,7 +14,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 
-from . import adapters, sandbox as sandboxing
+from . import adapters, report, sandbox as sandboxing
 from .config import RepoSpec, load_lane, load_releases, load_repos, match
 from .contracts import LaneRevision, WorkRelease
 from .events import EventLog, ItemView, project_items, state_dir
@@ -416,8 +416,13 @@ def integrator_reject(log: EventLog, attempt_id: str, reason: str, park: bool = 
 
 def metrics(events: list[dict]) -> dict:
     """Precision = gate-accepted attempts that landed with no integrator fix,
-    over gate-accepted attempts the integrator has ruled on."""
+    over gate-accepted attempts the integrator has ruled on.
+
+    ``model_precision`` uses report.py's attribution rule: fixes the planner
+    owns (``spec-gap``) do not count against the model.  ``fix_classes`` counts
+    integrator fixes by class."""
     gate_ok, landed, landed_clean, int_rejected, per_model = set(), set(), set(), set(), {}
+    attempt_model = {}
     for e in events:
         d = e["data"]
         if e["type"] == "decision.recorded" and d.get("by") == "gates" and d["decision"] == "candidate":
@@ -429,13 +434,30 @@ def metrics(events: list[dict]) -> dict:
             if not d["fix_commits"]:
                 landed_clean.add(d["attempt_id"])
         elif e["type"] == "experiment.recorded":
+            attempt_model[d["attempt_id"]] = d["model"]
             m = per_model.setdefault(d["model"], {"attempts": 0, "candidate": 0, "rejected": 0,
                                                   "parked": 0, "elapsed_s": 0.0})
             m["attempts"] += 1
             m[d["decision"]] = m.get(d["decision"], 0) + 1
             m["elapsed_s"] += d["elapsed_s"]
     ruled = (landed | int_rejected) & gate_ok
+    attributed = report.attribution(events)
+    model_clean = attributed["model_clean"]
+    for model, m in per_model.items():
+        ids = [aid for aid, mod in attempt_model.items() if mod == model]
+        model_ruled = sum(1 for aid in ids if aid in ruled)
+        model_clean_ruled = sum(1 for aid in ids if aid in model_clean and aid in ruled)
+        m["model_precision"] = (round(model_clean_ruled / model_ruled, 3)
+                                if model_ruled else None)
+        classes = {}
+        for aid in ids:
+            for cls, n in attributed["fixes"].get(aid, {}).items():
+                classes[cls] = classes.get(cls, 0) + n
+        m["fix_classes"] = classes
     return {"gate_accepted": len(gate_ok), "ruled": len(ruled), "landed": len(landed),
             "landed_clean": len(landed_clean),
             "precision": round(len(landed_clean & gate_ok) / len(ruled), 3) if ruled else None,
+            "model_precision": (round(len(model_clean & ruled) / len(ruled), 3)
+                                if ruled else None),
+            "fix_classes": attributed["fix_classes"],
             "per_model": per_model}
