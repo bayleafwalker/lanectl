@@ -259,21 +259,39 @@ def execute(c: Claim, log: EventLog, adapter_fn=None) -> str:
                                            changed=head != seed_sha)
     if breach:
         reasons = ["infra: isolation breach - main checkout changed during the attempt; inspect it"]
-    log.append("decision.recorded", {"attempt_id": c.attempt_id, "decision": dec, "reasons": reasons,
-               "rules_revision": decision.RULES_REVISION, "by": "gates"}, item_id=rel.id)
-    if dec == "candidate":          # the evaluator predicts only gate-accepted attempts
-        evaluator.evaluate_attempt(log, c.attempt_id)
-    log.append("experiment.recorded", {"attempt_id": c.attempt_id, "model": c.model, "worker": c.worker,
-               "task_class": rel.task_class, "size": rel.size, "decision": dec, "elapsed_s": elapsed,
-               "lane_revision": lane.revision, "rules_revision": decision.RULES_REVISION,
-               "gates_failed": sorted(g for g, vs in gates.items() if vs)}, item_id=rel.id)
-    if follow in ("requeue", "requeue-infra"):
-        log.append("item.requeued", {"reason": reasons[0] if reasons else dec}, item_id=rel.id)
-    elif follow == "park":
-        log.append("item.parked", {"reason": "; ".join(reasons)[:500]}, item_id=rel.id)
+    record_decision(log, item_id=rel.id, attempt_id=c.attempt_id, model=c.model,
+                    worker=c.worker, task_class=rel.task_class, size=rel.size, dec=dec,
+                    reasons=reasons, follow=follow, elapsed_s=elapsed,
+                    lane_revision=lane.revision, gates=gates)
     if dec != "candidate":
         _discard(repo, wt)
     return f"{c.attempt_id} [{c.model}] -> {dec}: {'; '.join(reasons)[:400]}"
+
+
+def record_decision(log: EventLog, *, item_id: str, attempt_id: str, model: str,
+                    worker: str, task_class: str, size: str, dec: str, reasons: list[str],
+                    follow: str, elapsed_s: float = 0.0, lane_revision: int | None = None,
+                    gates: dict[str, list[str]] | None = None,
+                    extra: dict | None = None) -> None:
+    """Record a decision and everything the runner records after it.
+
+    Shared with the reaper so a recovered attempt leaves the same trail the
+    runner would have left.  ``extra`` adds fields to ``decision.recorded``.
+    """
+    payload = {"attempt_id": attempt_id, "decision": dec, "reasons": reasons,
+               "rules_revision": decision.RULES_REVISION, "by": "gates"}
+    payload.update(extra or {})
+    log.append("decision.recorded", payload, item_id=item_id)
+    if dec == "candidate":          # the evaluator predicts only gate-accepted attempts
+        evaluator.evaluate_attempt(log, attempt_id)
+    log.append("experiment.recorded", {"attempt_id": attempt_id, "model": model, "worker": worker,
+               "task_class": task_class, "size": size, "decision": dec, "elapsed_s": elapsed_s,
+               "lane_revision": lane_revision, "rules_revision": decision.RULES_REVISION,
+               "gates_failed": sorted(g for g, vs in (gates or {}).items() if vs)}, item_id=item_id)
+    if follow in ("requeue", "requeue-infra"):
+        log.append("item.requeued", {"reason": reasons[0] if reasons else dec}, item_id=item_id)
+    elif follow == "park":
+        log.append("item.parked", {"reason": "; ".join(reasons)[:500]}, item_id=item_id)
 
 
 def run_gates(c: Claim, wt: Path, seed_sha: str, head: str, acc: dict[str, bytes],
