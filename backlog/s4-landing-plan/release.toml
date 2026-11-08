@@ -1,6 +1,6 @@
 id = "s4-landing-plan"
 repo = "lanectl"
-base_sha = "535eae4ebcfab3bbedac852ac4e994e4f0cb1694"
+base_sha = "999c872674fba2dcd5dfd299a5fdc270bd550a6f"
 revision = 1
 title = "Shadow integrator: landing plans and their match rate"
 task_class = "semantic"
