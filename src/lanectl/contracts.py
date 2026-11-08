@@ -38,6 +38,12 @@ EVENT_TYPES: dict[str, tuple[str, ...]] = {
     "item.parked": ("reason",),
     "item.requeued": ("reason",),
     "integrator.fix": ("attempt_id", "commit", "fix_class"),
+    # v1 additive extension (planner, 2026-11-08) for ladder stages 2-5.
+    "admission.shadow": ("static", "capacity", "agree", "reasons"),          # S2 capacity admission
+    "evaluation.recorded": ("attempt_id", "evaluator", "verdict", "rules_revision"),  # S3 evaluator
+    "landing.planned": ("train_id", "plan", "by"),                            # S4 shadow landing
+    "triage.proposed": ("source", "fingerprint", "summary"),                  # S4 triage emitters
+    "burn.planned": ("provider", "window", "burnable", "items"),              # S5 burn-down
 }
 FIX_CLASSES = ("spec-gap", "model-error", "gate-gap")
 

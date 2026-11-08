@@ -233,6 +233,42 @@ def _data_for(etype: str) -> st.SearchStrategy[dict]:
             "commit": shas(),
             "fix_class": st.sampled_from(FIX_CLASSES),
         })
+    # v1 additive extension (planner, 2026-11-08): shapes the stage 2-5 lanes build to.
+    if etype == "admission.shadow":
+        return st.fixed_dictionaries({
+            "static": st.sampled_from(("admit", "block")),
+            "capacity": st.sampled_from(("admit", "block")),
+            "agree": st.booleans(),
+            "reasons": _reasons(),
+        })
+    if etype == "evaluation.recorded":
+        return st.fixed_dictionaries({
+            "attempt_id": ids("attempt"),
+            "evaluator": st.sampled_from(("rules", "model")),
+            "verdict": st.sampled_from(("accept", "reject", "abstain")),
+            "rules_revision": st.text(min_size=1, max_size=40),
+        })
+    if etype == "landing.planned":
+        return st.fixed_dictionaries({
+            "train_id": ids("train"),
+            "plan": st.lists(st.fixed_dictionaries({
+                "attempt_id": ids("attempt"),
+                "action": st.sampled_from(("land", "hold", "reject"))}), max_size=4),
+            "by": st.sampled_from(("operator", "integrator-shadow")),
+        })
+    if etype == "triage.proposed":
+        return st.fixed_dictionaries({
+            "source": st.sampled_from(("check", "train", "reap")),
+            "fingerprint": shas(),
+            "summary": st.text(min_size=1, max_size=200),
+        })
+    if etype == "burn.planned":
+        return st.fixed_dictionaries({
+            "provider": st.sampled_from(PROVIDERS),
+            "window": st.sampled_from(WINDOWS),
+            "burnable": st.integers(min_value=0, max_value=10**7),
+            "items": st.lists(ids("item"), max_size=6),
+        })
     raise AssertionError(f"no payload strategy for {etype!r}")
 
 

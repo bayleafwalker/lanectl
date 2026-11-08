@@ -60,7 +60,9 @@ is a lane-built replacement that runs in shadow mode against its scaffold.
   `integrator.fix`, `item.parked`, `item.requeued`, and the capacity and policy
   families: `usage.recorded` (UsageEvent), `window.observed`
   (WindowObservation), `policy.revised` (AllocationPolicyRevision, lane
-  revisions).
+  revisions). Additive extension for stages 2-5 (2026-11-08): `admission.shadow`,
+  `evaluation.recorded`, `landing.planned`, `triage.proposed`, `burn.planned`;
+  payload shapes are pinned by `tests/strategies.py`.
 
 Item states: ready → claimed → implemented → gated → candidate → in-train →
 landed, or rejected → requeued (retry prefers a different model) or parked.
