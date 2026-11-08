@@ -100,10 +100,16 @@ def build_report(events: list[dict], precision_bar: float = 0.5,
     model_clean_ids = attributed["model_clean"]
     usage_events: list[dict] = []
     experiments: list[dict] = []
+    shadow_recorded = 0
+    shadow_agreed = 0
 
     for ev in events:
         t, d = ev["type"], ev["data"]
-        if t == "experiment.recorded":
+        if t == "admission.shadow":
+            shadow_recorded += 1
+            if d.get("agree"):
+                shadow_agreed += 1
+        elif t == "experiment.recorded":
             experiments.append({"attempt_id": d["attempt_id"], "model": d["model"],
                                 "task_class": d["task_class"],
                                 "elapsed_s": d.get("elapsed_s", 0.0)})
@@ -196,6 +202,12 @@ def build_report(events: list[dict], precision_bar: float = 0.5,
     return {"by_class": by_class, "by_model": by_model,
             "fix_classes": fix_classes, "stop_conditions": stop_conditions,
             "planner_flags": planner_flags, "gate_flags": gate_flags,
+            "shadow_admission": {
+                "recorded": shadow_recorded,
+                "agreed": shadow_agreed,
+                "agreement": (round(shadow_agreed / shadow_recorded, _DIGITS)
+                              if shadow_recorded else None),
+            },
             "precision_bar": precision_bar, "min_ruled": min_ruled}
 
 
@@ -226,6 +238,11 @@ def format_report(report: dict) -> str:
     lines = _table("CLASS", report["by_class"])
     lines.append("")
     lines += _table("MODEL", report["by_model"])
+    shadow = report.get("shadow_admission") or {}
+    lines.append("")
+    lines.append(f"shadow_admission: recorded={shadow.get('recorded', 0)} "
+                 f"agreed={shadow.get('agreed', 0)} "
+                 f"agreement={_fmt_precision(shadow.get('agreement'))}")
     if report["fix_classes"]:
         lines.append("")
         lines.append("fix_classes: " + ", ".join(

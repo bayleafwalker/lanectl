@@ -14,7 +14,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 
-from . import adapters, report, sandbox as sandboxing
+from . import adapters, capacity, report, sandbox as sandboxing
 from .config import RepoSpec, load_lane, load_releases, load_repos, match
 from .contracts import LaneRevision, WorkRelease
 from .events import EventLog, ItemView, project_items, state_dir
@@ -76,8 +76,39 @@ def sync_releases(log: EventLog, releases: list[WorkRelease]) -> None:
                        item_id=rel.id)
 
 
+def provider_for(model: str) -> str:
+    """Allocation-policy provider key for a routed model (``opencode-go/*`` -> ``opencode``)."""
+    try:
+        return adapters.worker_for(model)
+    except ValueError:
+        return model.split("/", 1)[0]
+
+
+def record_shadow(log: EventLog, events: list[dict], rel: WorkRelease, model: str | None,
+                  static: str) -> None:
+    """Append what capacity *would* have decided; it never changes the static answer."""
+    provider = provider_for(model) if model else None
+    try:
+        policy = capacity.AllocationPolicy.load()
+    except capacity.PolicyError:
+        policy = None      # a broken shadow policy must never stop static admission
+    verdict = capacity.capacity_admission(events, policy, datetime.now(timezone.utc),
+                                          provider, rel.size)
+    log.append("admission.shadow", {
+        "static": static, "capacity": verdict["decision"],
+        "agree": static == verdict["decision"], "reasons": verdict["reasons"],
+        "release_id": rel.id, "size": rel.size, "provider": provider,
+        "estimate": verdict["estimate"], "burnable": verdict["burnable"],
+    }, item_id=rel.id)
+
+
 def admit(lane_name: str, log: EventLog, only: str | None = None) -> Claim | str:
-    """Return a Claim, or a string saying why nothing was admitted."""
+    """Return a Claim, or a string saying why nothing was admitted.
+
+    Static caps decide admission.  Whenever at least one release is ready the
+    capacity projection is also recorded as ``admission.shadow``, so the two
+    policies can be compared before capacity is allowed to gate anything.
+    """
     lane, repos, releases = load_lane(lane_name), load_repos(), load_releases()
     with log.locked():
         sync_releases(log, releases)
@@ -90,21 +121,33 @@ def admit(lane_name: str, log: EventLog, only: str | None = None) -> Claim | str
                             and e["ts"].startswith(today) and e["data"]["lane"] == lane.lane
                             and e["data"]["attempt_id"] not in infra)
         unlanded = sum(1 for v in items.values() if v.state in ("candidate", "in-train"))
-        if running >= lane.caps["concurrency"]:
-            return f"cap: concurrency {running}/{lane.caps['concurrency']}"
-        if claimed_today >= lane.caps["items_per_day"]:
-            return f"cap: items_per_day {claimed_today}/{lane.caps['items_per_day']}"
-        if unlanded >= lane.caps["accepted_unlanded_max"]:
-            return f"cap: accepted_unlanded {unlanded}/{lane.caps['accepted_unlanded_max']} (integrate first)"
-        skipped = []
+        ready: list[tuple[WorkRelease, ItemView]] = []
         for rel in releases:
             if only and rel.id != only:
                 continue
-            v = items[rel.id]
-            if v.state not in ("ready", "requeued"):
+            v = items.get(rel.id)
+            if v is None or v.state not in ("ready", "requeued"):
                 continue
             if attempts_used(v, rel.revision) >= lane.max_attempts:
                 continue
+            ready.append((rel, v))
+
+        def blocked(reason: str) -> str:
+            """A static cap refused: shadow the same release capacity would have seen."""
+            if ready:
+                rel, v = ready[0]
+                record_shadow(log, events, rel, pick_model(rel, lane, v), "block")
+            return reason
+
+        if running >= lane.caps["concurrency"]:
+            return blocked(f"cap: concurrency {running}/{lane.caps['concurrency']}")
+        if claimed_today >= lane.caps["items_per_day"]:
+            return blocked(f"cap: items_per_day {claimed_today}/{lane.caps['items_per_day']}")
+        if unlanded >= lane.caps["accepted_unlanded_max"]:
+            return blocked(f"cap: accepted_unlanded {unlanded}/{lane.caps['accepted_unlanded_max']} "
+                           "(integrate first)")
+        skipped = []
+        for rel, v in ready:
             reasons = readiness(rel, lane, repos)
             if reasons:
                 skipped.append(f"{rel.id}: {'; '.join(reasons)}")
@@ -121,7 +164,11 @@ def admit(lane_name: str, log: EventLog, only: str | None = None) -> Claim | str
                 "lane_digest": lane.digest, "model": model, "worker": worker,
                 "release_revision": rel.revision, "base_sha": rel.base_sha,
                 "branch": f"lane/{attempt_id}"}, item_id=rel.id)
+            record_shadow(log, events, rel, model, "admit")
             return Claim(rel, repos[rel.repo], lane, attempt_id, model, worker)
+        if ready:
+            rel, v = ready[0]
+            record_shadow(log, events, rel, pick_model(rel, lane, v), "block")
         return "nothing ready" + ("".join(f"\n  not ready: {s}" for s in skipped))
 
 
