@@ -6,3 +6,47 @@ setup_cmd = "uv sync -q"
 test_cmd = "uv run --no-sync pytest -q -p no:cacheprovider {files}"
 check_cmd = "uv run pytest -q"
 worktree_root = "/projects/dev/_wt/lanes"
+
+# Stage 6 fan-out (2026-11-08). Commands verified in fresh worktrees: python -m pytest puts the
+# repo root on sys.path (plain pytest fails collection in both public repos).
+# homelab-analytics: public (github). Fast suite 2679 passed in 11m on a fresh worktree.
+[repos.homelab-analytics]
+path = "/projects/dev/homelab-analytics"
+main = "main"
+setup_cmd = "uv sync -q --extra dev"
+test_cmd = "uv run --no-sync python -m pytest -q -p no:cacheprovider {files}"
+check_cmd = "uv run --no-sync ruff check . && uv run --no-sync python -m pytest -q -p no:cacheprovider -m 'not slow'"
+worktree_root = "/projects/dev/_wt/lanes"
+protected_paths = [".github/**", ".agents/**", ".claude/**", ".project/**", "AGENTS.md", "CLAUDE.md",
+                   "charts/**", "infra/**", "migrations/**", "githooks/**", "requirements/**", "uv.lock",
+                   "opencode.json", "homelab-analytics.dispatch.json"]
+
+# sovite: public (github). Full suite exit 0 in 8m on a fresh worktree.
+[repos.sovite]
+path = "/projects/dev/sovite"
+main = "main"
+setup_cmd = "uv sync -q --extra test"
+test_cmd = "uv run --no-sync python -m pytest -q -p no:cacheprovider {files}"
+check_cmd = "uv run --no-sync python -m pytest -q -p no:cacheprovider"
+worktree_root = "/projects/dev/_wt/lanes"
+protected_paths = [".github/**", "AGENTS.md", "CLAUDE.md", "deploy/**", "contracts/**", "config/**",
+                   "verification/**", "Dockerfile", "compose.yaml", "RELEASE-MANIFEST.json",
+                   "requirements.lock", "uv.lock", ".gitleaks.toml"]
+
+# vuoro-cloud: private Forgejo. Restricted floor: first-party (Claude) routes only, never
+# OpenCode Go. Unit suite + ruff 4249 passed in 2m on a fresh worktree.
+[repos.vuoro-cloud]
+path = "/projects/dev/vuoro-cloud"
+main = "main"
+setup_cmd = "uv sync -q --extra test --extra admission-test"
+test_cmd = "uv run --no-sync python -m pytest -q -p no:cacheprovider {files}"
+check_cmd = "uv run --no-sync ruff format --check src tests scripts && uv run --no-sync ruff check src tests scripts && uv run --no-sync python -m pytest -q -p no:cacheprovider -m 'not integration'"
+worktree_root = "/projects/dev/_wt/lanes"
+data_class_floor = "restricted"
+protected_paths = [".forgejo/**", ".agents/**", ".claude/**", ".sprintctl/**", "AGENTS.md", "CLAUDE.md",
+                   "clusters/**", "deploy/**", "platform/**", "policy/**", "secrets/**", "terraform/**",
+                   "migrations/**", ".sops.yaml", "uv.lock", "requirements.lock", "SHA256SUMS",
+                   "HANDOFF_MANIFEST.json", "vuoro-cloud.dispatch.json", "flake.lock", "Containerfile"]
+
+[repos.vuoro-cloud.routing]
+"claude-sonnet-5-5" = 1.0
