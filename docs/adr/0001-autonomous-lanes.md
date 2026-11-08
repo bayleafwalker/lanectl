@@ -33,8 +33,11 @@ is a lane-built replacement that runs in shadow mode against its scaffold.
    `backlog/<id>/` and is copied into the worktree as a protected seed commit.
 3. Gates, scheduling and admission are deterministic.
 4. State is an append-only event log; every view is a projection.
-5. Governance paths change only through the judgment plane. A lane change that
-   touches a protected path is **parked**, never auto-accepted.
+5. Governance paths change only through the judgment plane. Lanes may write
+   them when a release scopes them explicitly; every gate still runs and the
+   result is **parked for interactive review** (`lanectl approve`), never
+   auto-accepted. Unscoped governance edits and any edit to acceptance files
+   are hard protected-path parks.
 6. Every attempt emits an ExperimentRecord, including failures.
 7. Expiring capacity may be burned down; non-expiring spend never is.
 8. The runner runs a released tag (`uv tool install` of `vX.Y.Z`), never the
@@ -73,18 +76,23 @@ landed, or rejected → requeued (retry prefers a different model) or parked.
 
 ## Data boundary
 
-OpenCode Go routes leave the estate. A release with `data_class = "restricted"`
-is never routed to a model listed in `external_models`; if only external models
-are routed, the Definition of Ready blocks it. Restricted work includes private
-repositories (vuoro-cloud, appservice, cred-broker), served tracker records,
-credentials and effect designs. On 2026-11-08 the operator directed DeepSeek
-V4.1 Flash as the bulk implementer for this public repository.
+OpenCode Go routes leave the estate. On 2026-11-08 the operator cleared
+public-repository material, including this repository's work-queue, contract,
+gate and authority designs, for OpenCode Go DeepSeek, so lanes build lanectl
+itself. Still excluded from external models: credentials and secret values,
+private repositories (vuoro-cloud, appservice, cred-broker), served tracker
+records, handoffs, telemetry, and customer or tenant data. A release with
+`data_class = "restricted"` is never routed to a model in `external_models`, and
+the Definition of Ready blocks it when only external models are routed.
+
+The planner writes releases, acceptance tests and policy values; lanes write
+the code, governance code included, under review.
 
 ## Bootstrap ladder
 
 | Stage | Interactive | Lanes | Scaffold replaced | Exit |
 | --- | --- | --- | --- | --- |
-| 0 Seed | contracts, gates, runner, OpenCode adapter, static caps, planner skill | — | — | one item end to end; red-team test edit blocked (seed tests) |
+| 0 Seed | contracts, gates, runner, OpenCode adapter, static caps, planner skill (minimal) | — | — | one item end to end; red-team test edit blocked (seed tests) |
 | 1 Siblings | adapter contract | native OpenCode adapter with usage, Claude adapter, schemas, usage hook, metrics | — | every attempt logged with usage; ~20 items |
 | 2 Capacity | projection semantics as property tests | probes, window detector, ledger, allocation projection, admission | static caps (shadow first) | shadow admission agrees for a week |
 | 3 Acceptance | decision rules v1 | evaluator, gate jobs, dev-namespace train deploys | manual review per task class | agreement ≥ precision bar per class |

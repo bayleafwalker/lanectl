@@ -50,12 +50,16 @@ def evaluate(changes: list[FileChange], rel: WorkRelease, lane: LaneRevision,
              acceptance_paths: tuple[str, ...] = ()) -> list[str]:
     """Pure policy. Returns violations; each starts with a stable rule id."""
     v: list[str] = []
-    protected = lane.protected_paths + acceptance_paths
     total = 0
     for c in changes:
         total += c.added + c.deleted
-        if match(c.path, protected):
+        if match(c.path, acceptance_paths):
             v.append(f"protected-path: {c.path}")
+            continue
+        if match(c.path, lane.protected_paths):
+            # Governance paths are writable only when the release scopes them
+            # explicitly; such changes always go to interactive review.
+            v.append(f"{'protected-review' if match(c.path, rel.scope_paths) else 'protected-path'}: {c.path}")
             continue
         if not match(c.path, rel.scope_paths):
             v.append(f"out-of-scope: {c.path}")
@@ -74,6 +78,10 @@ def evaluate(changes: list[FileChange], rel: WorkRelease, lane: LaneRevision,
     if budget is not None and total > budget:
         v.append(f"size-budget: {total} changed lines > {budget} for size {rel.size}")
     return v
+
+
+def review_only(violations: list[str]) -> bool:
+    return bool(violations) and all(x.startswith("protected-review:") for x in violations)
 
 
 def is_protected_violation(violations: list[str]) -> bool:

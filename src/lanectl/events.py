@@ -107,7 +107,9 @@ def project_items(events: list[dict]) -> dict[str, ItemView]:
         elif t == "gate.result":
             v.state = "gated"
         elif t == "decision.recorded":
-            by_attempt.get(d["attempt_id"], {}).update(decision=d["decision"])
+            by_attempt.get(d["attempt_id"], {}).update(
+                decision=d["decision"],
+                infra=bool(d["reasons"]) and str(d["reasons"][0]).startswith("infra:"))
             v.state = d["decision"]
             v.last_reason = "; ".join(d["reasons"])
         elif t == "item.landed":

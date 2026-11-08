@@ -129,3 +129,14 @@ def test_acceptance_failure_rejects(estate):
     release("lazy", SUB_TEST)
     out = runner.execute(runner.admit("implement", log), log, adapter_fn=scripted(lambda wt: None))
     assert "-> rejected" in out and "acceptance" in out, out
+
+
+def test_infra_failure_does_not_consume_attempts(estate):
+    repo, release, log = estate
+    release("infra", SUB_TEST)
+    dead = lambda **_: AdapterResult("failed", 1, "", None)
+    for _ in range(3):   # more than max_attempts=2: infra failures never park the item
+        out = runner.execute(runner.admit("implement", log), log, adapter_fn=dead)
+        assert "-> rejected: infra:" in out, out
+    v = project_items(log.read())["infra"]
+    assert v.state == "requeued" and runner.attempts_used(v, 1) == 0

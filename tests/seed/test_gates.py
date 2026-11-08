@@ -52,7 +52,8 @@ def test_red_team_editing_acceptance_or_gates_is_protected():
     ch = [FileChange("M", "tests/acc/test_acc.py", 1, 1, ["assert True"])]
     v = evaluate(ch, rel(), LANE, ("tests/acc/test_acc.py",))
     assert v and v[0].startswith("protected-path:")
-    v = evaluate([FileChange("M", "src/pkg/gates/x.py", 1, 0, ["pass"])], rel(), LANE)
+    narrow = rel(scope_paths=("src/pkg/a.py", "tests/**"))
+    v = evaluate([FileChange("M", "src/pkg/gates/x.py", 1, 0, ["pass"])], narrow, LANE)
     assert v[0].startswith("protected-path:")
     dec, _, follow = decision.decide({"diff-policy": v}, "done", 1, 2)
     assert (dec, follow) == ("parked", "park")
@@ -98,3 +99,17 @@ def test_projection_lifecycle():
     assert project_items(log)["item-1"].state == "landed"
     log.append(ev("release.published", {"release_id": "item-1", "revision": 2}))
     assert project_items(log)["item-1"].state == "landed"   # landed items are not reopened
+
+
+def test_scoped_governance_change_goes_to_review_not_rejection():
+    r = rel(scope_paths=("src/pkg/**",))
+    v = evaluate([FileChange("M", "src/pkg/gates/x.py", 3, 1, ["pass"])], r, LANE)
+    assert v == ["protected-review: src/pkg/gates/x.py"]
+    dec, reasons, follow = decision.decide({"diff-policy": v, "acceptance": []}, "done", 1, 2)
+    assert (dec, follow) == ("parked", "park") and reasons[0].startswith("review-required")
+    # a real failure still rejects first
+    dec, _, _ = decision.decide({"diff-policy": v, "acceptance": ["exit 1"]}, "done", 1, 2)
+    assert dec == "rejected"
+    # unscoped governance change stays a hard protected-path park
+    v2 = evaluate([FileChange("M", "governance/x.toml", 1, 0, ["x"])], r, LANE)
+    assert v2 == ["protected-path: governance/x.toml"]

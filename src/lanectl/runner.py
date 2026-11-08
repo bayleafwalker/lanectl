@@ -42,6 +42,11 @@ class Claim:
 
 # ---------------------------------------------------------------- admission
 
+def attempts_used(view: ItemView, revision: int) -> int:
+    """Attempts that count against max_attempts: this revision, not infra failures."""
+    return len([a for a in view.attempts if a.get("release_revision") == revision and not a.get("infra")])
+
+
 def pick_model(rel: WorkRelease, lane: LaneRevision, view: ItemView) -> str | None:
     weights = eligible_models(rel, lane)
     if lane.retry == "different_model":
@@ -95,7 +100,7 @@ def admit(lane_name: str, log: EventLog, only: str | None = None) -> Claim | str
             v = items[rel.id]
             if v.state not in ("ready", "requeued"):
                 continue
-            if len([a for a in v.attempts if a.get("release_revision") == rel.revision]) >= lane.max_attempts:
+            if attempts_used(v, rel.revision) >= lane.max_attempts:
                 continue
             reasons = readiness(rel, lane, repos)
             if reasons:
@@ -141,7 +146,8 @@ Planner-owned acceptance files (read them, never edit them):
 - Any test you add must fail without your change.
 - No skip/xfail markers, no new dependencies{"" if not rel.allow_deps else " unless required"}.
 - Keep the change under ~{lane.size_budget_lines.get(rel.size, 0)} changed lines.
-- Do not touch: {", ".join(lane.protected_paths)}.
+- Do not touch: {", ".join(lane.protected_paths)} (except paths your write scope names explicitly;
+  those changes are reviewed interactively before landing).
 - Commits are optional; uncommitted changes are collected.
 
 # Escalate instead of guessing when
@@ -206,20 +212,24 @@ def execute(c: Claim, log: EventLog, adapter_fn=None) -> str:
         log.append("usage.recorded", {"provider": c.worker, "source": "adapter",
                    "units": res.usage, "attempt_id": c.attempt_id, "model": c.model}, item_id=rel.id)
 
-    gates = run_gates(c, wt, seed_sha, head, acc, res.outcome)
+    if res.outcome == "failed" and head == seed_sha:
+        gates = {}   # nothing to gate; decide() classifies this as infra
+    else:
+        gates = run_gates(c, wt, seed_sha, head, acc, res.outcome)
     for g, vs in gates.items():
         log.append("gate.result", {"attempt_id": c.attempt_id, "gate": g, "passed": not vs,
                                    "violations": vs}, item_id=rel.id)
     view = project_items(log.read())[rel.id]
-    used = len([a for a in view.attempts if a.get("release_revision") == rel.revision])
-    dec, reasons, follow = decision.decide(gates, res.outcome, used, lane.max_attempts)
+    used = attempts_used(view, rel.revision)
+    dec, reasons, follow = decision.decide(gates, res.outcome, used, lane.max_attempts,
+                                           changed=head != seed_sha)
     log.append("decision.recorded", {"attempt_id": c.attempt_id, "decision": dec, "reasons": reasons,
                "rules_revision": decision.RULES_REVISION, "by": "gates"}, item_id=rel.id)
     log.append("experiment.recorded", {"attempt_id": c.attempt_id, "model": c.model, "worker": c.worker,
                "task_class": rel.task_class, "size": rel.size, "decision": dec, "elapsed_s": elapsed,
                "lane_revision": lane.revision, "rules_revision": decision.RULES_REVISION,
                "gates_failed": sorted(g for g, vs in gates.items() if vs)}, item_id=rel.id)
-    if follow == "requeue":
+    if follow in ("requeue", "requeue-infra"):
         log.append("item.requeued", {"reason": reasons[0] if reasons else dec}, item_id=rel.id)
     elif follow == "park":
         log.append("item.parked", {"reason": "; ".join(reasons)[:500]}, item_id=rel.id)
@@ -339,6 +349,18 @@ def land(log: EventLog, train_id: str) -> str:
     for aid in d["attempts"]:
         git(repo.path, "worktree", "remove", "--force", str(repo.worktree_root / aid), check=False)
     return f"landed {d['attempts']} on {repo.main} at {tip[:12]}; fixes={ {k: len(v) for k, v in fixes.items()} }"
+
+
+def approve(log: EventLog, attempt_id: str, note: str) -> str:
+    """Judgment plane: accept a parked review-required attempt into the candidate pool."""
+    items = project_items(log.read())
+    v = next((v for v in items.values() if v.attempts and v.attempts[-1]["attempt_id"] == attempt_id), None)
+    if v is None or v.state != "parked":
+        return f"{attempt_id}: not the latest attempt of a parked item"
+    log.append("decision.recorded", {"attempt_id": attempt_id, "decision": "candidate",
+               "reasons": [f"interactive review: {note}"], "rules_revision": "integrator",
+               "by": "integrator"}, item_id=v.item_id)
+    return f"{attempt_id}: candidate (approved)"
 
 
 def integrator_reject(log: EventLog, attempt_id: str, reason: str, park: bool = False) -> str:

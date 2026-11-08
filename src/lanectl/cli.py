@@ -48,6 +48,9 @@ def main(argv: list[str] | None = None) -> int:
     rj.add_argument("attempt_id")
     rj.add_argument("reason")
     rj.add_argument("--park", action="store_true")
+    ap = sub.add_parser("approve", help="judgment plane: accept a review-required parked attempt")
+    ap.add_argument("attempt_id")
+    ap.add_argument("note")
     ev = sub.add_parser("events", help="print the log tail")
     ev.add_argument("-n", type=int, default=30)
     ev.add_argument("--item")
@@ -66,7 +69,11 @@ def main(argv: list[str] | None = None) -> int:
                 print(c)
                 return 0
             print(f"claimed {c.attempt_id} -> {c.model}", flush=True)
-            print(runner.execute(c, log), flush=True)
+            out = runner.execute(c, log)
+            print(out, flush=True)
+            if "-> rejected: infra:" in out:
+                print("breaker: worker infrastructure failure; stopping this run loop", flush=True)
+                return 3
         return 0
     if a.cmd == "status":
         events = log.read()
@@ -92,6 +99,9 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     if a.cmd == "land":
         print(runner.land(log, a.train_id))
+        return 0
+    if a.cmd == "approve":
+        print(runner.approve(log, a.attempt_id, a.note))
         return 0
     if a.cmd == "reject":
         print(runner.integrator_reject(log, a.attempt_id, a.reason, a.park))
