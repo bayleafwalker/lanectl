@@ -122,14 +122,14 @@ def _marker_text(output: str) -> str:
 
 
 def run_opencode(*, model: str, worktree: Path, prompt: str, status_file: Path,
-                 timeout_s: int, external: bool) -> AdapterResult:
+                 timeout_s: int, external: bool, env: dict | None = None) -> AdapterResult:
     """Run OpenCode once and return its outcome, usage and escalation state."""
     started = _utcnow()
-    cmd = ["opencode", "run", "--format", "json", "--model", model, prompt]
+    cmd = ["opencode", "run", "--format", "json", "--model", model, "--", prompt]
     try:
         proc = subprocess.Popen(
             cmd, cwd=str(worktree), stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-            text=True, start_new_session=True,
+            text=True, start_new_session=True, env=env,
         )
     except OSError as exc:
         usage = _empty_usage()
