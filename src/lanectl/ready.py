@@ -8,6 +8,7 @@ import re
 import subprocess
 from pathlib import Path
 
+from .adapters import worker_for
 from .config import RepoSpec
 from .contracts import SIZE_CLASSES, LaneRevision, WorkRelease
 
@@ -54,11 +55,22 @@ def eligible_models(rel: WorkRelease, lane: LaneRevision,
 
     A repo routing table replaces the lane's weights; an empty table keeps the
     lane's.  The effective data class is the stricter of the release's own class
-    and the repo's floor; restricted releases drop every external model.
+    and the repo's floor; restricted releases are an allowlist: only first-party
+    (Claude) models that are not external survive.  A model no adapter can map is
+    dropped rather than routed.
     """
     routing = dict(repo.routing) if repo is not None and repo.routing else dict(lane.routing)
     restricted = rel.data_class == "restricted" or (
         repo is not None and repo.data_class_floor == "restricted")
     if restricted:
-        return {m: w for m, w in routing.items() if m not in lane.external_models}
+        return {m: w for m, w in routing.items()
+                if m not in lane.external_models and _first_party(m)}
     return routing
+
+
+def _first_party(model: str) -> bool:
+    """True only when the model is served by the first-party Claude adapter."""
+    try:
+        return worker_for(model) == "claude"
+    except ValueError:
+        return False
