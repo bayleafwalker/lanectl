@@ -21,13 +21,13 @@ def _attempt(item, n, model, tclass, decision, elapsed, landed=None, fixes=0, by
 
 
 def test_report_groups_and_flags():
-    ev = [make_event("usage.recorded", {"provider": "opencode", "source": "adapter", "attempt_id": "a-a1",
-                                        "model": "M1", "units": {"input_tokens": 100, "output_tokens": 10}}, item_id="a")]
-    ev += _attempt("a", 1, "M1", "glue", "candidate", 100, landed=True)
-    ev += _attempt("b", 1, "M1", "glue", "candidate", 50, landed=True, fixes=2)
-    ev += _attempt("c", 1, "M1", "glue", "rejected", 30)
-    ev += _attempt("d", 1, "M2", "glue", "candidate", 20, by_integrator=True)
-    ev += _attempt("e", 1, "M2", "semantic", "parked", 10)
+    ev = [make_event("usage.recorded", {"provider": "opencode", "source": "adapter", "attempt_id": "aa-a1",
+                                        "model": "M1", "units": {"input_tokens": 100, "output_tokens": 10}}, item_id="aa")]
+    ev += _attempt("aa", 1, "M1", "glue", "candidate", 100, landed=True)
+    ev += _attempt("bb", 1, "M1", "glue", "candidate", 50, landed=True, fixes=2)
+    ev += _attempt("cc", 1, "M1", "glue", "rejected", 30)
+    ev += _attempt("dd", 1, "M2", "glue", "candidate", 20, by_integrator=True)
+    ev += _attempt("ee", 1, "M2", "semantic", "parked", 10)
 
     r = build_report(ev, precision_bar=0.5, min_ruled=2)
     g = r["by_class"]["glue"]
@@ -48,7 +48,7 @@ def test_report_cli_json(capsys, tmp_path, monkeypatch):
     from lanectl.events import EventLog
     monkeypatch.setenv("LANECTL_STATE", str(tmp_path))
     log = EventLog()
-    for e in _attempt("a", 1, "M1", "glue", "candidate", 10, landed=True):
+    for e in _attempt("aa", 1, "M1", "glue", "candidate", 10, landed=True):
         log.append(e["type"], e["data"], item_id=e["item_id"])
     assert cli.main(["report", "--json"]) == 0
     out = json.loads(capsys.readouterr().out)

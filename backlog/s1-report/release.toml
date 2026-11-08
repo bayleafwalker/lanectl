@@ -4,7 +4,7 @@ base_sha = "50dfdde87609acaa5ad18217cad9d445d2d31b40"
 title = "Precision and cost report with stop-condition flags"
 task_class = "view"
 size = "M"
-revision = 3
+revision = 4
 data_class = "public"
 outcome = """
 Add src/lanectl/report.py with build_report(events, precision_bar, min_ruled) -> dict and a
