@@ -1,0 +1,24 @@
+id = "s1-plugin-discovery"
+repo = "lanectl"
+base_sha = "ba63e269bf366f4deee4aa40ee1383b38a159aca"
+revision = 1
+title = "Discover command plugins instead of anchor lines; events --type filter"
+task_class = "tooling"
+size = "S"
+data_class = "public"
+outcome = """
+Two lanes adding plugins at the same cli.py anchor slot conflicted on merge (gate-gap, 2026-11-08).
+Replace the anchor/PLUGINS.append block in src/lanectl/cli.py with discover_plugins(package_name)
+-> list of modules: every direct submodule of the package that defines a module-level callable
+register, sorted by module name. main() uses discover_plugins("lanectl"). A new plugin then needs
+only its own module, no cli.py edit. Also add `lanectl events --type <event type>` (repeatable)
+filtering the printed tail, combinable with --item and -n. All existing commands keep working.
+"""
+# lint-release override (planner, 2026-11-08): flagged spec-gap only because the base-run
+# output is cut to its last 2000 chars, leaving argparse SystemExit; real failures are
+# AttributeError x3 + unrecognized --type. Fixed by s1-lint-per-test.
+[scope]
+paths = ["src/lanectl/cli.py", "tests/stage1/**"]
+[acceptance]
+exec = ["uv run --no-sync pytest -q -p no:cacheprovider"]
+files = ["tests/stage1/test_acc_plugin_discovery.py"]

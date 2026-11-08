@@ -1,0 +1,23 @@
+id = "s1-lint-per-test"
+repo = "lanectl"
+base_sha = "ba63e269bf366f4deee4aa40ee1383b38a159aca"
+revision = 1
+title = "lint-release classifies every failing test on the full output"
+task_class = "tooling"
+size = "S"
+data_class = "public"
+outcome = """
+lint-release misclassified s1-plugin-discovery: run_tests_at keeps only the last 2000 characters of
+output, so the classifier saw only the final failure. Make lint-release classify each failing test
+on its full, untruncated output: the file is spec-gap if any failing test is spec-gap or of unknown
+shape, passes-on-base if none fail, else expected. An argparse SystemExit for a missing command or
+flag ("unrecognized arguments", "invalid choice") is expected: the CLI feature is missing.
+gates/failonbase.py is a protected gate: changing it parks the attempt for planner review, which is
+acceptable; keep its existing behaviour for the fail-on-base gate.
+"""
+# lint-release cannot lint this release fairly (it is the tool under repair); verified by hand.
+[scope]
+paths = ["src/lanectl/lint_release.py", "src/lanectl/gates/failonbase.py", "tests/stage1/**"]
+[acceptance]
+exec = ["uv run --no-sync pytest -q -p no:cacheprovider"]
+files = ["tests/stage1/test_acc_lint_per_test.py"]

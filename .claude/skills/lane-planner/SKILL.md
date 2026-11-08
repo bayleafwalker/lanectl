@@ -48,7 +48,11 @@ three spec-gap fixes. Acceptance tests must fail on `base_sha` *for the expected
 reason* (missing module/feature, not a contract error in the test itself: use
 ids of 2+ chars); run `lanectl lint-release backlog/<id>` before publishing (must print OK; it
 flags passes-on-base and spec-gap failures); an import failure at collection hides
-fixture bugs below it, so also dry-run the test body against a stub or the expected API; scope globs are explicit;
+fixture bugs below it, so also dry-run the test body against a stub or the expected API; scope globs are explicit; build event fixtures from real events
+(`lanectl events --type <type> -n 3`): copy field names and values such as
+`provider`, `source` and gate `decision` instead of inventing them (invented
+fixtures caused the opencode/opencode-go and parked/candidate spec gaps); if
+lint-release is wrong, record the override and its reason in release.toml;
 size ≤ M; `data_class = "restricted"` for anything private, credential- or
 served-state-bearing (it will never go to an external model). Give the
 outcome and acceptance, not an implementation plan. Bump `revision` to reissue
