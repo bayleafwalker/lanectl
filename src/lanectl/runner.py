@@ -14,7 +14,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 
-from . import adapters, report, sandbox as sandboxing
+from . import adapters, evaluator, report, sandbox as sandboxing
 from .config import RepoSpec, load_lane, load_releases, load_repos, match
 from .contracts import LaneRevision, WorkRelease
 from .events import EventLog, ItemView, project_items, state_dir
@@ -261,6 +261,8 @@ def execute(c: Claim, log: EventLog, adapter_fn=None) -> str:
         reasons = ["infra: isolation breach - main checkout changed during the attempt; inspect it"]
     log.append("decision.recorded", {"attempt_id": c.attempt_id, "decision": dec, "reasons": reasons,
                "rules_revision": decision.RULES_REVISION, "by": "gates"}, item_id=rel.id)
+    if dec == "candidate":          # the evaluator predicts only gate-accepted attempts
+        evaluator.evaluate_attempt(log, c.attempt_id)
     log.append("experiment.recorded", {"attempt_id": c.attempt_id, "model": c.model, "worker": c.worker,
                "task_class": rel.task_class, "size": rel.size, "decision": dec, "elapsed_s": elapsed,
                "lane_revision": lane.revision, "rules_revision": decision.RULES_REVISION,
