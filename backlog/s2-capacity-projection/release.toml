@@ -1,7 +1,7 @@
 id = "s2-capacity-projection"
 repo = "lanectl"
-base_sha = "6b42633dad2244927bb8864b7bb25031540da777"
-revision = 1
+base_sha = "f3293080eda8e7fcf4bc41146f914add74553e7b"
+revision = 2
 title = "Capacity ledger and allocation projection"
 task_class = "projection"
 size = "M"
