@@ -10,6 +10,7 @@ gaps (the gates') still leave an attempt clean for the model.
 """
 from __future__ import annotations
 
+from .evaluator import agreement
 from .events import EventLog
 
 # How many decimals precision and mean elapsed time are reported with.
@@ -196,6 +197,7 @@ def build_report(events: list[dict], precision_bar: float = 0.5,
     return {"by_class": by_class, "by_model": by_model,
             "fix_classes": fix_classes, "stop_conditions": stop_conditions,
             "planner_flags": planner_flags, "gate_flags": gate_flags,
+            "evaluator": agreement(events),
             "precision_bar": precision_bar, "min_ruled": min_ruled}
 
 
@@ -239,6 +241,11 @@ def format_report(report: dict) -> str:
     if report["gate_flags"]:
         lines.append("gate_flags:")
         lines += [f"  {s}" for s in report["gate_flags"]]
+    lines.append("evaluator:")
+    for cls in sorted(report.get("evaluator") or {}):
+        g = report["evaluator"][cls]
+        lines.append(f"  {cls}: evaluated_ruled={g['evaluated_ruled']} "
+                     f"agreed={g['agreed']} agreement={g['agreement']:.3f}")
     return "\n".join(lines)
 
 
