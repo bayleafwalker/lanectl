@@ -1,0 +1,21 @@
+id = "s1-event-properties"
+repo = "lanectl"
+base_sha = "50dfdde87609acaa5ad18217cad9d445d2d31b40"
+title = "Hypothesis generators for the event contract"
+task_class = "test-generators"
+size = "M"
+data_class = "public"
+outcome = """
+Write tests/strategies.py with Hypothesis strategies valid_events() (any valid event of every type in
+lanectl.contracts.EVENT_TYPES, including optional extra keys and item_id None/valid ids) and
+event_logs() (plausible but adversarial sequences: claims, finishes, decisions, trains, landings,
+requeues, out-of-order and repeated events for a handful of items) so the planner-owned properties
+in tests/stage1/test_acc_event_properties.py pass. If a property exposes a real bug in
+src/lanectl/events.py, escalate with the minimal failing example instead of changing it.
+"""
+constraints = ["Hypothesis is already a dev dependency", "generated ids must satisfy contracts.check_id"]
+[scope]
+paths = ["tests/strategies.py", "tests/stage1/**"]
+[acceptance]
+exec = ["uv run --no-sync pytest -q -p no:cacheprovider"]
+files = ["tests/stage1/test_acc_event_properties.py"]

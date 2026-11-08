@@ -1,0 +1,23 @@
+id = "s1-reap-stale"
+repo = "lanectl"
+base_sha = "50dfdde87609acaa5ad18217cad9d445d2d31b40"
+title = "Reap abandoned attempts so caps recover"
+task_class = "recovery"
+size = "S"
+data_class = "public"
+outcome = """
+A runner that dies leaves an item 'claimed' forever and holds a concurrency slot. Add
+src/lanectl/reap.py with reap(log, *, now, older_than_s, max_attempts) -> list[attempt_id] and a
+`lanectl reap [--older-than SECONDS] [--lane implement]` command (plugin at the '# @anchor reap'
+line in src/lanectl/cli.py; max_attempts from the lane config). For every attempt claimed longer
+ago than the threshold with no attempt.finished, append under the log lock: attempt.finished
+(outcome failed, exit_code -1, head_sha ""), decision.recorded (rejected, reason abandoned, by
+reaper), experiment.recorded, then item.requeued or item.parked when attempts are exhausted.
+Idempotent.
+"""
+constraints = ["stdlib only"]
+[scope]
+paths = ["src/lanectl/reap.py", "src/lanectl/cli.py", "tests/stage1/**"]
+[acceptance]
+exec = ["uv run --no-sync pytest -q -p no:cacheprovider"]
+files = ["tests/stage1/test_acc_reap.py"]

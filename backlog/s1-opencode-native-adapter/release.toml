@@ -1,0 +1,24 @@
+id = "s1-opencode-native-adapter"
+repo = "lanectl"
+base_sha = "50dfdde87609acaa5ad18217cad9d445d2d31b40"
+title = "Native OpenCode adapter that captures token usage"
+task_class = "adapter"
+size = "M"
+data_class = "public"
+outcome = """
+Add src/lanectl/adapters_opencode.py with parse_stream(text) -> (final_text, usage) and
+run_opencode(*, model, worktree, prompt, status_file, timeout_s, external) -> AdapterResult.
+It runs `opencode run --format json --model MODEL PROMPT` in the worktree, parses the JSON
+event stream (text parts and step_finish token/cost data, see tests/stage1/opencode_stream.jsonl),
+detects the DISPATCH_OUTCOME: ESCALATED / ESCALATION_REASON: marker in the final text, enforces the
+timeout by killing the process group (outcome failed, exit_code 124), writes an atomic JSON status
+record to status_file (outcome, exit_code, usage, model, started/ended UTC) and returns usage so the
+runner records usage.recorded events. Register it as ADAPTERS["opencode"] at the
+'# @anchor opencode-native' line in src/lanectl/adapters.py.
+"""
+constraints = ["stdlib only", "do not change agentops_dispatch; it stays as the codex path"]
+[scope]
+paths = ["src/lanectl/adapters_opencode.py", "src/lanectl/adapters.py", "tests/stage1/**"]
+[acceptance]
+exec = ["uv run --no-sync pytest -q -p no:cacheprovider"]
+files = ["tests/stage1/test_acc_opencode_native.py", "tests/stage1/opencode_stream.jsonl"]

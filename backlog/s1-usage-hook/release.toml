@@ -1,0 +1,23 @@
+id = "s1-usage-hook"
+repo = "lanectl"
+base_sha = "50dfdde87609acaa5ad18217cad9d445d2d31b40"
+title = "Claude Code Stop hook that records interactive-session usage"
+task_class = "hook"
+size = "M"
+data_class = "public"
+outcome = """
+Interactive sessions draw from the same subscription windows as lanes, so they must report usage.
+Add src/lanectl/usage_hook.py with handle_hook(stdin, log) -> int, and a `lanectl hook usage`
+command (register a plugin at the '# @anchor usage-hook' line in src/lanectl/cli.py). It reads the
+Claude Code hook JSON from stdin, reads the transcript JSONL at transcript_path, sums usage from
+assistant messages not yet recorded (deduplicate by message id; keep a per-session cursor in the
+state directory so each Stop records only the delta) and appends one usage.recorded event
+(provider anthropic, source claude-code-interactive, session_id, model, units). It must never fail
+the session: any error returns 0 and records nothing.
+"""
+constraints = ["stdlib only", "fast: must finish well under one second for a 10 MB transcript after the first run"]
+[scope]
+paths = ["src/lanectl/usage_hook.py", "src/lanectl/cli.py", "tests/stage1/**"]
+[acceptance]
+exec = ["uv run --no-sync pytest -q -p no:cacheprovider"]
+files = ["tests/stage1/test_acc_usage_hook.py"]

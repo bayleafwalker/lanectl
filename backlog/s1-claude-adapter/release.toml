@@ -1,0 +1,23 @@
+id = "s1-claude-adapter"
+repo = "lanectl"
+base_sha = "50dfdde87609acaa5ad18217cad9d445d2d31b40"
+title = "Headless Claude Code adapter"
+task_class = "adapter"
+size = "M"
+data_class = "public"
+outcome = """
+Add src/lanectl/adapters_claude.py with build_command(model, prompt), parse_result(stdout) ->
+AdapterResult and run_claude(*, model, worktree, prompt, status_file, timeout_s, external).
+It runs Claude Code headless (`claude -p --model M --output-format json --permission-mode acceptEdits PROMPT`)
+with cwd set to the worktree, parses the single JSON result object (result text, is_error,
+usage, total_cost_usd, num_turns), detects the DISPATCH_OUTCOME: ESCALATED / ESCALATION_REASON:
+marker, enforces the timeout (failed, exit 124), writes an atomic JSON status record and returns
+normalised usage. Register it as ADAPTERS["claude"] at the '# @anchor claude' line in
+src/lanectl/adapters.py.
+"""
+constraints = ["stdlib only", "never pass --dangerously-skip-permissions"]
+[scope]
+paths = ["src/lanectl/adapters_claude.py", "src/lanectl/adapters.py", "tests/stage1/**"]
+[acceptance]
+exec = ["uv run --no-sync pytest -q -p no:cacheprovider"]
+files = ["tests/stage1/test_acc_claude_adapter.py"]

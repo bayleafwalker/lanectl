@@ -1,0 +1,22 @@
+id = "s1-report"
+repo = "lanectl"
+base_sha = "50dfdde87609acaa5ad18217cad9d445d2d31b40"
+title = "Precision and cost report with stop-condition flags"
+task_class = "view"
+size = "M"
+data_class = "public"
+outcome = """
+Add src/lanectl/report.py with build_report(events, precision_bar, min_ruled) -> dict and a
+`lanectl report [--json] [--precision-bar 0.5] [--min-ruled 20]` command (plugin at the
+'# @anchor report' line in src/lanectl/cli.py). Group ExperimentRecords by task_class and by
+model: attempts, gate_accepted (gate decision candidate), ruled (gate-accepted and then landed or
+rejected by the integrator), landed_clean (landed with no fix commits), precision
+(landed_clean/ruled, rounded to 3, None if nothing ruled), below_bar, mean_elapsed_s, summed
+usage units per model (usage.recorded with attempt_id/model), fix_classes from integrator.fix,
+and stop_conditions strings exactly as the acceptance test shows. Text output is a compact table.
+"""
+[scope]
+paths = ["src/lanectl/report.py", "src/lanectl/cli.py", "tests/stage1/**"]
+[acceptance]
+exec = ["uv run --no-sync pytest -q -p no:cacheprovider"]
+files = ["tests/stage1/test_acc_report.py"]
