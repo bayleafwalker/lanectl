@@ -1,7 +1,7 @@
 id = "s4-report-sections"
 repo = "lanectl"
-base_sha = "8cfba286a720fc0fceec2b2009cb515f7b7cb868"
-revision = 1
+base_sha = "b3dcb4f574579b25be34ac748be43a21b91d122b"
+revision = 2
 title = "Report sections as a registry so stage features stop colliding"
 task_class = "tooling"
 size = "S"
@@ -9,13 +9,16 @@ data_class = "public"
 outcome = """
 Every stage feature adds a key to build_report's return dict and a block at the end of
 format_report; three train merge conflicts on 2026-11-08 came from those two spots. Add a section
-registry in report.py: register_section(name, build, fmt=None) where build(events) -> value and
-fmt(value) -> list[str] (lines). build_report adds report[name] = build(events) for each registered
-section; format_report appends fmt(value) lines for each section that has a fmt. Move evaluator,
-landing_shadow and shadow_admission onto it (their modules register at import time; report.py
-imports them in one place, sorted). Keep the report keys and values unchanged, and give
-shadow_admission a formatted line "shadow_admission: recorded=<n> agreed=<n> agreement=<p>" that
-format_report does not print today. Section output order is registration name order.
+registry in report.py: register_section(name, build, fmt=None) stores into the module dict
+_SECTIONS, where build(events) -> value and fmt(value) -> list[str]. build_report first discovers
+sections, then adds report[name] = build(events) for each; format_report appends fmt(value) lines
+for each section with a fmt, in name order. Discovery happens at call time (no import cycle):
+import every lanectl submodule with pkgutil, as cli.discover_plugins does, and register the tuple
+returned by any module-level report_section() -> (name, build, fmt). evaluator, landing and
+capacity define report_section() and do not import report. Move evaluator, landing_shadow and
+shadow_admission onto it with keys and values unchanged; shadow_admission also gets a formatted
+line "shadow_admission: recorded=<n> agreed=<n> agreement=<p>". No noqa or type-ignore comments
+are needed or allowed (revision 1 was rejected for them: that design forced an import cycle).
 """
 [scope]
 paths = ["src/lanectl/report.py", "src/lanectl/evaluator.py", "src/lanectl/landing.py", "src/lanectl/capacity.py", "tests/stage4/**"]
