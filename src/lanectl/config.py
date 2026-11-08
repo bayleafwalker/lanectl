@@ -9,10 +9,10 @@ from __future__ import annotations
 import hashlib
 import os
 import tomllib
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path, PurePosixPath
 
-from .contracts import Acceptance, ContractError, LaneRevision, WorkRelease
+from .contracts import DATA_CLASSES, Acceptance, ContractError, LaneRevision, WorkRelease
 
 
 def home() -> Path:
@@ -40,6 +40,9 @@ class RepoSpec:
     check_cmd: str          # whole-repo check for trains
     worktree_root: Path
     setup_cmd: str = ""     # run once in a fresh worktree before anything else
+    protected_paths: tuple[str, ...] = ()   # extra protected globs for this repo
+    data_class_floor: str = "public"        # "restricted" treats every release as restricted
+    routing: dict[str, float] = field(default_factory=dict)  # overrides lane weights when set
 
 
 def load_lane(name: str, root: Path | None = None) -> LaneRevision:
@@ -72,10 +75,16 @@ def load_repos(root: Path | None = None) -> dict[str, RepoSpec]:
     raw = tomllib.loads(((root or home()) / "governance" / "repos.toml").read_text())
     out = {}
     for name, r in raw["repos"].items():
+        floor = r.get("data_class_floor", "public")
+        if floor not in DATA_CLASSES:
+            raise ContractError(f"{name}: data_class_floor must be one of {DATA_CLASSES}")
         out[name] = RepoSpec(name=name, path=Path(r["path"]), main=r.get("main", "main"),
                              test_cmd=r["test_cmd"], check_cmd=r["check_cmd"],
                              worktree_root=Path(r["worktree_root"]),
-                             setup_cmd=r.get("setup_cmd", ""))
+                             setup_cmd=r.get("setup_cmd", ""),
+                             protected_paths=tuple(r.get("protected_paths", ())),
+                             data_class_floor=floor,
+                             routing={k: float(v) for k, v in r.get("routing", {}).items()})
     return out
 
 

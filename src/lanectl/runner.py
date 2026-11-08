@@ -48,8 +48,9 @@ def attempts_used(view: ItemView, revision: int) -> int:
     return len([a for a in view.attempts if a.get("release_revision") == revision and not a.get("infra")])
 
 
-def pick_model(rel: WorkRelease, lane: LaneRevision, view: ItemView) -> str | None:
-    weights = eligible_models(rel, lane)
+def pick_model(rel: WorkRelease, lane: LaneRevision, view: ItemView,
+               repo: RepoSpec | None = None) -> str | None:
+    weights = eligible_models(rel, lane, repo)
     if lane.retry == "different_model":
         untried = {m: w for m, w in weights.items() if m not in view.models_tried}
         weights = untried or weights
@@ -109,7 +110,7 @@ def admit(lane_name: str, log: EventLog, only: str | None = None) -> Claim | str
             if reasons:
                 skipped.append(f"{rel.id}: {'; '.join(reasons)}")
                 continue
-            model = pick_model(rel, lane, v)
+            model = pick_model(rel, lane, v, repos.get(rel.repo))
             if model is None:
                 skipped.append(f"{rel.id}: no eligible model")
                 continue
@@ -127,8 +128,9 @@ def admit(lane_name: str, log: EventLog, only: str | None = None) -> Claim | str
 
 # ---------------------------------------------------------------- execution
 
-def render_prompt(rel: WorkRelease, lane: LaneRevision) -> str:
+def render_prompt(rel: WorkRelease, lane: LaneRevision, repo: RepoSpec | None = None) -> str:
     bullets = lambda xs: "\n".join(f"- {x}" for x in xs) or "- (none)"
+    protected = (*lane.protected_paths, *(repo.protected_paths if repo else ()))
     return f"""You own one bounded outcome in this git checkout (your working directory; stay inside it). Work autonomously:
 discover, plan, implement and verify. Do not ask questions.
 
@@ -149,7 +151,7 @@ Planner-owned acceptance files (read them, never edit them):
 - Any test you add must fail without your change.
 - No skip/xfail markers, no new dependencies{"" if not rel.allow_deps else " unless required"}.
 - Keep the change under ~{lane.size_budget_lines.get(rel.size, 0)} changed lines.
-- Do not touch: {", ".join(lane.protected_paths)} (except paths your write scope names explicitly;
+- Do not touch: {", ".join(protected)} (except paths your write scope names explicitly;
   those changes are reviewed interactively before landing).
 - Commits are optional; uncommitted changes are collected.
 
@@ -220,7 +222,7 @@ def execute(c: Claim, log: EventLog, adapter_fn=None) -> str:
     started = time.monotonic()
     fn = adapter_fn or adapters.ADAPTERS[c.worker]
     try:
-        res = fn(model=c.model, worktree=wt, prompt=render_prompt(rel, lane),
+        res = fn(model=c.model, worktree=wt, prompt=render_prompt(rel, lane, repo),
                  status_file=runs / f"{c.attempt_id}.json", timeout_s=lane.timeout_s,
                  external=c.model in lane.external_models, env=env)
     except Exception as exc:  # adapter crash is an attempt outcome, not a runner crash
@@ -279,7 +281,8 @@ def run_gates(c: Claim, wt: Path, seed_sha: str, head: str, acc: dict[str, bytes
     wrap = sb.wrap_shell if sb else None
     rel, repo, lane = c.rel, c.repo, c.lane
     changes = diffpolicy.collect(wt, seed_sha, head)
-    gates = {"diff-policy": diffpolicy.evaluate(changes, rel, lane, rel.acceptance.files)}
+    gates = {"diff-policy": diffpolicy.evaluate(changes, rel, lane, rel.acceptance.files,
+                                                repo.protected_paths)}
     if diffpolicy.is_protected_violation(gates["diff-policy"]) or worker_outcome == "escalated":
         return gates
     new_tests = {ch.path: (wt / ch.path).read_bytes() for ch in changes

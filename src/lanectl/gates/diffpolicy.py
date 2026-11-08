@@ -47,16 +47,18 @@ def collect(repo: Path, base: str, head: str) -> list[FileChange]:
 
 
 def evaluate(changes: list[FileChange], rel: WorkRelease, lane: LaneRevision,
-             acceptance_paths: tuple[str, ...] = ()) -> list[str]:
+             acceptance_paths: tuple[str, ...] = (),
+             repo_protected: tuple[str, ...] = ()) -> list[str]:
     """Pure policy. Returns violations; each starts with a stable rule id."""
     v: list[str] = []
     total = 0
+    protected = (*lane.protected_paths, *repo_protected)
     for c in changes:
         total += c.added + c.deleted
         if match(c.path, acceptance_paths):
             v.append(f"protected-path: {c.path}")
             continue
-        if match(c.path, lane.protected_paths):
+        if match(c.path, protected):
             # Governance paths are writable only when the release scopes them
             # explicitly; such changes always go to interactive review.
             v.append(f"{'protected-review' if match(c.path, rel.scope_paths) else 'protected-path'}: {c.path}")
