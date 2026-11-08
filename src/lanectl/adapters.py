@@ -62,3 +62,15 @@ ADAPTERS: dict[str, Adapter] = {
     "opencode": lambda **kw: agentops_dispatch("opencode", **kw),
     "codex": lambda **kw: agentops_dispatch("codex", **kw),
 }
+
+
+# Registration anchors: each adapter module registers on its own line below.
+# Replace only your own anchor; leave the spacer lines so trains merge cleanly.
+
+# @anchor opencode-native
+
+# spacer
+
+# @anchor claude
+
+# spacer

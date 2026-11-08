@@ -11,6 +11,23 @@ from .events import EventLog, project_items
 from .ready import readiness
 
 
+# Command plugins: modules exposing register(subparsers) -> {cmd: handler(args, log) -> int}.
+# Add one import per anchor line; keep the spacer lines so trains merge cleanly.
+PLUGINS: list = []
+
+# @anchor usage-hook
+
+# spacer
+
+# @anchor report
+
+# spacer
+
+# @anchor reap
+
+# spacer
+
+
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(prog="lanectl", description=__doc__)
     sub = p.add_subparsers(dest="cmd", required=True)
@@ -34,8 +51,13 @@ def main(argv: list[str] | None = None) -> int:
     ev = sub.add_parser("events", help="print the log tail")
     ev.add_argument("-n", type=int, default=30)
     ev.add_argument("--item")
+    handlers = {}
+    for plugin in PLUGINS:
+        handlers.update(plugin.register(sub))
     a = p.parse_args(argv)
     log = EventLog()
+    if a.cmd in handlers:
+        return handlers[a.cmd](a, log)
 
     if a.cmd == "run":
         for _ in range(a.max):
