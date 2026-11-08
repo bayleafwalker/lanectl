@@ -85,8 +85,11 @@ gate and authority designs, for OpenCode Go DeepSeek, so lanes build lanectl
 itself. Still excluded from external models: credentials and secret values,
 private repositories (vuoro-cloud, appservice, cred-broker), served tracker
 records, handoffs, telemetry, and customer or tenant data. A release with
-`data_class = "restricted"` is never routed to a model in `external_models`, and
-the Definition of Ready blocks it when only external models are routed.
+`data_class = "restricted"`, or any release for a repo whose `data_class_floor`
+is restricted, routes only to first-party models (adapter `claude`, not listed in
+`external_models`): an allowlist, so an unknown or newly added model is never
+routed restricted work. The Definition of Ready blocks a release with no
+eligible model.
 
 The planner writes releases, acceptance tests and policy values; lanes write
 the code, governance code included, under review.
@@ -102,6 +105,22 @@ the code, governance code included, under review.
 | 4 Integrator | authority config, fix budget | integrate skill, triage emitters | operator landing (shadow) | landing plans match |
 | 5 Steering | routing limits, burn-down rules | learning projection, burn-down, views | hand-set weights | a window burned within WIP caps |
 | 6 Fan-out | per-repo DoR + protected paths | per-repo wiring | — | homelab-analytics → sovite → vuoro-cloud (first-party routes only) |
+
+### Implementation status (2026-11-08)
+
+Every stage's lane work has landed (v0.1.14+); the exits are evidence clocks
+that run from here.
+
+| Stage | Landed | Evidence clock |
+| --- | --- | --- |
+| 2 | `probe`, `windows`, capacity projection, shadow admission (`admission.shadow`) | shadow admission agreement, one week |
+| 3 | `evaluate` (rules in `governance/evaluator.toml`, rev 2 after first evidence) | per-class agreement ≥ precision bar; gate jobs and dev-namespace train deploys not yet built |
+| 4 | integrator skill, `plan-landing` (shadow, `integrator.toml` authority empty), `triage`, reaper v2 | landing plans match operator landings |
+| 5 | `learn` (suggest only), `burn` (plan/record/execute through admission), `view --html` | a window burned within WIP caps |
+| 6 | repo overlay: protected paths, data-class floor, routing; first-party allowlist | per-repo wiring in `governance/repos.toml` |
+
+Report sections are self-registering (`report_section()` in each module), so a
+stage feature no longer edits `report.py`.
 
 ## Stop conditions
 
