@@ -1,8 +1,9 @@
 # Allocation policy: how capacity is budgeted, reserved and burned down.
 # Every number here is a placeholder the planner revises from usage evidence.
+# rev 4 (2026-11-08): burn-down rules.
 # rev 3 (2026-11-08): per-size output-token estimates for shadow admission.
 # rev 2 (2026-11-08): key renamed to "opencode" = provider recorded by the opencode adapter.
-revision = 3
+revision = 4
 
 [providers.opencode]
 unit = "output_tokens"
@@ -24,3 +25,8 @@ interactive = 0.0
 S = 15000
 M = 40000
 L = 100000
+
+# Burn-down (stage 5): spend expiring capacity that would otherwise reset unused.
+[burn]
+start_within_s = 3600    # only plan a burn in the last hour of a window
+min_burnable = 10000     # ignore smaller leftovers

@@ -1,0 +1,24 @@
+id = "s4-triage"
+repo = "lanectl"
+base_sha = "535eae4ebcfab3bbedac852ac4e994e4f0cb1694"
+revision = 1
+title = "Triage emitters: failures become deduplicated proposals"
+task_class = "glue"
+size = "S"
+data_class = "public"
+outcome = """
+Stage 4 triage: failures should turn into proposed work instead of being noticed by hand. Add
+src/lanectl/triage.py (command plugin). failing_tests(output) -> sorted unique pytest node ids
+from "FAILED <nodeid>[ - msg]" and "ERROR <nodeid>[ - msg]" lines. from_train(event) -> list of
+triage.proposed payloads for a failed train.built: source "train", one per failing node id from
+check_tail (or one for the whole train when none parse), fingerprint = sha1 hex of
+"<repo>:<node id>", summary naming the node id and train_id. proposals(events) -> open proposals
+deduplicated by fingerprint, each with "count" (how many times proposed) and "first_ts"/"last_ts".
+`lanectl triage scan --record` emits proposals for failed trains not yet scanned (a train is
+scanned once; keep its train_id in the payload); `lanectl triage` lists proposals.
+"""
+[scope]
+paths = ["src/lanectl/triage.py", "tests/stage4/**"]
+[acceptance]
+exec = ["uv run --no-sync pytest -q -p no:cacheprovider"]
+files = ["tests/stage4/test_acc_triage.py"]

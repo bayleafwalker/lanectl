@@ -1,0 +1,7 @@
+# Routing limits v1 (planner-owned). The learning projection suggests lane routing
+# weights inside these bounds; changing a lane's weights stays a reviewed LaneRevision.
+revision = 1
+min_weight = 0.05        # every eligible model keeps some exploration
+max_weight = 1.0
+min_evidence = 5         # ruled attempts per (model, task_class) before leaving the prior
+prior = [1, 1]           # Beta(alpha, beta) on model-clean landings

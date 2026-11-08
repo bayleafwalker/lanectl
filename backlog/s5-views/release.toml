@@ -1,0 +1,23 @@
+id = "s5-views"
+repo = "lanectl"
+base_sha = "535eae4ebcfab3bbedac852ac4e994e4f0cb1694"
+revision = 1
+title = "Static HTML view of lanes, capacity and shadows"
+task_class = "view"
+size = "S"
+data_class = "public"
+outcome = """
+Stage 5 views: one static page an operator can open. Add src/lanectl/view.py (command plugin).
+render(events, now) -> a complete HTML document (no external assets) with sections whose ids are
+items, report, capacity and triage: item counts by state (events.project_items), the per-class
+and per-model report table plus any shadow-agreement keys the report has (shadow_admission,
+evaluator, landing_shadow, when present), the capacity projection from the repo allocation policy
+(omit the section body gracefully if no policy), and open triage proposals (empty list when the
+module or events are absent). All event-derived text is HTML-escaped. `lanectl view --html
+<path>` writes it and prints the path.
+"""
+[scope]
+paths = ["src/lanectl/view.py", "tests/stage5/**"]
+[acceptance]
+exec = ["uv run --no-sync pytest -q -p no:cacheprovider"]
+files = ["tests/stage5/test_acc_view.py"]

@@ -1,0 +1,25 @@
+id = "s5-learning"
+repo = "lanectl"
+base_sha = "535eae4ebcfab3bbedac852ac4e994e4f0cb1694"
+revision = 1
+title = "Learning projection: suggested routing weights"
+task_class = "semantic"
+size = "M"
+data_class = "public"
+outcome = """
+Stage 5 replaces hand-set routing weights with evidence. Add src/lanectl/learning.py (command
+plugin). posterior(events, limits) -> {(model, task_class): {"ruled", "clean", "mean"}} where
+clean counts ruled attempts that are model-clean (report.attribution) and mean is the Beta
+posterior mean (prior alpha+clean)/(alpha+beta+ruled) with limits["prior"] = [alpha, beta].
+suggest(events, limits, models, task_class) -> {model: weight} for the given eligible models:
+models below limits["min_evidence"] ruled attempts use the prior mean; weights are proportional
+to the mean, scaled so the largest is limits["max_weight"], then clamped to at least
+limits["min_weight"]; rounded to 3 decimals. load_limits(path=None) reads governance/routing.toml.
+`lanectl learn [--lane implement]` prints the posterior table and, per task class seen, the
+suggested weights next to the lane's current routing weights. It never edits governance.
+"""
+[scope]
+paths = ["src/lanectl/learning.py", "tests/stage5/**"]
+[acceptance]
+exec = ["uv run --no-sync pytest -q -p no:cacheprovider"]
+files = ["tests/stage5/test_acc_learning.py"]

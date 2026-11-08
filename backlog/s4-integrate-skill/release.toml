@@ -1,0 +1,24 @@
+id = "s4-integrate-skill"
+repo = "lanectl"
+base_sha = "535eae4ebcfab3bbedac852ac4e994e4f0cb1694"
+revision = 1
+title = "Integrator skill for planner sessions"
+task_class = "glue"
+size = "S"
+data_class = "public"
+outcome = """
+Write .claude/skills/lane-integrator/SKILL.md: the integrator's cycle as a Claude Code skill
+(frontmatter name: lane-integrator and a description saying when to use it). It covers: listing
+candidates and parked review-required items; reviewing a diff; `lanectl approve`, `lanectl train`,
+`lanectl plan-landing <train> --record` (shadow plan first), `lanectl land`, `lanectl reject`;
+integrator fix commits titled fix(<attempt_id>): [spec-gap|model-error|gate-gap] ... as separate
+commits; the fix budget and allowed fix classes in governance/integrator.toml (requeue instead of
+fixing beyond them); `lanectl triage scan --record` after a failed train; cleanup of lane
+branches and train worktrees after landing. Keep it under 120 lines; commands, not essays. This
+path is protected: the attempt will wait for planner review.
+"""
+[scope]
+paths = [".claude/skills/lane-integrator/SKILL.md", "tests/stage4/**"]
+[acceptance]
+exec = ["uv run --no-sync pytest -q -p no:cacheprovider"]
+files = ["tests/stage4/test_acc_integrate_skill.py"]
