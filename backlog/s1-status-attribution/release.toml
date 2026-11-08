@@ -1,0 +1,20 @@
+id = "s1-status-attribution"
+repo = "lanectl"
+base_sha = "6642749f89e603e87e7544e079766928ba3c57a0"
+revision = 1
+title = "lanectl status attributes fixes to model vs planner"
+task_class = "view"
+size = "S"
+data_class = "public"
+outcome = """
+runner.metrics() (behind lanectl status) counts every integrator fix against the model. Spec-gap
+fixes are planner errors. Add model_precision (a ruled attempt whose fixes are all fix_class
+spec-gap counts as clean, same rule as report.build_report) and fix_classes (count per fix_class
+from integrator.fix events) to the top level and to each per_model entry, next to the unchanged
+precision. Keep existing keys. Prefer reusing report.py logic over duplicating it.
+"""
+[scope]
+paths = ["src/lanectl/runner.py", "src/lanectl/report.py", "tests/stage1/**"]
+[acceptance]
+exec = ["uv run --no-sync pytest -q -p no:cacheprovider"]
+files = ["tests/stage1/test_acc_status_attribution.py"]
