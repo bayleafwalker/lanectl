@@ -18,7 +18,9 @@ from that pool first; whatever is left is scaled by the fraction of the window
 still ahead. Expiring capacity above that decayed reservation is burnable.
 
 ``project`` is a pure function: it performs no I/O and depends only on its
-arguments.
+arguments.  ``capacity_admission`` layers a shadow admission decision on the
+projection: it estimates what an attempt of a given size would burn and admits
+only when the provider's burnable floor covers it.
 """
 from __future__ import annotations
 
@@ -79,6 +81,7 @@ class ProviderPolicy:
     expiring: bool
     windows: tuple[WindowPolicy, ...]
     reservations: dict[str, float] = field(default_factory=dict)
+    estimates: dict[str, int | float] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -119,9 +122,14 @@ class AllocationPolicy:
                 if not 0.0 <= f <= 1.0:
                     raise PolicyError(f"provider {name!r}: reservation {key!r} must be within [0, 1]")
                 reservations[str(key)] = f
+            estimates_raw = spec.get("estimates", {})
+            if not isinstance(estimates_raw, dict):
+                raise PolicyError(f"provider {name!r}: estimates must be a table")
+            estimates = {str(size): _number(value, f"provider {name!r}: estimate {size!r}")
+                         for size, value in estimates_raw.items()}
             providers[str(name)] = ProviderPolicy(
                 name=str(name), unit=unit, expiring=bool(spec.get("expiring", False)),
-                windows=windows, reservations=reservations,
+                windows=windows, reservations=reservations, estimates=estimates,
             )
         return cls(revision=revision, providers=providers)
 
@@ -267,6 +275,94 @@ def project(events: list[dict], policy: AllocationPolicy, now: datetime) -> dict
 def _tidy(value: float) -> int | float:
     """Keep whole numbers integral in projections and JSON output."""
     return int(value) if float(value).is_integer() else value
+
+
+#: Observed attempts of a size needed before their mean replaces the policy estimate.
+ESTIMATE_SAMPLE = 3
+
+
+def _observed_estimate(events: list[dict], provider: str, unit: str,
+                       size: str) -> float | None:
+    """Mean adapter-recorded ``unit`` per attempt of ``size``, or None below the floor.
+
+    Attempts are the ``experiment.recorded`` rows for this size, keyed by
+    ``attempt_id``; their cost is the ``usage.recorded`` rows from the adapter
+    for this provider, summed per attempt so a retry's multiple usage records
+    count once.
+    """
+    attempts: set[str] = set()
+    for ev in events:
+        if not isinstance(ev, dict) or ev.get("type") != "experiment.recorded":
+            continue
+        data = ev.get("data")
+        if not isinstance(data, dict) or data.get("size") != size:
+            continue
+        attempt_id = data.get("attempt_id")
+        if isinstance(attempt_id, str) and attempt_id:
+            attempts.add(attempt_id)
+    if not attempts:
+        return None
+    totals: dict[str, float] = {}
+    for ev in events:
+        if not isinstance(ev, dict) or ev.get("type") != "usage.recorded":
+            continue
+        data = ev.get("data")
+        if not isinstance(data, dict) or data.get("provider") != provider:
+            continue
+        if data.get("source") != "adapter":
+            continue
+        attempt_id = data.get("attempt_id")
+        if attempt_id not in attempts:
+            continue
+        units = data.get("units")
+        if not isinstance(units, dict):
+            continue
+        amount = units.get(unit)
+        if isinstance(amount, bool) or not isinstance(amount, (int, float)):
+            continue
+        totals[attempt_id] = totals.get(attempt_id, 0.0) + float(amount)
+    if len(totals) < ESTIMATE_SAMPLE:
+        return None
+    return sum(totals.values()) / len(totals)
+
+
+def capacity_admission(events: list[dict], policy: AllocationPolicy | None,
+                       now: datetime, provider: str | None, size: str) -> dict:
+    """Decide in shadow whether capacity would admit one attempt of ``size``.
+
+    Static caps stay authoritative; this is a second opinion recorded alongside
+    them.  The estimate is the policy's per-size placeholder until
+    ``ESTIMATE_SAMPLE`` adapter-recorded attempts of that size exist, at which
+    point their mean replaces it.  Burnable is the floor over the provider's
+    windows (``project``): an estimate is admitted when it fits inside every
+    window.  A missing policy, or a provider the policy does not name, admits
+    with a reason rather than blocking on an unknown.
+    """
+    if policy is None:
+        return {"decision": "admit", "estimate": None, "burnable": None,
+                "reasons": ["no allocation policy; capacity does not gate admission"]}
+    spec = policy.providers.get(provider) if provider is not None else None
+    if spec is None:
+        return {"decision": "admit", "estimate": None, "burnable": None,
+                "reasons": [f"provider {provider!r} is not in the allocation policy; admitting"]}
+    reasons: list[str] = []
+    observed = _observed_estimate(events, provider, spec.unit, size)
+    if observed is not None:
+        estimate = _tidy(observed)
+        reasons.append(f"estimate {estimate} is the mean of {ESTIMATE_SAMPLE}+ observed "
+                       f"attempts of size {size}")
+    elif size in spec.estimates:
+        estimate = _tidy(float(spec.estimates[size]))
+        reasons.append(f"estimate {estimate} is the policy estimate for size {size}")
+    else:
+        estimate = 0
+        reasons.append(f"no estimate for size {size!r}; assuming 0")
+    windows = project(events, policy, now).get(provider, {})
+    burnable = _tidy(min((w["burnable"] for w in windows.values()), default=0.0))
+    decision = "admit" if burnable >= estimate else "block"
+    reasons.append(f"burnable {burnable} {'>=' if decision == 'admit' else '<'} estimate {estimate}")
+    return {"decision": decision, "estimate": estimate, "burnable": burnable,
+            "reasons": reasons}
 
 
 def register(sub) -> dict:
