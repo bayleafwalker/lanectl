@@ -37,24 +37,21 @@ def _below_bar(precision: float | None, ruled: int, bar: float, min_ruled: int) 
     return ruled >= min_ruled and precision is not None and precision < bar
 
 
-def build_report(events: list[dict], precision_bar: float = 0.5,
-                 min_ruled: int = 20) -> dict:
-    """Build the per-task-class / per-model precision and cost report."""
+def attribution(events: list[dict]) -> dict:
+    """Attempt-level fix attribution shared by the report and status metrics.
+
+    ``clean`` is a landing with no fix commits at all; ``model_clean`` treats
+    fixes the planner owns (``spec-gap``) as not the model's fault.
+    """
     gate_ok: set[str] = set()
     integrator_rejected: set[str] = set()
     landed: dict[str, list] = {}             # attempt_id -> fix_commits
     fixes: dict[str, dict[str, int]] = {}    # attempt_id -> {fix_class: count}
     fix_classes: dict[str, int] = {}
-    usage_events: list[dict] = []
-    experiments: list[dict] = []
 
     for ev in events:
         t, d = ev["type"], ev["data"]
-        if t == "experiment.recorded":
-            experiments.append({"attempt_id": d["attempt_id"], "model": d["model"],
-                                "task_class": d["task_class"],
-                                "elapsed_s": d.get("elapsed_s", 0.0)})
-        elif t == "decision.recorded":
+        if t == "decision.recorded":
             if d.get("by") == "gates" and d.get("decision") == "candidate":
                 gate_ok.add(d["attempt_id"])
             elif d.get("by") == "integrator" and d.get("decision") != "candidate":
@@ -66,13 +63,10 @@ def build_report(events: list[dict], precision_bar: float = 0.5,
             per_attempt = fixes.setdefault(aid, {})
             per_attempt[cls] = per_attempt.get(cls, 0) + 1
             fix_classes[cls] = fix_classes.get(cls, 0) + 1
-        elif t == "usage.recorded" and d.get("attempt_id") and d.get("model"):
-            usage_events.append({"attempt_id": d["attempt_id"], "model": d["model"],
-                                 "units": d.get("units") or {}})
 
-    ruled_ids = gate_ok & (set(landed) | integrator_rejected)
-    clean_ids = {aid for aid, commits in landed.items()
-                 if not commits and not fixes.get(aid)}
+    ruled = gate_ok & (set(landed) | integrator_rejected)
+    clean = {aid for aid, commits in landed.items()
+             if not commits and not fixes.get(aid)}
 
     def _model_clean(aid: str) -> bool:
         """Landed, and every integrator fix was one the planner owed."""
@@ -84,7 +78,35 @@ def build_report(events: list[dict], precision_bar: float = 0.5,
         # Fix commits with no recorded class cannot be attributed to the model.
         return not landed[aid] or bool(per_attempt)
 
-    model_clean_ids = {aid for aid in landed if _model_clean(aid)}
+    model_clean = {aid for aid in landed if _model_clean(aid)}
+    return {"gate_ok": gate_ok, "landed": landed, "fixes": fixes,
+            "fix_classes": fix_classes, "ruled": ruled, "clean": clean,
+            "model_clean": model_clean}
+
+
+def build_report(events: list[dict], precision_bar: float = 0.5,
+                 min_ruled: int = 20) -> dict:
+    """Build the per-task-class / per-model precision and cost report."""
+    attributed = attribution(events)
+    gate_ok = attributed["gate_ok"]
+    landed = attributed["landed"]
+    fixes = attributed["fixes"]
+    fix_classes = attributed["fix_classes"]
+    ruled_ids = attributed["ruled"]
+    clean_ids = attributed["clean"]
+    model_clean_ids = attributed["model_clean"]
+    usage_events: list[dict] = []
+    experiments: list[dict] = []
+
+    for ev in events:
+        t, d = ev["type"], ev["data"]
+        if t == "experiment.recorded":
+            experiments.append({"attempt_id": d["attempt_id"], "model": d["model"],
+                                "task_class": d["task_class"],
+                                "elapsed_s": d.get("elapsed_s", 0.0)})
+        elif t == "usage.recorded" and d.get("attempt_id") and d.get("model"):
+            usage_events.append({"attempt_id": d["attempt_id"], "model": d["model"],
+                                 "units": d.get("units") or {}})
 
     # Both groupings start from the experiment records; an attempt appears
     # once under its class and once under its model.
