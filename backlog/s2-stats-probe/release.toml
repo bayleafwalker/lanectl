@@ -1,0 +1,25 @@
+id = "s2-stats-probe"
+repo = "lanectl"
+base_sha = "f0c0f78f044273f8154e6b9fd2aaef8dafbf2955"
+revision = 1
+title = "Probe: provider-wide OpenCode usage vs the ledger"
+task_class = "projection"
+size = "S"
+data_class = "public"
+outcome = """
+Lanes record usage per attempt, but OpenCode Go capacity is also spent outside lanes. Add
+src/lanectl/probe.py (command plugin). probe_opencode(run) calls run(["opencode", "stats",
+"--days", "0", "--json"]) -> stdout and returns a window.observed payload: provider "opencode",
+window "day", observed = {"source": "opencode-stats", "range_from", "range_to" (ISO UTC "...Z"
+from the epoch-millisecond range), "output_tokens", "input_tokens", "reasoning_tokens",
+"cache_read_tokens", "sessions"}. drift(events) compares the latest such probe with the ledger:
+the summed usage.recorded output_tokens for provider "opencode" whose ts falls inside the probe
+range -> {"probe": n, "ledger": n, "unrecorded": probe - ledger, "range_from", "range_to"}, or
+None without a probe. `lanectl probe opencode [--record]` runs the real command (timeout 60s)
+and prints the payload and drift. The sample stdout in the acceptance test is real output.
+"""
+[scope]
+paths = ["src/lanectl/probe.py", "tests/stage2/**"]
+[acceptance]
+exec = ["uv run --no-sync pytest -q -p no:cacheprovider"]
+files = ["tests/stage2/test_acc_probe.py"]

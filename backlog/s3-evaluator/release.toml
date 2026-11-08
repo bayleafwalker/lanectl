@@ -1,0 +1,29 @@
+id = "s3-evaluator"
+repo = "lanectl"
+base_sha = "f0c0f78f044273f8154e6b9fd2aaef8dafbf2955"
+revision = 1
+title = "Rules evaluator predicting the integrator's ruling"
+task_class = "semantic"
+size = "M"
+data_class = "public"
+outcome = """
+Stage 3: an evaluator predicts, for each gate-accepted attempt, whether the integrator will accept
+it, so rule-based acceptance can later replace manual review per task class. Add
+src/lanectl/evaluator.py (command plugin). load_rules(path=None) reads governance/evaluator.toml
+(planner-owned; read its comments). features(repo_path, seed_sha, head_sha, size_budget,
+test_globs) -> {"changed_lines", "changed_lines_ratio", "new_test_files", "files_touched"} from git
+diff seed..head. evaluate(features, rules) -> (verdict, reasons): first matching rule's verdict
+and [rule name], else (default, []); ops > >= < <= ==. evaluate_attempt(log, attempt_id) records
+evaluation.recorded {attempt_id, evaluator: "rules", verdict, rules_revision: "evaluator/v<revision>",
+features, reasons} once per attempt; runner.execute calls it right after a gates candidate
+decision. `lanectl evaluate --backfill` evaluates gate-accepted attempts that have none (lane
+branch missing -> skip with a message). agreement(events) -> per task_class {"evaluated_ruled",
+"agreed", "agreement"}: the integrator accepted an attempt when it landed with no model-error fix;
+it rejected it otherwise (integrator rejection or a model-error fix). The report gains
+"evaluator" = that mapping and the text report prints it.
+"""
+[scope]
+paths = ["src/lanectl/evaluator.py", "src/lanectl/runner.py", "src/lanectl/report.py", "tests/stage3/**"]
+[acceptance]
+exec = ["uv run --no-sync pytest -q -p no:cacheprovider"]
+files = ["tests/stage3/test_acc_evaluator.py"]

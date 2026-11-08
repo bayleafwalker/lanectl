@@ -1,0 +1,26 @@
+id = "s2-window-detector"
+repo = "lanectl"
+base_sha = "f0c0f78f044273f8154e6b9fd2aaef8dafbf2955"
+revision = 1
+title = "Window detector: provider exhaustion from attempt failures"
+task_class = "projection"
+size = "S"
+data_class = "public"
+outcome = """
+Add src/lanectl/windows.py (a command plugin: module-level register, discovered automatically).
+detect(events) -> list of window.observed payloads for failed or escalated attempts whose final_tail
+says the provider's quota or rate limit is exhausted (429, "rate limit", "usage limit", "quota",
+case-insensitive). provider comes from the claimed model: opencode-go/* -> "opencode",
+claude-* -> "anthropic"; window is "5h". observed = {"attempt_id", "exhausted_at" (the
+attempt.finished ts), "reset_at"} where reset_at is an ISO UTC "...Z" string parsed from
+"resets at <ISO>", "try again in N minutes|hours" or "retry after N seconds" relative to
+exhausted_at, else null. Skip attempts already covered by a recorded window.observed with that
+attempt_id. `lanectl windows` prints detections; `--record` appends them. No real exhaustion
+message has been logged yet: these formats are assumptions, keep matching tolerant.
+capacity.project already anchors windows on observed reset_at.
+"""
+[scope]
+paths = ["src/lanectl/windows.py", "tests/stage2/**"]
+[acceptance]
+exec = ["uv run --no-sync pytest -q -p no:cacheprovider"]
+files = ["tests/stage2/test_acc_windows.py"]

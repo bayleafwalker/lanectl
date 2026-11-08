@@ -1,0 +1,30 @@
+# Evaluator rules v1 (planner-owned): predict the integrator's ruling on a
+# gate-accepted attempt. First matching rule wins; otherwise `default`.
+# Features (computed from git diff seed_sha..head_sha):
+#   changed_lines        added + deleted lines
+#   changed_lines_ratio  changed_lines / size budget of the release size
+#   new_test_files       added files matching the lane's test globs
+#   files_touched        files changed
+revision = 1
+default = "accept"
+
+[[rules]]
+name = "near-size-budget"
+feature = "changed_lines_ratio"
+op = ">"
+value = 0.8
+verdict = "reject"
+
+[[rules]]
+name = "no-new-tests"
+feature = "new_test_files"
+op = "=="
+value = 0
+verdict = "reject"
+
+[[rules]]
+name = "sprawl"
+feature = "files_touched"
+op = ">"
+value = 8
+verdict = "reject"

@@ -1,0 +1,27 @@
+id = "s2-shadow-admission"
+repo = "lanectl"
+base_sha = "f0c0f78f044273f8154e6b9fd2aaef8dafbf2955"
+revision = 1
+title = "Shadow admission from capacity projection"
+task_class = "projection"
+size = "M"
+data_class = "public"
+outcome = """
+Static caps stay authoritative; capacity-based admission runs in shadow. In capacity.py add
+capacity_admission(events, policy, now, provider, size) -> {"decision": "admit"|"block",
+"estimate", "burnable", "reasons"}: estimate is the policy's providers.<p>.estimates[size]
+(governance/allocation.toml rev 3), replaced by the mean adapter-recorded output_tokens per attempt
+of that size once 3+ such attempts exist (join usage.recorded attempt_id to experiment.recorded
+size); burnable is the minimum burnable over the provider's windows from project(); admit when
+burnable >= estimate. A provider absent from the policy (or no policy) admits with a reason.
+In runner.admit, whenever at least one release is ready, append admission.shadow with static
+("admit" if a Claim is returned, else "block"), capacity (for the release static picked, else the
+first ready release), agree, reasons, plus release_id, size, provider, estimate, burnable. The
+report (build_report and text) gains shadow_admission = {"recorded", "agreed", "agreement"}
+(agreement None when nothing recorded). Model provider mapping: opencode-go/* -> "opencode".
+"""
+[scope]
+paths = ["src/lanectl/capacity.py", "src/lanectl/runner.py", "src/lanectl/report.py", "tests/stage2/**"]
+[acceptance]
+exec = ["uv run --no-sync pytest -q -p no:cacheprovider"]
+files = ["tests/stage2/test_acc_shadow_admission.py"]
