@@ -4,9 +4,9 @@ The report is a pure projection: experiments give the population (one record
 per attempt), gate decisions say which attempts the gates accepted, and the
 judgment plane (landing / integrator rejection) says which accepted attempts
 were ruled on.  Precision is the share of ruled attempts that landed with no
-integrator fix at all.  Model precision is narrower: fixes the planner owes
-(``spec-gap``) do not count against the model, so an attempt whose only fixes
-are spec gaps still counts as clean for the model.
+integrator fix at all.  Model precision is narrower: only fixes classed
+``model-error`` count against the model, so spec gaps (the planner's) and gate
+gaps (the gates') still leave an attempt clean for the model.
 """
 from __future__ import annotations
 
@@ -15,8 +15,11 @@ from .events import EventLog
 # How many decimals precision and mean elapsed time are reported with.
 _DIGITS = 3
 
-# Fix classes the planner owns: they never count against the model.
+# Fix classes by owner.  Only model-error counts against the model; the
+# planner owns spec gaps and the gates own gate gaps.
+_MODEL_FIX_CLASSES = {"model-error"}
 _PLANNER_FIX_CLASSES = {"spec-gap"}
+_GATE_FIX_CLASSES = {"gate-gap"}
 
 
 def _empty_group() -> dict:
@@ -44,8 +47,8 @@ def attribution(events: list[dict]) -> dict:
     approval of an attempt the gates parked as review-required (the integrator
     is the judgment plane, so its approval makes protected-path work gate
     accepted too).  ``clean`` is a landing with no fix commits at all;
-    ``model_clean`` treats fixes the planner owns (``spec-gap``) as not the
-    model's fault.
+    ``model_clean`` treats every fix class except ``model-error`` as not the
+    model's fault, so spec gaps are the planner's and gate gaps the gates'.
     """
     gate_ok: set[str] = set()
     integrator_rejected: set[str] = set()
@@ -73,14 +76,10 @@ def attribution(events: list[dict]) -> dict:
              if not commits and not fixes.get(aid)}
 
     def _model_clean(aid: str) -> bool:
-        """Landed, and every integrator fix was one the planner owed."""
+        """Landed, and no integrator fix was classed ``model-error``."""
         if aid not in landed:
             return False
-        per_attempt = fixes.get(aid, {})
-        if any(cls not in _PLANNER_FIX_CLASSES for cls in per_attempt):
-            return False
-        # Fix commits with no recorded class cannot be attributed to the model.
-        return not landed[aid] or bool(per_attempt)
+        return not any(cls in _MODEL_FIX_CLASSES for cls in fixes.get(aid, {}))
 
     model_clean = {aid for aid in landed if _model_clean(aid)}
     return {"gate_ok": gate_ok, "landed": landed, "fixes": fixes,
@@ -170,6 +169,7 @@ def build_report(events: list[dict], precision_bar: float = 0.5,
 
     stop_conditions = []
     planner_flags = []
+    gate_flags = []
     for cls in sorted(by_class):
         g = by_class[cls]
         if g["below_bar"]:
@@ -184,10 +184,18 @@ def build_report(events: list[dict], precision_bar: float = 0.5,
             planner_flags.append(
                 f"task_class {cls}: {spec_gap_ruled} of {g['ruled']} ruled "
                 f"items needed spec-gap fixes")
+        gate_gap_ruled = sum(
+            1 for aid, c in attempt_class.items()
+            if c == cls and aid in ruled_ids
+            and any(k in _GATE_FIX_CLASSES for k in fixes.get(aid, {})))
+        if gate_gap_ruled:
+            gate_flags.append(
+                f"task_class {cls}: {gate_gap_ruled} of {g['ruled']} ruled "
+                f"items needed gate-gap fixes")
 
     return {"by_class": by_class, "by_model": by_model,
             "fix_classes": fix_classes, "stop_conditions": stop_conditions,
-            "planner_flags": planner_flags,
+            "planner_flags": planner_flags, "gate_flags": gate_flags,
             "precision_bar": precision_bar, "min_ruled": min_ruled}
 
 
@@ -228,6 +236,9 @@ def format_report(report: dict) -> str:
     if report["planner_flags"]:
         lines.append("planner_flags:")
         lines += [f"  {s}" for s in report["planner_flags"]]
+    if report["gate_flags"]:
+        lines.append("gate_flags:")
+        lines += [f"  {s}" for s in report["gate_flags"]]
     return "\n".join(lines)
 
 

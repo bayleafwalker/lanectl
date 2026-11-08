@@ -421,8 +421,9 @@ def metrics(events: list[dict]) -> dict:
     Gate acceptance and ruling come from report.py's shared attribution, so an
     attempt the gates parked as review-required and the integrator then approved
     counts here exactly as it does in the report.  ``model_precision`` uses the
-    same attribution rule: fixes the planner owns (``spec-gap``) do not count
-    against the model.  ``fix_classes`` counts integrator fixes by class."""
+    same attribution rule: only fixes classed ``model-error`` count against the
+    model, while spec gaps are the planner's and gate gaps the gates'.
+    ``fix_classes`` counts integrator fixes by class."""
     attributed = report.attribution(events)
     gate_ok = attributed["gate_ok"]
     ruled = attributed["ruled"]
@@ -451,9 +452,9 @@ def metrics(events: list[dict]) -> dict:
             for cls, n in attributed["fixes"].get(aid, {}).items():
                 classes[cls] = classes.get(cls, 0) + n
         m["fix_classes"] = classes
-    # ``gate_accepted`` is the precision population: accepted attempts the
-    # integrator has ruled on, so status cannot count an attempt report ignores.
-    return {"gate_accepted": len(gate_ok & ruled), "ruled": len(ruled), "landed": len(landed),
+    # ``gate_accepted`` counts every gate-accepted attempt, including ones the
+    # integrator has not ruled on yet; ``ruled`` is the precision population.
+    return {"gate_accepted": len(gate_ok), "ruled": len(ruled), "landed": len(landed),
             "landed_clean": len(landed_clean),
             "precision": round(len(landed_clean & gate_ok) / len(ruled), 3) if ruled else None,
             "model_precision": (round(len(model_clean & ruled) / len(ruled), 3)
