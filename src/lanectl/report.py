@@ -4,7 +4,9 @@ The report is a pure projection: experiments give the population (one record
 per attempt), gate decisions say which attempts the gates accepted, and the
 judgment plane (landing / integrator rejection) says which accepted attempts
 were ruled on.  Precision is the share of ruled attempts that landed with no
-integrator fix at all.
+integrator fix at all.  Model precision is narrower: fixes the planner owes
+(``spec-gap``) do not count against the model, so an attempt whose only fixes
+are spec gaps still counts as clean for the model.
 """
 from __future__ import annotations
 
@@ -13,11 +15,14 @@ from .events import EventLog
 # How many decimals precision and mean elapsed time are reported with.
 _DIGITS = 3
 
+# Fix classes the planner owns: they never count against the model.
+_PLANNER_FIX_CLASSES = {"spec-gap"}
+
 
 def _empty_group() -> dict:
     return {"attempts": 0, "gate_accepted": 0, "ruled": 0, "landed_clean": 0,
-            "precision": None, "below_bar": False, "mean_elapsed_s": 0.0,
-            "usage": {}, "fix_classes": {}}
+            "precision": None, "model_precision": None, "below_bar": False,
+            "mean_elapsed_s": 0.0, "usage": {}, "fix_classes": {}}
 
 
 def _add_units(target: dict, units: dict) -> None:
@@ -69,6 +74,18 @@ def build_report(events: list[dict], precision_bar: float = 0.5,
     clean_ids = {aid for aid, commits in landed.items()
                  if not commits and not fixes.get(aid)}
 
+    def _model_clean(aid: str) -> bool:
+        """Landed, and every integrator fix was one the planner owed."""
+        if aid not in landed:
+            return False
+        per_attempt = fixes.get(aid, {})
+        if any(cls not in _PLANNER_FIX_CLASSES for cls in per_attempt):
+            return False
+        # Fix commits with no recorded class cannot be attributed to the model.
+        return not landed[aid] or bool(per_attempt)
+
+    model_clean_ids = {aid for aid in landed if _model_clean(aid)}
+
     # Both groupings start from the experiment records; an attempt appears
     # once under its class and once under its model.
     def _new_group() -> dict:
@@ -107,7 +124,11 @@ def build_report(events: list[dict], precision_bar: float = 0.5,
         clean_ruled = sum(1 for aid in ids if aid in clean_ids and aid in ruled_ids)
         if g["ruled"]:
             g["precision"] = round(clean_ruled / g["ruled"], _DIGITS)
-        g["below_bar"] = _below_bar(g["precision"], g["ruled"],
+        model_clean_ruled = sum(1 for aid in ids
+                                if aid in model_clean_ids and aid in ruled_ids)
+        if g["ruled"]:
+            g["model_precision"] = round(model_clean_ruled / g["ruled"], _DIGITS)
+        g["below_bar"] = _below_bar(g["model_precision"], g["ruled"],
                                     precision_bar, min_ruled)
         g["mean_elapsed_s"] = (round(g["_elapsed"] / len(ids), _DIGITS)
                                if ids else 0.0)
@@ -122,15 +143,25 @@ def build_report(events: list[dict], precision_bar: float = 0.5,
         _populate(group)
 
     stop_conditions = []
+    planner_flags = []
     for cls in sorted(by_class):
         g = by_class[cls]
         if g["below_bar"]:
             stop_conditions.append(
-                f"task_class {cls}: precision {g['precision']:.3f} < "
+                f"task_class {cls}: precision {g['model_precision']:.3f} < "
                 f"{precision_bar:g} over {g['ruled']} ruled items")
+        spec_gap_ruled = sum(
+            1 for aid, c in attempt_class.items()
+            if c == cls and aid in ruled_ids
+            and any(k in _PLANNER_FIX_CLASSES for k in fixes.get(aid, {})))
+        if spec_gap_ruled:
+            planner_flags.append(
+                f"task_class {cls}: {spec_gap_ruled} of {g['ruled']} ruled "
+                f"items needed spec-gap fixes")
 
     return {"by_class": by_class, "by_model": by_model,
             "fix_classes": fix_classes, "stop_conditions": stop_conditions,
+            "planner_flags": planner_flags,
             "precision_bar": precision_bar, "min_ruled": min_ruled}
 
 
@@ -144,13 +175,14 @@ def _fmt_usage(units: dict) -> str:
 
 def _table(title: str, rows: dict) -> list[str]:
     out = [f"{title:10} {'ATT':>4} {'GATE':>5} {'RULED':>6} {'CLEAN':>6} "
-           f"{'PREC':>6} {'FLAG':>6} {'MEAN_S':>8}  USAGE"]
+           f"{'PREC':>6} {'MPREC':>6} {'FLAG':>6} {'MEAN_S':>8}  USAGE"]
     for name in sorted(rows):
         g = rows[name]
         flag = "below" if g["below_bar"] else "ok"
         out.append(f"{name[:10]:10} {g['attempts']:>4} {g['gate_accepted']:>5} "
                    f"{g['ruled']:>6} {g['landed_clean']:>6} "
-                   f"{_fmt_precision(g['precision']):>6} {flag:>6} "
+                   f"{_fmt_precision(g['precision']):>6} "
+                   f"{_fmt_precision(g['model_precision']):>6} {flag:>6} "
                    f"{g['mean_elapsed_s']:>8.1f}  {_fmt_usage(g['usage'])}")
     return out
 
@@ -167,6 +199,9 @@ def format_report(report: dict) -> str:
     if report["stop_conditions"]:
         lines.append("stop_conditions:")
         lines += [f"  {s}" for s in report["stop_conditions"]]
+    if report["planner_flags"]:
+        lines.append("planner_flags:")
+        lines += [f"  {s}" for s in report["planner_flags"]]
     return "\n".join(lines)
 
 
