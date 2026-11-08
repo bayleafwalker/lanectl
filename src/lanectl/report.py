@@ -12,6 +12,7 @@ from __future__ import annotations
 
 from .evaluator import agreement
 from .events import EventLog
+from .landing import plan_match
 
 # How many decimals precision and mean elapsed time are reported with.
 _DIGITS = 3
@@ -198,6 +199,7 @@ def build_report(events: list[dict], precision_bar: float = 0.5,
             "fix_classes": fix_classes, "stop_conditions": stop_conditions,
             "planner_flags": planner_flags, "gate_flags": gate_flags,
             "evaluator": agreement(events),
+            "landing_shadow": plan_match(events),
             "precision_bar": precision_bar, "min_ruled": min_ruled}
 
 
@@ -246,6 +248,12 @@ def format_report(report: dict) -> str:
         g = report["evaluator"][cls]
         lines.append(f"  {cls}: evaluated_ruled={g['evaluated_ruled']} "
                      f"agreed={g['agreed']} agreement={g['agreement']:.3f}")
+    shadow = report.get("landing_shadow") or {}
+    shadow_agreement = shadow.get("agreement")
+    lines.append("")
+    lines.append(f"landing_shadow: trains={shadow.get('trains', 0)} "
+                 f"matched={shadow.get('matched', 0)} "
+                 f"agreement={_fmt_precision(shadow_agreement)}")
     return "\n".join(lines)
 
 
