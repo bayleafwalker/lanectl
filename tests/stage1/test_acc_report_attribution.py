@@ -1,7 +1,7 @@
 """Acceptance: precision split by who caused the fix (planner-owned).
 
-`precision` stays as is. `model_precision` treats spec-gap fixes as the
-planner's fault: an attempt whose only fixes are spec-gap counts as clean.
+`precision` stays as is. `model_precision` counts only fixes classed model-error
+against the model: spec-gap fixes are the planner's, gate-gap fixes the gates'.
 """
 from lanectl.contracts import make_event
 from lanectl.report import build_report
@@ -27,8 +27,9 @@ def test_model_precision_excludes_spec_gap_fixes():
     r = build_report(ev, precision_bar=0.5, min_ruled=1)
     g = r["by_class"]["glue"]
     assert g["precision"] == 0.25
-    assert g["model_precision"] == 0.5          # aa clean, bb spec-gap only; cc and dd count against
-    assert r["by_model"]["M"]["model_precision"] == 0.5
+    assert g["model_precision"] == 0.75         # only cc (model-error) counts against the model
+    assert r["by_model"]["M"]["model_precision"] == 0.75
+    assert r["gate_flags"] == ["task_class glue: 1 of 4 ruled items needed gate-gap fixes"]
     assert g["fix_classes"] == {"spec-gap": 2, "model-error": 1, "gate-gap": 1}
 
 
@@ -40,3 +41,4 @@ def test_stop_conditions_use_model_precision():
     assert r["by_class"]["glue"]["precision"] == 0.0
     assert r["stop_conditions"] == []            # planner errors do not retire the model's task class
     assert r["planner_flags"] == ["task_class glue: 4 of 4 ruled items needed spec-gap fixes"]
+    assert r["gate_flags"] == []

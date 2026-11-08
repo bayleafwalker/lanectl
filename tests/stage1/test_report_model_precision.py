@@ -1,4 +1,6 @@
-"""Coverage for splitting precision between model faults and planner faults."""
+"""Coverage for attributing fixes: only model-error counts against the model.
+
+Planner-rewritten 2026-11-08 when the attribution rule changed (gate-gap moved off the model)."""
 from lanectl.contracts import make_event
 from lanectl.report import build_report, format_report
 
@@ -40,8 +42,8 @@ def test_planner_flags_count_only_ruled_items_with_spec_gaps():
 
 def test_model_precision_is_reported_for_both_groupings():
     r = build_report(_mixed_events(), precision_bar=0.5, min_ruled=1)
-    assert r["by_class"]["glue"]["model_precision"] == 0.5
-    assert r["by_model"]["M"]["model_precision"] == round(2 / 5, 3)
+    assert r["by_class"]["glue"]["model_precision"] == 0.75
+    assert r["by_model"]["M"]["model_precision"] == 0.6
 
 
 def test_unruled_group_has_null_model_precision():
@@ -57,10 +59,10 @@ def test_stop_conditions_and_flags_follow_model_precision():
     r = build_report(ev, precision_bar=0.75, min_ruled=2)
     g = r["by_class"]["glue"]
     assert g["precision"] == 0.0
-    assert g["model_precision"] == 0.5
-    assert g["below_bar"] is True
-    assert r["stop_conditions"] == [
-        "task_class glue: precision 0.500 < 0.75 over 2 ruled items"]
+    assert g["model_precision"] == 1.0
+    assert g["below_bar"] is False
+    assert r["stop_conditions"] == []
+    assert r["gate_flags"] == ["task_class glue: 1 of 2 ruled items needed gate-gap fixes"]
     assert r["planner_flags"] == [
         "task_class glue: 1 of 2 ruled items needed spec-gap fixes"]
 

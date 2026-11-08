@@ -1,4 +1,6 @@
-"""Status metrics attribute fixes to the planner vs the model (see report.py)."""
+"""Status metrics attribute fixes to planner, gates or model (see report.py).
+
+Planner-rewritten 2026-11-08 when the attribution rule changed (gate-gap moved off the model)."""
 from lanectl.contracts import make_event
 from lanectl.runner import metrics
 
@@ -25,7 +27,7 @@ def test_per_model_fix_classes_and_planner_attribution():
     ev = (_landed("aa", [], model="M1") + _landed("bb", ["spec-gap"], model="M1")
           + _landed("cc", ["gate-gap"], model="M2"))
     m = metrics(ev)
-    assert m["model_precision"] == round(2 / 3, 3)
+    assert m["model_precision"] == 1.0
     assert m["per_model"]["M1"]["fix_classes"] == {"spec-gap": 1}
     assert m["per_model"]["M2"]["fix_classes"] == {"gate-gap": 1}
     assert m["per_model"]["M1"]["attempts"] == 2          # existing keys kept
