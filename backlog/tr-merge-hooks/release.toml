@@ -1,0 +1,23 @@
+id = "tr-merge-hooks"
+repo = "lanectl"
+base_sha = "c6b19611730735f037a61c385b9d2d8a5d74b8a2"
+revision = 1
+title = "Train merges respect repo commit hooks and report the real merge failure"
+task_class = "glue"
+size = "S"
+data_class = "public"
+outcome = """
+homelab-analytics enforces Conventional Commits with a commit-msg hook that lets git-style "Merge..."
+subjects through. runner.build_train merges each candidate with the subject
+"train: <attempt_id> <title>", which that hook rejects, and every failed merge is recorded as
+"merge conflict" (seen 2026-11-09: train-20261109163714 excluded a clean merge). Change build_train:
+merge subject "Merge lane/<attempt_id>: <title>" (never --no-verify; repository hooks stay in force);
+on a failed merge record reason "merge conflict" only when the merge left unmerged paths
+(git diff --name-only --diff-filter=U is non-empty, checked before the abort), otherwise
+"merge failed: <last non-empty stderr line, clipped to 200 chars>".
+"""
+[scope]
+paths = ["src/lanectl/runner.py", "tests/stage7/**"]
+[acceptance]
+exec = ["uv run --no-sync pytest -q -p no:cacheprovider"]
+files = ["tests/stage7/test_acc_train_merge_hooks.py"]
