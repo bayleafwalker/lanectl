@@ -1,0 +1,34 @@
+id = "dr-coverage-gaps"
+repo = "lanectl"
+base_sha = "52afdad63a5dc5c19870189485bb40e2e9c90ebd"
+revision = 1
+title = "Close decision-record gaps: acceptance, reaper and integrator transitions; coverage since start"
+task_class = "semantic"
+size = "M"
+data_class = "public"
+outcome = """
+decision_coverage (2026-11-09) shows the gaps: acceptance 0/20, rerun 0/18, escalation 0/16, and
+dispatch diluted by claims from before lane.decision existed. Close them:
+1. coverage.coverage counts expected decisions only from events at or after the first lane.decision
+   in the log (earlier history predates the contract); it adds top-level "_since" (that event's ts,
+   or None when there is none) and the report header becomes "decision_coverage (since <ts|->):".
+2. evaluator.evaluate_attempt, when it appends evaluation.recorded, also appends lane.decision kind
+   "acceptance" phase "proposed" (preliminary: gates and the integrator decide what lands): chosen =
+   verdict, mechanism "evaluator-rules", policy_revision = the evaluation's rules_revision, subject
+   {"item_id", "attempt_id"}, reasons, decision_id, snapshot_ts.
+3. runner.approve appends lane.decision kind "acceptance" phase "applied", chosen "candidate",
+   mechanism "integrator", subject, proposal_id = the latest acceptance proposed decision_id for that
+   attempt (field omitted when none). runner.integrator_reject appends kind "rerun" (requeue) or
+   "escalation" (park) phase "applied", mechanism "integrator", subject, reasons.
+4. reap.reap appends kind "rerun" or "escalation" phase "applied", mechanism "reaper/v2", subject,
+   reasons, for each requeue or park it records (abandoned and recovered attempts alike).
+5. runner.execute takes the log lock around its capacity reconciliation (read open reservation +
+   append), so a concurrent reap cannot reconcile the same reservation twice.
+Use the existing helpers in decisions.py (records stay within 2048 bytes). The estate fixture comes
+from tests/stage7/conftest.py: tests use it without importing it.
+"""
+[scope]
+paths = ["src/lanectl/coverage.py", "src/lanectl/evaluator.py", "src/lanectl/runner.py", "src/lanectl/reap.py", "src/lanectl/decisions.py", "tests/stage7/**"]
+[acceptance]
+exec = ["uv run --no-sync pytest -q -p no:cacheprovider"]
+files = ["tests/stage7/test_acc_coverage_gaps.py"]

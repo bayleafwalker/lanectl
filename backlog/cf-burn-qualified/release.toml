@@ -1,6 +1,6 @@
 id = "cf-burn-qualified"
 repo = "lanectl"
-base_sha = "659aba84405ecd9c13c5022df9b1b706950d90a2"
+base_sha = "52afdad63a5dc5c19870189485bb40e2e9c90ebd"
 revision = 1
 title = "Burn only qualified capacity; revalidate and record allocation decisions; dwell"
 task_class = "semantic"
