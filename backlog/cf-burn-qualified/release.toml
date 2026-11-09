@@ -1,0 +1,40 @@
+id = "cf-burn-qualified"
+repo = "lanectl"
+base_sha = "659aba84405ecd9c13c5022df9b1b706950d90a2"
+revision = 1
+title = "Burn only qualified capacity; revalidate and record allocation decisions; dwell"
+task_class = "semantic"
+size = "M"
+data_class = "public"
+outcome = """
+Plan docs/plans/2026-11-09-decision-records-and-capacity-feedback.md: placeholder values never
+establish entitlement or burn capacity; unknown capacity never becomes free capacity; revalidate pool,
+window and model when applying a burn plan and correlate the plan with the actual dispatch; policy
+revisions set a minimum allocation dwell and change threshold; denials override them immediately.
+
+1. capacity.WindowPolicy gains budget_basis: "placeholder" | "verified" (default "placeholder").
+2. burn.check(events, policy_raw, now) -> list[str]: reasons no burn may be planned now, [] when
+   allowed. Reasons (each a string containing the quoted word): a window budget_basis is
+   "placeholder"; the provider's qualified basis is "unknown" (capacity.qualified); the pool is
+   "denied"; "dwell": the latest lane.decision kind allocation phase applied is younger than
+   [allocation] min_dwell_s and the new burnable differs from that decision's recorded burnable by
+   less than change_threshold (fraction of it). A denial is reported even inside the dwell.
+   plan_burn returns None whenever check() is non-empty, and otherwise uses the measured burnable
+   from capacity_admission's arithmetic (budget - lane_used - outside_lane - in_flight when present).
+3. burn.execute_plan(log, plan, policy_raw, now, admit) -> list of claims. First append lane.decision
+   kind "allocation" phase "proposed": decision_id, chosen "<provider>/<window>", mechanism
+   "burn-plan/v1", policy_revision "allocation@<revision>", items (plan items), burnable, snapshot_ts.
+   Then for each item: re-run check() on the current log; if non-empty, append phase "refused" with
+   proposal_id and reasons and stop; else call admit(item_id) (Claim or str); a Claim gets phase
+   "applied" with proposal_id, chosen item_id, subject {"item_id", "attempt_id"}, burnable; a str
+   gets phase "refused" with that reason and stops. `lanectl burn --execute` uses execute_plan with
+   admit = lambda rid: runner.admit(lane, log, only=rid), then runner.execute for each claim.
+4. governance/allocation.toml already marks nothing verified: with it, `lanectl burn` plans nothing
+   and prints the placeholder reason.
+"""
+allow_test_edits = true
+[scope]
+paths = ["src/lanectl/burn.py", "src/lanectl/capacity.py", "tests/stage5/test_burn.py", "tests/stage7/**"]
+[acceptance]
+exec = ["uv run --no-sync pytest -q -p no:cacheprovider"]
+files = ["tests/stage7/test_acc_burn_qualified.py"]
