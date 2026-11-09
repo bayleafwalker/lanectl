@@ -1,7 +1,7 @@
 id = "cf-reservations"
 repo = "lanectl"
-base_sha = "3ef6774c291d22af8ab97039044437d4d28a6869"
-revision = 1
+base_sha = "85a4f1d730b2ee5048273162bc0974551f17faf3"
+revision = 2
 title = "Reserve capacity atomically at admission and reconcile on completion or recovery"
 task_class = "semantic"
 size = "M"
@@ -24,6 +24,7 @@ Contracts capacity.reserved / capacity.reconciled are in contracts.py (planner-o
 3. capacity: in_flight(events, provider, pool) = sum of amounts of reservations with no
    capacity.reconciled. qualified() views gain "in_flight"; capacity_admission subtracts in_flight
    from burnable when basis is measured (unknown stays unknown) and mentions it in a reason.
+The estate fixture comes from tests/stage7/conftest.py: tests use it without importing it.
 4. Usage dedup: in capacity's usage folding (project, qualified), usage.recorded events that share
    (provider, attempt_id) count once (the latest); events without attempt_id are counted as today.
 """
