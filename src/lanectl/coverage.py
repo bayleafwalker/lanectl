@@ -16,8 +16,24 @@ from .contracts import LANE_DECISION_KINDS
 _KINDS = (*LANE_DECISION_KINDS, "refusal")
 
 
+def _first_decision_ts(events: list[dict]) -> str | None:
+    """Timestamp of the first ``lane.decision``; earlier history predates the contract."""
+    for ev in events:
+        if isinstance(ev, dict) and ev.get("type") == "lane.decision":
+            ts = ev.get("ts")
+            if isinstance(ts, str) and ts:
+                return ts
+    return None
+
+
 def coverage(events: list[dict]) -> dict[str, dict]:
-    """Count expected versus recorded decisions for every kind (pure)."""
+    """Count expected versus recorded decisions for every kind (pure).
+
+    Only events at or after the first ``lane.decision`` count: records written
+    before the contract existed have no corresponding decisions, so early
+    history would otherwise dilute dispatch (and every other) coverage.
+    """
+    since = _first_decision_ts(events)
     expected: dict[str, int | None] = {kind: 0 for kind in _KINDS}
     expected["refusal"] = None
     recorded = {kind: 0 for kind in _KINDS}
@@ -27,6 +43,10 @@ def coverage(events: list[dict]) -> dict[str, dict]:
     for ev in events:
         if not isinstance(ev, dict):
             continue
+        if since is not None:
+            ts = ev.get("ts")
+            if not isinstance(ts, str) or ts < since:
+                continue
         kind, data = ev.get("type"), ev.get("data")
         if not isinstance(data, dict):
             continue
@@ -69,12 +89,14 @@ def coverage(events: list[dict]) -> dict[str, dict]:
         exp, rec = expected[kind], recorded[kind]
         ratio = round(min(rec, exp) / exp, 3) if exp else None
         out[kind] = {"expected": exp, "recorded": rec, "coverage": ratio}
+    out["_since"] = since
     return out
 
 
 def _fmt_coverage(value: dict) -> list[str]:
-    lines = ["", "decision_coverage:"]
-    for kind in sorted(value):
+    since = value.get("_since") or "-"
+    lines = ["", f"decision_coverage (since {since}):"]
+    for kind in sorted(k for k in value if k != "_since"):
         row = value[kind]
         exp = row.get("expected")
         ratio = row.get("coverage")

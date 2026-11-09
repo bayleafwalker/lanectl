@@ -22,6 +22,9 @@ MAX_RECORD_BYTES = 2048
 MECHANISM_DISPATCH = "weighted-hash/v1"
 MECHANISM_CAPS = "static-caps/v1"
 MECHANISM_GATES = "gates"
+MECHANISM_EVALUATOR = "evaluator-rules"
+MECHANISM_INTEGRATOR = "integrator"
+MECHANISM_REAPER = "reaper/v2"
 
 
 def _new_id(prefix: str) -> str:
@@ -126,4 +129,81 @@ def transition(log, *, lane: LaneRevision, rel: WorkRelease, attempt_id: str,
         "basis": basis(lane, rel),
         "reasons": list(reasons),
     }, item_id=rel.id)
+    return decision_id
+
+
+def acceptance_proposed(log, *, item_id: str, attempt_id: str, chosen: str,
+                        policy_revision: str, reasons: list[str]) -> str:
+    """Record the evaluator's preliminary acceptance verdict (one per evaluation)."""
+    decision_id = _new_id("dec")
+    _append(log, {
+        "decision_id": decision_id,
+        "kind": "acceptance",
+        "phase": "proposed",
+        "chosen": chosen,
+        "mechanism": MECHANISM_EVALUATOR,
+        "policy_revision": policy_revision,
+        "subject": {"item_id": item_id, "attempt_id": attempt_id},
+        "snapshot_ts": utcnow(),
+        "reasons": list(reasons),
+    }, item_id=item_id)
+    return decision_id
+
+
+def latest_acceptance_proposal(events: list[dict], attempt_id: str) -> str | None:
+    """The most recent proposed acceptance decision for *attempt_id*, if any."""
+    latest = None
+    for ev in events:
+        data = ev.get("data") if isinstance(ev, dict) else None
+        if not isinstance(data, dict) or ev.get("type") != "lane.decision":
+            continue
+        if data.get("kind") != "acceptance" or data.get("phase") != "proposed":
+            continue
+        subject = data.get("subject")
+        if isinstance(subject, dict) and subject.get("attempt_id") == attempt_id:
+            latest = data.get("decision_id")
+    return latest
+
+
+def acceptance_applied(log, *, item_id: str, attempt_id: str,
+                       proposal_id: str | None = None) -> str:
+    """Record the integrator's applied acceptance; links the proposal it applied."""
+    decision_id = _new_id("dec")
+    data = {
+        "decision_id": decision_id,
+        "kind": "acceptance",
+        "phase": "applied",
+        "chosen": "candidate",
+        "mechanism": MECHANISM_INTEGRATOR,
+        "policy_revision": MECHANISM_INTEGRATOR,
+        "subject": {"item_id": item_id, "attempt_id": attempt_id},
+        "snapshot_ts": utcnow(),
+    }
+    if proposal_id is not None:
+        data["proposal_id"] = proposal_id
+    _append(log, data, item_id=item_id)
+    return decision_id
+
+
+def follow_applied(log, *, item_id: str, attempt_id: str, follow: str,
+                   mechanism: str, reasons: list[str]) -> str | None:
+    """Record a non-gate applied rerun/escalation (integrator or reaper)."""
+    if follow == "park":
+        kind, chosen = "escalation", "park"
+    elif follow.startswith("requeue"):
+        kind, chosen = "rerun", "requeue"
+    else:
+        return None
+    decision_id = _new_id("dec")
+    _append(log, {
+        "decision_id": decision_id,
+        "kind": kind,
+        "phase": "applied",
+        "chosen": chosen,
+        "mechanism": mechanism,
+        "policy_revision": mechanism,
+        "subject": {"item_id": item_id, "attempt_id": attempt_id},
+        "snapshot_ts": utcnow(),
+        "reasons": list(reasons),
+    }, item_id=item_id)
     return decision_id

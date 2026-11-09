@@ -374,12 +374,15 @@ def execute(c: Claim, log: EventLog, adapter_fn=None) -> str:
     if res.usage:
         log.append("usage.recorded", {"provider": c.worker, "source": "adapter",
                    "units": res.usage, "attempt_id": c.attempt_id, "model": c.model}, item_id=rel.id)
-    events = log.read()
-    reservation = open_reservation(events, c.attempt_id)
-    if reservation is not None:
-        reconcile_capacity(log, events, c.attempt_id,
-                           actual=usage_actual(reservation.get("unit"), res.usage),
-                           outcome="completed", item_id=rel.id)
+    # Hold the log lock across read-and-append: a concurrent reap must not also
+    # see this reservation open and reconcile it a second time.
+    with log.locked():
+        events = log.read()
+        reservation = open_reservation(events, c.attempt_id)
+        if reservation is not None:
+            reconcile_capacity(log, events, c.attempt_id,
+                               actual=usage_actual(reservation.get("unit"), res.usage),
+                               outcome="completed", item_id=rel.id)
 
     if breach:
         res = adapters.AdapterResult("failed", res.exit_code, res.final_tail, None)
@@ -424,7 +427,13 @@ def record_decision(log: EventLog, *, item_id: str, attempt_id: str, model: str,
     payload.update(extra or {})
     log.append("decision.recorded", payload, item_id=item_id)
     if dec == "candidate":          # the evaluator predicts only gate-accepted attempts
-        evaluator.evaluate_attempt(log, attempt_id)
+        data = evaluator.evaluate_attempt(log, attempt_id)
+        if data is None:            # no policy or no measurable diff to predict from
+            rules = _evaluator_rules()
+            decisions.acceptance_proposed(
+                log, item_id=item_id, attempt_id=attempt_id,
+                chosen=rules["default"], policy_revision=f"evaluator/v{rules['revision']}",
+                reasons=["preliminary: no evaluation recorded"])
     log.append("experiment.recorded", {"attempt_id": attempt_id, "model": model, "worker": worker,
                "task_class": task_class, "size": size, "decision": dec, "elapsed_s": elapsed_s,
                "lane_revision": lane_revision, "rules_revision": decision.RULES_REVISION,
@@ -591,6 +600,9 @@ def approve(log: EventLog, attempt_id: str, note: str) -> str:
     # without one, landing.plan_landing plans a hold for it.  Idempotent: an evaluation
     # recorded earlier is kept as-is.
     evaluator.evaluate_attempt(log, attempt_id, _evaluator_rules())
+    decisions.acceptance_applied(
+        log, item_id=v.item_id, attempt_id=attempt_id,
+        proposal_id=decisions.latest_acceptance_proposal(log.read(), attempt_id))
     return f"{attempt_id}: candidate (approved)"
 
 
@@ -616,6 +628,10 @@ def integrator_reject(log: EventLog, attempt_id: str, reason: str, park: bool = 
     log.append("decision.recorded", {"attempt_id": attempt_id, "decision": "parked" if park else "rejected",
                "reasons": [reason], "rules_revision": "integrator", "by": "integrator"}, item_id=v.item_id)
     log.append("item.parked" if park else "item.requeued", {"reason": reason}, item_id=v.item_id)
+    decisions.follow_applied(
+        log, item_id=v.item_id, attempt_id=attempt_id,
+        follow="park" if park else "requeue",
+        mechanism=decisions.MECHANISM_INTEGRATOR, reasons=[reason])
     return f"{attempt_id}: {'parked' if park else 'requeued'}"
 
 
