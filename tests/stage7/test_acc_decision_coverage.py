@@ -32,11 +32,11 @@ def test_unknown_without_denominator():
     assert c["refusal"] == {"expected": None, "recorded": 2, "coverage": None}
     assert c["rerun"] == {"expected": 1, "recorded": 1, "coverage": 1.0}
     assert c["escalation"] == {"expected": 0, "recorded": 0, "coverage": None}
-    assert set(c) == set(LANE_DECISION_KINDS) | {"refusal"}
+    assert set(c) - {"_since"} == set(LANE_DECISION_KINDS) | {"refusal"}
 
 
 def test_report_section():
     text = report.format_report(report.build_report([_claim("it-a1")]))
-    assert "decision_coverage:" in text
+    assert "decision_coverage" in text      # header may carry "(since <ts>)" (dr-coverage-gaps)
     assert "  dispatch: recorded=0 expected=1 coverage=0.000" in text
     assert "  refusal: recorded=0 expected=unknown coverage=unknown" in text

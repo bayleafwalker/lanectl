@@ -55,9 +55,9 @@ def test_dispatch_needs_a_claimed_attempt_and_subject():
 def test_format_is_sorted_with_unknowns():
     from lanectl import report
     text = report.format_report(report.build_report([]))
-    assert "decision_coverage:" in text
+    assert "decision_coverage" in text
     lines = text.splitlines()
-    start = lines.index("decision_coverage:")
+    start = next(i for i, line in enumerate(lines) if line.startswith("decision_coverage"))
     kinds = [line.split(":")[0].strip() for line in lines[start + 1:start + 7]]
     assert kinds == sorted(kinds) == ["acceptance", "allocation", "dispatch",
                                       "escalation", "refusal", "rerun"]
