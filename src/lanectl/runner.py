@@ -502,6 +502,12 @@ def build_train(log: EventLog, repo_name: str, attempt_ids: list[str] | None = N
     # global one, else .git/hooks); never --no-verify and never overridden, so a
     # global secret scan stays in force and a rejection is reported as such.
     g = ["git", "-C", str(wt), *BOT]
+    # A fresh worktree has no .venv, but hooks run from it and expect the tools
+    # setup_cmd installs; run setup before the first merge as well as after the
+    # merges, since candidates may change dependencies.  A setup failure here
+    # excludes nothing: the merges proceed and any hook failure is reported.
+    if repo.setup_cmd:
+        subprocess.run(repo.setup_cmd, shell=True, cwd=wt, capture_output=True)
     included, excluded = [], []
     for c in cands:
         subject = f"Merge lane/{c['attempt_id']}: {c['title']}"
