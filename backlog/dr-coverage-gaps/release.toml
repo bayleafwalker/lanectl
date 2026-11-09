@@ -1,7 +1,7 @@
 id = "dr-coverage-gaps"
 repo = "lanectl"
-base_sha = "52afdad63a5dc5c19870189485bb40e2e9c90ebd"
-revision = 1
+base_sha = "0ef1a613760aaf4025fe8bee07cc1a080ca825cf"
+revision = 2
 title = "Close decision-record gaps: acceptance, reaper and integrator transitions; coverage since start"
 task_class = "semantic"
 size = "M"
