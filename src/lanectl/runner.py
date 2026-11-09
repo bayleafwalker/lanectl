@@ -409,6 +409,12 @@ def candidates(log: EventLog, repo_name: str | None = None) -> list[dict]:
     return out
 
 
+def _merge_failure_reason(p: subprocess.CompletedProcess) -> str:
+    """The last non-empty stderr line is the hook's own complaint, not git's noise."""
+    lines = [ln.strip() for ln in p.stderr.splitlines() if ln.strip()]
+    return f"merge failed: {(lines[-1] if lines else '')[:200]}"
+
+
 def build_train(log: EventLog, repo_name: str, attempt_ids: list[str] | None = None) -> str:
     repo = load_repos()[repo_name]
     cands = [c for c in candidates(log, repo_name) if not attempt_ids or c["attempt_id"] in attempt_ids]
@@ -418,16 +424,31 @@ def build_train(log: EventLog, repo_name: str, attempt_ids: list[str] | None = N
     base = git(repo.path, "rev-parse", repo.main)
     wt = repo.worktree_root / train_id
     git(repo.path, "worktree", "add", "-q", "-b", f"train/{train_id}", str(wt), base)
+    # Hooks run exactly as git configures them (repo-local core.hooksPath, else the
+    # global one, else .git/hooks); never --no-verify and never overridden, so a
+    # global secret scan stays in force and a rejection is reported as such.
+    g = ["git", "-C", str(wt), *BOT]
     included, excluded = [], []
     for c in cands:
-        p = subprocess.run(["git", "-C", str(wt), *BOT, "merge", "--no-ff", "-q", "-m",
-                            f"train: {c['attempt_id']} {c['title']}", c["branch"]],
+        subject = f"Merge lane/{c['attempt_id']}: {c['title']}"
+        # Stop before committing so commit-msg sees the subject and its stderr is the
+        # real reason; a git-style "Merge ..." subject is what such hooks accept.
+        p = subprocess.run([*g, "merge", "--no-ff", "--no-commit", "-q", c["branch"]],
                            capture_output=True, text=True)
         if p.returncode:
+            unmerged = git(wt, "diff", "--name-only", "--diff-filter=U", check=False)
             git(wt, "merge", "--abort", check=False)
-            excluded.append({"attempt_id": c["attempt_id"], "reason": "merge conflict"})
-        else:
-            included.append(c["attempt_id"])
+            reason = "merge conflict" if unmerged else _merge_failure_reason(p)
+            excluded.append({"attempt_id": c["attempt_id"], "reason": reason})
+            continue
+        if git(wt, "rev-parse", "-q", "--verify", "MERGE_HEAD", check=False):
+            q = subprocess.run([*g, "commit", "-q", "-m", subject], capture_output=True, text=True)
+            if q.returncode:
+                git(wt, "merge", "--abort", check=False)
+                excluded.append({"attempt_id": c["attempt_id"],
+                                 "reason": _merge_failure_reason(q)})
+                continue
+        included.append(c["attempt_id"])
     if repo.setup_cmd:
         subprocess.run(repo.setup_cmd, shell=True, cwd=wt, capture_output=True)
     p = subprocess.run(repo.check_cmd, shell=True, cwd=wt, capture_output=True, text=True)
