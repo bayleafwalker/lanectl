@@ -8,6 +8,7 @@ T0 = datetime(2026, 11, 8, 10, 0, tzinfo=timezone.utc)
 POLICY = {"revision": 4, "burn": {"start_within_s": 3600, "min_burnable": 10000},
           "providers": {"opencode": {"unit": "output_tokens", "expiring": True, "reservations": {},
                                      "windows": [{"name": "5h", "length_s": 18000, "budget": 100000,
+                                                  "budget_basis": "verified",
                                                   "anchor": "2026-11-08T10:00:00Z"}],
                                      "estimates": {"S": 15000, "M": 40000, "L": 100000}}}}
 CAPS = {"concurrency": 3, "items_per_day": 48, "accepted_unlanded_max": 8}
@@ -20,21 +21,29 @@ def _used(n):
     return e
 
 
+def _obs(n):
+    """Fresh pool observation agreeing with lane usage: no outside-lane spend (F5 requires measured)."""
+    return make_event("capacity.observed", {
+        "provider": "opencode", "pool": "opencode:default", "source": "opencode-stats", "unit": "output_tokens",
+        "basis": "measured", "observed_at": "2026-11-08T14:20:00Z", "value": n, "value_kind": "cumulative",
+        "window_start": "2026-11-08T10:00:00Z"}, ts="2026-11-08T14:20:00Z")
+
+
 def test_no_burn_before_the_last_hour():
     assert plan_burn([], POLICY, T0 + timedelta(hours=2), READY, CAPS, 0, 0) is None
 
 
 def test_burn_fills_burnable_in_backlog_order():
-    p = plan_burn([_used(10000)], POLICY, T0 + timedelta(hours=4, minutes=30), READY, CAPS, 0, 0)
+    p = plan_burn([_used(10000), _obs(10000)], POLICY, T0 + timedelta(hours=4, minutes=30), READY, CAPS, 0, 0)
     assert p["provider"] == "opencode" and p["window"] == "5h" and p["burnable"] == 90000
     assert p["items"] == ["aa", "bb"]          # 40000 + 40000; cc would exceed 90000 at 95000
 
 
 def test_slots_bound_the_plan():
-    p = plan_burn([], POLICY, T0 + timedelta(hours=4, minutes=30), READY, CAPS, running=2, unlanded=0)
+    p = plan_burn([_obs(0)], POLICY, T0 + timedelta(hours=4, minutes=30), READY, CAPS, running=2, unlanded=0)
     assert p["items"] == ["aa"]
-    assert plan_burn([], POLICY, T0 + timedelta(hours=4, minutes=30), READY, CAPS, 0, unlanded=8) is None
+    assert plan_burn([_obs(0)], POLICY, T0 + timedelta(hours=4, minutes=30), READY, CAPS, 0, unlanded=8) is None
 
 
 def test_small_leftover_is_ignored():
-    assert plan_burn([_used(95000)], POLICY, T0 + timedelta(hours=4, minutes=30), READY, CAPS, 0, 0) is None
+    assert plan_burn([_used(95000), _obs(95000)], POLICY, T0 + timedelta(hours=4, minutes=30), READY, CAPS, 0, 0) is None
