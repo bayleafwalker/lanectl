@@ -80,9 +80,7 @@ lanectl reject <attempt_id> "<reason>"   # per attempt that must not land
 ```
 
 `land` refuses if main moved since the train was built: rebuild the train.
-Landing records fixes it finds on the train log, so the titles above are the
-contract.
-
+Landing records fixes it finds on the train log (titles above are the contract).
 PR+CI repos (homelab-analytics, sovite): after `land`, follow `pr-landing.md`.
 
 ## 6. Failed train
