@@ -15,7 +15,7 @@ from __future__ import annotations
 import re
 from datetime import timedelta
 
-from .capacity import format_ts, parse_ts
+from .capacity import AllocationPolicy, PolicyError, format_ts, parse_ts
 
 WINDOW = "5h"
 
@@ -116,6 +116,27 @@ def detect(events: list[dict]) -> list[dict]:
     return out
 
 
+def capacity_observation(payload: dict, policy: AllocationPolicy | None) -> dict:
+    """Turn a detection into a ``capacity.observed`` denial row for its pool."""
+    provider = str(payload.get("provider") or "")
+    observed = payload.get("observed") if isinstance(payload.get("observed"), dict) else {}
+    spec = policy.providers.get(provider) if policy is not None else None
+    pool = spec.pool if spec is not None and spec.pool else f"{provider}:default"
+    unit = spec.unit if spec is not None else "output_tokens"
+    return {
+        "provider": provider,
+        "pool": pool,
+        "source": "window-detector",
+        "unit": unit,
+        "basis": "measured",
+        "observed_at": observed.get("exhausted_at"),
+        "value": None,
+        "value_kind": "denial",
+        "reset_at": observed.get("reset_at"),
+        "scope": "host",
+    }
+
+
 def register(sub) -> dict:
     p = sub.add_parser("windows", help="detect provider window exhaustion from attempt failures")
     p.add_argument("--record", action="store_true",
@@ -125,12 +146,20 @@ def register(sub) -> dict:
 
 def _cmd(args, log) -> int:
     detections = detect(log.read())
+    if args.record and detections:
+        try:
+            policy = AllocationPolicy.load()
+        except PolicyError:
+            policy = None
+    else:
+        policy = None
     for payload in detections:
         obs = payload["observed"]
         print(f"{payload['provider']:10} {payload['window']:4} {obs['attempt_id']:40} "
               f"exhausted_at={obs['exhausted_at']} reset_at={obs['reset_at']}")
         if args.record:
             log.append("window.observed", payload)
+            log.append("capacity.observed", capacity_observation(payload, policy))
     if not detections:
         print("no provider exhaustion detected")
     return 0
