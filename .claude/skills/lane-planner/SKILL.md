@@ -77,6 +77,9 @@ Release the runner after landing governance, runner or contract changes, and bef
 running any main-branch command that writes a new event type: an older runner
 refuses a log it cannot validate (crashed two workers 2026-11-08). Keep forbidden
 patterns (`# noqa`, skip markers) out of acceptance tests: lanes copy them.
+In fan-out repos, `acceptance.exec` runs only the acceptance file: gates run in a
+user-namespace sandbox where root-owned paths appear as uid 65534 (sovite's ownership
+checks fail there); the full suite runs as the train check, unsandboxed, after review.
 Release the runner after landing governance or runner changes:
 `git tag vX.Y.Z && uv tool install --force git+file:///projects/dev/lanectl@vX.Y.Z`.
 

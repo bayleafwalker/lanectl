@@ -1,7 +1,7 @@
 id = "sv-pytest-rootdir"
 repo = "sovite"
 base_sha = "b2fa578939ec136be709a46af31941ec0f8b1d43"
-revision = 1
+revision = 2
 title = "Plain pytest collects tests that import from the repo root"
 task_class = "tooling"
 size = "S"
@@ -13,9 +13,10 @@ No module named 'scripts'"); only `python -m pytest` works, because it puts the 
 on sys.path. Make the plain `pytest` command collect the whole suite from the repository root,
 using pytest's own configuration in pyproject.toml [tool.pytest.ini_options] (no conftest
 sys.path hacks, no changes to the test modules). `python -m pytest` keeps working unchanged.
+pyproject.toml is a protected path: the attempt waits for planner review.
 """
 [scope]
 paths = ["pyproject.toml"]
 [acceptance]
-exec = ["uv run --no-sync python -m pytest -q -p no:cacheprovider"]
+exec = ["uv run --no-sync python -m pytest -q -p no:cacheprovider tests/test_acc_pytest_rootdir.py"]
 files = ["tests/test_acc_pytest_rootdir.py"]
