@@ -10,6 +10,7 @@ import os
 import shutil
 import subprocess
 import time
+import tomllib
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -468,7 +469,25 @@ def approve(log: EventLog, attempt_id: str, note: str) -> str:
     log.append("decision.recorded", {"attempt_id": attempt_id, "decision": "candidate",
                "reasons": [f"interactive review: {note}"], "rules_revision": "integrator",
                "by": "integrator"}, item_id=v.item_id)
+    # The gates only evaluate when they decide candidate, so an approved park has none;
+    # without one, landing.plan_landing plans a hold for it.  Idempotent: an evaluation
+    # recorded earlier is kept as-is.
+    evaluator.evaluate_attempt(log, attempt_id, _evaluator_rules())
     return f"{attempt_id}: candidate (approved)"
+
+
+def _evaluator_rules() -> dict:
+    """Planner rules, or the evaluator's default when no policy is installed.
+
+    ``evaluator.evaluate_attempt`` declines to predict without
+    ``governance/evaluator.toml``.  An approval is a ruling in its own right, so
+    it still freezes the default verdict (``evaluator/v0``) rather than leaving
+    the attempt unevaluated.
+    """
+    try:
+        return evaluator.load_rules()
+    except (OSError, tomllib.TOMLDecodeError):
+        return {"revision": 0, "default": "accept", "rules": []}
 
 
 def integrator_reject(log: EventLog, attempt_id: str, reason: str, park: bool = False) -> str:
