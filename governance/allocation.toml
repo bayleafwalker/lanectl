@@ -4,7 +4,7 @@
 # rev 3 (2026-11-08): per-size output-token estimates for shadow admission.
 # rev 2 (2026-11-08): key renamed to "opencode" = provider recorded by the opencode adapter.
 # rev 5 (2026-11-09): pool identity, observation freshness, reallocation dwell (decision-records plan).
-revision = 5
+revision = 6
 
 [providers.opencode]
 unit = "output_tokens"
@@ -15,12 +15,23 @@ pool = "opencode-go:default"
 # An observation older than this is stale: capacity becomes unknown, never zero.
 freshness_s = 3600
 
-# One fixed-length window; anchor defaults to the Unix epoch so 5h windows
-# tile the UTC day (00:00, 05:00, 10:00, 15:00, 20:00).
+# rev 6 (2026-11-09): budget verified against the published entitlement.
+# Plan: OpenCode Go (operator-confirmed 2026-11-09). Published limits (opencode.ai/docs/go,
+# read 2026-11-09) are per-model dollar amounts: DeepSeek V4.1 Flash $100/month, with
+# 5-hour = 20% ($20) and weekly = 50% ($50) of the monthly figure. Window anchoring is
+# not published. The weekly cap binds: 33.6 five-hour windows share $50, so 5h windows
+# never expire meaningful capacity. One weekly window therefore models the entitlement.
+# Conversion (estimate): today's pool mix at Peak prices ($0.30 in, $0.006 cache read,
+# $1.20 out incl. reasoning) costs $6.43 per 1M recorded output tokens. Budget $22/week:
+# half of $50 because a fixed anchor can straddle two provider weeks, and below $100/4.35
+# so the monthly cap also holds. $22 / $6.43 per 1M = 3.4M output tokens.
+# Do not add a second window: burn takes the max across windows and measures usage once
+# for all of them (lanectl burn._burnable), so extra windows loosen, never tighten.
 [[providers.opencode.windows]]
-name = "5h"
-length_s = 18000
-budget = 2000000
+name = "week"
+length_s = 604800
+budget = 3400000
+budget_basis = "verified"
 
 [providers.opencode.reservations]
 interactive = 0.0
