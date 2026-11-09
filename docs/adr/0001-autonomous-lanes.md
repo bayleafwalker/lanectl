@@ -122,6 +122,16 @@ that run from here.
 Report sections are self-registering (`report_section()` in each module), so a
 stage feature no longer edits `report.py`.
 
+### Planning amendment (2026-11-09)
+
+The operator accepted [decision records and capacity feedback](../plans/2026-11-09-decision-records-and-capacity-feedback.md)
+as planning direction. Extend the existing lane components with proportional
+decision records and source-qualified shared-pool accounting. Allocation values
+remain placeholders until qualified; this amendment supplies no implementation,
+entitlement or promotion evidence. Existing gates and integration authority
+remain in force. The feedback work runs alongside the existing evidence clocks;
+it does not add a benchmark prerequisite to ordinary lane work.
+
 ## Stop conditions
 
 - A task class leaves the autonomous lane if model precision (ruled items that
