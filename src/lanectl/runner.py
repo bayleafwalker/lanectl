@@ -424,15 +424,10 @@ def build_train(log: EventLog, repo_name: str, attempt_ids: list[str] | None = N
     base = git(repo.path, "rev-parse", repo.main)
     wt = repo.worktree_root / train_id
     git(repo.path, "worktree", "add", "-q", "-b", f"train/{train_id}", str(wt), base)
-    # Merge in the repository's own hooks directory: a machine-global core.hooksPath
-    # must not silently disable the repo's commit-msg policy.  A repo-local
-    # core.hooksPath wins as configured.  Hooks stay in force (never --no-verify),
-    # so a rejection must be reported as such.
-    own_hooks = Path(git(repo.path, "rev-parse", "--git-common-dir"))
-    own_hooks = (own_hooks if own_hooks.is_absolute() else repo.path / own_hooks) / "hooks"
-    local_hooks = git(repo.path, "config", "--local", "--get", "core.hooksPath", check=False)
-    hook_cfg = [] if local_hooks else ["-c", f"core.hooksPath={own_hooks}"]
-    g = ["git", "-C", str(wt), *hook_cfg, *BOT]
+    # Hooks run exactly as git configures them (repo-local core.hooksPath, else the
+    # global one, else .git/hooks); never --no-verify and never overridden, so a
+    # global secret scan stays in force and a rejection is reported as such.
+    g = ["git", "-C", str(wt), *BOT]
     included, excluded = [], []
     for c in cands:
         subject = f"Merge lane/{c['attempt_id']}: {c['title']}"

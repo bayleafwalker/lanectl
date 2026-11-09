@@ -1,5 +1,6 @@
 """Acceptance: train merges respect commit hooks and name real failures (planner-owned)."""
 import stat
+import subprocess
 
 from lanectl import runner
 from tests.seed.test_end_to_end import SUB_TEST, estate, scripted  # estate is a pytest fixture
@@ -11,9 +12,13 @@ def good(wt):
 
 
 def _hook(repo, body):
-    h = repo / ".git" / "hooks" / "commit-msg"
+    """A repo-local hooks directory, as homelab-analytics installs it (core.hooksPath)."""
+    d = repo / "githooks"
+    d.mkdir(exist_ok=True)
+    h = d / "commit-msg"
     h.write_text("#!/bin/sh\n" + body)
     h.chmod(h.stat().st_mode | stat.S_IXUSR)
+    subprocess.run(["git", "-C", str(repo), "config", "--local", "core.hooksPath", str(d)], check=True)
 
 
 def _train(log):
