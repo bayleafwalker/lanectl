@@ -110,6 +110,73 @@ def record_shadow(log: EventLog, events: list[dict], rel: WorkRelease, model: st
     }, item_id=rel.id)
 
 
+def reserve_capacity(log: EventLog, events: list[dict], rel: WorkRelease,
+                     provider: str | None, attempt_id: str) -> bool:
+    """Reserve the attempt's estimated burn before it starts, atomically.
+
+    Only a provider the allocation policy names is reserved: an unknown provider
+    would not be gated at admission, so holding capacity for it would invent a
+    ledger entry.  Called inside the admission lock, right after ``item.claimed``.
+    """
+    if provider is None:
+        return False
+    try:
+        policy = capacity.AllocationPolicy.load()
+    except capacity.PolicyError:
+        policy = None      # a broken policy must never stop admission
+    if policy is None or provider not in policy.providers:
+        return False
+    spec = policy.providers[provider]
+    amount = capacity.estimate(events, policy, provider, rel.size)
+    if amount is None:
+        return False
+    log.append("capacity.reserved", {
+        "reservation_id": f"res-{attempt_id}", "provider": provider,
+        "pool": spec.pool, "unit": spec.unit, "amount": amount,
+        "attempt_id": attempt_id}, item_id=rel.id)
+    return True
+
+
+def usage_actual(unit: str | None, usage: dict | None) -> int | float | None:
+    """Adapter-reported ``unit`` usage, or None when it reported none."""
+    if not isinstance(usage, dict):
+        return None
+    value = usage.get(unit)
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return None
+    return value
+
+
+def open_reservation(events: list[dict], attempt_id: str) -> dict | None:
+    """The attempt's ``capacity.reserved`` payload that no reconciliation closed."""
+    reconciled = {str((e.get("data") or {}).get("reservation_id"))
+                  for e in events
+                  if isinstance(e, dict) and e.get("type") == "capacity.reconciled"}
+    for ev in events:
+        data = ev.get("data") if isinstance(ev, dict) else None
+        if not isinstance(data, dict) or ev.get("type") != "capacity.reserved":
+            continue
+        if data.get("attempt_id") != attempt_id:
+            continue
+        if str(data.get("reservation_id")) in reconciled:
+            continue
+        return data
+    return None
+
+
+def reconcile_capacity(log: EventLog, events: list[dict], attempt_id: str, *,
+                       actual: int | float | None, outcome: str,
+                       item_id: str | None = None) -> bool:
+    """Reconcile an attempt's open reservation, at most once."""
+    reservation = open_reservation(events, attempt_id)
+    if reservation is None:
+        return False
+    log.append("capacity.reconciled", {
+        "reservation_id": reservation["reservation_id"], "actual": actual,
+        "outcome": outcome}, item_id=item_id)
+    return True
+
+
 def admit(lane_name: str, log: EventLog, only: str | None = None) -> Claim | str:
     """Return a Claim, or a string saying why nothing was admitted.
 
@@ -176,6 +243,7 @@ def admit(lane_name: str, log: EventLog, only: str | None = None) -> Claim | str
                 "lane_digest": lane.digest, "model": model, "worker": worker,
                 "release_revision": rel.revision, "base_sha": rel.base_sha,
                 "branch": f"lane/{attempt_id}"}, item_id=rel.id)
+            reserve_capacity(log, events, rel, worker, attempt_id)
             decisions.dispatch(log, lane=lane, rel=rel, attempt_id=attempt_id,
                                cycle_id=cycle_id, model=model, alternatives=alternatives)
             record_shadow(log, events, rel, model, "admit")
@@ -306,6 +374,12 @@ def execute(c: Claim, log: EventLog, adapter_fn=None) -> str:
     if res.usage:
         log.append("usage.recorded", {"provider": c.worker, "source": "adapter",
                    "units": res.usage, "attempt_id": c.attempt_id, "model": c.model}, item_id=rel.id)
+    events = log.read()
+    reservation = open_reservation(events, c.attempt_id)
+    if reservation is not None:
+        reconcile_capacity(log, events, c.attempt_id,
+                           actual=usage_actual(reservation.get("unit"), res.usage),
+                           outcome="completed", item_id=rel.id)
 
     if breach:
         res = adapters.AdapterResult("failed", res.exit_code, res.final_tail, None)

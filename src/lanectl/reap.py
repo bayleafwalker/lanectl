@@ -58,6 +58,7 @@ def _recover(log: EventLog, events: list[dict], fin: dict, iid: str,
         follow=follow, elapsed_s=fin.get("elapsed_s", 0.0),
         lane_revision=claim.get("lane_revision"), gates=gates,
         extra={"recovered_by": RECOVERED_BY})
+    runner.reconcile_capacity(log, events, aid, actual=None, outcome="recovered", item_id=iid)
     return True
 
 
@@ -97,6 +98,8 @@ def reap(log: EventLog, *, now: datetime, older_than_s: float,
             log.append("attempt.finished", {
                 "attempt_id": aid, "outcome": "failed", "exit_code": -1, "head_sha": "",
                 "elapsed_s": 0.0, "escalation_reason": "abandoned"}, item_id=iid)
+            runner.reconcile_capacity(log, events, aid, actual=None, outcome="recovered",
+                                      item_id=iid)
             log.append("decision.recorded", {
                 "attempt_id": aid, "decision": "rejected", "reasons": ["abandoned"],
                 "rules_revision": RULES_REVISION, "by": "reaper"}, item_id=iid)

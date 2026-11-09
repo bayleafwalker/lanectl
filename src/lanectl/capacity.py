@@ -242,8 +242,17 @@ def _observed_anchor(events: list[dict], provider: str, window: str,
 
 
 def _usage(events: list[dict], provider: str, unit: str) -> list[tuple[datetime, float, str]]:
+    """Ledger usage rows, with overlapping sources folded once.
+
+    One source may report an attempt in several rows (incremental records); those
+    still sum.  Distinct sources (an adapter and a hook) overlap and each report
+    the attempt's whole consumption, so when more than one source speaks for the
+    same ``(provider, attempt_id)`` only the latest row counts.  Rows without an
+    ``attempt_id`` cannot be attributed and are all counted.
+    """
     rows: list[tuple[datetime, float, str]] = []
-    for ev in events:
+    grouped: dict[str, list[tuple[int, datetime, float, str]]] = {}
+    for index, ev in enumerate(events):
         if not isinstance(ev, dict) or ev.get("type") != "usage.recorded":
             continue
         data = ev.get("data")
@@ -256,7 +265,18 @@ def _usage(events: list[dict], provider: str, unit: str) -> list[tuple[datetime,
         amount = units.get(unit)
         if isinstance(amount, bool) or not isinstance(amount, (int, float)):
             continue
-        rows.append((ts, float(amount), str(data.get("source", ""))))
+        source = str(data.get("source", ""))
+        attempt_id = data.get("attempt_id")
+        if isinstance(attempt_id, str) and attempt_id:
+            grouped.setdefault(attempt_id, []).append((index, ts, float(amount), source))
+        else:
+            rows.append((ts, float(amount), source))
+    for observations in grouped.values():
+        if len({source for _, _, _, source in observations}) <= 1:
+            rows.extend((ts, amount, source) for _, ts, amount, source in observations)
+        else:
+            _, ts, amount, source = max(observations, key=lambda row: (row[1], row[0]))
+            rows.append((ts, amount, source))
     return rows
 
 
@@ -358,6 +378,46 @@ def _denied(events: list[dict], provider: str, spec: ProviderPolicy,
     return False
 
 
+def in_flight(events: list[dict], provider: str, pool: str) -> int | float:
+    """Sum of reservations for a provider pool that no reconciliation closed.
+
+    A reservation is credited back when a ``capacity.reconciled`` names it, at
+    most once.
+    """
+    reconciled = {str((e.get("data") or {}).get("reservation_id"))
+                  for e in events
+                  if isinstance(e, dict) and e.get("type") == "capacity.reconciled"}
+    total = 0.0
+    for ev in events:
+        if not isinstance(ev, dict) or ev.get("type") != "capacity.reserved":
+            continue
+        data = ev.get("data")
+        if not isinstance(data, dict):
+            continue
+        if data.get("provider") != provider or data.get("pool") != pool:
+            continue
+        if str(data.get("reservation_id")) in reconciled:
+            continue
+        amount = data.get("amount")
+        if isinstance(amount, bool) or not isinstance(amount, (int, float)):
+            continue
+        total += float(amount)
+    return _tidy(total)
+
+
+def estimate(events: list[dict], policy: AllocationPolicy | None, provider: str | None,
+             size: str) -> int | float | None:
+    """The per-attempt estimate ``capacity_admission`` would use, or None.
+
+    None means the policy does not name the provider, so admission would not
+    gate it and nothing should be reserved.
+    """
+    spec = policy.providers.get(provider) if policy is not None and provider is not None else None
+    if spec is None:
+        return None
+    return _estimate(events, spec, provider, size)[0]
+
+
 def qualified(events: list[dict], policy: AllocationPolicy,
               now: datetime) -> dict[str, dict]:
     """Qualify each provider's capacity by pool, source and freshness.
@@ -397,6 +457,7 @@ def qualified(events: list[dict], policy: AllocationPolicy,
             "stale": stale,
             "lane_used": lane_used,
             "outside_lane": outside_lane,
+            "in_flight": in_flight(events, provider, pool),
             "denied": _denied(events, provider, spec, now),
         }
     return out
@@ -495,10 +556,12 @@ def capacity_admission(events: list[dict], policy: AllocationPolicy | None,
     estimate, reasons = _estimate(events, spec, provider, size)
     if not spec.qualified:
         windows = project(events, policy, now).get(provider, {})
-        burnable = _tidy(min((w["burnable"] for w in windows.values()), default=0.0))
+        held = in_flight(events, provider, spec.pool)
+        burned = min((w["burnable"] for w in windows.values()), default=0.0)
+        burnable = _tidy(max(0.0, burned - held))
         decision = "admit" if burnable >= estimate else "block"
         reasons.append(f"burnable {burnable} {'>=' if decision == 'admit' else '<'} "
-                       f"estimate {estimate}")
+                       f"estimate {estimate} (in-flight {held} in pool {spec.pool})")
         return {"decision": decision, "estimate": estimate, "burnable": burnable,
                 "basis": "measured", "reasons": reasons}
 
@@ -515,14 +578,16 @@ def capacity_admission(events: list[dict], policy: AllocationPolicy | None,
                 "basis": "unknown", "reasons": reasons}
 
     outside = view["outside_lane"]
+    held = view["in_flight"]
     windows = project(events, policy, now).get(provider, {})
     budgets = {window.name: window.budget for window in spec.windows}
     floor = min((budgets.get(name, 0) - w["used"] - outside - w["reserved_effective"])
                 for name, w in windows.items()) if windows else 0.0
-    burnable = _tidy(max(0.0, floor))
+    burnable = _tidy(max(0.0, floor - held))
     decision = "admit" if burnable >= estimate else "block"
     reasons.append(f"burnable {burnable} {'>=' if decision == 'admit' else '<'} "
-                   f"estimate {estimate} (outside-lane {outside} in pool {view['pool']})")
+                   f"estimate {estimate} (outside-lane {outside}, in-flight {held} "
+                   f"in pool {view['pool']})")
     return {"decision": decision, "estimate": estimate, "burnable": burnable,
             "basis": "measured", "reasons": reasons}
 
@@ -579,7 +644,7 @@ def _cmd(args, log) -> int:
         stale = " stale" if view["stale"] else ""
         denied = " denied" if view["denied"] else ""
         print(f"{provider:16} pool={view['pool']} basis={view['basis']}{stale}{denied} "
-              f"observed_at={observed} outside_lane={outside}")
+              f"observed_at={observed} outside_lane={outside} in_flight={view['in_flight']}")
     for provider, windows in views.items():
         for name, w in windows.items():
             burn = "allowed" if w["burn_down_allowed"] else "held"
