@@ -132,6 +132,21 @@ entitlement or promotion evidence. Existing gates and integration authority
 remain in force. The feedback work runs alongside the existing evidence clocks;
 it does not add a benchmark prerequisite to ordinary lane work.
 
+Implemented 2026-11-09 (v0.1.17–v0.1.22, lane-built; contract by the planner):
+`lane.decision` records dispatch (proposed/applied/refused, deterministic
+weighted-hash probabilities), rerun, escalation, acceptance (evaluator proposes,
+integrator applies) and allocation; `decision_coverage` counts them against
+independent denominators from the first record on. `capacity.observed` qualifies
+pool observations (opencode-stats probe, window-detector denials) with freshness;
+unknown or stale capacity is never zero, outside-lane spend is measured against
+the ledger, and denials block until reset. Admission reserves its estimate and
+completion or the reaper reconciles it; usage counts once per (provider, attempt).
+`burn` plans only from verified budgets and measured capacity, revalidates per
+item, records allocation decisions and keeps a dwell; with today's placeholder
+budget it plans nothing. `cost_feedback` reports output tokens per landed item
+with fixes. Overhead: decision lines ≤2048 bytes; append p95 measured 5.9 ms
+against the 10 ms budget (tests guard at 25 ms). No routine model call.
+
 ## Stop conditions
 
 - A task class leaves the autonomous lane if model precision (ruled items that
