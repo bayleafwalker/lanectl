@@ -1,0 +1,33 @@
+id = "dr-dispatch-records"
+repo = "lanectl"
+base_sha = "f2894847bd613386967f4213969627468df8042c"
+revision = 1
+title = "Runner emits lane.decision records for dispatch, rerun and escalation"
+task_class = "semantic"
+size = "M"
+data_class = "public"
+outcome = """
+Implements the decision-record part of docs/plans/2026-11-09-decision-records-and-capacity-feedback.md
+for the runner. Contract: lane.decision in contracts.py (planner-owned; do not edit contracts.py).
+
+Each runner.admit call is one cycle with a fresh cycle_id. When it claims, record two lane.decision
+events for the item (item_id set): first phase "proposed", then phase "applied" whose proposal_id
+is the proposed decision_id. Both: kind "dispatch", chosen = model, mechanism "weighted-hash/v1",
+policy_revision "lane/<lane>@<revision>", subject {"item_id", "attempt_id"}, cycle_id,
+snapshot_ts (ISO UTC), basis = list of reference strings including "release:<id>@<revision>" and
+"lane:<lane>@<revision>", alternatives = the eligible weights pick_model chose from (after the
+retry filter, positive weights only), probabilities = {model: 1.0 for chosen, 0.0 for the other
+alternatives} (the weighted hash is deterministic given its inputs; never invent propensities).
+When a static cap blocks a cycle or nothing is eligible, record one lane.decision with kind
+"dispatch", phase "refused", chosen null, mechanism "static-caps/v1", reasons (list of strings,
+the cap message), cycle_id, item_id of the first ready release if any (else no item_id).
+After a decision, item.requeued is accompanied by a lane.decision kind "rerun" phase "applied"
+(chosen "requeue", mechanism "gates", subject with the attempt_id, reasons) and item.parked by
+kind "escalation" phase "applied" (chosen "park"). Every lane.decision event line stays within
+2048 bytes: use reference strings, not copied payloads. Recording must not change admission.
+"""
+[scope]
+paths = ["src/lanectl/runner.py", "src/lanectl/decisions.py", "tests/stage7/**"]
+[acceptance]
+exec = ["uv run --no-sync pytest -q -p no:cacheprovider"]
+files = ["tests/stage7/test_acc_dispatch_records.py"]

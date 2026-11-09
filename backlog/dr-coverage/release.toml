@@ -1,0 +1,31 @@
+id = "dr-coverage"
+repo = "lanectl"
+base_sha = "f2894847bd613386967f4213969627468df8042c"
+revision = 1
+title = "Decision-record coverage against independent denominators"
+task_class = "projection"
+size = "S"
+data_class = "public"
+outcome = """
+Plan docs/plans/2026-11-09-decision-records-and-capacity-feedback.md: count expected decisions from
+releases, claims and runtime transitions independently of received records; without an independent
+denominator a decision class's coverage stays unknown. Add src/lanectl/coverage.py with
+coverage(events) -> {kind: {"expected": int | None, "recorded": int, "coverage": float | None}}
+for every kind in contracts.LANE_DECISION_KINDS plus "refusal":
+- dispatch: expected = item.claimed events; recorded = lane.decision kind dispatch phase applied
+  whose subject.attempt_id is a claimed attempt id (each claim counted once).
+- rerun: expected = item.requeued events; recorded = lane.decision kind rerun phase applied.
+- escalation: expected = item.parked events; recorded = kind escalation phase applied.
+- allocation: expected = burn.planned events; recorded = kind allocation phase proposed.
+- acceptance: expected = evaluation.recorded events; recorded = kind acceptance (any phase).
+- refusal: expected None (no independent denominator); recorded = phase refused records.
+coverage = round(min(recorded, expected) / expected, 3) when expected > 0, else None.
+Register it as report section "decision_coverage" via a module-level report_section() (see
+capacity.report_section); format one line per kind in sorted order:
+"  <kind>: recorded=<n> expected=<n|unknown> coverage=<0.000|unknown>" under a "decision_coverage:" header.
+"""
+[scope]
+paths = ["src/lanectl/coverage.py", "tests/stage7/**"]
+[acceptance]
+exec = ["uv run --no-sync pytest -q -p no:cacheprovider"]
+files = ["tests/stage7/test_acc_decision_coverage.py"]

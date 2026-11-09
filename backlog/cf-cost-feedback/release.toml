@@ -1,0 +1,28 @@
+id = "cf-cost-feedback"
+repo = "lanectl"
+base_sha = "f2894847bd613386967f4213969627468df8042c"
+revision = 1
+title = "Quota consumed versus work landed, repairs and integrator effort"
+task_class = "projection"
+size = "S"
+data_class = "public"
+outcome = """
+Plan docs/plans/2026-11-09-decision-records-and-capacity-feedback.md, "Use the feedback": compare quota
+consumed with work landed, repairs and integrator effort; burning unused capacity is not success.
+Add src/lanectl/feedback.py with cost_feedback(events) -> {model: row} where row has:
+attempts (item.claimed for the model), output_tokens (sum of usage.recorded units.output_tokens whose
+attempt_id belongs to a claim of that model; usage without attempt_id is not attributed), landed
+(item.landed whose attempt_id was claimed by the model), fixes (integrator.fix events on those landed
+attempts), model_error_fixes (fix_class "model-error"), tokens_per_landed = round(output_tokens /
+landed) when landed > 0 else None, and unattributed_output_tokens on a separate top-level key
+"_unattributed" = {"output_tokens": sum of usage.recorded output_tokens with a provider in
+("opencode",) and no attempt_id}. Register report section "cost_feedback" through a module-level
+report_section(); format: "cost_feedback:" then per model in sorted order
+"  <model>: attempts=<n> landed=<n> output_tokens=<n> tokens_per_landed=<n|-> fixes=<n> model_error_fixes=<n>"
+and "  unattributed opencode output_tokens=<n>".
+"""
+[scope]
+paths = ["src/lanectl/feedback.py", "tests/stage7/**"]
+[acceptance]
+exec = ["uv run --no-sync pytest -q -p no:cacheprovider"]
+files = ["tests/stage7/test_acc_cost_feedback.py"]

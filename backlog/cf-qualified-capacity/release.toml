@@ -1,0 +1,45 @@
+id = "cf-qualified-capacity"
+repo = "lanectl"
+base_sha = "f2894847bd613386967f4213969627468df8042c"
+revision = 1
+title = "Source-qualified capacity: pool observations, freshness, unknown is not zero"
+task_class = "semantic"
+size = "M"
+data_class = "public"
+outcome = """
+Plan docs/plans/2026-11-09-decision-records-and-capacity-feedback.md, shared-pool accounting.
+Contract capacity.observed is in contracts.py (planner-owned; do not edit contracts.py or governance).
+
+1. capacity.ProviderPolicy gains pool: str (default "<provider>:default") and freshness_s: int | None
+   (default None = observations never go stale), parsed from governance/allocation.toml
+   ([providers.<p>] pool, freshness_s; rev 5 sets them for opencode).
+2. probe.capacity_observation(payload, policy) turns a probe_opencode payload into capacity.observed
+   data: provider, pool (from policy, else "<provider>:default"), source "opencode-stats", unit
+   "output_tokens", basis "measured", observed_at = observed.range_to, value = output_tokens,
+   value_kind "cumulative", window_start = observed.range_from, scope "host" (opencode stats sees
+   every session on this host, lane or not), fresh_until = observed_at + freshness_s when set.
+   `lanectl probe opencode --record` appends it after the existing window.observed.
+   windows.capacity_observation(payload, policy) does the same for a detected exhaustion: source
+   "window-detector", basis "measured", value_kind "denial", value null, observed_at = exhausted_at,
+   reset_at copied; `lanectl windows --record` appends it too.
+3. capacity.qualified(events, policy, now) -> {provider: view} where view has pool, basis
+   ("measured" | "unknown"), observed_at, stale (bool), lane_used, outside_lane, denied (bool):
+   - latest capacity.observed with value_kind "cumulative" for the provider's pool: if missing, or
+     now > observed_at + freshness_s, basis "unknown", stale accordingly, outside_lane None.
+     Otherwise basis "measured" and outside_lane = max(0, value - lane usage.recorded units[unit]
+     for that provider with ts in [window_start, observed_at]).
+   - lane_used = lane usage.recorded for the provider inside the current policy window (as project).
+   - denied = a capacity.observed value_kind "denial" for the pool inside the current window whose
+     reset_at is missing or later than now.
+4. capacity_admission uses it: denied -> "block" (basis measured, burnable 0, reason mentions denial);
+   basis unknown -> "admit" with burnable None and a reason containing "capacity unknown" (the static
+   policy decides; unknown never becomes zero usage or free capacity); measured -> burnable = min over
+   windows of (budget - lane_used - outside_lane - effective reservation), counting outside-lane spend
+   wholly in the current window (conservative). The result gains "basis".
+5. `lanectl capacity` prints each provider's basis, observed_at and outside_lane.
+"""
+[scope]
+paths = ["src/lanectl/capacity.py", "src/lanectl/probe.py", "src/lanectl/windows.py", "tests/stage7/**"]
+[acceptance]
+exec = ["uv run --no-sync pytest -q -p no:cacheprovider"]
+files = ["tests/stage7/test_acc_qualified_capacity.py"]
