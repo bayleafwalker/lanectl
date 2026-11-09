@@ -14,6 +14,7 @@ import subprocess
 import tomllib
 from pathlib import Path
 
+from . import decisions
 from .config import home, load_lane, load_releases, load_repos, match
 
 #: Rule operators accepted by ``evaluate``.  Only these six are policy language.
@@ -158,6 +159,9 @@ def evaluate_attempt(log, attempt_id: str, rules: dict | None = None) -> dict | 
     existing = _existing_evaluation(events, attempt_id)
     if existing is not None:
         return existing
+    # One preliminary acceptance proposal per attempt: a proposal recorded
+    # earlier (a default freeze before any policy existed) is kept as the basis.
+    proposed = decisions.latest_acceptance_proposal(events, attempt_id)
     try:
         rules = rules or load_rules()
     except (OSError, tomllib.TOMLDecodeError):
@@ -175,6 +179,11 @@ def evaluate_attempt(log, attempt_id: str, rules: dict | None = None) -> dict | 
             "rules_revision": f"evaluator/v{rules['revision']}",
             "features": measured, "reasons": reasons}
     log.append("evaluation.recorded", data, item_id=ctx["item_id"])
+    if proposed is None:
+        # Preliminary: the gates and the integrator decide what actually lands.
+        decisions.acceptance_proposed(
+            log, item_id=ctx["item_id"], attempt_id=attempt_id, chosen=verdict,
+            policy_revision=data["rules_revision"], reasons=reasons)
     return data
 
 

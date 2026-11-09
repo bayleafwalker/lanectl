@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from . import runner
+from . import decisions, runner
 from .config import load_lane, load_releases
 from .events import EventLog, ItemView, project_items
 from .gates import decision
@@ -50,6 +50,9 @@ def _recover(log: EventLog, events: list[dict], fin: dict, iid: str,
     else:   # died before gates ran: cannot accept, and must not burn an attempt
         dec, reasons, follow = ("rejected", ["infra: runner died before gates"],
                                 "requeue-infra")
+    decisions.follow_applied(
+        log, item_id=iid, attempt_id=aid, follow=follow,
+        mechanism=decisions.MECHANISM_REAPER, reasons=reasons)
     runner.record_decision(
         log, item_id=iid, attempt_id=aid, model=claim.get("model", "unknown"),
         worker=claim.get("worker", "unknown"),
@@ -95,6 +98,16 @@ def reap(log: EventLog, *, now: datetime, older_than_s: float,
                 continue
             if not _stale(e["ts"], now, older_than_s):
                 continue
+            # same counting as admission: this revision, infra failures excluded
+            used = len([a for a in views[iid].attempts if a.get("release_revision") == d.get("release_revision")
+                        and not a.get("infra")])
+            if used >= max_attempts:
+                follow, reasons = "park", ["abandoned: attempts exhausted"]
+            else:
+                follow, reasons = "requeue", ["abandoned"]
+            decisions.follow_applied(
+                log, item_id=iid, attempt_id=aid, follow=follow,
+                mechanism=decisions.MECHANISM_REAPER, reasons=reasons)
             log.append("attempt.finished", {
                 "attempt_id": aid, "outcome": "failed", "exit_code": -1, "head_sha": "",
                 "elapsed_s": 0.0, "escalation_reason": "abandoned"}, item_id=iid)
@@ -108,13 +121,10 @@ def reap(log: EventLog, *, now: datetime, older_than_s: float,
                 "worker": d.get("worker", "unknown"),
                 "task_class": d.get("task_class", "unknown"), "decision": "rejected",
                 "elapsed_s": 0.0, "rules_revision": RULES_REVISION, "by": "reaper"}, item_id=iid)
-            # same counting as admission: this revision, infra failures excluded
-            used = len([a for a in views[iid].attempts if a.get("release_revision") == d.get("release_revision")
-                        and not a.get("infra")])
-            if used >= max_attempts:
-                log.append("item.parked", {"reason": "abandoned: attempts exhausted"}, item_id=iid)
+            if follow == "park":
+                log.append("item.parked", {"reason": reasons[0]}, item_id=iid)
             else:
-                log.append("item.requeued", {"reason": "abandoned"}, item_id=iid)
+                log.append("item.requeued", {"reason": reasons[0]}, item_id=iid)
             finished.add(aid)
             closed.append(aid)
     return closed
