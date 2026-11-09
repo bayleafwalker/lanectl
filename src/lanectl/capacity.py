@@ -66,12 +66,18 @@ def _number(value: object, label: str) -> int | float:
     return value
 
 
+#: A window budget is only an entitlement when the planner verified it against
+#: provider evidence. Placeholder values (the default) never authorize a burn.
+BUDGET_BASES = ("placeholder", "verified")
+
+
 @dataclass(frozen=True)
 class WindowPolicy:
     name: str
     length_s: int
     budget: int | float
     anchor: datetime | None = None
+    budget_basis: str = "placeholder"
 
 
 @dataclass(frozen=True)
@@ -196,7 +202,12 @@ def _window(provider: str, raw: object) -> WindowPolicy:
         anchor = parse_ts(raw.get("anchor"))
         if anchor is None:
             raise PolicyError(f"provider {provider!r} window {name!r}: bad anchor {raw.get('anchor')!r}")
-    return WindowPolicy(name=name, length_s=length, budget=budget, anchor=anchor)
+    basis = raw.get("budget_basis", "placeholder")
+    if basis not in BUDGET_BASES:
+        raise PolicyError(f"provider {provider!r} window {name!r}: budget_basis must be one of "
+                          f"{BUDGET_BASES}: {basis!r}")
+    return WindowPolicy(name=name, length_s=length, budget=budget, anchor=anchor,
+                        budget_basis=basis)
 
 
 def _window_bounds(now: datetime, anchor: datetime | None, length_s: int) -> tuple[datetime, datetime]:
