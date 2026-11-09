@@ -1,0 +1,21 @@
+id = "tr-setup-before-merge"
+repo = "lanectl"
+base_sha = "5f06a19db0974928b2873ad2cf18c987bc62c21e"
+revision = 1
+title = "Train runs the repo setup before merging so commit hooks find their tools"
+task_class = "glue"
+size = "S"
+data_class = "public"
+outcome = """
+homelab-analytics' pre-commit hook runs ruff from .venv/bin/python, which the repo's setup_cmd
+(uv sync) creates. runner.build_train runs setup_cmd only after merging candidates, so the merge
+commit's hooks fail ("No module named ruff", train-20261109171241). Run repo.setup_cmd in the fresh
+train worktree before the first merge as well as after the merges (candidates may change
+dependencies). A setup failure before merging excludes nothing by itself; merges proceed and hook
+failures are reported as they are today. The estate fixture comes from tests/stage7/conftest.py.
+"""
+[scope]
+paths = ["src/lanectl/runner.py", "tests/stage7/**"]
+[acceptance]
+exec = ["uv run --no-sync pytest -q -p no:cacheprovider"]
+files = ["tests/stage7/test_acc_train_setup_first.py"]
