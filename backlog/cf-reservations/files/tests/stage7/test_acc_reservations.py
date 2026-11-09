@@ -8,7 +8,7 @@ from lanectl import capacity, runner
 from lanectl.adapters import AdapterResult
 from lanectl.contracts import make_event
 from lanectl.reap import reap
-from tests.seed.test_end_to_end import SUB_TEST, estate  # estate is a pytest fixture
+from tests.seed.test_end_to_end import SUB_TEST  # estate comes from tests/stage7/conftest.py
 
 LATER = datetime.now(timezone.utc) + timedelta(days=1)
 

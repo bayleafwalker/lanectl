@@ -2,7 +2,7 @@
 import stat
 
 from lanectl import runner
-from tests.seed.test_end_to_end import SUB_TEST, estate, scripted  # estate is a pytest fixture
+from tests.seed.test_end_to_end import SUB_TEST, scripted  # estate comes from tests/stage7/conftest.py
 
 
 def good(wt):

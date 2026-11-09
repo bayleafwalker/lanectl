@@ -6,7 +6,7 @@ from pathlib import Path
 
 from lanectl import runner
 from lanectl.events import EventLog
-from tests.seed.test_end_to_end import SUB_TEST, estate, scripted  # estate is a pytest fixture
+from tests.seed.test_end_to_end import SUB_TEST, scripted  # estate comes from tests/stage7/conftest.py
 
 ADD_TEST = "from calc import add\n\ndef test_add_neg():\n    assert add(-1, -1) == -2\n"
 
