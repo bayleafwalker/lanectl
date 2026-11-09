@@ -1,0 +1,21 @@
+id = "sv-pytest-rootdir"
+repo = "sovite"
+base_sha = "b2fa578939ec136be709a46af31941ec0f8b1d43"
+revision = 1
+title = "Plain pytest collects tests that import from the repo root"
+task_class = "tooling"
+size = "S"
+data_class = "public"
+outcome = """
+Running the plain `pytest` entry point from the repository root fails collection of
+tests/test_pg_test_diagnostics.py, which imports the `scripts.ci` package ("ModuleNotFoundError:
+No module named 'scripts'"); only `python -m pytest` works, because it puts the working directory
+on sys.path. Make the plain `pytest` command collect the whole suite from the repository root,
+using pytest's own configuration in pyproject.toml [tool.pytest.ini_options] (no conftest
+sys.path hacks, no changes to the test modules). `python -m pytest` keeps working unchanged.
+"""
+[scope]
+paths = ["pyproject.toml"]
+[acceptance]
+exec = ["uv run --no-sync python -m pytest -q -p no:cacheprovider"]
+files = ["tests/test_acc_pytest_rootdir.py"]

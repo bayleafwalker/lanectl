@@ -1,0 +1,21 @@
+id = "ha-pytest-rootdir"
+repo = "homelab-analytics"
+base_sha = "abe3b0e13f72e6d40c207dbf9374c3acd2ef44fe"
+revision = 1
+title = "Plain pytest collects tests that import from the repo root"
+task_class = "tooling"
+size = "S"
+data_class = "public"
+outcome = """
+Running the plain `pytest` entry point from the repository root fails collection in 50 test
+modules that import `tests.` or `scripts.` packages ("ModuleNotFoundError: No module named
+'tests'"); only `python -m pytest` works, because it puts the working directory on sys.path.
+Make the plain `pytest` command collect the whole suite from the repository root, using pytest's
+own configuration in pytest.ini (no conftest sys.path hacks, no changes to the test modules).
+`python -m pytest` keeps working unchanged.
+"""
+[scope]
+paths = ["pytest.ini"]
+[acceptance]
+exec = ["uv run --no-sync python -m pytest -q -p no:cacheprovider"]
+files = ["tests/test_acc_pytest_rootdir.py"]
