@@ -15,9 +15,9 @@ from __future__ import annotations
 
 import json
 import subprocess
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
-from .capacity import format_ts, parse_ts
+from .capacity import AllocationPolicy, PolicyError, format_ts, parse_ts
 
 PROVIDER = "opencode"
 WINDOW = "day"
@@ -64,6 +64,37 @@ def probe_opencode(run) -> dict:
             "sessions": _int(stats.get("sessions")),
         },
     }
+
+
+def capacity_observation(payload: dict, policy: AllocationPolicy | None) -> dict:
+    """Turn a probe payload into a source-qualified ``capacity.observed`` row.
+
+    OpenCode stats are cumulative for this host, not just the lanes: the row is
+    marked ``scope = "host"`` so ``capacity.qualified`` can subtract the ledger
+    and treat the remainder as outside-lane spend.
+    """
+    provider = str(payload.get("provider") or PROVIDER)
+    observed = payload.get("observed") if isinstance(payload.get("observed"), dict) else {}
+    spec = policy.providers.get(provider) if policy is not None else None
+    pool = spec.pool if spec is not None and spec.pool else f"{provider}:default"
+    observed_at = observed.get("range_to")
+    row = {
+        "provider": provider,
+        "pool": pool,
+        "source": SOURCE,
+        "unit": "output_tokens",
+        "basis": "measured",
+        "observed_at": observed_at,
+        "value": _int(observed.get("output_tokens")),
+        "value_kind": "cumulative",
+        "window_start": observed.get("range_from"),
+        "scope": "host",
+    }
+    if spec is not None and spec.freshness_s is not None:
+        start = parse_ts(observed_at)
+        if start is not None:
+            row["fresh_until"] = format_ts(start + timedelta(seconds=spec.freshness_s))
+    return row
 
 
 def _latest_probe(events: list[dict]) -> dict | None:
@@ -144,9 +175,14 @@ def _cmd(args, log) -> int:
         return 1
     print(json.dumps(payload, indent=1, sort_keys=True))
     if args.record:
+        try:
+            policy = AllocationPolicy.load()
+        except PolicyError:
+            policy = None
         with log.locked():
             ev = log.append("window.observed", payload)
-        print(f"recorded window.observed at {ev['ts']}")
+            observed = log.append("capacity.observed", capacity_observation(payload, policy))
+        print(f"recorded window.observed at {ev['ts']} and capacity.observed at {observed['ts']}")
     result = drift(log.read())
     if result is None:
         print("no probe in the log; nothing to compare")

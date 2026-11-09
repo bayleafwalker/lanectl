@@ -82,6 +82,16 @@ class ProviderPolicy:
     windows: tuple[WindowPolicy, ...]
     reservations: dict[str, float] = field(default_factory=dict)
     estimates: dict[str, int | float] = field(default_factory=dict)
+    pool: str | None = None
+    freshness_s: int | None = None
+    # Whether the source named a pool or freshness deadline. Pre-qualification
+    # policies (rev 4 and earlier, and tests that omit both) keep the legacy
+    # ledger-only projection instead of treating every absence as unknown.
+    qualified: bool = False
+
+    def __post_init__(self) -> None:
+        if not self.pool:
+            object.__setattr__(self, "pool", f"{self.name}:default")
 
 
 @dataclass(frozen=True)
@@ -127,9 +137,26 @@ class AllocationPolicy:
                 raise PolicyError(f"provider {name!r}: estimates must be a table")
             estimates = {str(size): _number(value, f"provider {name!r}: estimate {size!r}")
                          for size, value in estimates_raw.items()}
+            pool_raw = spec.get("pool")
+            if pool_raw is None:
+                pool = f"{name}:default"
+            elif not isinstance(pool_raw, str) or not pool_raw:
+                raise PolicyError(f"provider {name!r}: pool must be a non-empty string")
+            else:
+                pool = pool_raw
+            freshness = spec.get("freshness_s")
+            if freshness is None:
+                freshness_s = None
+            else:
+                seconds = _number(freshness, f"provider {name!r}: freshness_s")
+                if not float(seconds).is_integer() or seconds < 0:
+                    raise PolicyError(f"provider {name!r}: freshness_s must be non-negative whole seconds")
+                freshness_s = int(seconds)
             providers[str(name)] = ProviderPolicy(
                 name=str(name), unit=unit, expiring=bool(spec.get("expiring", False)),
                 windows=windows, reservations=reservations, estimates=estimates,
+                pool=pool, freshness_s=freshness_s,
+                qualified="pool" in spec or "freshness_s" in spec,
             )
         return cls(revision=revision, providers=providers)
 
@@ -277,6 +304,104 @@ def _tidy(value: float) -> int | float:
     return int(value) if float(value).is_integer() else value
 
 
+def _as_utc(value: datetime) -> datetime:
+    if value.tzinfo is None:
+        return value.replace(tzinfo=timezone.utc)
+    return value.astimezone(timezone.utc)
+
+
+def _capacity_rows(events: list[dict], provider: str, pool: str,
+                   value_kind: str) -> list[tuple[datetime, datetime, dict]]:
+    """``capacity.observed`` rows of one kind for a provider pool, oldest first."""
+    rows: list[tuple[datetime, datetime, dict]] = []
+    for ev in events:
+        if not isinstance(ev, dict) or ev.get("type") != "capacity.observed":
+            continue
+        data = ev.get("data")
+        if not isinstance(data, dict):
+            continue
+        if data.get("provider") != provider or data.get("pool") != pool:
+            continue
+        if data.get("value_kind") != value_kind:
+            continue
+        observed_at = parse_ts(data.get("observed_at")) or parse_ts(ev.get("ts"))
+        if observed_at is None:
+            continue
+        seen_at = parse_ts(ev.get("ts")) or observed_at
+        rows.append((observed_at, seen_at, data))
+    rows.sort(key=lambda row: (row[0], row[1]))
+    return rows
+
+
+def _summed_usage(events: list[dict], provider: str, unit: str,
+                  start: datetime, end: datetime) -> float:
+    """Ledger usage for a provider/unit with ``start <= ts <= end``."""
+    return sum(amount for ts, amount, _ in _usage(events, provider, unit)
+               if start <= ts <= end)
+
+
+def _denied(events: list[dict], provider: str, spec: ProviderPolicy,
+            now: datetime) -> bool:
+    """A denial observed in a current window that has not reset yet."""
+    bounds = []
+    for window in spec.windows:
+        anchor = _observed_anchor(events, provider, window.name, window.anchor)
+        bounds.append(_window_bounds(now, anchor, window.length_s))
+    if not bounds:
+        return False
+    for observed_at, _, data in _capacity_rows(events, provider, spec.pool, "denial"):
+        if not any(start <= observed_at < end for start, end in bounds):
+            continue
+        reset = parse_ts(data.get("reset_at"))
+        if reset is None or reset > now:
+            return True
+    return False
+
+
+def qualified(events: list[dict], policy: AllocationPolicy,
+              now: datetime) -> dict[str, dict]:
+    """Qualify each provider's capacity by pool, source and freshness.
+
+    A cumulative host-wide snapshot only measures outside-lane spend while it is
+    fresh. Missing or stale evidence is ``unknown``: it never collapses to zero
+    usage or free capacity. A denial blocks its pool until the recorded reset.
+    """
+    now = _as_utc(now)
+    projected = project(events, policy, now)
+    out: dict[str, dict] = {}
+    for provider, spec in policy.providers.items():
+        pool = spec.pool or f"{provider}:default"
+        windows = projected.get(provider, {})
+        lane_used = _tidy(max((w["used"] for w in windows.values()), default=0.0))
+        rows = _capacity_rows(events, provider, pool, "cumulative")
+        observed_at: datetime | None = rows[-1][0] if rows else None
+        basis = "unknown"
+        stale = False
+        outside_lane: int | float | None = None
+        if rows:
+            data = rows[-1][2]
+            value = data.get("value")
+            window_start = parse_ts(data.get("window_start"))
+            if spec.freshness_s is not None:
+                stale = now > observed_at + timedelta(seconds=spec.freshness_s)
+            if (isinstance(value, (int, float)) and not isinstance(value, bool)
+                    and window_start is not None and not stale):
+                inside = _summed_usage(events, provider, spec.unit,
+                                       window_start, observed_at)
+                outside_lane = _tidy(max(0.0, float(value) - inside))
+                basis = "measured"
+        out[provider] = {
+            "pool": pool,
+            "basis": basis,
+            "observed_at": format_ts(observed_at) if observed_at is not None else None,
+            "stale": stale,
+            "lane_used": lane_used,
+            "outside_lane": outside_lane,
+            "denied": _denied(events, provider, spec, now),
+        }
+    return out
+
+
 #: Observed attempts of a size needed before their mean replaces the policy estimate.
 ESTIMATE_SAMPLE = 3
 
@@ -326,25 +451,8 @@ def _observed_estimate(events: list[dict], provider: str, unit: str,
     return sum(totals.values()) / len(totals)
 
 
-def capacity_admission(events: list[dict], policy: AllocationPolicy | None,
-                       now: datetime, provider: str | None, size: str) -> dict:
-    """Decide in shadow whether capacity would admit one attempt of ``size``.
-
-    Static caps stay authoritative; this is a second opinion recorded alongside
-    them.  The estimate is the policy's per-size placeholder until
-    ``ESTIMATE_SAMPLE`` adapter-recorded attempts of that size exist, at which
-    point their mean replaces it.  Burnable is the floor over the provider's
-    windows (``project``): an estimate is admitted when it fits inside every
-    window.  A missing policy, or a provider the policy does not name, admits
-    with a reason rather than blocking on an unknown.
-    """
-    if policy is None:
-        return {"decision": "admit", "estimate": None, "burnable": None,
-                "reasons": ["no allocation policy; capacity does not gate admission"]}
-    spec = policy.providers.get(provider) if provider is not None else None
-    if spec is None:
-        return {"decision": "admit", "estimate": None, "burnable": None,
-                "reasons": [f"provider {provider!r} is not in the allocation policy; admitting"]}
+def _estimate(events: list[dict], spec: ProviderPolicy, provider: str,
+              size: str) -> tuple[int | float, list[str]]:
     reasons: list[str] = []
     observed = _observed_estimate(events, provider, spec.unit, size)
     if observed is not None:
@@ -357,12 +465,66 @@ def capacity_admission(events: list[dict], policy: AllocationPolicy | None,
     else:
         estimate = 0
         reasons.append(f"no estimate for size {size!r}; assuming 0")
+    return estimate, reasons
+
+
+def capacity_admission(events: list[dict], policy: AllocationPolicy | None,
+                       now: datetime, provider: str | None, size: str) -> dict:
+    """Decide in shadow whether capacity would admit one attempt of ``size``.
+
+    Static caps stay authoritative; this is a second opinion recorded alongside
+    them.  The estimate is the policy's per-size placeholder until
+    ``ESTIMATE_SAMPLE`` adapter-recorded attempts of that size exist, at which
+    point their mean replaces it.
+
+    When a provider names a shared pool or freshness deadline, the decision is
+    source-qualified: a denial blocks until reset; missing or stale evidence is
+    unknown and the static policy decides (with no burnable figure); fresh
+    cumulative evidence measures outside-lane spend, which is subtracted from
+    every current window.  Pre-qualification policies keep the ledger-only
+    projection.  A missing policy, or a provider the policy does not name,
+    admits with a reason rather than blocking on an unknown.
+    """
+    if policy is None:
+        return {"decision": "admit", "estimate": None, "burnable": None, "basis": "unknown",
+                "reasons": ["no allocation policy; capacity does not gate admission"]}
+    spec = policy.providers.get(provider) if provider is not None else None
+    if spec is None:
+        return {"decision": "admit", "estimate": None, "burnable": None, "basis": "unknown",
+                "reasons": [f"provider {provider!r} is not in the allocation policy; admitting"]}
+    estimate, reasons = _estimate(events, spec, provider, size)
+    if not spec.qualified:
+        windows = project(events, policy, now).get(provider, {})
+        burnable = _tidy(min((w["burnable"] for w in windows.values()), default=0.0))
+        decision = "admit" if burnable >= estimate else "block"
+        reasons.append(f"burnable {burnable} {'>=' if decision == 'admit' else '<'} "
+                       f"estimate {estimate}")
+        return {"decision": decision, "estimate": estimate, "burnable": burnable,
+                "basis": "measured", "reasons": reasons}
+
+    view = qualified(events, policy, now)[provider]
+    if view["denied"]:
+        reasons.append(f"capacity denial for pool {view['pool']}; blocking until reset")
+        return {"decision": "block", "estimate": estimate, "burnable": 0,
+                "basis": "measured", "reasons": reasons}
+    if view["basis"] == "unknown":
+        stale = " (stale observation)" if view["stale"] else ""
+        reasons.append(f"capacity unknown{stale}: no fresh cumulative observation for pool "
+                       f"{view['pool']}; the static policy decides and no capacity is assumed free")
+        return {"decision": "admit", "estimate": estimate, "burnable": None,
+                "basis": "unknown", "reasons": reasons}
+
+    outside = view["outside_lane"]
     windows = project(events, policy, now).get(provider, {})
-    burnable = _tidy(min((w["burnable"] for w in windows.values()), default=0.0))
+    budgets = {window.name: window.budget for window in spec.windows}
+    floor = min((budgets.get(name, 0) - w["used"] - outside - w["reserved_effective"])
+                for name, w in windows.items()) if windows else 0.0
+    burnable = _tidy(max(0.0, floor))
     decision = "admit" if burnable >= estimate else "block"
-    reasons.append(f"burnable {burnable} {'>=' if decision == 'admit' else '<'} estimate {estimate}")
+    reasons.append(f"burnable {burnable} {'>=' if decision == 'admit' else '<'} "
+                   f"estimate {estimate} (outside-lane {outside} in pool {view['pool']})")
     return {"decision": decision, "estimate": estimate, "burnable": burnable,
-            "reasons": reasons}
+            "basis": "measured", "reasons": reasons}
 
 
 def shadow_admission(events: list[dict]) -> dict:
@@ -402,12 +564,22 @@ def _cmd(args, log) -> int:
         print("no allocation policy (governance/allocation.toml); nothing to project")
         return 0
     now = datetime.now(timezone.utc)
-    views = project(log.read(), policy, now)
+    events = log.read()
+    views = project(events, policy, now)
+    qualified_views = qualified(events, policy, now)
     if args.json:
         print(json.dumps({"as_of": format_ts(now), "revision": policy.revision,
-                          "providers": views}, indent=1, sort_keys=True))
+                          "providers": views, "qualified": qualified_views},
+                         indent=1, sort_keys=True))
         return 0
     print(f"as of {format_ts(now)} (allocation revision {policy.revision})")
+    for provider, view in qualified_views.items():
+        observed = view["observed_at"] or "-"
+        outside = "-" if view["outside_lane"] is None else view["outside_lane"]
+        stale = " stale" if view["stale"] else ""
+        denied = " denied" if view["denied"] else ""
+        print(f"{provider:16} pool={view['pool']} basis={view['basis']}{stale}{denied} "
+              f"observed_at={observed} outside_lane={outside}")
     for provider, windows in views.items():
         for name, w in windows.items():
             burn = "allowed" if w["burn_down_allowed"] else "held"
