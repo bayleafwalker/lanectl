@@ -44,7 +44,18 @@ EVENT_TYPES: dict[str, tuple[str, ...]] = {
     "landing.planned": ("train_id", "plan", "by"),                            # S4 shadow landing
     "triage.proposed": ("source", "fingerprint", "summary"),                  # S4 triage emitters
     "burn.planned": ("provider", "window", "burnable", "items"),              # S5 burn-down
+    # v1 additive extension (planner, 2026-11-09): decision records and capacity feedback
+    # (docs/plans/2026-11-09-decision-records-and-capacity-feedback.md). lane.decision is not
+    # decision.recorded (gate/candidate vocabulary) and not Vuoro's authoritative Decision.
+    "lane.decision": ("decision_id", "kind", "phase", "chosen", "mechanism", "policy_revision"),
+    "capacity.observed": ("provider", "pool", "source", "unit", "basis", "observed_at"),
+    "capacity.reserved": ("reservation_id", "provider", "pool", "unit", "amount", "attempt_id"),
+    "capacity.reconciled": ("reservation_id", "actual", "outcome"),
 }
+LANE_DECISION_KINDS = ("dispatch", "rerun", "escalation", "allocation", "acceptance")
+LANE_DECISION_PHASES = ("proposed", "applied", "refused", "expired", "superseded")
+CAPACITY_BASES = ("measured", "estimated", "unknown")
+RECONCILE_OUTCOMES = ("completed", "recovered", "released")
 FIX_CLASSES = ("spec-gap", "model-error", "gate-gap")
 
 _ID = re.compile(r"^[a-z0-9][a-z0-9._-]{1,63}$")
@@ -86,6 +97,15 @@ def validate_event_parts(etype: str, data: dict, item_id: str | None) -> None:
         raise ContractError(f"bad fix_class {data['fix_class']!r}")
     if etype == "usage.recorded" and not isinstance(data["units"], dict):
         raise ContractError("usage units must be an object of unit -> number")
+    if etype == "lane.decision":
+        if data["kind"] not in LANE_DECISION_KINDS:
+            raise ContractError(f"bad lane.decision kind {data['kind']!r}")
+        if data["phase"] not in LANE_DECISION_PHASES:
+            raise ContractError(f"bad lane.decision phase {data['phase']!r}")
+    if etype == "capacity.observed" and data["basis"] not in CAPACITY_BASES:
+        raise ContractError(f"bad capacity basis {data['basis']!r}")
+    if etype == "capacity.reconciled" and data["outcome"] not in RECONCILE_OUTCOMES:
+        raise ContractError(f"bad reconcile outcome {data['outcome']!r}")
 
 
 def validate_event(event: dict) -> dict:

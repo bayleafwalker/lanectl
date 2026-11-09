@@ -24,9 +24,13 @@ from hypothesis import strategies as st
 from hypothesis.strategies import composite
 
 from lanectl.contracts import (
+    CAPACITY_BASES,
     DECISIONS,
     EVENT_TYPES,
     FIX_CLASSES,
+    LANE_DECISION_KINDS,
+    LANE_DECISION_PHASES,
+    RECONCILE_OUTCOMES,
     check_id,
     make_event,
 )
@@ -268,6 +272,39 @@ def _data_for(etype: str) -> st.SearchStrategy[dict]:
             "window": st.sampled_from(WINDOWS),
             "burnable": st.integers(min_value=0, max_value=10**7),
             "items": st.lists(ids("item"), max_size=6),
+        })
+    if etype == "lane.decision":
+        return st.fixed_dictionaries({
+            "decision_id": ids("dec"),
+            "kind": st.sampled_from(LANE_DECISION_KINDS),
+            "phase": st.sampled_from(LANE_DECISION_PHASES),
+            "chosen": st.one_of(st.none(), ids("choice")),
+            "mechanism": st.sampled_from(("weighted-hash/v1", "static-caps/v1", "burn-plan/v1", "gates")),
+            "policy_revision": st.text(min_size=1, max_size=40),
+        })
+    if etype == "capacity.observed":
+        return st.fixed_dictionaries({
+            "provider": st.sampled_from(PROVIDERS),
+            "pool": st.sampled_from(("opencode-go:default", "anthropic:default")),
+            "source": st.sampled_from(("probe", "adapter", "window-detector")),
+            "unit": st.sampled_from(("output_tokens", "requests")),
+            "basis": st.sampled_from(CAPACITY_BASES),
+            "observed_at": timestamps(),
+        })
+    if etype == "capacity.reserved":
+        return st.fixed_dictionaries({
+            "reservation_id": ids("res"),
+            "provider": st.sampled_from(PROVIDERS),
+            "pool": st.sampled_from(("opencode-go:default", "anthropic:default")),
+            "unit": st.sampled_from(("output_tokens", "requests")),
+            "amount": st.integers(min_value=0, max_value=10**7),
+            "attempt_id": ids("attempt"),
+        })
+    if etype == "capacity.reconciled":
+        return st.fixed_dictionaries({
+            "reservation_id": ids("res"),
+            "actual": st.one_of(st.none(), st.integers(min_value=0, max_value=10**7)),
+            "outcome": st.sampled_from(RECONCILE_OUTCOMES),
         })
     raise AssertionError(f"no payload strategy for {etype!r}")
 

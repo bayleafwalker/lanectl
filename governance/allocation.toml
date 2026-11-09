@@ -3,11 +3,17 @@
 # rev 4 (2026-11-08): burn-down rules.
 # rev 3 (2026-11-08): per-size output-token estimates for shadow admission.
 # rev 2 (2026-11-08): key renamed to "opencode" = provider recorded by the opencode adapter.
-revision = 4
+# rev 5 (2026-11-09): pool identity, observation freshness, reallocation dwell (decision-records plan).
+revision = 5
 
 [providers.opencode]
 unit = "output_tokens"
 expiring = true
+# Shared subscription pool this provider draws from. Unqualified: one OpenCode Go
+# subscription on this account is assumed; interactive and other-host use share it.
+pool = "opencode-go:default"
+# An observation older than this is stale: capacity becomes unknown, never zero.
+freshness_s = 3600
 
 # One fixed-length window; anchor defaults to the Unix epoch so 5h windows
 # tile the UTC day (00:00, 05:00, 10:00, 15:00, 20:00).
@@ -30,3 +36,10 @@ L = 100000
 [burn]
 start_within_s = 3600    # only plan a burn in the last hour of a window
 min_burnable = 10000     # ignore smaller leftovers
+
+# Reallocation damping: a new allocation applies only after min_dwell_s since the last
+# applied one and when it moves the burnable amount by at least change_threshold
+# (fraction). A provider denial (window.observed exhausted) overrides both immediately.
+[allocation]
+min_dwell_s = 1800
+change_threshold = 0.2
