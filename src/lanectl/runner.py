@@ -15,7 +15,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 
-from . import adapters, capacity, evaluator, report, sandbox as sandboxing
+from . import adapters, capacity, decisions, evaluator, report, sandbox as sandboxing
 from .config import RepoSpec, load_lane, load_releases, load_repos, match
 from .contracts import LaneRevision, WorkRelease
 from .events import EventLog, ItemView, project_items, state_dir
@@ -49,13 +49,19 @@ def attempts_used(view: ItemView, revision: int) -> int:
     return len([a for a in view.attempts if a.get("release_revision") == revision and not a.get("infra")])
 
 
-def pick_model(rel: WorkRelease, lane: LaneRevision, view: ItemView,
-               repo: RepoSpec | None = None) -> str | None:
+def candidate_weights(rel: WorkRelease, lane: LaneRevision, view: ItemView,
+                      repo: RepoSpec | None = None) -> dict[str, float]:
+    """Eligible weights the dispatch hash can choose from (retry filter applied)."""
     weights = eligible_models(rel, lane, repo)
     if lane.retry == "different_model":
         untried = {m: w for m, w in weights.items() if m not in view.models_tried}
         weights = untried or weights
-    weights = {m: w for m, w in weights.items() if w > 0}
+    return {m: w for m, w in weights.items() if w > 0}
+
+
+def pick_model(rel: WorkRelease, lane: LaneRevision, view: ItemView,
+               repo: RepoSpec | None = None) -> str | None:
+    weights = candidate_weights(rel, lane, view, repo)
     if not weights:
         return None
     # deterministic weighted choice: reproducible from the log
@@ -112,6 +118,7 @@ def admit(lane_name: str, log: EventLog, only: str | None = None) -> Claim | str
     policies can be compared before capacity is allowed to gate anything.
     """
     lane, repos, releases = load_lane(lane_name), load_repos(), load_releases()
+    cycle_id = decisions.new_cycle_id()
     with log.locked():
         sync_releases(log, releases)
         events = log.read()
@@ -139,6 +146,8 @@ def admit(lane_name: str, log: EventLog, only: str | None = None) -> Claim | str
             if ready:
                 rel, v = ready[0]
                 record_shadow(log, events, rel, pick_model(rel, lane, v), "block")
+            decisions.refused(log, lane=lane, cycle_id=cycle_id, reasons=[reason],
+                              item_id=ready[0][0].id if ready else None)
             return reason
 
         if running >= lane.caps["concurrency"]:
@@ -161,16 +170,22 @@ def admit(lane_name: str, log: EventLog, only: str | None = None) -> Claim | str
             n = len(v.attempts) + 1
             attempt_id = f"{rel.id}-a{n}"
             worker = adapters.worker_for(model)
+            alternatives = candidate_weights(rel, lane, v, repos.get(rel.repo))
             log.append("item.claimed", {
                 "attempt_id": attempt_id, "lane": lane.lane, "lane_revision": lane.revision,
                 "lane_digest": lane.digest, "model": model, "worker": worker,
                 "release_revision": rel.revision, "base_sha": rel.base_sha,
                 "branch": f"lane/{attempt_id}"}, item_id=rel.id)
+            decisions.dispatch(log, lane=lane, rel=rel, attempt_id=attempt_id,
+                               cycle_id=cycle_id, model=model, alternatives=alternatives)
             record_shadow(log, events, rel, model, "admit")
             return Claim(rel, repos[rel.repo], lane, attempt_id, model, worker)
         if ready:
             rel, v = ready[0]
             record_shadow(log, events, rel, pick_model(rel, lane, v), "block")
+        decisions.refused(log, lane=lane, cycle_id=cycle_id,
+                          reasons=["nothing ready", *skipped],
+                          item_id=ready[0][0].id if ready else None)
         return "nothing ready" + ("".join(f"\n  not ready: {s}" for s in skipped))
 
 
@@ -313,6 +328,8 @@ def execute(c: Claim, log: EventLog, adapter_fn=None) -> str:
                     worker=c.worker, task_class=rel.task_class, size=rel.size, dec=dec,
                     reasons=reasons, follow=follow, elapsed_s=elapsed,
                     lane_revision=lane.revision, gates=gates)
+    decisions.transition(log, lane=lane, rel=rel, attempt_id=c.attempt_id,
+                         follow=follow, reasons=reasons)
     if dec != "candidate":
         _discard(repo, wt)
     return f"{c.attempt_id} [{c.model}] -> {dec}: {'; '.join(reasons)[:400]}"
