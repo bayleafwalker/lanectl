@@ -1,0 +1,32 @@
+id = "hla-freshness-recovery"
+repo = "homelab-analytics"
+base_sha = "d58e757cd612ac09f74bb15cd8371191249bbb5a"
+revision = 1
+title = "Source freshness rows list the publications that recover on refresh (#1588)"
+task_class = "product-api"
+size = "S"
+data_class = "public"
+
+outcome = """
+GET /control/source-freshness: every dataset row gains "recovers_publications", the
+publications that recover once that source refreshes, so a stale row on /sources can show
+what it is holding back (sprintctl homelab-analytics#1588).
+
+Add publications_for_source(source_asset, *, dataset_name) to
+packages/pipelines/publication_preview.py. source_asset is a SourceAssetRecord or None. It
+returns a list of {"publication_key", "name"} dicts: the package's direct publications, then
+its derived refresh publications not already listed, with no duplicates. Resolve the package
+the same way the upload-time preview does (source asset transformation_package_id first,
+then the dataset name); an unresolvable source returns []. Reuse the existing
+_resolve_publication_preview logic rather than duplicating it.
+
+The route looks up each row's source asset in the config repository and sets
+"recovers_publications" from publications_for_source. Other row fields are unchanged.
+"""
+
+[scope]
+paths = ["packages/pipelines/**", "packages/application/**", "apps/api/routes/**"]
+
+[acceptance]
+files = ["tests/test_acc_freshness_recovery.py"]
+exec = ["uv run --no-sync python -m pytest -q -p no:cacheprovider tests/test_acc_freshness_recovery.py"]
