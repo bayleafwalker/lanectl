@@ -1,0 +1,46 @@
+id = "lr-focus-session"
+repo = "lanectl"
+base_sha = "5ec57c93b5ddb8c12de342d31a86e8a612aec9e3"
+revision = 1
+title = "Focus is per Claude session, not per machine"
+task_class = "tooling"
+size = "S"
+data_class = "public"
+
+outcome = """
+`lanectl focus` wrote one machine-wide file, so concurrent Claude sessions were all billed to
+whichever release was focused last (operator report, 2026-11-10). Focus becomes per session.
+Claude Code sets CLAUDE_CODE_SESSION_ID in a session's commands, and it equals the
+session_id the Stop hook receives.
+
+focus.py:
+- set_focus(release_id, role, session_id=None), clear_focus(session_id=None) and
+  current_focus(session_id=None) operate on state_dir()/focus/<session_id>.json when
+  session_id is given, else on the machine-wide state_dir()/focus.json. The 12-hour
+  staleness rule applies to both. A session_id containing anything but [A-Za-z0-9_-] is
+  treated as absent from the per-session store (never used as a path).
+- Command: with CLAUDE_CODE_SESSION_ID set (stripped, non-empty), `lanectl focus <id>`,
+  `--clear` and the bare form act on that session's focus, and the printed line becomes
+  "focus: <id> (<role>, this session)". Without it, setting or clearing a focus exits 2
+  with "focus: no CLAUDE_CODE_SESSION_ID; pass --all-sessions to focus every session"
+  unless --all-sessions is given, which uses the machine-wide file and prints
+  "focus: <id> (<role>, all sessions)". The bare form without the variable shows the
+  machine-wide focus or "no focus".
+
+usage_hook: attribution order is LANECTL_RELEASE / LANECTL_ROLE, then
+current_focus(payload session_id), then the machine-wide current_focus(). A session's own
+focus wins over the machine-wide one.
+
+Existing tests that set a focus without CLAUDE_CODE_SESSION_ID (tests/stage8/test_usage_focus_extra.py)
+must set it or pass --all-sessions; the full suite runs as a gate job.
+"""
+
+[scope]
+paths = ["src/lanectl/focus.py", "src/lanectl/usage_hook.py", "tests/**"]
+
+[acceptance]
+files = ["tests/stage8/test_acc_focus_session.py"]
+exec = ["uv run --no-sync pytest -q -p no:cacheprovider tests/stage8/test_acc_focus_session.py"]
+
+[lint]
+override = "base failures are the expected kind: missing output text (AssertionError), unknown --all-sessions flag (SystemExit 2), current_focus(session_id) arg (TypeError)"
