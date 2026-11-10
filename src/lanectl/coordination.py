@@ -287,6 +287,22 @@ class Coordinator:
             self.heartbeat(attempt_id)
         return self._call(operation_key, 'work.lease.report-outcome-v1', args, args)
 
+    def completion(self, attempt_id):
+        """Read current owner acceptance; a report receipt is not terminal work."""
+        binding = self._binding(attempt_id)
+        result = self.client.invoke(self.client.envelope('work.public.item-v1',
+            {'work_id': binding['item_id']}, None))
+        item = result.get('item')
+        if (result.get('authority') != 'sprintctl' or result.get('state') != 'ok'
+                or not isinstance(result.get('as_of'), str) or not isinstance(item, dict)
+                or item.get('work_id') != binding['item_id']
+                or item.get('status') not in ('pending','active','blocked','done')
+                or 'resolution' not in item):
+            raise CoordinationError('owner completion is unavailable or mismatched')
+        return {'closed': item['status'] == 'done' and item['resolution'] == 'accepted',
+                'status': item['status'], 'resolution': item['resolution'],
+                'authority': result['authority'], 'as_of': result['as_of']}
+
     def guard(self, attempt_id, *, on_lost=None):
         return LeaseGuard(self, attempt_id, on_lost=on_lost)
 

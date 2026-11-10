@@ -11,7 +11,7 @@ import pytest
 from lanectl.coordination import Coordinator, CoordinationError, VuoroClient
 
 OPS = ['run.register', 'lease.acquire', 'lease.heartbeat', 'evidence.tail',
-       'evidence.append', 'lease.report-outcome']
+       'evidence.append', 'lease.report-outcome', 'public.item']
 
 
 def expires(seconds=3600):
@@ -21,7 +21,8 @@ def expires(seconds=3600):
 @contextmanager
 def owner():
     state = {'calls': [], 'effects': {}, 'tail': None, 'deny': None, 'drop': None,
-             'environment': 'test', 'correlation': None, 'lease': {'lease_id': 'lease_test', 'state': 'active',
+             'environment': 'test', 'correlation': None, 'completion': {'authority':'sprintctl','state':'ok',
+             'as_of':'2026-11-10T00:00:00Z','item':{'work_id':123,'status':'active','resolution':None}}, 'lease': {'lease_id': 'lease_test', 'state': 'active',
              'generation': 1, 'expires_at': expires(), 'heartbeat_interval_seconds': 20}}
 
     class Handler(BaseHTTPRequestHandler):
@@ -59,12 +60,14 @@ def owner():
                 return self.respond({'status': 'rejected', 'error': {'code': state['deny'],
                                      'message': 'owner refusal'}}, 403)
             key = (op, args.get('idempotency_key'))
-            if key in state['effects'] and not op.endswith(('acquire-v1', 'heartbeat-v1', 'tail-v1')):
+            if key in state['effects'] and not op.endswith(('acquire-v1', 'heartbeat-v1', 'tail-v1', 'item-v1')):
                 result = state['effects'][key]
             elif op.endswith('run.register-v1'):
                 result = {'run': {'run_id': 'run_test'}}
             elif op.endswith(('lease.acquire-v1', 'lease.heartbeat-v1')):
                 result = {'lease': dict(state['lease'])}
+            elif op.endswith('public.item-v1'):
+                result = state['completion']
             elif op.endswith('evidence.tail-v1'):
                 result = {'item': state['tail']}
             elif op.endswith('evidence.append-v1'):
@@ -276,3 +279,23 @@ def test_new_principal_cannot_resume_cached_registration(tmp_path):
         with pytest.raises(CoordinationError, match='run-principal-mismatch'):
             start(coord(url, tmp_path))
         assert s['calls'][-1]['operation'] == 'work.lease.acquire-v1'
+
+
+@pytest.mark.parametrize('status,resolution,closed', [('active',None,False),('done',None,False),
+    ('done','rejected',False),('done','withdrawn',False),('done','accepted',True)])
+def test_completion_requires_current_accepted_owner_fact(tmp_path,status,resolution,closed):
+    with owner() as (url,s):
+        c = coord(url,tmp_path)
+        start(c)
+        s['completion']['item'].update(status=status,resolution=resolution)
+        assert c.completion('release-a1')['closed'] is closed
+        assert s['calls'][-1]['arguments'] == {'work_id':123}
+
+
+def test_completion_refuses_unavailable_owner_facts(tmp_path):
+    with owner() as (url,s):
+        c = coord(url,tmp_path)
+        start(c)
+        s['completion']['state'] = 'unavailable'
+        with pytest.raises(CoordinationError,match='unavailable'):
+            c.completion('release-a1')
