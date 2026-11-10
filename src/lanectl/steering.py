@@ -97,7 +97,16 @@ def admission(events, policy, now, provider, size, model, *, enforce=False):
         # the cumulative snapshot's already-covered interval a second time.
         after = sum(amount for ts, amount, _, _ in capacity._usage_rows(events, provider, spec.unit)
                     if observed < ts <= now)
-        held = capacity.in_flight(events, provider, spec.pool)
+        closed = {ev.get("data", {}).get("reservation_id") for ev in events
+                  if ev.get("type") == "capacity.reconciled"}
+        reservations = {}
+        for ev in events:
+            reservation = ev.get("data", {})
+            if (ev.get("type") == "capacity.reserved" and reservation.get("pool") == spec.pool
+                    and reservation.get("unit") == spec.unit
+                    and reservation.get("reservation_id") not in closed):
+                reservations[reservation["reservation_id"]] = reservation["amount"]
+        held = sum(reservations.values())
         view = capacity.project(events, policy, now)[provider][window.name]
         free = window.budget - data["value"] - after - held - view["reserved_effective"]
         if free < estimate:

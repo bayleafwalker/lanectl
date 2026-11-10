@@ -84,3 +84,13 @@ def test_denial_blocks_without_capacity_until_observed_reset():
     assert admission([deny], allocation(), NOW, "p", "S", "a", enforce=True)["decision"] == "block"
     deny["data"]["reset_at"] = "2026-11-10T11:59:30Z"
     assert admission([deny], allocation(), NOW, "p", "S", "a", enforce=True)["decision"] == "admit"
+
+
+def test_pool_reservations_shared_across_provider_aliases_and_deduplicated():
+    held = make_event("capacity.reserved", {"reservation_id": "r", "provider": "alias",
+        "pool": "account", "unit": "output_tokens", "amount": 10, "attempt_id": "aa"})
+    assert admission([observation(5), held], allocation(), NOW, "p", "S", "a", enforce=True)["decision"] == "block"
+    assert admission([observation(0), held, held], allocation(), NOW, "p", "S", "a", enforce=True)["decision"] == "admit"
+    reconciled = make_event("capacity.reconciled", {"reservation_id": "r", "provider": "alias",
+        "attempt_id": "aa", "actual": 0, "outcome": "completed"})
+    assert admission([observation(5), held, reconciled], allocation(), NOW, "p", "S", "a", enforce=True)["decision"] == "admit"
