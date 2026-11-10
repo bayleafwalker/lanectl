@@ -51,6 +51,13 @@ authority before effects. Served integration additionally requires the reviewed
 `integrator_host` to match the designated machine; a host-local lock alone
 does not establish distributed integration authority.
 
+Ticks recover abandoned local attempts only after the recorded runner's host,
+machine, boot and PID birth identity prove it is gone and its named sandbox is
+inactive. Live runners, active orphaned sandboxes, foreign hosts and unknown
+legacy identities are held. Recovered partial gates never become acceptance;
+a new attempt reruns them. Worker namespaces mount control logs and recovery
+journals read-only while retaining their own checkout for implementation.
+
 Promote a class through a reviewed policy revision after examining real product
 results. The ladder's week-long autonomous-operation and per-class product
 evidence clocks are operational qualification, not claims supplied by the test

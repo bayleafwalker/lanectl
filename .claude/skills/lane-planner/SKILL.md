@@ -29,7 +29,8 @@ For each candidate, read `git -C <repo> diff <seed_sha>..lane/<attempt>`.
   landed and superseded ones (doctor warns when one is past its TTL).
 - Small fix needed: commit on the train worktree as
   `fix(<attempt_id>): [spec-gap|model-error|gate-gap] <what>`, re-run the
-  repo check, then land. Never fold fixes into the worker's commit.
+  train check with `lanectl recheck <train_id>`, rerun any declared dev deploy
+  for the updated tip, then land. Never fold fixes into the worker's commit.
 - Wrong: `lanectl reject <attempt_id> "<reason>"` (requeue) or `--park`.
 
 For each parked item, read the reason. Protected-path parks need your review

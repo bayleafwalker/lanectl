@@ -63,11 +63,11 @@ cd <worktree>
 # fix(<attempt_id>): [model-error] <what>
 # fix(<attempt_id>): [gate-gap] <what>
 git commit -m "fix(<attempt_id>): [<fix_class>] <what> and why>"
-<repo check_cmd>                         # re-run the train check before landing
+lanectl recheck <train_id>               # records the passing check for the exact updated tip
 ```
 
 Budget from `governance/integrator.toml`: `fix_budget_lines` (default 30,
-added + deleted) and `allowed_fix_classes` (default `spec-gap`, `gate-gap`).
+aggregate added + deleted per attempt) and `allowed_fix_classes` (default `spec-gap`, `gate-gap`).
 Beyond either — too large, or a class such as `model-error` that is not
 allowed — do not fix: `lanectl reject <attempt_id> "<reason>"` to requeue, and
 leave the class on record for the planner to ratchet.
