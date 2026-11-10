@@ -5,6 +5,7 @@ deterministic; no agent chooses what runs next.
 """
 from __future__ import annotations
 
+import functools
 import hashlib
 import os
 import shutil
@@ -553,30 +554,64 @@ def build_train(log: EventLog, repo_name: str, attempt_ids: list[str] | None = N
         included.append(c["attempt_id"])
     if repo.setup_cmd:
         subprocess.run(repo.setup_cmd, shell=True, cwd=wt, capture_output=True)
+    checked_sha = git(wt, "rev-parse", "HEAD")
     p = subprocess.run(repo.check_cmd, shell=True, cwd=wt, capture_output=True, text=True)
-    passed = p.returncode == 0 and bool(included)
+    passed = (p.returncode == 0 and bool(included)
+              and git(wt, "rev-parse", "HEAD") == checked_sha
+              and not git(wt, "status", "--porcelain", "--untracked-files=no"))
     log.append("train.built", {"train_id": train_id, "repo": repo_name, "base_sha": base,
                "attempts": included, "excluded": excluded, "passed": passed,
-               "worktree": str(wt), "check_tail": (p.stdout + p.stderr)[-800:]})
+               "worktree": str(wt), "checked_sha": checked_sha, "check_tail": (p.stdout + p.stderr)[-800:]})
     return (f"{train_id}: {'PASSED' if passed else 'FAILED'} included={included} excluded={excluded}\n"
             f"worktree: {wt}\n{(p.stdout + p.stderr)[-800:]}")
 
 
+def _serialized_landing(fn):
+    @functools.wraps(fn)
+    def serialized(log, train_id):
+        with log.locked():
+            return fn(log, train_id)
+    return serialized
+
+
+@_serialized_landing
 def land(log: EventLog, train_id: str) -> str:
     """Judgment-plane action: fast-forward main to the train. Integrator fix commits
     on the train branch must be titled `fix(<attempt_id>): [<fix_class>] ...`."""
     events = log.read()
-    tb = next((e for e in events if e["type"] == "train.built" and e["data"]["train_id"] == train_id), None)
+    tb = next((e for e in reversed(events) if e["type"] == "train.built" and e["data"]["train_id"] == train_id), None)
     if tb is None:
         return f"unknown train {train_id}"
     d = tb["data"]
+    if not d.get("passed"):
+        return f"{train_id}: failed train; rebuild and pass its checks before landing"
     repos = load_repos()
     repo = repos[d["repo"]]
+    tip = git(repo.path, "rev-parse", f"train/{train_id}")
+    if d.get("checked_sha") and d["checked_sha"] != tip:
+        return f"{train_id}: checked tip changed; recheck the train before landing"
+    if not d.get("checked_sha"):
+        # Historical records predate commit-bound checks. Requalify rather than
+        # treating a historical pass as evidence for an arbitrary current tip.
+        checkout = Path(d["worktree"])
+        if not checkout.exists():
+            if tip != git(repo.path, "rev-parse", repo.main):
+                return f"{train_id}: missing checked tip; rebuild the train"
+            checkout = repo.path
+        checked = subprocess.run(repo.check_cmd, shell=True, cwd=checkout, capture_output=True, text=True)
+        if checked.returncode:
+            return f"{train_id}: failed recheck; not landing"
+        d = dict(d, checked_sha=tip)
+        log.append("train.built", d)
     requires_deploy = repo.deploy is not None
-    if requires_deploy and train_id not in deploy.live(events):
-        return (f"{train_id}: repo {repo.name} declares a deploy; run "
-                f"`lanectl deploy run {train_id}` and pass its health check before landing")
-    if git(repo.path, "rev-parse", repo.main) != d["base_sha"]:
+    deployed = deploy.live(events).get(train_id)
+    if requires_deploy:
+        expires = capacity.parse_ts(deployed.get("expires_at")) if deployed else None
+        if (not deployed or expires is None or expires <= datetime.now(timezone.utc)
+                or deployed.get("checked_sha") != tip):
+            return (f"{train_id}: repo {repo.name} declares a deploy; run "
+                    f"`lanectl deploy run {train_id}` and pass its health check for this tip before landing")
+    if git(repo.path, "rev-parse", repo.main) not in (d["base_sha"], tip):
         return f"{repo.main} moved since {train_id} was built; rebuild the train"
     tip = git(repo.path, "rev-parse", f"train/{train_id}")
     fixes = {}
@@ -596,12 +631,20 @@ def land(log: EventLog, train_id: str) -> str:
     else:
         git(repo.path, "update-ref", f"refs/heads/{repo.main}", tip, d["base_sha"])
     by_attempt = {a["attempt_id"]: a["item_id"] for v in project_items(events).values() for a in v.attempts}
+    releases = {r.id: r for r in load_releases()}
+    already = {e["data"]["attempt_id"] for e in events if e["type"] == "item.landed" and e["data"]["train_id"] == train_id}
     for aid in d["attempts"]:
+        if aid in already:
+            continue
+        rel = releases.get(by_attempt[aid])
+        request = ({k: getattr(rel, k) for k in ("id", "repo", "work", "work_complete")} if rel is not None else {})
         log.append("item.landed", {"attempt_id": aid, "train_id": train_id,
-                                   "fix_commits": fixes.get(aid, [])}, item_id=by_attempt[aid])
+                                   "fix_commits": fixes.get(aid, []), "landed_sha": tip, "work_request": request}, item_id=by_attempt[aid])
     # The land is done; the tracker note/close is best effort and never fails it.
     releases = {r.id: r for r in load_releases()}
     for aid in d["attempts"]:
+        if aid in already:
+            continue
         rel = releases.get(by_attempt[aid])
         if rel is None or not rel.work:
             continue
@@ -609,8 +652,9 @@ def land(log: EventLog, train_id: str) -> str:
             synced = work.sync(rel, train_id, tip, repos)
             if synced is not None:
                 log.append("work.synced", synced, item_id=rel.id)
-        except Exception:      # a raising sync must not change land's answer
-            continue
+        except Exception as exc:      # retain failed effects for retry
+            log.append("work.synced", {"work": rel.work, "train_id": train_id,
+                       "closed": False, "ok": False, "error": str(exc)[-300:]}, item_id=rel.id)
     if requires_deploy:
         deploy.teardown(log, train_id, "landed")
     _discard(repo, Path(d["worktree"]))

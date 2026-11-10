@@ -81,6 +81,10 @@ def deploy_train(log: EventLog, train_id: str) -> str:
         return f"{train_id}: train did not pass its check; not deploying"
     if spec is None:
         return f"{train_id}: repo {built.get('repo')} declares no deploy"
+    from .runner import git
+    checked_sha = built.get("checked_sha")
+    if checked_sha and git(repo.path, "rev-parse", f"train/{train_id}") != checked_sha:
+        return f"{train_id}: checked tip changed; not deploying"
     ns = namespace(train_id)
     env = deploy_env(spec, train_id)
     worktree = Path(built["worktree"]).resolve()
@@ -98,7 +102,7 @@ def deploy_train(log: EventLog, train_id: str) -> str:
     expires_at = _expires_at(spec.ttl_s)
     log.append("train.deployed", {
         "train_id": train_id, "repo": repo.name, "namespace": ns, "passed": True,
-        "expires_at": expires_at})
+        "expires_at": expires_at, "checked_sha": checked_sha})
     return f"{train_id}: deployed to {ns} (expires {expires_at})"
 
 

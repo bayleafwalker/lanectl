@@ -83,7 +83,7 @@ def _status(run, path: str, work: str, status: str, revision) -> None:
         _call(run, path, base)
 
 
-def sync(rel, train_id: str, landed_sha: str, repos, run=subprocess.run) -> dict | None:
+def sync(rel, train_id: str, landed_sha: str, repos, run=subprocess.run, *, skip_note=False) -> dict | None:
     """Note (and when ``work_complete``, close) the release's tracker item.
 
     Returns None when the release has no work reference; otherwise a
@@ -93,12 +93,19 @@ def sync(rel, train_id: str, landed_sha: str, repos, run=subprocess.run) -> dict
     if not rel.work:
         return None
     result = {"work": rel.work, "train_id": train_id, "closed": False, "ok": True}
+    noted = bool(skip_note)
     try:
         path = tracker_path(rel.work, repos)
-        _call(run, path, ["item", "note", "--id", rel.work, "--type", "update",
+        if not skip_note:
+            _call(run, path, ["item", "note", "--id", rel.work, "--type", "update",
                           "--summary", f"lanectl landed {rel.id} in {train_id}",
                           "--git-sha", landed_sha, "--actor", "lanectl"])
+        noted = True
         if not rel.work_complete:
+            return result
+        repo = repos.get(rel.repo)
+        if repo is not None and repo.landing == "pr" and not merged(repo, landed_sha, run):
+            result.update(pending_close=True, noted=True)
             return result
         item = _show(run, path, rel.work)
         if item["status"] == "done":
@@ -111,5 +118,78 @@ def sync(rel, train_id: str, landed_sha: str, repos, run=subprocess.run) -> dict
         result["closed"] = True
     except Exception as exc:      # reported, never raised: the land already happened
         result["ok"] = False
+        if noted:
+            result["noted"] = True
         result["error"] = str(exc)[-ERROR_TAIL:] or exc.__class__.__name__
     return result
+
+
+def merged(repo, sha, run=subprocess.run):
+    """Refresh the declared canonical main before accepting ancestry as merge proof."""
+    def git(*args, allowed=(0,)):
+        p = run(["git", "-C", str(repo.path), *args], capture_output=True,
+                text=True, stdin=subprocess.DEVNULL)
+        if p.returncode not in allowed:
+            raise _SyncFailed((p.stderr or "canonical repository check failed")[-ERROR_TAIL:])
+        return p
+    remote = git("config", "--get", "claude.canonicalRemote", allowed=(0, 1)).stdout.strip() or "origin"
+    # Fetch and independent nonempty remote observation prevent a sandboxed empty
+    # success from making an old tracking ref look like fresh merge evidence.
+    git("fetch", "--no-tags", remote, repo.main)
+    advertised = git("ls-remote", "--exit-code", remote, f"refs/heads/{repo.main}").stdout.split()
+    head = git("rev-parse", "FETCH_HEAD").stdout.strip()
+    if not advertised or len(head) != 40 or advertised[0] != head:
+        raise _SyncFailed("canonical main could not be freshly verified")
+    return git("merge-base", "--is-ancestor", sha, head, allowed=(0, 1)).returncode == 0
+
+
+def reconcile(log, *, repos=None, releases=None, run=None):
+    """Retry incomplete tracker effects, including PR completion, without relanding."""
+    from .config import load_releases, load_repos
+    from types import SimpleNamespace
+    repos = load_repos() if repos is None else repos
+    releases = {r.id: r for r in (load_releases() if releases is None else releases)}
+    events = log.read()
+    latest = {(e["item_id"], e["data"]["train_id"]): e["data"]
+              for e in events if e["type"] == "work.synced"}
+    results = []
+    for event in events:
+        if event["type"] != "item.landed":
+            continue
+        snapshot = event["data"].get("work_request")
+        rel = SimpleNamespace(**snapshot) if snapshot else releases.get(event["item_id"])
+        if rel is None or not rel.work:
+            continue
+        d = event["data"]
+        previous = latest.get((rel.id, d["train_id"]), {})
+        if previous.get("ok") and (previous.get("closed") or not rel.work_complete):
+            continue
+        sha = d.get("landed_sha")
+        if not sha:
+            # Legacy landings lack a stable commit reference. Never guess today's tip.
+            results.append({"work": rel.work, "train_id": d["train_id"], "ok": False,
+                            "closed": False, "error": "historical landing has no landed_sha"})
+            continue
+        kwargs = {"skip_note": previous.get("noted", False)}
+        if run is not None:
+            kwargs["run"] = run
+        result = sync(rel, d["train_id"], sha, repos, **kwargs)
+        if result is not None:
+            log.append("work.synced", result, item_id=rel.id)
+            latest[(rel.id, d["train_id"])] = result
+            results.append(result)
+    return results
+
+
+def register(sub):
+    p = sub.add_parser("work", help="reconcile tracker completion after landing")
+    actions = p.add_subparsers(dest="work_action", required=True)
+    actions.add_parser("reconcile", help="retry tracker synchronization and pending PR closes")
+    return {"work": _cmd}
+
+
+def _cmd(args, log):
+    results = reconcile(log)
+    for result in results:
+        print(json.dumps(result, sort_keys=True))
+    return 1 if any(not r["ok"] for r in results) else 0

@@ -30,3 +30,22 @@ dev deploys (`[repos.<r>.deploy]`) run on passed trains with a stripped environm
 
 State: `$LANECTL_STATE` (default `~/.local/state/lanectl/events.jsonl`).
 Governance and backlog: `$LANECTL_HOME` (a checkout of this repo's main).
+
+`lanectl integrate` advances gate-accepted work only for the explicitly reviewed
+`autonomous_classes` in `governance/integrator.toml`. With the default empty list,
+`tick` remains worker-only. With classes enabled, a tick integrates before and
+after execution: deterministic evaluation, train check, optional dev deploy,
+local landing, then canonical GitHub PR publication where configured. Required
+CI must pass for the exact PR head. Governance parks remain interactive; the
+executor applies no fixes beyond the configured class and line budget.
+
+Landing receipts now include the immutable `landed_sha` and `work_request`.
+`train.built.checked_sha` binds successful checks to a commit. Failed or changed
+trains cannot land. Older train records are rechecked rather than presumed valid.
+`work.synced.pending_close` records a PR completion waiting for fresh canonical
+ancestry proof; `noted` records a confirmed tracker note so retries can skip it.
+`lanectl work reconcile` retries incomplete tracker effects without landing again.
+An old receipt without a landed commit is reported as unknown, never inferred
+from today's branch tip. A lost tracker-note acknowledgement may still produce
+a duplicate note: tracker status convergence is idempotent, while note delivery
+has no owner-provided idempotency key.

@@ -9,7 +9,7 @@ claimed or after a worker infrastructure rejection.
 """
 from __future__ import annotations
 
-from . import deploy, doctor, runner
+from . import deploy, doctor, runner, integrator
 
 #: Substrings of an ``execute`` line that mean the worker itself failed.
 INFRA_MARKERS = ("-> rejected: infra:", "-> rejected: infra")
@@ -42,9 +42,16 @@ def tick(log, *, max_items: int = 3, lane: str = "implement",
     if doctor.ERROR in levels:
         return {"doctor": "error", "reaped": [], "ran": [], "stopped": "doctor"}
     status = "warn" if doctor.WARN in levels else "ok"
+    # Explicit autonomous_classes are the opt-in; ordinary ticks preserve the
+    # existing worker-only shape when authority is empty.
+    integrated = integrator.cycle(log)
     reaped = (reap_fn or deploy.reap)(log)
     ran = (run_fn or _run)(log, max_items, lane)
-    return {"doctor": status, "reaped": reaped, "ran": ran, "stopped": None}
+    integrated.extend(integrator.cycle(log))
+    result = {"doctor": status, "reaped": reaped, "ran": ran, "stopped": None}
+    if integrated:
+        result["integrated"] = integrated
+    return result
 
 
 def register(sub) -> dict:
@@ -60,6 +67,6 @@ def _cmd(args, log) -> int:
     out = tick(log, max_items=args.max, lane=args.lane)
     print(f"tick: doctor={out['doctor']} reaped={len(out['reaped'])} "
           f"ran={len(out['ran'])}")
-    for line in (*out["reaped"], *out["ran"]):
+    for line in (*out["reaped"], *out["ran"], *out.get("integrated", ())):
         print(line)
     return 1 if out["doctor"] == "error" else 0
