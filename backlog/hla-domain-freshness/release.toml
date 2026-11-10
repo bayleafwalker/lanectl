@@ -1,0 +1,42 @@
+id = "hla-domain-freshness"
+repo = "homelab-analytics"
+base_sha = "81aacfe5bbc4a8a32538b924ccb5596443c3c7bc"
+revision = 1
+title = "Domain freshness aggregation as a platform function; source-freshness rows carry domain (#1553)"
+task_class = "product-api"
+size = "M"
+data_class = "public"
+
+outcome = """
+Domain aggregation of publication confidence moves from the /control/confidence route into
+the platform, and source freshness rows carry their domain (sprintctl
+homelab-analytics#1553, parts 1 and 3; non-finance freshness configs are a later release).
+
+New module packages/platform/domain_freshness.py, moving (not copying) the logic now in
+apps/api/routes/control_routes.py:
+- domain_for_package(transformation_package_id: str | None) -> str: today's
+  _publication_domain, same labels ("platform" for None/empty, "finance", "utilities",
+  "homelab", "overview", else the id without "builtin_" and with "_" as spaces).
+- worst_case_verdict(a, b) and is_stale_publication(freshness_state): today's
+  _worst_case_verdict and _is_stale_publication.
+- summarize_domains(rows) -> list[dict]: rows are mappings with "domain",
+  "confidence_verdict" and "freshness_state"; returns one summary per domain, sorted by
+  domain, each {"domain", "verdict" (worst case), "count", "degraded_count" (verdict not
+  trustworthy, case-insensitive), "stale_count" (is_stale_publication)}.
+
+/control/confidence builds domain_summaries with summarize_domains over the publications it
+returns; its response is unchanged. The route module keeps no private copies of these
+helpers.
+
+GET /control/source-freshness rows gain "domain": domain_for_package of the row's package,
+where the package is the source asset's transformation_package_id, else the package
+inferred from the dataset name the way publications_for_source resolves it
+(packages/pipelines/publication_preview.py); an unresolvable package gives "platform".
+"""
+
+[scope]
+paths = ["packages/platform/**", "packages/pipelines/**", "apps/api/routes/**", "tests/**"]
+
+[acceptance]
+files = ["tests/test_acc_domain_freshness.py"]
+exec = ["uv run --no-sync python -m pytest -q -p no:cacheprovider tests/test_acc_domain_freshness.py"]
