@@ -46,3 +46,31 @@ authored releases retain their existing publication workflow.
 Artifacts under `backlog/` become cross-host-replicated when committed and
 pushed. Temporary clones are session-local and removed after each model call.
 No specification command changes lane authority, policy or publication state.
+
+## Close the feedback loop
+
+`lanectl closure scan` derives maintenance intake from recurring `planner_flags`
+and `gate_flags`: at least two distinct ruled attempts with the same gap class
+and task class. `--record` appends existing `triage.proposed` events; it makes no
+model call. `closure list` shows the durable intake and its draft links.
+
+```sh
+lanectl closure scan --record
+lanectl closure list
+lanectl closure draft <fingerprint> --scope 'src/**' --scope 'tests/**' \
+  --author-model claude-opus-5-5 --reviewer-model claude-fable-5-2
+```
+
+The source revision hashes the relevant attempt/fix references. Unrelated log
+activity and duplicate evidence do not generate another proposal. An active
+maintenance draft suppresses more work for the same flag/class; after it lands,
+its source evidence is consumed and only new recurring gaps produce new intake.
+Model errors remain routing feedback, not planner or gate maintenance.
+
+Intake is telemetry-derived and remains **restricted**. Drafting requires the
+existing first-party allowlist and defaults to the restricted lane. The caller
+still supplies scope and models; the command never publishes or changes policy.
+Repeated draft requests reuse their recorded result. A per-proposal process lock
+prevents concurrent writers, and an interrupted request recovers an already
+created draft only when its source intent and release digests match. No log lock
+is held across model execution.
