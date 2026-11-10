@@ -26,8 +26,8 @@ freshness_s = 3600
 # $1.20 out incl. reasoning) costs $6.43 per 1M recorded output tokens. Budget $22/week:
 # half of $50 because a fixed anchor can straddle two provider weeks, and below $100/4.35
 # so the monthly cap also holds. $22 / $6.43 per 1M = 3.4M output tokens.
-# Do not add a second window: burn takes the max across windows and measures usage once
-# for all of them (lanectl burn._burnable), so extra windows loosen, never tighten.
+# Since bx-burn-windows (2026-11-10) burn measures usage per window and takes the minimum,
+# so a 5h window may be added once its anchor is known; until then one weekly window suffices.
 [[providers.opencode.windows]]
 name = "week"
 length_s = 604800

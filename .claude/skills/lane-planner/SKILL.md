@@ -23,7 +23,10 @@ lanectl view --html <path>    # management page: backlog, attention, lanes, gove
 ## 2. Re-view
 
 For each candidate, read `git -C <repo> diff <seed_sha>..lane/<attempt>`.
-- Good: `lanectl train <repo>` → inspect → `lanectl land <train_id>`.
+- Good: `lanectl train <repo>` → inspect → (repo declares `deploy`: `lanectl deploy run <train_id>`,
+  which must pass its health check) → `lanectl land <train_id>` (tears the deploy down).
+  `lanectl deploy list` shows live dev deploys; `lanectl deploy reap` removes expired,
+  landed and superseded ones (doctor warns when one is past its TTL).
 - Small fix needed: commit on the train worktree as
   `fix(<attempt_id>): [spec-gap|model-error|gate-gap] <what>`, re-run the
   repo check, then land. Never fold fixes into the worker's commit.
@@ -58,7 +61,11 @@ fixture bugs below it, so also dry-run the test body against a stub or the expec
 (`lanectl events --type <type> -n 3`): copy field names and values such as
 `provider`, `source` and gate `decision` instead of inventing them (invented
 fixtures caused the opencode/opencode-go and parked/candidate spec gaps); if
-lint-release is wrong, record the override and its reason in release.toml;
+lint-release is wrong, record it in release.toml as `[lint] override = "<reason>"` (publish then
+prints the problems and the override, and proceeds); when a release reverses a behaviour, grep the
+existing tests for it and change them yourself first (s3-lint-expected broke three old tests at
+the train check); do not run two releases that edit the same lines of one file in parallel
+(s3-gate-jobs and s3-train-deploy both extended runner.py's import line: a conflict fix);
 size ≤ M; `data_class = "restricted"` for anything private, credential- or
 served-state-bearing (it will never go to an external model). Give the
 outcome and acceptance, not an implementation plan. Bump `revision` to reissue

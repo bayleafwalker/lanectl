@@ -14,10 +14,16 @@ lanectl backlog new <id> --repo R --title T --scope 'src/**'   # scaffold a draf
 lanectl backlog publish <id>           # lint and release it to the lanes
 lanectl run --max 3                    # lanes implement ready releases
 lanectl candidates && lanectl train <repo> && lanectl land <train_id>
+lanectl deploy run <train_id>          # repos with [deploy]: dev deploy + health before land
+lanectl deploy list | reap             # live dev deploys; tear down expired/landed/superseded
 lanectl lanes | report | view --html out.html   # caps, precision and cost, management page
 ```
 
 Run inside the checkout, or set `$LANECTL_HOME`.
+
+Per-repo gate jobs (`[[repos.<r>.gate_jobs]]`) run in the attempt sandbox after acceptance;
+dev deploys (`[repos.<r>.deploy]`) run on passed trains with a stripped environment. See
+[stage 3 plan](docs/plans/2026-11-10-stage3-gate-jobs-and-train-deploys.md).
 
 State: `$LANECTL_STATE` (default `~/.local/state/lanectl/events.jsonl`).
 Governance and backlog: `$LANECTL_HOME` (a checkout of this repo's main).
