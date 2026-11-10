@@ -31,8 +31,14 @@ def _tidy(value: float) -> int | float:
 
 
 def _new_row() -> dict:
-    return {"attempts": 0, "landed": 0, "output_tokens": 0,
+    return {"attempts": 0, "infra_attempts": 0, "landed": 0, "output_tokens": 0,
             "tokens_per_landed": None, "fixes": 0, "model_error_fixes": 0}
+
+
+def _infra_stopped(reasons) -> bool:
+    """True when a decision's first reason marks an infrastructure stop."""
+    return (isinstance(reasons, list) and bool(reasons)
+            and str(reasons[0]).startswith("infra:"))
 
 
 def cost_feedback(events: list[dict]) -> dict:
@@ -42,12 +48,17 @@ def cost_feedback(events: list[dict]) -> dict:
     only when its ``attempt_id`` belongs to such a claim.  ``integrator.fix``
     events count against a model only for attempts that model landed.  The
     ``_unattributed`` key carries usage that cannot be attributed to a claim.
+
+    ``attempts`` counts claims, while the report's ATT counts experiments;
+    ``infra_attempts`` names the attempts a decision stopped for infrastructure
+    (its first reason starts ``infra:``) and so never reached an experiment.
     """
     claim_model: dict[str, str] = {}         # attempt_id -> model
     rows: dict[str, dict] = {}               # model -> feedback row
     usage: list[tuple[str | None, str | None, float]] = []   # (attempt, provider, tokens)
     landed: set[str] = set()
     fixes: list[tuple[str, str]] = []        # (attempt_id, fix_class)
+    infra: set[str] = set()                  # attempts a decision stopped for infra
 
     for ev in events:
         if not isinstance(ev, dict):
@@ -65,6 +76,10 @@ def cost_feedback(events: list[dict]) -> dict:
             aid = d.get("attempt_id")
             usage.append((aid if isinstance(aid, str) else None,
                           d.get("provider"), _output_tokens(d.get("units"))))
+        elif t == "decision.recorded":
+            aid = d.get("attempt_id")
+            if isinstance(aid, str) and _infra_stopped(d.get("reasons")):
+                infra.add(aid)
         elif t == "item.landed":
             aid = d.get("attempt_id")
             if isinstance(aid, str) and aid in claim_model:
@@ -101,6 +116,7 @@ def cost_feedback(events: list[dict]) -> dict:
         tokens = per_model_tokens.get(model, 0)
         row["output_tokens"] = _tidy(tokens)
         row["landed"] = landed_by_model.get(model, 0)
+        row["infra_attempts"] = sum(1 for aid in infra if claim_model.get(aid) == model)
         if row["landed"]:
             row["tokens_per_landed"] = round(tokens / row["landed"])
 
@@ -112,7 +128,10 @@ def _fmt_cost_feedback(feedback: dict) -> list[str]:
     for model in sorted(m for m in feedback if m != "_unattributed"):
         row = feedback[model]
         per_landed = "-" if row["tokens_per_landed"] is None else row["tokens_per_landed"]
-        lines.append(f"  {model}: attempts={row['attempts']} landed={row['landed']} "
+        # Attempts are claims, and ATT in the report is experiments: claims a
+        # decision stopped for infra never reach an experiment, so label them.
+        infra = f" infra={row['infra_attempts']}" if row["infra_attempts"] else ""
+        lines.append(f"  {model}: attempts={row['attempts']}{infra} landed={row['landed']} "
                      f"output_tokens={row['output_tokens']} "
                      f"tokens_per_landed={per_landed} fixes={row['fixes']} "
                      f"model_error_fixes={row['model_error_fixes']}")
