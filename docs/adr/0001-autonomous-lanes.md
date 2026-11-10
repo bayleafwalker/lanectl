@@ -114,7 +114,7 @@ that run from here.
 | Stage | Landed | Evidence clock |
 | --- | --- | --- |
 | 2 | `probe`, `windows`, capacity projection, shadow admission (`admission.shadow`) | shadow admission agreement, one week |
-| 3 | `evaluate` (rules in `governance/evaluator.toml`, rev 2 after first evidence) | per-class agreement ≥ precision bar; gate jobs and dev-namespace train deploys not yet built |
+| 3 | `evaluate` (rules in `governance/evaluator.toml`, rev 2 after first evidence); gate jobs and dev train deploys (v0.1.26, [plan](../plans/2026-11-10-stage3-gate-jobs-and-train-deploys.md); compose backend, Kubernetes deferred) | per-class agreement ≥ precision bar |
 | 4 | integrator skill, `plan-landing` (shadow, `integrator.toml` authority empty), `triage`, reaper v2 | landing plans match operator landings |
 | 5 | `learn` (suggest only), `burn` (plan/record/execute through admission), `view --html` | a window burned within WIP caps |
 | 6 | repo overlay: protected paths, data-class floor, routing; first-party allowlist | per-repo wiring in `governance/repos.toml` |

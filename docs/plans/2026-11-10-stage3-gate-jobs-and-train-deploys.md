@@ -50,3 +50,24 @@ a smoke deploy of one train.
 
 Stage 3 exits on per-class agreement at or above the precision bar (unchanged). This plan
 supplies the missing lane components; it adds no evidence by itself.
+
+## Assessment (closeout 2026-11-10, v0.1.27)
+
+| Measure | Value |
+| --- | --- |
+| Releases landed | 8: the 4 planned, plus `s3-lint-expected` (lint misread two releases' base failures), `s3-ready-state` (claimed items listed READY), `s3-deploy-list-json` and `s3-adapter-stdin` (found by the smoke and the first gate-job run) |
+| Attempts | 9; 8 passed the gates first time |
+| Rejections | 1 infra (worker hung on an inherited stdin socket; requeued without consuming an attempt; fixed by `s3-adapter-stdin`) |
+| Integrator fixes | 3, all spec-gap, all planner errors: two releases reversed behaviour pinned by older tests (lint KeyError, READY for parked) and two parallel releases extended the same `runner.py` import line |
+| Lane cost | 85.5k output+reasoning tokens, about $0.23 at published Go prices, mostly peak hours (estimate) |
+| Tests | 418 before, 498 after |
+
+Wiring: lanectl `suite` gate job (full suite per attempt in the sandbox, 60s; it would have
+caught both reversed-behaviour fixes at the attempt); homelab-analytics `ruff` gate job and
+compose deploy (homelab-analytics PRs #77, #78). Smoke through `lanectl deploy run` against a
+scratch log: deploy and health 91s, loopback ports only, a planted `GH_TOKEN` absent from the
+containers, teardown left no containers, volumes or images. It also found that
+homelab-analytics has `core.fileMode=false` (governance calls the script through `bash`).
+
+Not yet exercised: a real homelab-analytics train through `deploy run` and `land`; the first
+homelab release will do it. Deferred as planned: the Kubernetes backend.
