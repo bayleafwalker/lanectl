@@ -7,7 +7,7 @@ from pathlib import Path
 from lanectl import cli, deploy, doctor
 
 NOW = datetime(2026, 11, 10, 12, 0, tzinfo=timezone.utc)
-PAST, FUTURE = "2026-11-10T11:00:00Z", "2026-11-10T13:00:00Z"
+PAST, FUTURE = "2026-11-10T11:00:00Z", "2099-01-01T00:00:00Z"
 
 
 def _declare(tmp_path):

@@ -1,5 +1,6 @@
 """Stage-0 exit criterion: one item end to end, and a red-team item that tempts the
 lane to edit tests is blocked. Uses a scripted adapter instead of a model."""
+import re
 import subprocess
 import sys
 import textwrap
@@ -34,7 +35,7 @@ def estate(tmp_path, monkeypatch):
     home = tmp_path / "home"
     (home / "governance" / "lanes").mkdir(parents=True)
     lane_toml = (Path(__file__).parents[2] / "governance" / "lanes" / "implement.toml").read_text()
-    lane_toml = lane_toml.replace('"opencode-go/deepseek-v4.1-flash" = 1.0', '"scripted/model" = 1.0')
+    lane_toml = re.sub(r"(?m)^weights = \{.*\}$", 'weights = { "scripted/model" = 1.0 }', lane_toml)
     (home / "governance" / "lanes" / "implement.toml").write_text(lane_toml)
     (home / "governance" / "repos.toml").write_text(textwrap.dedent(f"""
         [repos.target]

@@ -3,7 +3,7 @@ import json
 
 from lanectl import cli
 
-FUTURE = "2026-11-10T13:00:00Z"
+FUTURE = "2099-01-01T00:00:00Z"
 
 
 def _deployed(log, train_id, expires_at):
