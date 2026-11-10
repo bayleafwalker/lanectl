@@ -62,3 +62,23 @@ qualified, and the specs, not the code, are shown to be the asset.
 
 Not now: the Kubernetes deploy backend (rung 5), deeper decision records, burn tuning, and
 sprintctl integration beyond carrying a work id on the release.
+
+## Progress (2026-11-10)
+
+| Rung | Done | Evidence |
+| --- | --- | --- |
+| 1 | First real homelab train through deploy and land | `hla-freshness-recovery` (#1588): train 2693 passed, `deploy run` healthy in 54s, `land` refused before the deploy and tore it down after; homelab PR #79. `hla-domain-freshness` (#1553) queued. 2 of about 20 product-api items. |
+| 3 | Exit met | implement rev 3 routes deepseek-v4-pro at 0.25; `hla-freshness-recovery-a2` was the first `retry = "different_model"` and changed the outcome (a1 Flash rejected, a2 Pro landed). |
+| 4 | Instruments built (v0.1.28) | `lr-usage-focus`, `lr-operator-cost`, `lr-tick`, `lr-otel-export`, `lr-model-windows`: 5 releases, 5 attempts, all first-time gate passes, 1 integrator fix (model-error: a wall-clock test). Timer units in `contrib/systemd/`, not enabled (installing a recurring job needs the operator). |
+| 6 | Anthropic provider added | allocation rev 9: interactive sessions priced at API-equivalent rates; placeholder window, interactive reservation 1.0. |
+
+First operator-cost reading (estimates): lane work $0.03 per landed release; interactive Claude
+usage $104.88 this week, all unattributed because `lanectl focus` did not exist yet, which is
+about $1.59 per landed release over the 66 landed, roughly 50 times the lane cost. The planner
+and integrator, not the lanes, set the cost of a landed item; rung 2 (lanes write releases) is
+where that number moves.
+
+Found on the way: implement rev 3 broke the seed fixture's literal weights replace (fixed: the
+fixture rewrites the whole line); lane-written deploy tests compared against 13:00 UTC today and
+went red after it (fixed). Not yet modelled: V4 Pro's own $15/month limit as a scoped window
+(the mechanism now exists; budget in output tokens still to derive).

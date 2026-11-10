@@ -1,0 +1,10 @@
+[Unit]
+Description=Run lanectl tick every 30 minutes (ladder rung 4)
+
+[Timer]
+OnBootSec=10min
+OnUnitInactiveSec=30min
+Persistent=false
+
+[Install]
+WantedBy=timers.target

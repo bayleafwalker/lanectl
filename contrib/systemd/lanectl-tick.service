@@ -1,0 +1,13 @@
+[Unit]
+Description=lanectl tick: doctor, reap expired dev deploys, run up to 3 lane attempts
+Documentation=file:///projects/dev/lanectl/docs/plans/2026-11-10-productive-life-ladder.md
+
+[Service]
+Type=oneshot
+WorkingDirectory=/projects/dev/lanectl
+Environment=LANECTL_HOME=/projects/dev/lanectl
+Environment=PATH=%h/.local/bin:/etc/profiles/per-user/%u/bin:/run/current-system/sw/bin:/run/wrappers/bin
+ExecStart=%h/.local/bin/lanectl tick --max 3
+StandardInput=null
+TimeoutStartSec=3h
+Nice=10
