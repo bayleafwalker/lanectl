@@ -58,22 +58,75 @@ A competing writer outside that journal may cause an owner chain conflict; that
 refusal stays visible. The journal does not invent a new sequence or silently
 rebase an uncertain append.
 
-## Authoritative event storage remains separate
+## Served lane event authority
 
-This module does not replace the lane JSONL event log. Existing run evidence
-`tail` and `entry` operations can replay one caller-owned run chain. They do not
-provide the atomic multi-event transaction used by `EventLog.locked()` for
-admission (claim, capacity reservation and dispatch record), nor a shared stream
-across different named-host runner principals. A local SQLite journal cannot
-supply either missing owner guarantee.
+`lanectl.stream_store` owns schema 1, validated event storage, snapshot reads and
+atomic idempotent expected-revision batch append. Its optional
+`lanectl.vuoro_adapter.register_lane_catalog` composes into Vuoro's immutable
+catalog as `lane.stream.read-v1` (`work:read`) and `lane.stream.append-v1`
+(`work:evidence`). Both operations derive workspace, repository and principal
+from verified invocation context and recheck scope before serving a replay.
+They grant no Sprintctl claim, terminal Decision or target effect authority.
 
-A served lane event store needs a lanectl-owned repository stream with paginated
-revisioned reads, idempotent atomic batch append against an expected revision,
-contract validation, and explicitly authorized cross-run writers. Its adapter,
-Vuoro composition and runner operation allowlist must be implemented and tested
-before changing event-log authority. Until that path is qualified, JSONL remains
-the lane authority and is host-persistent; served run/lease/evidence/outcome facts
-remain authoritative at their existing owner.
+`RemoteEventLog` implements the existing append/read/locked interface. One
+`locked` block becomes one atomic served batch. Competing-host revision conflicts
+fail before admission returns a claim. An uncertain response retains exact
+pending bytes on the host and replays them under the same idempotency key.
+Reads page through a fixed snapshot revision; they never combine partial views
+from different stream revisions. These guarantees require the lane owner
+operations, not the per-run evidence chain.
+
+The host-persistent `LANECTL_STATE/backend.json` marker selects one authority for
+CLI invocations, hooks and the timer, including calls outside the checkout.
+`open_log()` never falls back to local JSONL if a selected served owner fails.
+`EventLog(path)` remains the explicit local/snapshot implementation for tests.
+
+### Release, storage and cutover
+
+The source implementation does not activate or qualify a deployment. A service
+release must pin the built lanectl wheel, source revision and artifact digest in
+its immutable composition manifest, alongside the existing work/audit/knowledge
+owners. The new optional lane descriptor selects module `lanectl.vuoro_adapter`,
+registration `register_lane_catalog`, API `v1`, schema `1`. Deployment supplies
+`VUORO_LANE_DATABASE`; runtime startup checks compatibility and never migrates.
+The gateway must admit exactly the two repository-scoped stream operations for
+the enrolled runner.
+
+The SQLite owner requires one service replica and a persistent local/block
+filesystem volume with working SQLite locks; do not place it on a network
+filesystem or an ephemeral container layer. Back up using SQLite's online backup
+API (copying a live WAL database file alone is incomplete), store the backup in
+the estate's qualified backup system, and rehearse a quiesced restore into a new
+owner instance. Stop service writes before restore. Persistent volume, backup
+and restore evidence is required before calling hosted storage
+**durable-authoritative**. A disposable development database is only
+**host-persistent**. The hosted API allows cross-host clients, but does not by
+itself establish replicated storage or recovery.
+
+With all writers paused, initialize the owner's configured database explicitly,
+then inspect/import history from the current authority:
+
+```sh
+lanectl stream init /state/lanectl/owner.sqlite
+lanectl stream import --repo lanectl --home /projects/dev/lanectl \
+  --source /home/bayleaf/.local/state/lanectl/events.jsonl
+# Read the dry-run source_sha256, then use that exact value:
+lanectl stream import --repo lanectl --home /projects/dev/lanectl \
+  --source /home/bayleaf/.local/state/lanectl/events.jsonl \
+  --source-sha256 <dry-run-digest> --execute
+lanectl stream configure --repo lanectl --home /projects/dev/lanectl
+```
+
+The migration command runs on the owner host; import/configure run on the lane
+host using its configured owner and runner credential. Import preserves event
+payloads, timestamps and ordering in bounded idempotent batches, refuses a
+mismatched served prefix, checks source drift, and records source and canonical
+event hashes in `stream-import-receipt.json`. It does not switch authority.
+Configure refuses an empty or mismatched destination when local history exists.
+Resume writers only after final history verification and marker selection.
+Keep JSONL as a historical source after switching; never run independent local
+and served writers as parallel authorities. Recovery/import receipts remain
+**host-persistent**, even when the selected stream has qualified hosted durability.
 
 ## Verification
 

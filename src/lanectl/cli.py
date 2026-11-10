@@ -9,7 +9,7 @@ import sys
 
 from . import runner
 from .config import load_lane, load_releases, load_repos
-from .events import EventLog, project_items
+from .events import EventLog, project_items, open_log
 from .ready import readiness
 
 # Item states that mean a lane cannot take the item right now, even though the
@@ -66,7 +66,7 @@ def main(argv: list[str] | None = None) -> int:
     for plugin in discover_plugins("lanectl"):
         handlers.update(plugin.register(sub))
     a = p.parse_args(argv)
-    log = EventLog()
+    log = open_log()
     if a.cmd in handlers:
         return handlers[a.cmd](a, log)
 

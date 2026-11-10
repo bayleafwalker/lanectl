@@ -119,3 +119,32 @@ def project_items(events: list[dict]) -> dict[str, ItemView]:
         elif t == "item.requeued":
             v.state, v.last_reason = "requeued", d["reason"]
     return items
+
+
+def open_log():
+    """Select the configured authority consistently for CLI, hooks and timers.
+
+    A host-persistent backend marker keeps invocations outside the checkout from
+    silently writing a second local authority. Served errors never fall back.
+    EventLog(path) remains the explicit local/snapshot implementation for tests.
+    """
+    marker = state_dir() / 'backend.json'
+    repo = os.environ.get('LANECTL_STREAM_REPO')
+    if marker.exists():
+        raw = json.loads(marker.read_text())
+        if raw.get('schema') != 'lanectl.backend/v1' or raw.get('backend') != 'served':
+            raise ValueError('invalid lanectl backend marker; refusing a local fallback')
+        if repo and repo != raw['repo']:
+            raise ValueError('LANECTL_STREAM_REPO conflicts with selected served authority')
+        repo, root, stream = raw['repo'], raw['home'], raw['stream']
+    elif repo:
+        from .config import home
+        root, stream = home(), os.environ.get('LANECTL_STREAM_NAME', 'control')
+    else:
+        return EventLog()
+    from .coordination import configured, CoordinationError
+    from .remote_events import RemoteEventLog
+    coordinator = configured(repo, root=root)
+    if coordinator is None:
+        raise CoordinationError('served lane stream selected but Vuoro owner configuration is missing')
+    return RemoteEventLog(coordinator.client, state_dir() / 'stream-pending.json', stream=stream)
