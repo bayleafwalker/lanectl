@@ -74,3 +74,20 @@ protected_paths = [".forgejo/**", ".agents/**", ".claude/**", ".sprintctl/**", "
 
 [repos.vuoro-cloud.routing]
 "claude-sonnet-5-5" = 1.0
+
+# appservice: public (github), GitOps for the appservice cluster. Flux applies main, so a lane
+# landing under clusters/, configuration/ or repositories/ would be a production deploy; those
+# paths are protected (production promotion stays an operator Decision, ladder plan). Lanes may
+# change docs/ (CI, rebuild and qualification suites), verification/ and tests. check_cmd is the
+# CI gate: `offline.sh validate` passed in 58s offline on a fresh worktree (563 passed, 2026-11-10).
+[repos.appservice]
+path = "/projects/dev/appservice"
+main = "main"
+test_cmd = "python3 -m pytest -q -p no:cacheprovider {files}"
+check_cmd = "bash docs/scripts/ci/offline.sh validate"
+worktree_root = "/projects/dev/_wt/lanes"
+protected_paths = ["clusters/**", "configuration/**", "repositories/**", "data/**", "bin/**",
+                   "scripts/**", ".github/**", ".sops.yaml", ".agents/**", ".claude/**",
+                   "AGENTS.md", "CLAUDE.md", "project.toml", "mise.toml", "opencode.json",
+                   "appservice.dispatch.json", "helm-toleration-allowlist.txt",
+                   "kustomize-apps-allowlist.txt", "ops_state.md", "vscode-shell/**"]
