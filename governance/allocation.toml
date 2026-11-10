@@ -8,7 +8,8 @@
 # rev 8 (2026-11-10): deepseek-v4-pro prices (routed at 0.25 since implement rev 3).
 # rev 9 (2026-11-10): anthropic provider (interactive sessions; ladder rung 6 first step).
 # rev 10 (2026-11-10): model-scoped window for DeepSeek V4 Pro's own limit (lr-model-windows).
-revision = 10
+# rev 11 (2026-11-10): anthropic per-size estimates (placeholders) so Claude lane attempts reserve.
+revision = 11
 
 [providers.opencode]
 unit = "output_tokens"
@@ -94,6 +95,11 @@ budget_basis = "placeholder"
 
 [providers.anthropic.reservations]
 interactive = 1.0
+
+[providers.anthropic.estimates]
+S = 15000
+M = 40000
+L = 100000
 
 # Published API prices, USD per 1M tokens (claude-api reference, cached 2026-11-03). Cache
 # write = 1.25x input (5-minute cache; derived multiplier). Haiku cache read = 0.1x input
