@@ -1,7 +1,7 @@
 id = "s3-ready-state"
 repo = "lanectl"
-base_sha = "6c1f42e71ae37fddb462e3e197fadc0a9de9f8f1"
-revision = 1
+base_sha = "bf9a3dfe3feb29aaef6ea5de045fc8f08a089bfd"
+revision = 2
 title = "ready shows in-flight items by state, not READY"
 task_class = "view"
 size = "S"

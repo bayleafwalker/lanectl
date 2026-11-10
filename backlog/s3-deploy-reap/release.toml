@@ -1,8 +1,7 @@
 id = "s3-deploy-reap"
 repo = "lanectl"
-base_sha = "185ed6c77c2605ccdb4f73030554c2fe53a6d530"
-revision = 2
-draft = true
+base_sha = "bf9a3dfe3feb29aaef6ea5de045fc8f08a089bfd"
+revision = 3
 title = "deploy list and reap; doctor warns on expired live deploys"
 task_class = "tooling"
 size = "S"
@@ -26,6 +25,9 @@ Add to src/lanectl/deploy.py:
   --json prints a list of {"train_id", "namespace", "repo", "expires_at", "expired"}.
   With no live deploys print "no live deploys".
 - "deploy reap": runs reap and prints its lines (or "nothing to reap"); exit 0.
+
+Fix "deploy run <train_id>": exit 0 only when the last train.deployed event for that train_id
+passed (today any earlier passed deploy of the train makes a failed rerun exit 0).
 
 In src/lanectl/doctor.py add a "deploys" check to run(): WARN with detail
 "<n> live past expires_at (lanectl deploy reap)" when any live deploy has expired at `now`,

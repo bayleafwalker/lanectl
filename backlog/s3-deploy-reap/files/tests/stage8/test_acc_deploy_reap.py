@@ -77,6 +77,23 @@ def test_doctor_warns_on_expired_live_deploy(estate, tmp_path):
     log = estate[2]
     assert not [f for f in doctor.run(log, now=NOW) if f.check == "deploys"]
     _deployed(log, "train-aa", PAST)
-    (finding,) = [f for f in doctor.run(log, now=NOW) if f.check == "deploys"]
+    found = [f for f in doctor.run(log, now=NOW) if f.check == "deploys"]
+    assert len(found) == 1
+    finding = found[0]
     assert finding.level == "WARN"
     assert finding.detail == "1 live past expires_at (lanectl deploy reap)"
+
+
+def test_deploy_run_exit_reflects_the_last_deploy(estate, tmp_path, monkeypatch, capsys):
+    _declare(tmp_path)
+    log = estate[2]
+    log.append("train.built", {"train_id": "train-gg", "repo": "target", "base_sha": "a" * 40,
+                               "attempts": [], "passed": True, "worktree": str(tmp_path)})
+    _deployed(log, "train-gg", FUTURE)
+
+    def failing(lg, train_id):
+        _deployed(lg, train_id, FUTURE, passed=False)
+        return f"{train_id}: health failed"
+
+    monkeypatch.setattr(deploy, "deploy_train", failing)
+    assert cli.main(["deploy", "run", "train-gg"]) == 1
