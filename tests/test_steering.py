@@ -5,6 +5,7 @@ from lanectl.steering import admission
 from lanectl.capacity import AllocationPolicy
 from lanectl.contracts import make_event
 from datetime import datetime, timezone
+import pytest
 
 
 def test_static_until_class_is_authorized():
@@ -94,3 +95,19 @@ def test_pool_reservations_shared_across_provider_aliases_and_deduplicated():
     reconciled = make_event("capacity.reconciled", {"reservation_id": "r", "provider": "alias",
         "attempt_id": "aa", "actual": 0, "outcome": "completed"})
     assert admission([observation(5), held, reconciled], allocation(), NOW, "p", "S", "a", enforce=True)["decision"] == "admit"
+
+
+def test_admission_modes_are_explicit_and_default_shadow():
+    from lanectl.capacity import ProviderPolicy, PolicyError
+    assert allocation().providers["p"].admission_mode == "shadow"
+    assert ProviderPolicy("p", "tokens", False, (), admission_mode="enforce").admission_mode == "enforce"
+    with pytest.raises(PolicyError):
+        ProviderPolicy("p", "tokens", False, (), admission_mode="yes")
+
+
+def test_reviewed_routing_policy_keeps_opt_in(tmp_path):
+    from lanectl.learning import load_limits
+    path = tmp_path / "routing.toml"
+    path.write_text('min_weight=.05\nmax_weight=1.0\nmin_evidence=5\nprior=[1,1]\nadaptive_classes=["glue"]\nmax_relative_change=.1\n'.replace('=.','=0.'))
+    assert load_limits(path)["adaptive_classes"] == ["glue"]
+    assert load_limits(path)["max_relative_change"] == .1
