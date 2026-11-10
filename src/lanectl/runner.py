@@ -295,11 +295,15 @@ def admit(lane_name: str, log: EventLog, only: str | None = None) -> Claim | str
             n = len(v.attempts) + 1
             attempt_id = f"{rel.id}-a{n}"
             worker = adapters.worker_for(model)
+            from . import reap
+            identity = reap.process_identity()
+            worker_unit = sandboxing.from_lane(lane.sandbox, (), lane.timeout_s + 120, attempt_id=attempt_id).unit
             log.append("item.claimed", {
                 "attempt_id": attempt_id, "lane": lane.lane, "lane_revision": lane.revision,
                 "lane_digest": lane.digest, "model": model, "worker": worker,
                 "release_revision": rel.revision, "base_sha": rel.base_sha,
-                "branch": f"lane/{attempt_id}"}, item_id=rel.id)
+                "branch": f"lane/{attempt_id}", "runner_process": identity,
+                "worker_unit": worker_unit if lane.sandbox.get("mode") == "systemd-run" else None}, item_id=rel.id)
             reserve_capacity(log, events, rel, provider_for(model), attempt_id)
             decisions.dispatch(log, lane=lane, rel=rel, attempt_id=attempt_id,
                                cycle_id=cycle_id, model=model, alternatives=alternatives)

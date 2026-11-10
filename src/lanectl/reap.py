@@ -10,6 +10,11 @@ older than the threshold with no decision gets one now.
 from __future__ import annotations
 
 from datetime import datetime, timezone
+import os
+import socket
+import hashlib
+import subprocess
+from pathlib import Path
 
 from . import decisions, runner
 from .config import load_lane, load_releases
@@ -29,7 +34,7 @@ def _stale(ts: str, now: datetime, older_than_s: float) -> bool:
 
 
 def _recover(log: EventLog, events: list[dict], fin: dict, iid: str,
-             release, max_attempts: int) -> bool:
+             release, max_attempts: int, *, allow_accept=True) -> bool:
     """Decide a finished-but-undecided attempt, then record what the runner would."""
     aid = fin["attempt_id"]
     claim = next((e["data"] for e in events
@@ -50,6 +55,8 @@ def _recover(log: EventLog, events: list[dict], fin: dict, iid: str,
     else:   # died before gates ran: cannot accept, and must not burn an attempt
         dec, reasons, follow = ("rejected", ["infra: runner died before gates"],
                                 "requeue-infra")
+    if not allow_accept and dec == "candidate":
+        dec, reasons, follow = ("rejected", ["infra: abandoned runner; acceptance must be rerun"], "requeue-infra")
     decisions.follow_applied(
         log, item_id=iid, attempt_id=aid, follow=follow,
         mechanism=decisions.MECHANISM_REAPER, reasons=reasons)
@@ -66,7 +73,7 @@ def _recover(log: EventLog, events: list[dict], fin: dict, iid: str,
 
 
 def reap(log: EventLog, *, now: datetime, older_than_s: float,
-         max_attempts: int) -> list[str]:
+         max_attempts: int, claim_filter=None, allow_accept=True) -> list[str]:
     """Close stale open attempts and decide stale finished ones; return their ids."""
     if now.tzinfo is None:
         now = now.replace(tzinfo=timezone.utc)
@@ -82,19 +89,24 @@ def reap(log: EventLog, *, now: datetime, older_than_s: float,
             aid = fin.get("attempt_id")
             if e["type"] != "attempt.finished" or not aid or aid in decided:
                 continue
+            claim = next((c for c in claims if c["data"]["attempt_id"] == aid), None)
+            if claim_filter is not None and (claim is None or not claim_filter(claim)):
+                continue
             if not _stale(e["ts"], now, older_than_s):
                 continue
             iid = e["item_id"] or next(
                 (c["item_id"] for c in claims if c["data"]["attempt_id"] == aid), None)
             if iid is None:
                 continue
-            if _recover(log, events, fin, iid, releases.get(iid), max_attempts):
+            if _recover(log, events, fin, iid, releases.get(iid), max_attempts, allow_accept=allow_accept):
                 decided.add(aid)
                 closed.append(aid)
         views: dict[str, ItemView] = project_items(log.read())
         for e in claims:
             d, iid, aid = e["data"], e["item_id"], e["data"]["attempt_id"]
-            if aid in finished:
+            if aid in finished or aid in decided:
+                continue
+            if claim_filter is not None and not claim_filter(e):
                 continue
             if not _stale(e["ts"], now, older_than_s):
                 continue
@@ -146,3 +158,78 @@ def _cmd(args, log: EventLog) -> int:
         print(f"reaped {aid}")
     print(f"{len(closed)} abandoned attempt(s) closed")
     return 0
+
+
+def process_identity(pid=None):
+    """Kernel birth identity, without relying on PID existence alone."""
+    pid = os.getpid() if pid is None else pid
+    try:
+        stat = Path(f"/proc/{pid}/stat").read_text()
+        start = stat[stat.rfind(')') + 2:].split()[19]
+        boot = Path('/proc/sys/kernel/random/boot_id').read_text().strip()
+        machine = hashlib.sha256(Path('/etc/machine-id').read_bytes().strip()).hexdigest()
+        return {'host': socket.gethostname(), 'boot_id': boot, 'machine_id': machine,
+                'pid': pid, 'start_ticks': start}
+    except (OSError, IndexError, ValueError):
+        return None
+
+
+def runner_dead(identity):
+    """True only when this host can prove the recorded process no longer exists."""
+    if not isinstance(identity, dict):
+        return False
+    local = process_identity()
+    if (local is None or identity.get('host') != local['host']
+            or identity.get('machine_id') != local['machine_id']):
+        return False
+    pid = identity.get('pid')
+    if (not isinstance(pid, int) or isinstance(pid, bool) or pid < 1 or not isinstance(identity.get('start_ticks'), str)
+            or not identity['start_ticks'].isdigit()):
+        return False
+    if identity.get('boot_id') != local['boot_id']:
+        return bool(identity.get('boot_id'))  # same machine, preceding boot
+    current = process_identity(pid)
+    if current is not None:
+        return current['start_ticks'] != identity['start_ticks']
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return True
+    except (PermissionError, OSError):
+        return False
+    return False  # procfs unreadable is unknown, not proof of death
+
+
+def unit_inactive(unit):
+    """An orphaned systemd sandbox can outlive its Python runner."""
+    if not isinstance(unit, str) or not unit.startswith('lanectl-attempt-') or not unit.endswith('.service'):
+        return False
+    try:
+        p = subprocess.run(['systemctl', '--user', 'show', unit,
+                            '--property=ActiveState,LoadState'], capture_output=True,
+                           text=True, timeout=10)
+    except (OSError, subprocess.TimeoutExpired):
+        return False
+    fields = dict(row.split('=', 1) for row in p.stdout.splitlines() if '=' in row)
+    return (p.returncode in (0, 4) and fields.get('ActiveState') in ('inactive', 'failed')
+            and fields.get('LoadState') in ('loaded', 'not-found'))
+
+
+def periodic(log, *, lane_name='implement', now=None, unit_inactive_fn=None):
+    """Recover proven abandoned local attempts before admitting more work.
+
+    Age alone never steals a lease or a live process. Foreign, old-format or
+    unreadable process facts remain manual/owner recovery. Recovered gate sets
+    cannot become candidates automatically: the new attempt reruns all gates.
+    """
+    try:
+        lane = load_lane(lane_name)
+    except FileNotFoundError:
+        return []
+    def eligible(claim):
+        d = claim['data']
+        return (d.get('lane') == lane_name and runner_dead(d.get('runner_process'))
+                and (unit_inactive_fn or unit_inactive)(d.get('worker_unit')))
+    return reap(log, now=now or datetime.now(timezone.utc),
+                older_than_s=max(3600, lane.timeout_s + 120), max_attempts=lane.max_attempts,
+                claim_filter=eligible, allow_accept=False)

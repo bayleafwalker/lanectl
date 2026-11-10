@@ -71,3 +71,11 @@ For a served event stream, autonomous effect execution additionally requires
 hostname. Other hosts may admit workers using atomic stream CAS but cannot deploy,
 publish or land trains. Admission conflicts are recomputed before any worker
 starts; external effects are reconciled from receipts instead of blindly replayed.
+
+Ticks also recover abandoned attempts before admission. New claims record the
+runner's kernel birth identity and named sandbox unit. Automatic recovery needs
+both proof that the recorded same-host process is gone or its PID was reused,
+and proof that its sandbox is inactive; age alone is insufficient. Foreign-host,
+legacy and unreadable liveness remain unknown for owner/manual reconciliation.
+A recovered incomplete gate set is requeued to rerun acceptance, never promoted
+to a candidate merely because the gate records present so far passed.

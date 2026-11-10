@@ -9,7 +9,7 @@ claimed or after a worker infrastructure rejection.
 """
 from __future__ import annotations
 
-from . import deploy, doctor, runner, integrator
+from . import deploy, doctor, runner, integrator, reap
 
 #: Substrings of an ``execute`` line that mean the worker itself failed.
 INFRA_MARKERS = ("-> rejected: infra:", "-> rejected: infra")
@@ -44,8 +44,10 @@ def tick(log, *, max_items: int = 3, lane: str = "implement",
     status = "warn" if doctor.WARN in levels else "ok"
     # Explicit autonomous_classes are the opt-in; ordinary ticks preserve the
     # existing worker-only shape when authority is empty.
+    recovered = reap.periodic(log, lane_name=lane)
     integrated = integrator.cycle(log)
     reaped = (reap_fn or deploy.reap)(log)
+    reaped.extend(f"attempt {aid}: abandoned runner recovered" for aid in recovered)
     ran = (run_fn or _run)(log, max_items, lane)
     integrated.extend(integrator.cycle(log))
     result = {"doctor": status, "reaped": reaped, "ran": ran, "stopped": None}
