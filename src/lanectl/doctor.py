@@ -156,14 +156,23 @@ def _main_sha(repo: RepoSpec, cache: dict[str, str]) -> str:
     return cache[repo.name]
 
 
+#: Item states where a moved base is actionable: the release is waiting for a
+#: lane and no attempt is in flight.  An item absent from the log is "new" and
+#: waits the same way; anything else (claimed, implemented, gated, candidate,
+#: in-train, landed) may still be moving through a lane, where rebasing would
+#: race the runner instead of helping it.
+DRIFT_STATES = frozenset({"ready", "requeued", "parked", "rejected"})
+
+
 def check_base_drift(releases: list[WorkRelease], repos: dict[str, RepoSpec],
                      views: dict[str, ItemView]) -> list[Finding]:
-    """A pending release whose ``base_sha`` is no longer the repo's main commit."""
+    """A waiting release whose ``base_sha`` is no longer the repo's main commit."""
     findings: list[Finding] = []
     cache: dict[str, str] = {}
     for rel in releases:
-        if views.get(rel.id) is not None and views[rel.id].state == "landed":
-            continue
+        view = views.get(rel.id)
+        if view is not None and view.state not in DRIFT_STATES:
+            continue   # in flight (or landed): a rebase warning would be wrong
         repo = repos.get(rel.repo)
         if repo is None:   # the repos check already reported it
             continue
