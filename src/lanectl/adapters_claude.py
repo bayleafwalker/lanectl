@@ -197,7 +197,7 @@ def _record(outcome: str, exit_code: int, final_tail: str, reason: str | None,
 
 
 def _run_child(cmd: list[str], worktree: Path, timeout_s: float,
-               env: dict | None = None) -> tuple[str, str, int, bool]:
+               env: dict | None = None, cancel_event=None) -> tuple[str, str, int, bool]:
     """Run the CLI in its own process group so a timeout kills descendants."""
     proc = subprocess.Popen(
         cmd,
@@ -209,6 +209,10 @@ def _run_child(cmd: list[str], worktree: Path, timeout_s: float,
         start_new_session=True,
         env=env,
     )
+    if cancel_event is not None:
+        from .child_process import communicate
+        stdout, stderr, stopped = communicate(proc, timeout_s, cancel_event)
+        return stdout or "", stderr or "", 130 if stopped == "cancelled" else 124 if stopped else proc.returncode, bool(stopped)
     try:
         stdout, stderr = proc.communicate(timeout=timeout_s)
         return stdout, stderr, proc.returncode, False
@@ -222,7 +226,7 @@ def _run_child(cmd: list[str], worktree: Path, timeout_s: float,
 
 
 def run_claude(*, model: str, worktree: Path, prompt: str, status_file: Path,
-               timeout_s: float, external: bool, env: dict | None = None) -> AdapterResult:
+               timeout_s: float, external: bool, env: dict | None = None, cancel_event=None) -> AdapterResult:
     """Run Claude Code headless and return a normalised result.
 
     A timeout is recorded as ``failed`` with exit code 124.  The status file is
@@ -250,7 +254,8 @@ def run_claude(*, model: str, worktree: Path, prompt: str, status_file: Path,
     cmd = build_command(model, prompt)
     cmd[0] = exe
     try:
-        stdout, stderr, exit_code, timed_out = _run_child(cmd, worktree, timeout_s, env)
+        kwargs = {"cancel_event": cancel_event} if cancel_event is not None else {}
+        stdout, stderr, exit_code, timed_out = _run_child(cmd, worktree, timeout_s, env, **kwargs)
     except OSError as exc:
         result = _result("failed", 1, f"claude launch failed: {exc}", None)
         _write_status(status_file, _record(
@@ -264,6 +269,8 @@ def run_claude(*, model: str, worktree: Path, prompt: str, status_file: Path,
         partial = (stdout + stderr).strip()
         final = f"{detail}\n{partial}" if partial else detail
         result = _result("failed", 124, final[-TAIL_LIMIT:], None)
+        if cancel_event is not None and cancel_event.is_set():
+            result = _result("failed", 130, "native execution cancelled after lease loss", None)
     else:
         parsed = parse_result(stdout)
         tail = parsed.final_tail or (stdout + stderr)[-TAIL_LIMIT:]
