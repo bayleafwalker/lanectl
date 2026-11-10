@@ -7,7 +7,8 @@
 # rev 5 (2026-11-09): pool identity, observation freshness, reallocation dwell (decision-records plan).
 # rev 8 (2026-11-10): deepseek-v4-pro prices (routed at 0.25 since implement rev 3).
 # rev 9 (2026-11-10): anthropic provider (interactive sessions; ladder rung 6 first step).
-revision = 9
+# rev 10 (2026-11-10): model-scoped window for DeepSeek V4 Pro's own limit (lr-model-windows).
+revision = 10
 
 [providers.opencode]
 unit = "output_tokens"
@@ -35,6 +36,16 @@ name = "week"
 length_s = 604800
 budget = 3400000
 budget_basis = "verified"
+
+# DeepSeek V4 Pro has its own limit: $15/month, weekly 50% = $7.50 (published). Conversion
+# (estimate): observed V4 Pro mix costs $21.44 per 1M recorded output tokens (3 events,
+# 2026-11-10), so $7.50 is about 350k output tokens. Model-scoped: report and doctor only.
+[[providers.opencode.windows]]
+name = "pro-week"
+length_s = 604800
+budget = 350000
+budget_basis = "verified"
+models = ["opencode-go/deepseek-v4-pro"]
 
 # Published OpenCode Go prices, USD per 1M tokens (opencode.ai/docs/go, read 2026-11-09).
 # Peak: 01:00-04:00 and 06:00-10:00 UTC, Monday-Friday; all other hours are off-peak.
