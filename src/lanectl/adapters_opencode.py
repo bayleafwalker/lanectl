@@ -128,7 +128,8 @@ def run_opencode(*, model: str, worktree: Path, prompt: str, status_file: Path,
     cmd = ["opencode", "run", "--format", "json", "--model", model, "--", prompt]
     try:
         proc = subprocess.Popen(
-            cmd, cwd=str(worktree), stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+            cmd, cwd=str(worktree), stdin=subprocess.DEVNULL,
+            stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
             text=True, start_new_session=True, env=env,
         )
     except OSError as exc:

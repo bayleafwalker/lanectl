@@ -46,7 +46,7 @@ def agentops_dispatch(worker: str, model: str, worktree: Path, prompt: str, stat
     if external:
         cmd.append("--data-boundary-attested")
     cmd.append(prompt)
-    p = subprocess.run(cmd, capture_output=True, text=True, env=env)
+    p = subprocess.run(cmd, stdin=subprocess.DEVNULL, capture_output=True, text=True, env=env)
     try:
         rec = json.loads(status_file.read_text())
     except (OSError, ValueError):
