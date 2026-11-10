@@ -1,0 +1,30 @@
+id = "bx-burn-windows"
+repo = "lanectl"
+base_sha = "8bfcb50dd3265383066269e44e5355a6264fa56d"
+revision = 1
+title = "Burn: capacity's window bounds and the tightest window"
+task_class = "projection"
+size = "M"
+data_class = "public"
+outcome = """
+Plan docs/plans/2026-11-10-backlog-dx-and-admin-views.md; sprintctl lanectl#2881. Two defects in
+src/lanectl/burn.py:
+1. Bounds disagree with capacity. capacity.project places an unanchored window on the epoch grid
+   (or the policy anchor, or the latest window.observed reset_at), but burn anchors windows to the
+   latest observation's window_start, so for a weekly window the burn window always ends about
+   seven days out and never qualifies. Burn must use, for each window, the same window_start and
+   window_end that capacity.project reports.
+2. Usage is not per window. _burnable and plan_burn subtract the largest per-window usage from
+   every window and look only at the window that is ending, so a 5h window with room inside an
+   exhausted week still burns. The burnable amount must be the minimum over all of the provider's
+   windows of (budget - that window's used from capacity.project - outside_lane - in_flight),
+   floored at 0. A plan is made when any window ends within start_within_s, limited by that
+   minimum; min_burnable, estimates, slots and dwell rules are unchanged.
+Delete burn's own observation-anchored bounds once unused. Existing tests with explicit anchors keep
+passing.
+"""
+[scope]
+paths = ["src/lanectl/burn.py", "tests/stage8/**"]
+[acceptance]
+exec = ["uv run --no-sync pytest -q -p no:cacheprovider"]
+files = ["tests/stage8/test_acc_burn_windows.py"]

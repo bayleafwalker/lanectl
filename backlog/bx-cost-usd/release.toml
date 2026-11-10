@@ -1,0 +1,33 @@
+id = "bx-cost-usd"
+repo = "lanectl"
+base_sha = "8bfcb50dd3265383066269e44e5355a6264fa56d"
+revision = 1
+title = "Dollar estimates from published prices"
+task_class = "projection"
+size = "S"
+data_class = "public"
+outcome = """
+Plan docs/plans/2026-11-10-backlog-dx-and-admin-views.md. OpenCode Go reports cost_usd=0.0, so the
+report shows no cost although the subscription limits are dollar amounts. governance/allocation.toml
+now carries [providers.<p>.prices] (peak_hours_utc as [start, end) UTC hour pairs, peak_weekdays with
+Monday = 0, and models.<model>.offpeak/peak tables of USD per 1M tokens for input, output and
+cache_read). Add src/lanectl/costs.py:
+- price_usage(units, model, ts, prices) -> float | None: USD for one usage.recorded units dict at
+  ISO-8601 ts. input_tokens at input, output_tokens and reasoning_tokens at output, cache_read_tokens
+  at cache_read; other units are ignored. The peak table applies when ts falls on a peak weekday and
+  in a peak hour range, else offpeak (a model without a peak table always uses offpeak). None when
+  the model has no price entry.
+- cost_summary(events, policy_raw) -> {model: {"usd_est": float, "events": int}, "_unpriced":
+  {"events": int}}: over usage.recorded events with a model, priced from the prices table of any
+  provider in policy_raw["providers"] that lists the model; usage that no table prices counts in
+  _unpriced.
+- A report section "cost_usd" registered through a module-level report_section() (as feedback.py
+  does), reading the raw policy from config.home()/governance/allocation.toml (absent: the section
+  says "no price table"). Format: "cost_usd (estimate from published prices):", then per model in
+  sorted order "  <model>: usd=<usd_est:.2f> events=<n>", then "  unpriced usage events=<n>".
+"""
+[scope]
+paths = ["src/lanectl/costs.py", "tests/stage8/**"]
+[acceptance]
+exec = ["uv run --no-sync pytest -q -p no:cacheprovider"]
+files = ["tests/stage8/test_acc_cost_usd.py"]
