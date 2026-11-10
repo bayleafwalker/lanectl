@@ -17,7 +17,7 @@ def _raw(basis="verified"):
             "providers": {"opencode": {"unit": "output_tokens", "expiring": True, "pool": "p:1",
                                        "freshness_s": 3600, "estimates": {"S": 15000},
                                        "windows": [{"name": "5h", "length_s": 18000, "budget": 100000,
-                                                    "budget_basis": basis}]}}}
+                                                    "budget_basis": basis, "anchor": "2026-11-09T10:00:00Z"}]}}}
 
 
 def _obs(value=10000, at="2026-11-09T14:20:00Z"):
