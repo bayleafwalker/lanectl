@@ -125,15 +125,18 @@ def load_limits(path: Path | str | None = None) -> dict:
     classes = raw.get("adaptive_classes", [])
     if not isinstance(classes, list) or any(not isinstance(c, str) or not c for c in classes):
         raise ValueError("adaptive_classes must be a list of task class names")
-    return {
+    result = {
         "revision": int(raw.get("revision", 0)),
         "min_weight": float(raw["min_weight"]),
         "max_weight": float(raw["max_weight"]),
         "min_evidence": int(raw["min_evidence"]),
         "prior": [float(raw["prior"][0]), float(raw["prior"][1])],
-        "adaptive_classes": classes,
-        "max_relative_change": float(raw.get("max_relative_change", .25)),
     }
+    if "adaptive_classes" in raw:
+        result["adaptive_classes"] = classes
+    if "max_relative_change" in raw:
+        result["max_relative_change"] = float(raw["max_relative_change"])
+    return result
 
 
 def format_learning(posterior_view: dict[tuple[str, str], dict],

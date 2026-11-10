@@ -49,3 +49,23 @@ def test_named_systemd_sandbox_cancellation_stops_late_writes(tmp_path):
     proc.communicate(timeout=5)
     time.sleep(2.1)
     assert not marker.exists()
+
+
+def test_timeout_stops_sandbox_before_draining_its_inherited_pipes(tmp_path):
+    from lanectl.sandbox import from_lane
+    sb = from_lane({"mode": "systemd-run"}, (str(tmp_path),), 30,
+                   attempt_id="timeout-proof-" + str(os.getpid()))
+    marker = tmp_path / "late"
+    started = tmp_path / "started"
+    script = f"import pathlib,time;pathlib.Path({str(started)!r}).touch();time.sleep(2);pathlib.Path({str(marker)!r}).touch()"
+    proc = subprocess.Popen([*sb.prefix(tmp_path), sys.executable, "-c", script], start_new_session=True,
+                            stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    deadline = time.monotonic() + 5
+    while not started.exists() and proc.poll() is None and time.monotonic() < deadline:
+        time.sleep(.02)
+    assert started.exists(), proc.communicate(timeout=5)
+    before = time.monotonic()
+    _, _, stopped = communicate(proc, .1, on_stop=sb.cancel)
+    assert stopped == "timeout" and time.monotonic() - before < 2
+    time.sleep(2.1)
+    assert not marker.exists()
