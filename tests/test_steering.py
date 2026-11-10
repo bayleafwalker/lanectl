@@ -111,3 +111,15 @@ def test_reviewed_routing_policy_keeps_opt_in(tmp_path):
     path.write_text('min_weight=.05\nmax_weight=1.0\nmin_evidence=5\nprior=[1,1]\nadaptive_classes=["glue"]\nmax_relative_change=.1\n'.replace('=.','=0.'))
     assert load_limits(path)["adaptive_classes"] == ["glue"]
     assert load_limits(path)["max_relative_change"] == .1
+
+
+def test_completed_alias_spend_and_denials_are_shared_by_pool():
+    from dataclasses import replace
+    policy = allocation()
+    policy.providers["alias"] = replace(policy.providers["p"], name="alias")
+    usage = make_event("usage.recorded", {"provider": "alias", "source": "adapter",
+        "attempt_id": "alias-aa", "units": {"output_tokens": 10}}, ts="2026-11-10T12:00:00Z")
+    assert admission([observation(5), usage], policy, NOW, "p", "S", "a", enforce=True)["decision"] == "block"
+    denial = observation(provider="alias", value_kind="denial", value=None,
+                         reset_at="2026-11-10T13:00:00Z")
+    assert admission([denial], policy, NOW, "p", "S", "a", enforce=True)["decision"] == "block"

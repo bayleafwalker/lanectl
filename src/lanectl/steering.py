@@ -57,7 +57,14 @@ def admission(events, policy, now, provider, size, model, *, enforce=False):
         return result
     now = capacity._as_utc(now)
     spec = policy.providers[provider]
-    for observed, seen, data in capacity._capacity_rows(events, provider, spec.pool, "denial"):
+    aliases = {name for name, candidate in policy.providers.items()
+               if candidate.pool == spec.pool and candidate.unit == spec.unit}
+    # A provider label is not an account pool. Normalize only the reviewed
+    # aliases so source-overlap deduplication also spans those aliases.
+    pool_events = [dict(ev, data=dict(ev.get("data", {}), provider=provider))
+                   if ev.get("data", {}).get("provider") in aliases else ev
+                   for ev in events]
+    for observed, seen, data in capacity._capacity_rows(pool_events, provider, spec.pool, "denial"):
         reset = capacity.parse_ts(data.get("reset_at"))
         if (observed <= now and seen <= now and data.get("basis") == "measured"
                 and data.get("unit") == spec.unit
@@ -77,7 +84,7 @@ def admission(events, policy, now, provider, size, model, *, enforce=False):
             continue
         start, end = capacity._window_bounds(now, anchor, window.length_s)
         rows = []
-        for observed, seen, data in capacity._capacity_rows(events, provider, spec.pool, "cumulative"):
+        for observed, seen, data in capacity._capacity_rows(pool_events, provider, spec.pool, "cumulative"):
             value = data.get("value")
             if (data.get("basis") != "measured" or data.get("scope") not in ("account", "pool")
                     or data.get("model") or data.get("models")
@@ -95,7 +102,7 @@ def admission(events, policy, now, provider, size, model, *, enforce=False):
         observed, _, data = rows[-1]
         # Subsequent ledger rows consume additional capacity, without counting
         # the cumulative snapshot's already-covered interval a second time.
-        after = sum(amount for ts, amount, _, _ in capacity._usage_rows(events, provider, spec.unit)
+        after = sum(amount for ts, amount, _, _ in capacity._usage_rows(pool_events, provider, spec.unit)
                     if observed < ts <= now)
         closed = {ev.get("data", {}).get("reservation_id") for ev in events
                   if ev.get("type") == "capacity.reconciled"}
@@ -107,7 +114,7 @@ def admission(events, policy, now, provider, size, model, *, enforce=False):
                     and reservation.get("reservation_id") not in closed):
                 reservations[reservation["reservation_id"]] = reservation["amount"]
         held = sum(reservations.values())
-        view = capacity.project(events, policy, now)[provider][window.name]
+        view = capacity.project(pool_events, policy, now)[provider][window.name]
         free = window.budget - data["value"] - after - held - view["reserved_effective"]
         if free < estimate:
             return {"decision": "block", "basis": "measured",
