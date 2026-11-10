@@ -1,0 +1,50 @@
+id = "lr-work-sync"
+repo = "lanectl"
+base_sha = "e6eb998fa14154bf4378801e98a05d803ae4c047"
+revision = 1
+title = "Landing reports to the release's sprintctl item and closes it when complete"
+task_class = "glue"
+size = "M"
+data_class = "public"
+
+outcome = """
+V1 of the vuoro-cloud plan: a landed release reports to its tracker item, so no manual
+sprintctl step follows a land. The contract already has WorkRelease.work ("<repo>#<id>", may be
+empty), WorkRelease.work_complete, and the event type "work.synced" with required keys
+work, train_id, closed, ok (plus "error" when ok is false).
+
+New module src/lanectl/work.py:
+- tracker_path(work, repos) -> str: the repo name before "#"; repos[name].path when that name
+  is in the repos mapping, else "/projects/dev/<name>".
+- sync(rel, train_id, landed_sha, repos, run=subprocess.run) -> dict | None. Returns None when
+  rel.work is empty. Every sprintctl call is run(["direnv", "exec", path, "sprintctl", ...],
+  cwd=path, capture_output=True, text=True, stdin=subprocess.DEVNULL), where path is
+  tracker_path(rel.work, repos).
+  1. Always first: ["item", "note", "--id", rel.work, "--type", "update", "--summary",
+     f"lanectl landed {rel.id} in {train_id}", "--git-sha", landed_sha, "--actor", "lanectl"].
+  2. Only when rel.work_complete: ["item", "show", "--id", rel.work, "--json"]; the JSON is an
+     object, optionally wrapped as {"item": {...}}, with "status" and "status_revision". If the
+     status is "done", nothing more. If it is "pending" or "blocked", first ["item", "status",
+     "--id", rel.work, "--status", "active", "--actor", "lanectl", "--expected-revision", <its
+     status_revision>], then show again. Then ["item", "status", "--id", rel.work, "--status",
+     "done", "--actor", "lanectl", "--expected-revision", <the current status_revision>].
+  3. Result: {"work": rel.work, "train_id": train_id, "closed": <true only when the item ended
+     done because of or before this call and work_complete is set>, "ok": <every call exited 0
+     and parsed>}. When ok is false, stop at the first failing call and add "error": the last
+     300 characters of that call's stderr (or the exception text). sync never raises.
+- runner.land: after the item.landed events are appended, call work.sync once per landed
+  release that has a work reference, and append its result as "work.synced" with
+  item_id=<release id>. Load releases and repos the way land already does. A failed or raising
+  sync never changes land's return value or stops the land.
+- lanectl backlog new gains --work REF and --work-complete (a flag); they write
+  work = "REF" and work_complete = true into the new release.toml. --work-complete without
+  --work exits 2.
+Do not modify existing tests.
+"""
+
+[scope]
+paths = ["src/lanectl/work.py", "src/lanectl/runner.py", "src/lanectl/backlog.py", "tests/**"]
+
+[acceptance]
+files = ["tests/stage8/test_acc_work_sync.py"]
+exec = ["uv run --no-sync pytest -q -p no:cacheprovider tests/stage8/test_acc_work_sync.py"]
