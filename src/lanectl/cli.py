@@ -35,9 +35,11 @@ def main(argv: list[str] | None = None) -> int:
     r.add_argument("--lane", default="implement")
     r.add_argument("--item")
     r.add_argument("--max", type=int, default=1, help="attempts to run sequentially (default 1)")
-    sub.add_parser("status", help="item states, pending candidates, precision")
+    st = sub.add_parser("status", help="item states, pending candidates, precision")
+    st.add_argument("--all", action="store_true", help="list landed items too")
     rd = sub.add_parser("ready", help="Definition-of-Ready report for every release")
     rd.add_argument("--lane", default="implement")
+    rd.add_argument("--all", action="store_true", help="include landed releases")
     sub.add_parser("candidates")
     t = sub.add_parser("train", help="build a candidate train on top of main and run the repo check")
     t.add_argument("repo")
@@ -80,17 +82,30 @@ def main(argv: list[str] | None = None) -> int:
     if a.cmd == "status":
         events = log.read()
         items = project_items(events)
+        landed = 0
         for v in sorted(items.values(), key=lambda v: v.item_id):
+            if v.state == "landed":
+                landed += 1
+                if not a.all:
+                    continue
             models = ",".join(m.split("/")[-1] for m in v.models_tried)
             print(f"{v.state:10} {v.item_id:40} r{v.release_revision} tries={len(v.attempts)} [{models}]"
                   + (f"  -- {v.last_reason[:120]}" if v.state in ("parked", "rejected", "requeued") else ""))
+        if landed and not a.all:
+            print(f"landed: {landed} (lanectl status --all to list)")
         print(json.dumps(runner.metrics(events), indent=1))
         return 0
     if a.cmd == "ready":
         lane, repos = load_lane(a.lane), load_repos()
+        items = project_items(log.read())
         for rel in load_releases():
-            rs = readiness(rel, lane, repos)
-            print(f"{'READY' if not rs else 'BLOCKED':8} {rel.id}" + "".join(f"\n    - {x}" for x in rs))
+            v = items.get(rel.id)
+            landed = v is not None and v.state == "landed" and v.release_revision >= rel.revision
+            if landed and not a.all:
+                continue
+            rs = [] if landed else readiness(rel, lane, repos)
+            state = "LANDED" if landed else ("READY" if not rs else "BLOCKED")
+            print(f"{state:8} {rel.id}" + "".join(f"\n    - {x}" for x in rs))
         return 0
     if a.cmd == "candidates":
         for c in runner.candidates(log):
