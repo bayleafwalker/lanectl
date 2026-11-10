@@ -12,8 +12,9 @@ carries ``message.id``, ``message.model`` and ``message.usage``.  Streamed
 turns may be repeated with the same id, so messages are deduplicated by id.
 
 Interactive usage is attributed to the release a planner or integrator session
-is working on: ``LANECTL_RELEASE`` wins, then ``lanectl focus``.  The role comes
-from ``LANECTL_ROLE``, then the focus, and defaults to ``interactive``.
+is working on: ``LANECTL_RELEASE`` wins, then that session's ``lanectl focus``,
+then the machine-wide focus.  The role comes from ``LANECTL_ROLE``, then the
+focus, and defaults to ``interactive``.
 
 A per-session cursor (file offset plus the ids already seen) lives next to the
 event log, under the state directory.  Each run only reads the bytes appended
@@ -179,13 +180,14 @@ def _collect(path: Path, cursor: dict):
     return totals, models, messages, {"offset": offset, "messages": sorted(seen)}
 
 
-def _attribution() -> tuple[str | None, str]:
-    """``(release_id, role)``: environment first, then the recorded focus."""
+def _attribution(session_id=None) -> tuple[str | None, str]:
+    """``(release_id, role)``: environment first, then the session focus, then
+    the machine-wide focus."""
     release = os.environ.get("LANECTL_RELEASE", "").strip()
     role = os.environ.get("LANECTL_ROLE", "").strip()
     if not release or not role:
         try:
-            focus = current_focus()
+            focus = current_focus(session_id) or current_focus()
         except Exception:       # attribution must never break the hook
             focus = None
         if focus:
@@ -221,7 +223,7 @@ def handle_hook(stdin, log: EventLog) -> int:
             return 0
 
         model = models.most_common(1)[0][0] if models else "unknown"
-        item_id, role = _attribution()
+        item_id, role = _attribution(session_id)
         with log.locked():
             log.append("usage.recorded", {
                 "provider": PROVIDER,
