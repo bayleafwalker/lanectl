@@ -1,0 +1,31 @@
+id = "lr-claude-provider"
+repo = "lanectl"
+base_sha = "29c326bc6750be75aefb084df438e35730218653"
+revision = 1
+title = "Claude lane attempts reserve and record against the anthropic provider"
+task_class = "glue"
+size = "S"
+data_class = "public"
+
+outcome = """
+Claude lane attempts (vuoro-cloud routes claude-sonnet-5-5) must draw on the same allocation
+provider as interactive Claude sessions, "anthropic" (usage_hook PROVIDER, allocation rev 9,
+windows.provider_for). Today runner.provider_for returns the worker name "claude", so
+admission finds no policy and admits unchecked, reservations are skipped, and lane usage is
+recorded under provider "claude".
+
+runner.py:
+- provider_for(model) returns "anthropic" for claude-* models and "opencode" for
+  opencode-go/* and opencode/* models (unchanged); any other model keeps today's behaviour
+  (the worker name, else the prefix before "/").
+- The adapter usage.recorded event uses provider_for(c.model) instead of c.worker, so
+  OpenCode usage is still recorded as "opencode" and Claude usage as "anthropic".
+Do not modify existing tests.
+"""
+
+[scope]
+paths = ["src/lanectl/runner.py", "tests/**"]
+
+[acceptance]
+files = ["tests/stage8/test_acc_claude_provider.py"]
+exec = ["uv run --no-sync pytest -q -p no:cacheprovider tests/stage8/test_acc_claude_provider.py"]
