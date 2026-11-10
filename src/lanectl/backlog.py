@@ -21,7 +21,7 @@ import tomllib
 from pathlib import Path
 
 from .config import home, load_release, load_releases, load_repos
-from .contracts import ContractError, check_id
+from .contracts import WORK_REF, ContractError, check_id
 from .events import EventLog, project_items
 from .lint_release import lint_release
 
@@ -45,7 +45,7 @@ draft = true
 title = {title}
 task_class = {task_class}
 size = {size}
-data_class = {data_class}
+data_class = {data_class}{work_lines}
 
 outcome = \"\"\"
 TODO: describe the outcome; replace this line with what the release delivers.
@@ -225,6 +225,14 @@ def _drop_draft(text: str) -> str:
 
 
 def _new(args) -> int:
+    work_ref = getattr(args, "work", None)
+    work_complete = bool(getattr(args, "work_complete", False))
+    if work_complete and not work_ref:
+        print("--work-complete needs --work", file=sys.stderr)
+        return 2
+    if work_ref and not WORK_REF.fullmatch(work_ref):
+        print(f"--work must look like <repo>#<id>: {work_ref!r}", file=sys.stderr)
+        return 2
     try:
         check_id("id", args.id)
     except ContractError as exc:
@@ -246,10 +254,16 @@ def _new(args) -> int:
         return 2
 
     test = args.test or f"tests/test_acc_{args.id.replace('-', '_')}.py"
+    work_lines = ""
+    if work_ref:
+        work_lines = f"\nwork = {_quote(work_ref)}"
+        if work_complete:
+            work_lines += "\nwork_complete = true"
     toml = RELEASE_TEMPLATE.format(
         id=_quote(args.id), repo=_quote(repo.name), base_sha=_quote(base_sha),
         title=_quote(args.title), task_class=_quote(args.task_class),
         size=_quote(args.size), data_class=_quote(args.data_class),
+        work_lines=work_lines,
         paths=", ".join(_quote(p) for p in args.scope),
         files=_quote(test), exec_cmd=_quote(_exec_cmd(repo.test_cmd, test)))
     stub = STUB_TEMPLATE.format(id=args.id, message=STUB_MESSAGE)
@@ -398,6 +412,10 @@ def register(sub) -> dict:
     new.add_argument("--data-class", default="public", dest="data_class",
                      choices=("public", "restricted"))
     new.add_argument("--test", metavar="PATH", help="acceptance test path in the release")
+    new.add_argument("--work", metavar="REF",
+                     help="sprintctl item this release delivers, as <repo>#<id>")
+    new.add_argument("--work-complete", action="store_true", dest="work_complete",
+                     help="landing closes the tracker item (needs --work)")
     pub = sp.add_parser("publish", help="lift the draft flag once the release is edited")
     pub.add_argument("id")
     rebase = sp.add_parser("rebase", help="move pending releases to the repo's current main")

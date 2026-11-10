@@ -15,7 +15,8 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 
-from . import adapters, capacity, decisions, deploy, evaluator, gatejobs, report, sandbox as sandboxing
+from . import (adapters, capacity, decisions, deploy, evaluator, gatejobs, report,
+               sandbox as sandboxing, work)
 from .config import RepoSpec, load_lane, load_releases, load_repos, match
 from .contracts import LaneRevision, WorkRelease
 from .events import EventLog, ItemView, project_items, state_dir
@@ -569,7 +570,8 @@ def land(log: EventLog, train_id: str) -> str:
     if tb is None:
         return f"unknown train {train_id}"
     d = tb["data"]
-    repo = load_repos()[d["repo"]]
+    repos = load_repos()
+    repo = repos[d["repo"]]
     requires_deploy = repo.deploy is not None
     if requires_deploy and train_id not in deploy.live(events):
         return (f"{train_id}: repo {repo.name} declares a deploy; run "
@@ -597,6 +599,18 @@ def land(log: EventLog, train_id: str) -> str:
     for aid in d["attempts"]:
         log.append("item.landed", {"attempt_id": aid, "train_id": train_id,
                                    "fix_commits": fixes.get(aid, [])}, item_id=by_attempt[aid])
+    # The land is done; the tracker note/close is best effort and never fails it.
+    releases = {r.id: r for r in load_releases()}
+    for aid in d["attempts"]:
+        rel = releases.get(by_attempt[aid])
+        if rel is None or not rel.work:
+            continue
+        try:
+            synced = work.sync(rel, train_id, tip, repos)
+            if synced is not None:
+                log.append("work.synced", synced, item_id=rel.id)
+        except Exception:      # a raising sync must not change land's answer
+            continue
     if requires_deploy:
         deploy.teardown(log, train_id, "landed")
     _discard(repo, Path(d["worktree"]))
