@@ -1,0 +1,32 @@
+id = "bx-admin-view"
+repo = "lanectl"
+base_sha = "c38aa50fe55e9e5de499aed99fa8d435a25ec020"
+revision = 1
+title = "Management sections in view --html"
+task_class = "view"
+size = "M"
+data_class = "public"
+outcome = """
+Plan docs/plans/2026-11-10-backlog-dx-and-admin-views.md, wave 2. The HTML view shows item counts,
+report, capacity and triage, but not the backlog, what needs the operator, lanes or governance.
+In src/lanectl/view.py:
+- render(events, now, *, releases=None, lanes=None, repos=None) stays pure; when an input is None
+  its section says it is unavailable. The command (_cmd) loads releases with config.load_releases,
+  lane rows with lanes.rows(events) and repos with config.load_repos, and passes them.
+- New sections, each a <section id="..."> placed before the existing ones:
+  backlog: open rows from backlog.backlog_rows (state not landed) as a table STATE, ID, REPO, REV,
+  TRIES, TITLE, followed by "<n> landed".
+  attention: items needing the operator - parked items with their reason, candidates awaiting a
+  train (state candidate), and draft releases (WorkRelease.draft) - one row per item with its kind
+  (parked, candidate, draft); "nothing needs attention" when empty.
+  lanes: per lane its revision, routing (model=weight) and each cap as used/limit.
+  governance: one row per repo with name, path, main, number of protected paths, data_class_floor.
+- A nav at the top with an href="#<id>" link to every section, including the existing items,
+  report, capacity and triage sections.
+Escape every value from releases, the log and governance (titles may contain markup).
+"""
+[scope]
+paths = ["src/lanectl/view.py", "tests/stage8/**"]
+[acceptance]
+exec = ["uv run --no-sync pytest -q -p no:cacheprovider"]
+files = ["tests/stage8/test_acc_admin_view.py"]

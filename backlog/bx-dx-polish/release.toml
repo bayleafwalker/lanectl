@@ -1,0 +1,22 @@
+id = "bx-dx-polish"
+repo = "lanectl"
+base_sha = "c38aa50fe55e9e5de499aed99fa8d435a25ec020"
+revision = 1
+title = "Doctor ignores in-flight drift; capacity prints whole numbers"
+task_class = "glue"
+size = "S"
+data_class = "public"
+outcome = """
+Plan docs/plans/2026-11-10-backlog-dx-and-admin-views.md, observed while dogfooding wave 1.
+- src/lanectl/doctor.py: the base-drift warning tells the operator to rebase, which is wrong for a
+  release that is in flight. Warn only for releases whose item state is new (absent from the log),
+  ready, requeued, parked or rejected.
+- src/lanectl/capacity.py text output (the capacity command without --json): print outside_lane,
+  in_flight, used, remaining, reserved and burnable as whole numbers rounded to the nearest
+  integer (in_flight=24411.825454545455 today). JSON output is unchanged.
+"""
+[scope]
+paths = ["src/lanectl/doctor.py", "src/lanectl/capacity.py", "tests/stage8/**"]
+[acceptance]
+exec = ["uv run --no-sync pytest -q -p no:cacheprovider"]
+files = ["tests/stage8/test_acc_dx_polish.py"]

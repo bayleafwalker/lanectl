@@ -1,0 +1,42 @@
+id = "bx-backlog-new"
+repo = "lanectl"
+base_sha = "c38aa50fe55e9e5de499aed99fa8d435a25ec020"
+revision = 1
+title = "backlog new, publish and rebase"
+task_class = "tooling"
+size = "M"
+data_class = "public"
+outcome = """
+Plan docs/plans/2026-11-10-backlog-dx-and-admin-views.md, wave 2. Writing a release means copying a
+toml, looking up base_sha and bumping revisions by hand; a half-written release in the checkout can
+be claimed. WorkRelease now has draft (release.toml "draft = true"); drafts are never ready.
+Extend the "backlog" command in src/lanectl/backlog.py with three subcommands. All write only under
+config.home()/backlog/ and edit release.toml as text so comments and layout survive.
+
+- "new <id> --repo R --title T --scope GLOB [--scope GLOB ...] [--class C] [--size S|M]
+  [--data-class public|restricted] [--test PATH]": defaults class glue, size S, data-class public,
+  test tests/test_acc_<id with - as _>.py. Writes backlog/<id>/release.toml with id, repo,
+  base_sha (the repo's current main commit, RepoSpec.main), revision = 1, draft = true, title,
+  task_class, size, data_class, an outcome placeholder starting with "TODO", [scope] paths and
+  [acceptance] files = [PATH] and exec = [the repo's test_cmd with {files} replaced by PATH]; and
+  backlog/<id>/files/<PATH> as a stub test that fails with an AssertionError whose message contains
+  "write the acceptance test". The result loads with config.load_release. Prints the release
+  directory. Exit 2 without writing for an invalid id (contracts.check_id), an unknown repo or an
+  existing directory.
+- "publish <id>": refuse (exit 1, draft kept) while the outcome starts with "TODO" or an acceptance
+  file still contains the stub message; otherwise run lint_release.lint_release on the directory,
+  print each problem and exit 1 if any; otherwise remove the draft line and exit 0. A release that
+  is not a draft prints "already published" and exits 0.
+- "rebase [<id> ...] [--pending]": for each named release, or with --pending every release whose
+  item state is new, ready, requeued, parked or rejected, set base_sha to the repo's current main
+  commit and increase revision by 1 (adding "revision = 2" when the file has no revision line);
+  print "<id>: <old 12 hex> -> <new 12 hex> r<n>" or "<id>: up to date" when unchanged. --pending
+  skips landed and in-flight releases silently; a named release whose item is claimed,
+  implemented, gated, candidate or in-train is not changed, prints "<id>: in flight (<state>)" and
+  makes the exit code 1.
+"""
+[scope]
+paths = ["src/lanectl/backlog.py", "tests/stage8/**"]
+[acceptance]
+exec = ["uv run --no-sync pytest -q -p no:cacheprovider"]
+files = ["tests/stage8/test_acc_backlog_new.py"]
