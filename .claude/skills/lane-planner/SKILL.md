@@ -11,10 +11,13 @@ policy and landings; lanes write code.
 ## 1. Inputs (read-only)
 
 ```sh
-lanectl status            # states, precision, per-model results
+lanectl doctor            # home, releases, repos, log, policy, stale attempts, drifted bases
+lanectl backlog list --open   # open releases with state and tries (--state, --repo, --json)
+lanectl backlog show <id>     # one release: fields, attempts with reasons, outcome
 lanectl candidates        # gate-accepted, awaiting integration
-lanectl ready             # Definition-of-Ready blockers per release
-lanectl events --item <id>   # one item's history
+lanectl lanes             # routing, limits and live cap usage per lane
+lanectl status            # open items and precision (--all includes landed)
+lanectl view --html <path>    # management page: backlog, attention, lanes, governance, report
 ```
 
 ## 2. Re-view
@@ -37,14 +40,17 @@ model-error → routing/prompt (LaneRevision); gate-gap → a new gate rule.
 Write the next releases from the current stage of
 `docs/adr/0001-autonomous-lanes.md`. One directory per item:
 
-```
-backlog/<id>/release.toml       # see existing items for the shape
-backlog/<id>/files/<repo-path>  # planner-owned acceptance tests
+```sh
+lanectl backlog new <id> --repo <repo> --title "<title>" --scope '<glob>' [--size M] [--class view] [--test <path>]
+#   writes backlog/<id>/release.toml (draft = true, base_sha = repo main) and a failing stub test
+#   under backlog/<id>/files/<path>; edit the outcome and the test, then:
+lanectl backlog publish <id>     # refuses TODO outcomes and stub tests, runs lint-release, clears draft
 ```
 
-Rules: after any seed/runner change lands, rebase pending releases (set
-`base_sha` to current main and bump `revision`) — stale bases caused the first
-three spec-gap fixes. Acceptance tests must fail on `base_sha` *for the expected
+A draft is never ready, so a half-written release in the checkout cannot be claimed (the runner
+reads the working tree, not committed main). Rules: after any seed/runner change lands,
+`lanectl backlog rebase --pending` moves waiting releases to current main and bumps `revision`
+— stale bases caused the first three spec-gap fixes. Acceptance tests must fail on `base_sha` *for the expected
 reason* (missing module/feature, not a contract error in the test itself: use
 ids of 2+ chars); run `lanectl lint-release backlog/<id>` before publishing (must print OK; it
 flags passes-on-base and spec-gap failures); an import failure at collection hides
