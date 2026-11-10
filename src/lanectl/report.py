@@ -240,12 +240,15 @@ def _fmt_usage(units: dict) -> str:
 
 
 def _table(title: str, rows: dict) -> list[str]:
-    out = [f"{title:10} {'ATT':>4} {'GATE':>5} {'RULED':>6} {'CLEAN':>6} "
+    # The name column fits the longest class or model name (never truncated);
+    # the numeric columns keep their fixed widths, right aligned under the header.
+    width = max([len(title), *(len(name) for name in rows)])
+    out = [f"{title:{width}} {'ATT':>4} {'GATE':>5} {'RULED':>6} {'CLEAN':>6} "
            f"{'PREC':>6} {'MPREC':>6} {'FLAG':>6} {'MEAN_S':>8}  USAGE"]
     for name in sorted(rows):
         g = rows[name]
         flag = "below" if g["below_bar"] else "ok"
-        out.append(f"{name[:10]:10} {g['attempts']:>4} {g['gate_accepted']:>5} "
+        out.append(f"{name:{width}} {g['attempts']:>4} {g['gate_accepted']:>5} "
                    f"{g['ruled']:>6} {g['landed_clean']:>6} "
                    f"{_fmt_precision(g['precision']):>6} "
                    f"{_fmt_precision(g['model_precision']):>6} {flag:>6} "
