@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import math
 
-from . import learning
+from . import capacity, learning
 
 
 def effective_weights(events, eligible: dict[str, float], task_class: str,
@@ -39,4 +39,62 @@ def effective_weights(events, eligible: dict[str, float], task_class: str,
         if low > high:
             raise ValueError("static weight outside adaptive bounds")
         result[model] = round(max(low, min(high, value)), 6)
+    return result
+
+
+def admission(events, policy, now, provider, size, model, *, enforce=False):
+    """Enforce every qualified applicable fixed window under the claim lock.
+
+    Observations must cover the account pool and exact consumption interval.
+    Host totals, estimated values, unknown resets and stale/future observations
+    retain static admission. A measured exhausted window still blocks even when
+    another applicable window is unknown. Model limits conservatively charge
+    pool totals and all in-flight reservations unless better scoped inputs exist.
+    """
+    result = {"decision": "admit", "basis": "unknown", "reasons": []}
+    if not enforce or policy is None or provider not in policy.providers:
+        result["reasons"].append("static admission retained")
+        return result
+    now = capacity._as_utc(now)
+    spec = policy.providers[provider]
+    estimate = capacity.estimate(events, policy, provider, size)
+    if estimate is None or spec.freshness_s is None:
+        result["reasons"].append("unknown estimate or observation freshness")
+        return result
+    applicable = [w for w in spec.windows if not w.models or model in w.models]
+    known = 0
+    for window in applicable:
+        anchor = capacity._observed_anchor(events, provider, window.name, window.anchor)
+        if window.budget_basis != "verified" or anchor is None:
+            continue
+        start, end = capacity._window_bounds(now, anchor, window.length_s)
+        rows = []
+        for observed, seen, data in capacity._capacity_rows(events, provider, spec.pool, "cumulative"):
+            value = data.get("value")
+            if (data.get("basis") != "measured" or data.get("scope") not in ("account", "pool")
+                    or data.get("unit") != spec.unit
+                    or capacity.parse_ts(data.get("window_start")) != start
+                    or not start <= observed <= now or seen > now
+                    or (now - observed).total_seconds() > spec.freshness_s
+                    or isinstance(value, bool) or not isinstance(value, (float, int))
+                    or not math.isfinite(value) or value < 0):
+                continue
+            rows.append((observed, seen, data))
+        if not rows:
+            continue
+        known += 1
+        observed, _, data = rows[-1]
+        # Subsequent ledger rows consume additional capacity, without counting
+        # the cumulative snapshot's already-covered interval a second time.
+        after = sum(amount for ts, amount, _, _ in capacity._usage_rows(events, provider, spec.unit)
+                    if observed < ts <= now)
+        held = capacity.in_flight(events, provider, spec.pool)
+        view = capacity.project(events, policy, now)[provider][window.name]
+        free = window.budget - data["value"] - after - held - view["reserved_effective"]
+        if free < estimate:
+            return {"decision": "block", "basis": "measured",
+                    "reasons": [f"{window.name}: available {free} below estimate {estimate}"]}
+    if applicable and known == len(applicable):
+        result["basis"] = "measured"
+    result["reasons"].append(f"qualified windows {known}/{len(applicable)}")
     return result
