@@ -1,0 +1,46 @@
+id = "s3-train-deploy"
+repo = "lanectl"
+base_sha = "185ed6c77c2605ccdb4f73030554c2fe53a6d530"
+revision = 2
+title = "lanectl deploy run/down: dev train deploys with stripped env; land requires a passed deploy"
+task_class = "tooling"
+size = "M"
+data_class = "public"
+
+outcome = """
+Plan docs/plans/2026-11-10-stage3-gate-jobs-and-train-deploys.md, release s3-train-deploy.
+config.RepoSpec.deploy (config.DeploySpec(cmd, health_cmd, teardown_cmd, ttl_s, env_allow), from
+s3-repo-config) declares a dev deploy. Event types train.deployed and train.torn_down are in
+contracts.EVENT_TYPES (required keys there; reasons in contracts.TEARDOWN_REASONS).
+
+Add src/lanectl/deploy.py:
+- namespace(train_id) -> "lane-dev-<train_id>".
+- deploy_env(spec, train_id) -> dict: only the variables named in spec.env_allow that are set in
+  os.environ, plus LANE_NAMESPACE, LANE_TRAIN_ID and LANE_TTL_S (str of spec.ttl_s). Nothing else
+  from the environment is passed.
+- deploy_train(log, train_id) -> str. Uses the latest train.built for train_id. Returns a message
+  and records nothing when the train is unknown, did not pass, or its repo has no deploy. Otherwise
+  runs spec.cmd, then spec.health_cmd, each with shell=True, cwd=<train worktree>,
+  env=deploy_env(...), timeout 1800, output captured. Both exit 0: append train.deployed
+  {train_id, repo, namespace, passed: True, expires_at: now + ttl_s as "%Y-%m-%dT%H:%M:%SZ" UTC}.
+  Either fails: append train.deployed with passed False, stage "deploy" or "health", tail (last
+  800 chars of output), then tear down with reason "deploy-failed".
+- teardown(log, train_id, reason) -> str: runs spec.teardown_cmd with cwd=<repo path> and the same
+  env, then appends train.torn_down {train_id, namespace, reason, passed: exit == 0}.
+- live(events) -> dict train_id -> train.deployed data, for passed deploys with no later
+  train.torn_down for that train_id.
+- Plugin command (module-level register(sub)): "deploy run <train_id>" prints deploy_train's
+  message, exit 0 when the deploy passed else 1; "deploy down <train_id>" tears down with reason
+  "manual".
+
+In runner.land: when the train's repo declares deploy and the train has no live passed deploy,
+return a message containing "deploy" and change nothing. After a successful land of such a train,
+tear its deploy down with reason "landed". Repos without deploy land exactly as today.
+"""
+
+[scope]
+paths = ["src/lanectl/deploy.py", "src/lanectl/runner.py", "tests/stage8/**"]
+
+[acceptance]
+files = ["tests/stage8/test_acc_train_deploy.py"]
+exec = ["uv run --no-sync pytest -q -p no:cacheprovider tests/stage8/test_acc_train_deploy.py"]
