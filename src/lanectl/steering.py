@@ -57,6 +57,14 @@ def admission(events, policy, now, provider, size, model, *, enforce=False):
         return result
     now = capacity._as_utc(now)
     spec = policy.providers[provider]
+    for observed, seen, data in capacity._capacity_rows(events, provider, spec.pool, "denial"):
+        reset = capacity.parse_ts(data.get("reset_at"))
+        if (observed <= now and seen <= now and data.get("basis") == "measured"
+                and data.get("unit") == spec.unit
+                and data.get("model") in (None, model)
+                and (reset is None or reset > now)):
+            return {"decision": "block", "basis": "measured",
+                    "reasons": ["provider denial remains active"]}
     estimate = capacity.estimate(events, policy, provider, size)
     if estimate is None or spec.freshness_s is None:
         result["reasons"].append("unknown estimate or observation freshness")
@@ -72,6 +80,7 @@ def admission(events, policy, now, provider, size, model, *, enforce=False):
         for observed, seen, data in capacity._capacity_rows(events, provider, spec.pool, "cumulative"):
             value = data.get("value")
             if (data.get("basis") != "measured" or data.get("scope") not in ("account", "pool")
+                    or data.get("model") or data.get("models")
                     or data.get("unit") != spec.unit
                     or capacity.parse_ts(data.get("window_start")) != start
                     or not start <= observed <= now or seen > now

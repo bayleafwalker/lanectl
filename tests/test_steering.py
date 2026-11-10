@@ -67,7 +67,7 @@ def test_model_limit_blocks_only_applicable_model_when_enforced():
 def test_unqualified_observations_never_create_measured_headroom():
     for changes in [{"scope": "host"}, {"basis": "estimated"}, {"unit": "requests"},
                     {"observed_at": "2026-11-10T13:00:00Z"},
-                    {"observed_at": "2026-11-10T09:00:00Z"}, {"value": -1}]:
+                    {"observed_at": "2026-11-10T09:00:00Z"}, {"value": -1}, {"model": "a"}]:
         result = admission([observation(**changes)], allocation(), NOW, "p", "S", "a", enforce=True)
         assert result["decision"] == "admit" and result["basis"] == "unknown"
 
@@ -77,3 +77,10 @@ def test_inflight_reservations_prevent_concurrent_overspend():
         "pool": "account", "unit": "output_tokens", "amount": 10, "attempt_id": "aa"})
     result = admission([observation(5), held], allocation(), NOW, "p", "S", "a", enforce=True)
     assert result["decision"] == "block"
+
+
+def test_denial_blocks_without_capacity_until_observed_reset():
+    deny = observation(value_kind="denial", value=None, reset_at="2026-11-10T13:00:00Z")
+    assert admission([deny], allocation(), NOW, "p", "S", "a", enforce=True)["decision"] == "block"
+    deny["data"]["reset_at"] = "2026-11-10T11:59:30Z"
+    assert admission([deny], allocation(), NOW, "p", "S", "a", enforce=True)["decision"] == "admit"
