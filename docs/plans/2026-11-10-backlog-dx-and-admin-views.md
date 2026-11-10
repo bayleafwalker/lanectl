@@ -50,6 +50,27 @@ Wave 2 (builds on wave 1):
 - `bx-backlog-new` writes planner-owned files; lanes may build the tool, but it is run by the
   planner, and `backlog/**` stays a protected path for lanes.
 
-## Assessment
+## Assessment (closeout 2026-11-10, v0.1.23)
 
-Recorded at closeout: accepted outcomes, planner effort, fix classes, elapsed time.
+| Measure | Value |
+| --- | --- |
+| Releases landed | 11 of 11 (wave 1: 6; wave 2: 5, `bx-backlog-new` split out of the original list) |
+| Attempts | 12; 11 passed the gates first time |
+| Rejections | 1 model-error caught by the gate (`# pragma: no cover` added to a lane test); passed on retry |
+| Integrator fixes | 0 across two trains |
+| Lane cost | 80.7k output tokens, about $0.45 at published Go prices (estimate) |
+| Elapsed | about 40 minutes of lane time, three lanes in parallel |
+| Tests | 307 before, 418 after |
+
+Planner changes made directly (protected paths): the draft flag in `WorkRelease`/`ready.py`,
+an explicit anchor in the stage-7 burn test, the price table (allocation rev 7), skill and README.
+
+Found while dogfooding and fixed in wave 2: doctor warned base drift for in-flight releases;
+capacity printed unrounded floats; burn anchored windows to the latest observation, so a weekly
+window could never burn (`bx-burn-windows`, sprintctl lanectl#2881). Found outside lanectl: the
+16 repos rolled into sprintctl on 2026-11-09 could not run lifecycle commands until each committed
+a root `*.dispatch.json` with `authority_repo_uuid` (UUID5 of the repo URL; done 2026-11-10).
+
+Open: the runner reads the working tree, so only the draft flag protects unfinished releases;
+`lint-release` classifies a missing-key `KeyError` as a spec gap (override recorded in
+`bx-report-polish`).
