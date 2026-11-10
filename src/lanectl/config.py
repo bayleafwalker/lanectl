@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import hashlib
 import os
+import re
 import tomllib
 from dataclasses import dataclass, field
 from pathlib import Path, PurePosixPath
@@ -44,6 +45,24 @@ def match(path: str, globs) -> bool:
 
 
 @dataclass(frozen=True)
+class GateJob:
+    """One extra check run in the attempt worktree after acceptance passes."""
+    name: str
+    cmd: str
+    timeout_s: int = 600
+
+
+@dataclass(frozen=True)
+class DeploySpec:
+    """How a repo's train is deployed to a throwaway dev namespace and torn down."""
+    cmd: str
+    health_cmd: str
+    teardown_cmd: str
+    ttl_s: int = 3600
+    env_allow: tuple[str, ...] = ()     # inherited variables; everything else is stripped
+
+
+@dataclass(frozen=True)
 class RepoSpec:
     name: str
     path: Path
@@ -55,6 +74,63 @@ class RepoSpec:
     protected_paths: tuple[str, ...] = ()   # extra protected globs for this repo
     data_class_floor: str = "public"        # "restricted" treats every release as restricted
     routing: dict[str, float] = field(default_factory=dict)  # overrides lane weights when set
+    gate_jobs: tuple[GateJob, ...] = ()     # in the order repos.toml lists them
+    deploy: DeploySpec | None = None        # None means the repo has no dev deploy
+
+
+_GATE_JOB_NAME = re.compile(r"[a-z0-9][a-z0-9-]*")     # gate names are also event keys
+
+
+def _positive_int(repo: str, where: str, key: str, value) -> int:
+    if isinstance(value, bool) or not isinstance(value, int) or value <= 0:
+        raise ContractError(f"{repo}: {where} {key} must be a positive integer")
+    return value
+
+
+def _required_str(repo: str, where: str, key: str, raw: dict) -> str:
+    value = raw.get(key)
+    if not isinstance(value, str) or not value.strip():
+        raise ContractError(f"{repo}: {where} missing {key}")
+    return value
+
+
+def _gate_jobs(repo: str, tables) -> tuple[GateJob, ...]:
+    jobs, seen = [], set()
+    for index, raw in enumerate(tables):
+        where = f"gate_jobs[{index}]"
+        if not isinstance(raw, dict):
+            raise ContractError(f"{repo}: {where} must be a table")
+        name = _required_str(repo, where, "name", raw)
+        if not _GATE_JOB_NAME.fullmatch(name):
+            raise ContractError(
+                f"{repo}: {where} name {name!r} must be lowercase letters, digits and hyphens, "
+                "starting with a letter or digit")
+        if name in seen:
+            raise ContractError(f"{repo}: duplicate gate job {name!r}")
+        seen.add(name)
+        jobs.append(GateJob(name=name, cmd=_required_str(repo, where, "cmd", raw),
+                            timeout_s=_positive_int(repo, where, "timeout_s",
+                                                    raw.get("timeout_s", 600))))
+    return tuple(jobs)
+
+
+def _deploy(repo: str, raw) -> DeploySpec:
+    if not isinstance(raw, dict):
+        raise ContractError(f"{repo}: deploy must be a table")
+    env_allow = raw.get("env_allow", [])
+    if not isinstance(env_allow, list) or any(not isinstance(v, str) for v in env_allow):
+        raise ContractError(f"{repo}: deploy env_allow must be a list of strings")
+    for entry in env_allow:
+        if entry.startswith("LANE_"):
+            raise ContractError(
+                f"{repo}: deploy env_allow {entry!r} is reserved for lanectl (LANE_ prefix)")
+    return DeploySpec(
+        cmd=_required_str(repo, "deploy", "cmd", raw),
+        health_cmd=_required_str(repo, "deploy", "health_cmd", raw),
+        teardown_cmd=_required_str(repo, "deploy", "teardown_cmd", raw),
+        ttl_s=_positive_int(repo, "deploy", "ttl_s", raw.get("ttl_s", 3600)),
+        env_allow=tuple(env_allow),
+    )
 
 
 def load_lane(name: str, root: Path | None = None) -> LaneRevision:
@@ -96,7 +172,9 @@ def load_repos(root: Path | None = None) -> dict[str, RepoSpec]:
                              setup_cmd=r.get("setup_cmd", ""),
                              protected_paths=tuple(r.get("protected_paths", ())),
                              data_class_floor=floor,
-                             routing={k: float(v) for k, v in r.get("routing", {}).items()})
+                             routing={k: float(v) for k, v in r.get("routing", {}).items()},
+                             gate_jobs=_gate_jobs(name, r.get("gate_jobs", ())),
+                             deploy=_deploy(name, r["deploy"]) if "deploy" in r else None)
     return out
 
 
