@@ -88,9 +88,11 @@ def _invoke(repo, lane, base_sha, model, prompt, *, adapter_fn=None, proposal=No
         if shims:
             env['PATH'] = f'{shims}{os.pathsep}{env.get("PATH", "")}'
         fn = adapter_fn or adapters.ADAPTERS[adapters.worker_for(model)]
+        local_args = {'sandbox': sb} if adapters.worker_for(model) == 'local' else {}
         result = fn(model=model, worktree=wt, prompt=prompt,
                     status_file=runtime / 'status.json', timeout_s=timeout_s,
-                    external=adapters.worker_for(model) == 'opencode' or model in lane.external_models, env=env)
+                    external=adapters.worker_for(model) == 'opencode' or model in lane.external_models, env=env,
+                    **local_args)
         if result.outcome != 'done' or result.exit_code:
             raise ValueError(f'spec model failed or escalated: {result.outcome}')
         tracked = _git(wt, 'diff', '--name-only', 'HEAD')
@@ -289,6 +291,19 @@ def validate_for_publish(path):
         return []
     except (OSError, ValueError, KeyError, TypeError, IndexError) as exc:
         return [f'specification: {exc}']
+
+
+
+def publication_lint(path):
+    """Generated acceptance remains untrusted when the planner publishes it."""
+    path = Path(path)
+    raw = tomllib.loads((path / 'release.toml').read_text())
+    if 'specification' not in raw:
+        return None
+    rel = load_release(path)
+    repo = load_repos()[rel.repo]
+    lane = load_lane(rel.eligible_lanes[0])
+    return _base_lint(path, repo, lane, min(lane.timeout_s, 900))
 
 
 def implementation_models(rel, weights):

@@ -216,3 +216,5 @@ def test_protection():
     d=make(estate,adapter_fn_override=adapter)
     assert spec.validate_for_publish(d)==[]
     assert not (repo/'leaked').exists()
+    assert cli.main(['backlog','publish','spec-sub'])==0
+    assert not (repo/'leaked').exists()
