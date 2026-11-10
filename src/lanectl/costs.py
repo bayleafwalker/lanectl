@@ -18,6 +18,7 @@ _UNIT_COLUMNS = (
     ("output_tokens", "output"),
     ("reasoning_tokens", "output"),          # listed with no separate price
     ("cache_read_tokens", "cache_read"),
+    ("cache_write_tokens", "cache_write"),
 )
 
 _PER_MILLION = 1_000_000.0
