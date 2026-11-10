@@ -39,9 +39,9 @@ timeout_s = 300
 # ephemeral ports, example credentials only. Pilot 2026-11-10: up 104s, healthy, clean teardown.
 # The environment is stripped to env_allow; docker reaches /var/run/docker.sock by default.
 [repos.homelab-analytics.deploy]
-cmd = "scripts/lane-dev-deploy.sh up"
-health_cmd = "scripts/lane-dev-deploy.sh health"
-teardown_cmd = "scripts/lane-dev-deploy.sh down"
+cmd = "bash scripts/lane-dev-deploy.sh up"
+health_cmd = "bash scripts/lane-dev-deploy.sh health"
+teardown_cmd = "bash scripts/lane-dev-deploy.sh down"
 ttl_s = 3600
 env_allow = ["PATH", "HOME"]
 
