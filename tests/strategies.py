@@ -27,6 +27,7 @@ from lanectl.contracts import (
     CAPACITY_BASES,
     DECISIONS,
     EVENT_TYPES,
+    TEARDOWN_REASONS,
     FIX_CLASSES,
     LANE_DECISION_KINDS,
     LANE_DECISION_PHASES,
@@ -305,6 +306,21 @@ def _data_for(etype: str) -> st.SearchStrategy[dict]:
             "reservation_id": ids("res"),
             "actual": st.one_of(st.none(), st.integers(min_value=0, max_value=10**7)),
             "outcome": st.sampled_from(RECONCILE_OUTCOMES),
+        })
+    if etype == "train.deployed":
+        return st.fixed_dictionaries({
+            "train_id": ids("train"),
+            "repo": st.sampled_from(("lanectl", "homelab-analytics")),
+            "namespace": ids("lane-dev"),
+            "passed": st.booleans(),
+            "expires_at": timestamps(),
+        })
+    if etype == "train.torn_down":
+        return st.fixed_dictionaries({
+            "train_id": ids("train"),
+            "namespace": ids("lane-dev"),
+            "reason": st.sampled_from(TEARDOWN_REASONS),
+            "passed": st.booleans(),
         })
     raise AssertionError(f"no payload strategy for {etype!r}")
 

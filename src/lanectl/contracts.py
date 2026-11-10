@@ -51,12 +51,17 @@ EVENT_TYPES: dict[str, tuple[str, ...]] = {
     "capacity.observed": ("provider", "pool", "source", "unit", "basis", "observed_at"),
     "capacity.reserved": ("reservation_id", "provider", "pool", "unit", "amount", "attempt_id"),
     "capacity.reconciled": ("reservation_id", "actual", "outcome"),
+    # v1 additive extension (planner, 2026-11-10): stage 3 dev train deploys
+    # (docs/plans/2026-11-10-stage3-gate-jobs-and-train-deploys.md).
+    "train.deployed": ("train_id", "repo", "namespace", "passed", "expires_at"),
+    "train.torn_down": ("train_id", "namespace", "reason", "passed"),
 }
 LANE_DECISION_KINDS = ("dispatch", "rerun", "escalation", "allocation", "acceptance")
 LANE_DECISION_PHASES = ("proposed", "applied", "refused", "expired", "superseded")
 CAPACITY_BASES = ("measured", "estimated", "unknown")
 RECONCILE_OUTCOMES = ("completed", "recovered", "released")
 FIX_CLASSES = ("spec-gap", "model-error", "gate-gap")
+TEARDOWN_REASONS = ("expired", "landed", "superseded", "deploy-failed", "manual")
 
 _ID = re.compile(r"^[a-z0-9][a-z0-9._-]{1,63}$")
 
