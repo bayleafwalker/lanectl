@@ -5,7 +5,8 @@
 # rev 2 (2026-11-08): key renamed to "opencode" = provider recorded by the opencode adapter.
 # rev 7 (2026-11-10): published per-model prices for dollar estimates (bx-cost-usd).
 # rev 5 (2026-11-09): pool identity, observation freshness, reallocation dwell (decision-records plan).
-revision = 7
+# rev 8 (2026-11-10): deepseek-v4-pro prices (routed at 0.25 since implement rev 3).
+revision = 8
 
 [providers.opencode]
 unit = "output_tokens"
@@ -44,6 +45,13 @@ peak_weekdays = [0, 1, 2, 3, 4]
 [providers.opencode.prices.models."opencode-go/deepseek-v4.1-flash"]
 offpeak = { input = 0.15, output = 0.60, cache_read = 0.003 }
 peak = { input = 0.30, output = 1.20, cache_read = 0.006 }
+
+# DeepSeek V4 Pro (opencode.ai/docs/go, read 2026-11-10). Its own per-model limit: $15/month,
+# so 5-hour $3 and weekly $7.50 (20%/50%). Not yet a separate window: the "week" budget above
+# models Flash's limit only (gap, ladder rung 4).
+[providers.opencode.prices.models."opencode-go/deepseek-v4-pro"]
+offpeak = { input = 0.66, output = 1.98, cache_read = 0.022 }
+peak = { input = 1.32, output = 3.96, cache_read = 0.044 }
 
 [providers.opencode.reservations]
 interactive = 0.0
