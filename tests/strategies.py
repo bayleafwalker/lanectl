@@ -322,6 +322,13 @@ def _data_for(etype: str) -> st.SearchStrategy[dict]:
             "reason": st.sampled_from(TEARDOWN_REASONS),
             "passed": st.booleans(),
         })
+    if etype == "work.synced":
+        return st.fixed_dictionaries({
+            "work": st.sampled_from(["lanectl#1", "homelab-analytics#1553"]),
+            "train_id": ids("train"),
+            "closed": st.booleans(),
+            "ok": st.booleans(),
+        })
     raise AssertionError(f"no payload strategy for {etype!r}")
 
 

@@ -23,6 +23,8 @@ DATA_CLASSES = ("public", "restricted")
 DECISIONS = ("candidate", "rejected", "parked", "landed")
 
 # event type -> required payload keys
+WORK_REF = re.compile(r"[a-z0-9][a-z0-9-]*#[1-9][0-9]*")
+
 EVENT_TYPES: dict[str, tuple[str, ...]] = {
     "release.published": ("release_id", "revision"),
     "item.claimed": ("attempt_id", "lane", "model", "worker"),
@@ -35,6 +37,9 @@ EVENT_TYPES: dict[str, tuple[str, ...]] = {
     "policy.revised": ("kind", "revision", "digest"),
     "train.built": ("train_id", "base_sha", "attempts", "passed"),
     "item.landed": ("attempt_id", "train_id", "fix_commits"),
+    # V1 (2026-11-10): the tracker item a landed release reports to. ok=False carries `error`;
+    # a failed sync never fails the land.
+    "work.synced": ("work", "train_id", "closed", "ok"),
     "item.parked": ("reason",),
     "item.requeued": ("reason",),
     "integrator.fix": ("attempt_id", "commit", "fix_class"),
@@ -149,6 +154,8 @@ class WorkRelease:
     allow_test_edits: bool = False
     revision: int = 1
     draft: bool = False                   # a draft is never ready (lanectl backlog publish)
+    work: str = ""                        # sprintctl item "<repo>#<id>" this release delivers
+    work_complete: bool = False           # landing closes the item (else only notes it)
     release_dir: str = ""                 # set by the loader
 
     def __post_init__(self) -> None:
@@ -157,6 +164,10 @@ class WorkRelease:
             raise ContractError(f"size must be one of {SIZE_CLASSES}")
         if self.data_class not in DATA_CLASSES:
             raise ContractError(f"data_class must be one of {DATA_CLASSES}")
+        if self.work and not WORK_REF.fullmatch(self.work):
+            raise ContractError(f"work must look like <repo>#<id>, got {self.work!r}")
+        if self.work_complete and not self.work:
+            raise ContractError("work_complete needs work")
 
 
 @dataclass(frozen=True)
