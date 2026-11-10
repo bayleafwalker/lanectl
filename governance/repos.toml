@@ -7,6 +7,14 @@ test_cmd = "uv run --no-sync pytest -q -p no:cacheprovider {files}"
 check_cmd = "uv run pytest -q"
 worktree_root = "/projects/dev/_wt/lanes"
 
+# Stage 3 gate jobs (2026-11-10): the full suite per attempt, in the attempt sandbox (477 passed
+# in 60s there). Acceptance runs only the release's file, so a release that breaks an older test
+# was caught only at the train check (s3-lint-expected-a1); this rejects it at the attempt.
+[[repos.lanectl.gate_jobs]]
+name = "suite"
+cmd = "uv run --no-sync pytest -q -p no:cacheprovider"
+timeout_s = 900
+
 # Stage 6 fan-out (2026-11-08). Commands verified in fresh worktrees: python -m pytest puts the
 # repo root on sys.path (plain pytest fails collection in both public repos).
 # homelab-analytics: public (github). Fast suite 2679 passed in 11m on a fresh worktree.
@@ -20,6 +28,22 @@ worktree_root = "/projects/dev/_wt/lanes"
 protected_paths = [".github/**", ".agents/**", ".claude/**", ".project/**", "AGENTS.md", "CLAUDE.md",
                    "charts/**", "infra/**", "migrations/**", "githooks/**", "requirements/**", "uv.lock",
                    "opencode.json", "homelab-analytics.dispatch.json"]
+
+[[repos.homelab-analytics.gate_jobs]]
+name = "ruff"
+cmd = "uv run --no-sync ruff check ."
+timeout_s = 300
+
+# Stage 3 dev train deploy (docs/plans/2026-11-10-stage3-gate-jobs-and-train-deploys.md): the
+# example compose stack as project lane-dev-<train>, images built from the train, loopback
+# ephemeral ports, example credentials only. Pilot 2026-11-10: up 104s, healthy, clean teardown.
+# The environment is stripped to env_allow; docker reaches /var/run/docker.sock by default.
+[repos.homelab-analytics.deploy]
+cmd = "scripts/lane-dev-deploy.sh up"
+health_cmd = "scripts/lane-dev-deploy.sh health"
+teardown_cmd = "scripts/lane-dev-deploy.sh down"
+ttl_s = 3600
+env_allow = ["PATH", "HOME"]
 
 # sovite: public (github). Full suite exit 0 in 8m on a fresh worktree.
 [repos.sovite]
