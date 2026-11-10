@@ -19,6 +19,7 @@ from pathlib import Path
 
 from .capacity import AllocationPolicy, parse_ts
 from .config import RepoSpec, WorkRelease, home, load_lane, load_release, load_repos
+from .deploy import list_deploys
 from .events import EventLog, ItemView, project_items
 from .runner import git
 
@@ -186,6 +187,15 @@ def check_base_drift(releases: list[WorkRelease], repos: dict[str, RepoSpec],
     return findings
 
 
+def check_deploys(events: list[dict], now: datetime) -> list[Finding]:
+    """Live dev deploys past their ``expires_at`` need reaping."""
+    expired = sum(1 for row in list_deploys(events, now) if row["expired"])
+    if not expired:
+        return []
+    return [Finding(WARN, "deploys",
+                    f"{expired} live past expires_at (lanectl deploy reap)")]
+
+
 def run(log: EventLog, *, root: Path | None = None,
         now: datetime | None = None) -> list[Finding]:
     """Run every check and return the findings in report order."""
@@ -203,12 +213,13 @@ def run(log: EventLog, *, root: Path | None = None,
         views = project_items(events)
         findings += check_attempts(views, now)
         findings += check_base_drift(releases, repos, views)
+        findings += check_deploys(events, now)
     return findings
 
 
 def register(sub) -> dict:
     p = sub.add_parser("doctor", help="health checks: home, releases, repos, log, "
-                                     "policy, stale attempts, drifted bases")
+                                     "policy, stale attempts, drifted bases, deploys")
     p.add_argument("--json", action="store_true", help="emit the findings as JSON")
     return {"doctor": _cmd}
 
