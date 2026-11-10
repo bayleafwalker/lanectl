@@ -1,7 +1,7 @@
 id = "hla-freshness-recovery"
 repo = "homelab-analytics"
 base_sha = "d58e757cd612ac09f74bb15cd8371191249bbb5a"
-revision = 1
+revision = 2
 title = "Source freshness rows list the publications that recover on refresh (#1588)"
 task_class = "product-api"
 size = "S"
@@ -25,7 +25,7 @@ The route looks up each row's source asset in the config repository and sets
 """
 
 [scope]
-paths = ["packages/pipelines/**", "packages/application/**", "apps/api/routes/**"]
+paths = ["packages/pipelines/**", "packages/application/**", "apps/api/routes/**", "tests/**"]
 
 [acceptance]
 files = ["tests/test_acc_freshness_recovery.py"]

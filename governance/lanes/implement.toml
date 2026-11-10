@@ -1,14 +1,15 @@
 # Lane revision (a RecipeRevision). Governance path: interactive changes only.
 # Every number here is a placeholder policy value, revised from ExperimentRecords.
 lane = "implement"
-revision = 2
+revision = 3
 
 [eligibility]
 size_max = "M"
 
 [routing]
 # Operator direction 2026-11-08: OpenCode Go DeepSeek V4.1 Flash is the bulk implementer.
-weights = { "opencode-go/deepseek-v4.1-flash" = 1.0 }
+# rev 3 (2026-11-10, ladder rung 3): second model at 0.25 so retry = different_model can fire.
+weights = { "opencode-go/deepseek-v4.1-flash" = 0.75, "opencode-go/deepseek-v4-pro" = 0.25 }
 external_models = ["opencode-go/deepseek-v4.1-flash", "opencode-go/deepseek-v4-pro"]
 retry = "different_model"     # falls back to the same model while only one is routed
 max_attempts = 2
