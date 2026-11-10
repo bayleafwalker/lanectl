@@ -14,7 +14,7 @@ def test_classify_failure_prefers_spec_gap_and_flags_unknown():
     both = "E   ImportError: no module\nE   lanectl.contracts.ContractError: bad id\n"
     assert classify_failure(both) == "spec-gap"
     assert classify_failure("2 failed, 1 passed in 0.1s") == "spec-gap"
-    assert classify_failure("E   KeyError: 'mystery'") == "spec-gap"
+    assert classify_failure("E   RuntimeError: mystery") == "spec-gap"
 
 
 def _repo(tmp_path):
