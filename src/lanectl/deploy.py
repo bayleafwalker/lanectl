@@ -5,14 +5,18 @@ a train up, a health check, a teardown command, a TTL and the only environment
 variables the deploy may inherit.  Everything else in the operator's environment
 (forge tokens, tracker credentials, kubeconfigs) is stripped before a command
 runs.  Deploys are recorded as ``train.deployed`` and ``train.torn_down``.
+``lanectl deploy list`` shows the live ones; ``reap`` tears down those that
+landed, were superseded by a later deploy of their repo, or passed their TTL.
 """
 from __future__ import annotations
 
+import json
 import os
 import subprocess
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
+from .capacity import parse_ts
 from .config import DeploySpec, load_repos
 from .events import EventLog
 
@@ -102,6 +106,13 @@ def teardown(log: EventLog, train_id: str, reason: str) -> str:
     """Run the repo's teardown command and record a ``train.torn_down`` event."""
     found = _spec_for(log, train_id)
     if found is None:
+        # A deploy whose train.built is not in this log: the deploy event still
+        # names the repo, so its declared teardown command is reachable.
+        data = live(log.read()).get(train_id) or {}
+        repo = load_repos().get(data.get("repo"))
+        if repo is not None:
+            found = None, repo, repo.deploy
+    if found is None:
         return f"unknown train {train_id}"
     _, repo, spec = found
     if spec is None:
@@ -130,13 +141,72 @@ def live(events: list[dict]) -> dict[str, dict]:
     return out
 
 
+def _expired(data: dict, now: datetime) -> bool:
+    expires = parse_ts(data.get("expires_at"))
+    return expires is not None and expires <= now
+
+
+def due(events: list[dict], now: datetime) -> list[tuple[str, str]]:
+    """Live deploys to reap, in ``train.deployed`` order, with their reason.
+
+    An item that landed names the train (``landed``); a later passed deploy of
+    the same repo replaces it (``superseded``); otherwise it is ``expired`` when
+    its ``expires_at`` has passed.  Live deploys in none of those classes are
+    not listed.
+    """
+    now = now if now.tzinfo is not None else now.replace(tzinfo=timezone.utc)
+    deploys = live(events)
+    landed = {((ev.get("data") or {}).get("train_id"))
+              for ev in events if ev.get("type") == "item.landed"}
+    last_deploy_at: dict[str, int] = {}
+    repo_of: dict[str, str] = {}
+    for i, ev in enumerate(events):
+        data = ev.get("data") or {}
+        if ev.get("type") == "train.deployed" and data.get("passed"):
+            last_deploy_at[data.get("train_id")] = i
+            repo_of[data.get("train_id")] = data.get("repo")
+    out: list[tuple[str, str]] = []
+    passed = [(i, (ev.get("data") or {}).get("repo")) for i, ev in enumerate(events)
+              if ev.get("type") == "train.deployed" and (ev.get("data") or {}).get("passed")]
+    for train_id, data in deploys.items():
+        at = last_deploy_at.get(train_id, -1)
+        later = any(repo == repo_of.get(train_id) and i > at for i, repo in passed)
+        if train_id in landed:
+            out.append((train_id, "landed"))
+        elif later:
+            out.append((train_id, "superseded"))
+        elif _expired(data, now):
+            out.append((train_id, "expired"))
+    return out
+
+
+def reap(log: EventLog, now: datetime | None = None) -> list[str]:
+    """Tear down every due deploy and return one line per teardown."""
+    now = now or datetime.now(timezone.utc)
+    return [teardown(log, train_id, reason) for train_id, reason in due(log.read(), now)]
+
+
+def list_deploys(events: list[dict], now: datetime | None = None) -> list[dict]:
+    """One row per live deploy, with whether it is past its ``expires_at``."""
+    now = now or datetime.now(timezone.utc)
+    now = now if now.tzinfo is not None else now.replace(tzinfo=timezone.utc)
+    return [{"train_id": train_id,
+             "namespace": data.get("namespace") or namespace(train_id),
+             "repo": data.get("repo"), "expires_at": data.get("expires_at"),
+             "expired": _expired(data, now)}
+            for train_id, data in live(events).items()]
+
+
 def register(sub) -> dict:
-    p = sub.add_parser("deploy", help="run or tear down a train's dev deploy")
+    p = sub.add_parser("deploy", help="run, list or tear down a train's dev deploy")
     actions = p.add_subparsers(dest="deploy_action", required=True)
     run = actions.add_parser("run", help="deploy a passed train and health-check it")
     run.add_argument("train_id")
     down = actions.add_parser("down", help="tear a train's dev deploy down")
     down.add_argument("train_id")
+    listed = actions.add_parser("list", help="list live dev deploys")
+    listed.add_argument("--json", action="store_true", help="emit the list as JSON")
+    actions.add_parser("reap", help="tear down landed, superseded or expired deploys")
     return {"deploy": _cmd}
 
 
@@ -144,8 +214,26 @@ def _cmd(args, log: EventLog) -> int:
     if args.deploy_action == "down":
         print(teardown(log, args.train_id, "manual"))
         return 0
+    if args.deploy_action == "list":
+        rows = list_deploys(log.read())
+        if not rows:
+            print("no live deploys")
+        elif args.json:
+            print(json.dumps(rows))
+        else:
+            for row in rows:
+                line = (f"{row['namespace']}  {row['train_id']}  {row['repo']}  "
+                        f"expires {row['expires_at']}")
+                print(line + ("  EXPIRED" if row["expired"] else ""))
+        return 0
+    if args.deploy_action == "reap":
+        lines = reap(log)
+        print("\n".join(lines) if lines else "nothing to reap")
+        return 0
     print(deploy_train(log, args.train_id))
-    passed = any(e.get("type") == "train.deployed"
-                 and (e.get("data") or {}).get("train_id") == args.train_id
-                 and e["data"].get("passed") for e in log.read())
-    return 0 if passed else 1
+    last = None
+    for ev in log.read():
+        data = ev.get("data") or {}
+        if ev.get("type") == "train.deployed" and data.get("train_id") == args.train_id:
+            last = data
+    return 0 if (last is not None and last.get("passed")) else 1
