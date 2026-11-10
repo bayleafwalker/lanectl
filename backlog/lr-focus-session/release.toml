@@ -1,7 +1,7 @@
 id = "lr-focus-session"
 repo = "lanectl"
-base_sha = "5ec57c93b5ddb8c12de342d31a86e8a612aec9e3"
-revision = 1
+base_sha = "be270ccde7fdde4cdd0f332357eadc3fa93717f0"
+revision = 2
 title = "Focus is per Claude session, not per machine"
 task_class = "tooling"
 size = "S"
