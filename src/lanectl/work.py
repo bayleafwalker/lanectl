@@ -67,9 +67,20 @@ def _show(run, path: str, work: str) -> dict:
     return item
 
 
+SERVED_CAS = "direct-backend CAS option"
+
+
 def _status(run, path: str, work: str, status: str, revision) -> None:
-    _call(run, path, ["item", "status", "--id", work, "--status", status,
-                      "--actor", "lanectl", "--expected-revision", str(revision)])
+    """Transition with CAS on a direct backend. A served backend refuses
+    ``--expected-revision`` (its lifecycle commands carry their own basis), so the
+    call is repeated once without it."""
+    base = ["item", "status", "--id", work, "--status", status, "--actor", "lanectl"]
+    try:
+        _call(run, path, [*base, "--expected-revision", str(revision)])
+    except _SyncFailed as exc:
+        if SERVED_CAS not in str(exc):
+            raise
+        _call(run, path, base)
 
 
 def sync(rel, train_id: str, landed_sha: str, repos, run=subprocess.run) -> dict | None:
