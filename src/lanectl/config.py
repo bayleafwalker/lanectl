@@ -111,6 +111,7 @@ def load_release(release_dir: Path) -> WorkRelease:
             acceptance=Acceptance(exec=tuple(acc.get("exec", ())), files=tuple(acc.get("files", ())),
                                   fail_on_base=bool(acc.get("fail_on_base", True))),
             eligible_lanes=tuple(raw.get("eligible_lanes", ("implement",))),
+            draft=bool(raw.get("draft", False)),
             constraints=tuple(raw.get("constraints", ())),
             escalate_when=tuple(raw.get("escalate_when", ())),
             allow_deps=bool(raw.get("allow_deps", False)),

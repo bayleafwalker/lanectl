@@ -143,6 +143,7 @@ class WorkRelease:
     allow_deps: bool = False
     allow_test_edits: bool = False
     revision: int = 1
+    draft: bool = False                   # a draft is never ready (lanectl backlog publish)
     release_dir: str = ""                 # set by the loader
 
     def __post_init__(self) -> None:

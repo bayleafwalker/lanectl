@@ -18,6 +18,8 @@ _SHA = re.compile(r"^[0-9a-f]{40}$")
 def readiness(rel: WorkRelease, lane: LaneRevision, repos: dict[str, RepoSpec]) -> list[str]:
     """Empty list = ready for this lane. Each string is a blocking reason."""
     r: list[str] = []
+    if rel.draft:
+        r.append("release is a draft (lanectl backlog publish %s)" % rel.id)
     if lane.lane not in rel.eligible_lanes:
         r.append(f"lane {lane.lane} not in eligible_lanes")
     if SIZE_CLASSES.index(rel.size) > SIZE_CLASSES.index(lane.size_max):
