@@ -12,6 +12,10 @@ from .config import load_lane, load_releases, load_repos
 from .events import EventLog, project_items
 from .ready import readiness
 
+# Item states that mean a lane cannot take the item right now, even though the
+# release passes the Definition of Ready. Reported as the state, not as READY.
+_IN_FLIGHT_STATES = frozenset({"claimed", "implemented", "gated", "candidate", "in-train", "parked"})
+
 
 def discover_plugins(package_name: str) -> list:
     """Return direct submodules of *package_name* exposing a callable ``register``.
@@ -100,11 +104,15 @@ def main(argv: list[str] | None = None) -> int:
         items = project_items(log.read())
         for rel in load_releases():
             v = items.get(rel.id)
-            landed = v is not None and v.state == "landed" and v.release_revision >= rel.revision
+            current = v is not None and v.release_revision >= rel.revision
+            landed = current and v.state == "landed"
             if landed and not a.all:
                 continue
-            rs = [] if landed else readiness(rel, lane, repos)
-            state = "LANDED" if landed else ("READY" if not rs else "BLOCKED")
+            if current and v.state in _IN_FLIGHT_STATES:
+                state, rs = v.state.upper(), []
+            else:
+                rs = [] if landed else readiness(rel, lane, repos)
+                state = "LANDED" if landed else ("READY" if not rs else "BLOCKED")
             print(f"{state:8} {rel.id}" + "".join(f"\n    - {x}" for x in rs))
         return 0
     if a.cmd == "candidates":
