@@ -67,9 +67,9 @@ sprintctl integration beyond carrying a work id on the release.
 
 | Rung | Done | Evidence |
 | --- | --- | --- |
-| 1 | First real homelab train through deploy and land | `hla-freshness-recovery` (#1588): train 2693 passed, `deploy run` healthy in 54s, `land` refused before the deploy and tore it down after; homelab PR #79. `hla-domain-freshness` (#1553) queued. 2 of about 20 product-api items. |
+| 1 | Two homelab trains through deploy and land | `hla-freshness-recovery` (#1588): train 2693 passed, `deploy run` healthy in 54s, `land` refused before the deploy and tore it down after; homelab PR #79. `hla-domain-freshness` (#1553 parts 1 and 3): train 2704 passed, deployed, landed; homelab PR #80. 2 of about 20 product-api items. |
 | 3 | Exit met | implement rev 3 routes deepseek-v4-pro at 0.25; `hla-freshness-recovery-a2` was the first `retry = "different_model"` and changed the outcome (a1 Flash rejected, a2 Pro landed). |
-| 4 | Instruments built (v0.1.28) | `lr-usage-focus`, `lr-operator-cost`, `lr-tick`, `lr-otel-export`, `lr-model-windows`: 5 releases, 5 attempts, all first-time gate passes, 1 integrator fix (model-error: a wall-clock test). Timer units in `contrib/systemd/`, not enabled (installing a recurring job needs the operator). |
+| 4 | Instruments built (v0.1.28) | `lr-usage-focus`, `lr-operator-cost`, `lr-tick`, `lr-otel-export`, `lr-model-windows`: 5 releases, 5 attempts, all first-time gate passes, 1 integrator fix (model-error: a wall-clock test). Timer units in `contrib/systemd/`, not enabled (installing a recurring job needs the operator). v0.1.29: `lr-focus-session` makes focus per Claude session (the operator found the machine-wide focus would misbill concurrent sessions); a1 rejected for editing existing tests (planner error: stale base and an outcome that asked for it), a2 on V4 Pro landed. allocation rev 10 models V4 Pro's own weekly limit. |
 | 6 | Anthropic provider added | allocation rev 9: interactive sessions priced at API-equivalent rates; placeholder window, interactive reservation 1.0. |
 
 First operator-cost reading (estimates, corrected): lane work $0.03 per landed release.
