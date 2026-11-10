@@ -1,0 +1,24 @@
+id = "s3-adapter-stdin"
+repo = "lanectl"
+base_sha = "a53bc35f79a288681e0247ee634a133109121998"
+revision = 1
+title = "Workers get stdin from /dev/null (opencode hung on an inherited socket)"
+task_class = "adapter"
+size = "S"
+data_class = "public"
+
+outcome = """
+Observed 2026-11-10 (s3-deploy-list-json-a1): "lanectl run" started from a shell whose stdin is
+a socket hung for 25 minutes; "opencode run" reads piped stdin before starting and waited for
+EOF on the inherited socket. adapters_claude already passes stdin=subprocess.DEVNULL. Do the same
+for the worker subprocess in adapters_opencode.run_opencode (the subprocess.Popen call) and in
+adapters.agentops_dispatch (the subprocess.run call), so no worker inherits the runner's stdin.
+Nothing else changes.
+"""
+
+[scope]
+paths = ["src/lanectl/adapters_opencode.py", "src/lanectl/adapters.py", "tests/stage8/**"]
+
+[acceptance]
+files = ["tests/stage8/test_acc_adapter_stdin.py"]
+exec = ["uv run --no-sync pytest -q -p no:cacheprovider tests/stage8/test_acc_adapter_stdin.py"]
