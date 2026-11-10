@@ -75,8 +75,11 @@ def eligible_models(rel: WorkRelease, lane: LaneRevision,
 
 
 def _first_party(model: str) -> bool:
-    """True only when the model is served by the first-party Claude adapter."""
+    """Allow the native Claude route or an explicitly configured local provider."""
     try:
+        if worker_for(model) == "local":
+            from .adapters_local import configured
+            return configured(model)
         return worker_for(model) == "claude"
     except ValueError:
         return False

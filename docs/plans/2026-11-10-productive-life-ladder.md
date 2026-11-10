@@ -23,6 +23,16 @@ classes does not transfer, and the stage exits only tick when items flow.
 
 ## Target state
 
+Implementation update: the 0.2.0 source supplies independently reviewed draft
+specifications, recurring-flag intake, bounded headless integration, commit-bound
+landing/deploy checks, canonical PR reconciliation, Vuoro lifecycle and served
+event streams, qualified allocation/learning and an isolated local provider.
+See [the operation guide](../full-stack-operation.md) for opt-in controls and
+remaining rollout/product qualification. The workstation timer was observed
+enabled and active during this implementation; earlier "not enabled" progress
+notes below are historical. No source change establishes the ladder's evidence
+clocks or a hosted production rollout.
+
 The operator writes intents. Everything between an intent and a landed, dev-deployed change is
 lane work, including improving the lanes. Standing operator involvement: one planner session a
 week, on parked items and ratchet proposals.

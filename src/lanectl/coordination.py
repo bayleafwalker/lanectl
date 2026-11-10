@@ -205,7 +205,8 @@ class Coordinator:
             raise ValueError('item_id must be a positive integer')
         identity = [item_id, model_id, profile_digest, recipe_id]
         prefix = 'lanectl-' + hashlib.sha256(attempt_id.encode()).hexdigest()
-        run_args = {'harness_id': 'lanectl', 'harness_build': '0.1.0', 'model_id': model_id,
+        from . import __version__
+        run_args = {'harness_id': 'lanectl', 'harness_build': __version__, 'model_id': model_id,
                     'recipe_id': recipe_id, 'observed_profile': {'instruction_digest': profile_digest,
                     'skill_digests': []}, 'idempotency_key': prefix + '-run'}
         run = self._call(attempt_id + ':run', 'work.run.register-v1', identity, run_args)['run']['run_id']

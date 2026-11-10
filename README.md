@@ -5,6 +5,7 @@ first) implement planner-written WorkReleases in isolated worktrees; determinist
 gates decide preliminary acceptance; an integrator lands candidate trains.
 
 Design and invariants: [ADR 0001](docs/adr/0001-autonomous-lanes.md).
+Full delivery stack and activation: [operation guide](docs/full-stack-operation.md).
 Planner cycle: [.claude/skills/lane-planner/SKILL.md](.claude/skills/lane-planner/SKILL.md).
 
 ```sh
