@@ -216,10 +216,10 @@ def _cmd(args, log: EventLog) -> int:
         return 0
     if args.deploy_action == "list":
         rows = list_deploys(log.read())
-        if not rows:
-            print("no live deploys")
-        elif args.json:
+        if args.json:
             print(json.dumps(rows))
+        elif not rows:
+            print("no live deploys")
         else:
             for row in rows:
                 line = (f"{row['namespace']}  {row['train_id']}  {row['repo']}  "
