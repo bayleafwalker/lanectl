@@ -1,0 +1,27 @@
+id = "s3-ready-state"
+repo = "lanectl"
+base_sha = "6c1f42e71ae37fddb462e3e197fadc0a9de9f8f1"
+revision = 1
+title = "ready shows in-flight items by state, not READY"
+task_class = "view"
+size = "S"
+data_class = "public"
+
+outcome = """
+"lanectl ready" runs the Definition of Ready check only, so an item that is already claimed,
+a candidate, in a train or parked prints READY, which reads as "a lane can take it now"
+(observed 2026-11-10: a claimed release listed as READY). In the "ready" branch of
+src/lanectl/cli.py: when the release's projected item (events.project_items) is at the current
+release revision (v.release_revision >= rel.revision) and its state is one of "claimed",
+"implemented", "gated", "candidate", "in-train" or "parked", print that state upper-cased
+(e.g. "CLAIMED", "IN-TRAIN", "PARKED") in place of READY/BLOCKED, padded to 8 characters like
+the other labels, with no readiness reasons. LANDED, READY and BLOCKED behave as today; an item at
+an older revision than the release (reissued) is judged by readiness as today.
+"""
+
+[scope]
+paths = ["src/lanectl/cli.py", "tests/stage8/**"]
+
+[acceptance]
+files = ["tests/stage8/test_acc_ready_state.py"]
+exec = ["uv run --no-sync pytest -q -p no:cacheprovider tests/stage8/test_acc_ready_state.py"]
