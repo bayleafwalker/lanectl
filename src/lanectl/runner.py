@@ -583,6 +583,10 @@ def land(log: EventLog, train_id: str) -> str:
     if tb is None:
         return f"unknown train {train_id}"
     d = tb["data"]
+    recorded = {e["data"]["attempt_id"] for e in events
+                if e["type"] == "item.landed" and e["data"]["train_id"] == train_id}
+    if d["attempts"] and set(d["attempts"]) <= recorded:
+        return f"landed {d['attempts']} (already recorded); use work reconcile for pending completion"
     if not d.get("passed"):
         return f"{train_id}: failed train; rebuild and pass its checks before landing"
     repos = load_repos()
@@ -598,8 +602,12 @@ def land(log: EventLog, train_id: str) -> str:
             if tip != git(repo.path, "rev-parse", repo.main):
                 return f"{train_id}: missing checked tip; rebuild the train"
             checkout = repo.path
+        if (git(checkout, "rev-parse", "HEAD") != tip
+                or git(checkout, "status", "--porcelain", "--untracked-files=no")):
+            return f"{train_id}: historical worktree differs from train tip; rebuild"
         checked = subprocess.run(repo.check_cmd, shell=True, cwd=checkout, capture_output=True, text=True)
-        if checked.returncode:
+        if (checked.returncode or git(checkout, "rev-parse", "HEAD") != tip
+                or git(checkout, "status", "--porcelain", "--untracked-files=no")):
             return f"{train_id}: failed recheck; not landing"
         d = dict(d, checked_sha=tip)
         log.append("train.built", d)
@@ -613,7 +621,6 @@ def land(log: EventLog, train_id: str) -> str:
                     f"`lanectl deploy run {train_id}` and pass its health check for this tip before landing")
     if git(repo.path, "rev-parse", repo.main) not in (d["base_sha"], tip):
         return f"{repo.main} moved since {train_id} was built; rebuild the train"
-    tip = git(repo.path, "rev-parse", f"train/{train_id}")
     fixes = {}
     for line in git(repo.path, "log", "--format=%H %s", f"{d['base_sha']}..{tip}").splitlines():
         sha, subj = line.split(" ", 1)

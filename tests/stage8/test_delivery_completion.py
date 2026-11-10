@@ -102,3 +102,34 @@ def test_landing_replay_does_not_duplicate_receipts(estate):
     assert runner.land(log,'tt').startswith('landed')
     assert runner.land(log,'tt').startswith('landed')
     assert len([e for e in log.read() if e['type']=='item.landed']) == 1
+
+
+def test_land_does_not_reread_checked_branch_tip(estate, monkeypatch):
+    repo, release, log=estate
+    release('race-proof','def test_ok():\n    assert True\n')
+    base=_head(repo)
+    _train(log,repo,'race-proof',base)
+    train=[e['data'] for e in log.read() if e['type']=='train.built'][-1]
+    log.append('train.built',dict(train,checked_sha=base))
+    real=runner.git; reads=[]
+    def git(path,*args,**kwargs):
+        if args==('rev-parse','train/tt'):
+            reads.append(True)
+            if len(reads)>1:
+                return 'f'*40
+        return real(path,*args,**kwargs)
+    monkeypatch.setattr(runner,'git',git)
+    assert runner.land(log,'tt').startswith('landed')
+    assert len(reads)==1
+    assert [e['data']['landed_sha'] for e in log.read() if e['type']=='item.landed']==[base]
+
+
+def test_completed_deploy_landing_replays_after_teardown(estate,tmp_path):
+    from tests.stage8.test_acc_train_deploy import _declare
+    repo,release,log=estate
+    release('done-proof','def test_ok():\n    assert True\n')
+    base=_head(repo);_train(log,repo,'done-proof',base);_declare(tmp_path)
+    log.append('train.deployed',{'train_id':'tt','repo':'target','namespace':'lane-dev-tt','passed':True,'expires_at':'2099-01-01T00:00:00Z','checked_sha':base})
+    assert runner.land(log,'tt').startswith('landed')
+    assert runner.land(log,'tt').startswith('landed')
+    assert len([e for e in log.read() if e['type']=='item.landed'])==1

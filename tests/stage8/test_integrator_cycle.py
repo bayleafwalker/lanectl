@@ -65,3 +65,13 @@ def test_candidate_flows_through_train_land_and_replay(estate, monkeypatch):
     assert project_items(log.read())['full-proof'].state=='landed'
     assert integrator.cycle(log)==[]
     assert len([e for e in log.read() if e['type']=='item.landed'])==1
+
+
+def test_many_small_fixes_cannot_exceed_train_budget(tmp_path, monkeypatch):
+    from types import SimpleNamespace
+    def git(path,*args,**kw):
+        if args[0]=='log':
+            return 'aaaa fix(attempt-a1): [spec-gap] one\nbbbb fix(attempt-a1): [spec-gap] two'
+        return '20\t0\tsrc/f.py'
+    monkeypatch.setattr(runner,'git',git)
+    assert integrator._fix_warnings(SimpleNamespace(path=tmp_path),{'train_id':'tt','base_sha':'a'*40},[],AUTH)

@@ -90,6 +90,8 @@ def _fix_warnings(repo, train, events, authority):
         counts[commit] = sum(int(n) for row in lines.splitlines() for n in row.split('\t')[:2] if n.isdigit())
     # Read fixes from the train itself as well; receipts are normally emitted
     # only at land, so relying solely on recorded fixes would miss new ones.
+    per_attempt = {}
+    total = 0
     for row in runner.git(repo.path, 'log', '--format=%H %s', f"{train['base_sha']}..train/{train['train_id']}").splitlines():
         commit, subject = row.split(' ', 1)
         if not subject.startswith('fix(') or '): [' not in subject:
@@ -97,7 +99,12 @@ def _fix_warnings(repo, train, events, authority):
         cls = subject.split('): [', 1)[1].split(']', 1)[0]
         nums = runner.git(repo.path, 'show', '--format=', '--numstat', commit)
         count = sum(int(n) for line in nums.splitlines() for n in line.split('\t')[:2] if n.isdigit())
-        if cls not in authority['allowed_fix_classes'] or count > authority['fix_budget_lines']:
+        attempt = subject[4:subject.index(')')]
+        per_attempt[attempt] = per_attempt.get(attempt, 0) + count
+        total += count
+        if (cls not in authority['allowed_fix_classes']
+                or per_attempt[attempt] > authority['fix_budget_lines']
+                or total > authority['fix_budget_lines']):
             return [f'integrator fix {commit} exceeds allowed class or size']
     return landing.fix_budget([e for e in events if e["type"] != "integrator.fix" or e["data"].get("train_id") == train["train_id"]], authority, counts)
 
