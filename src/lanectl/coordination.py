@@ -105,12 +105,17 @@ class VuoroClient:
 
     def envelope(self, operation, arguments, key):
         catalog = self._catalog or self.discover()
-        if not any(op.get('name') == operation for op in catalog['operations']):
+        definition = next((op for op in catalog['operations'] if op.get('name') == operation), None)
+        if definition is None:
             raise CoordinationError(f'owner operation unavailable: {operation}')
+        mode = definition.get('idempotency', 'not-allowed')
+        if mode == 'required' and not key:
+            raise CoordinationError('owner requires a transport idempotency key')
+        transport_key = key if mode in ('required', 'optional') else None
         return {'schema_version': 'invocation/v1', 'request_id': str(uuid.uuid4()),
                 'operation': operation, 'arguments': arguments,
                 'catalog_revision': catalog['revision'], 'basis_revision': None,
-                'idempotency_key': key, 'repo_id': self.repo_id}
+                'idempotency_key': transport_key, 'repo_id': self.repo_id}
 
     def invoke(self, envelope):
         # Every restarted client rechecks environment before replaying any write.

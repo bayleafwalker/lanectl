@@ -50,6 +50,7 @@ def owner():
             assert self.headers['Authorization'] == 'Bearer synthetic-runner'
             p = json.loads(self.rfile.read(int(self.headers['Content-Length'])))
             assert p['schema_version'] == 'invocation/v1'
+            assert p['idempotency_key'] is None
             assert p['catalog_revision'] == 'catalog-a' and p['repo_id'] == 'repo-a'
             assert p['request_id'] == self.headers['X-Request-ID']
             state['calls'].append(p)

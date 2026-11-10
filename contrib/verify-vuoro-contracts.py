@@ -24,12 +24,14 @@ contracts = {c.name: c for c in WORK_OPERATION_CONTRACTS}
 validated = []
 class ContractOwner(VuoroClient):
     def discover(self):
-        self._catalog = {'revision': 'fixture', 'operations': [{'name': name} for name in contracts]}
+        self._catalog = {'revision': 'fixture', 'operations': [{'name': name, 'idempotency': contracts[name].idempotency} for name in contracts]}
         return self._catalog
 
     def invoke(self, envelope):
         InvocationRequest.model_validate(envelope)
         contract = contracts[envelope['operation']]
+        if contract.idempotency == 'not-allowed':
+            assert envelope['idempotency_key'] is None, 'service refuses transport key on owner-idempotent operation'
         Draft202012Validator(contract.input_schema).validate(envelope['arguments'])
         validated.append(envelope)
         op = envelope['operation']
