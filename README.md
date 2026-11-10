@@ -79,3 +79,8 @@ and proof that its sandbox is inactive; age alone is insufficient. Foreign-host,
 legacy and unreadable liveness remain unknown for owner/manual reconciliation.
 A recovered incomplete gate set is requeued to rerun acceptance, never promoted
 to a candidate merely because the gate records present so far passed.
+
+Worker sandboxes also mount the resolved coordinator state directory, governance
+home and canonical target checkout read-only. The attempt checkout is the only
+write exception; status and journal updates remain coordinator operations outside
+the worker namespace.

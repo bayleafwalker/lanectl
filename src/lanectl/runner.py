@@ -485,7 +485,13 @@ def execute(c: Claim, log: EventLog, adapter_fn=None, *, lease_guard=None,
     git(repo.path, "clone", "-q", "--shared", "--no-checkout", str(repo.path), str(wt))
     git(wt, "checkout", "-q", "-b", branch, rel.base_sha)
     git(wt, "remote", "remove", "origin", check=False)   # do not advertise the main checkout
-    sb = sandboxing.from_lane(lane.sandbox, (str(wt),), lane.timeout_s + 120,
+    from .config import home
+    # Control state and checkout authority must stay outside worker writes even
+    # when they live outside the lane's declared filesystem roots.
+    protected_roots = [*lane.sandbox.get("readonly", ()), str(state_dir().resolve()),
+                       str(home().resolve()), str(Path(repo.path).resolve())]
+    sandbox_policy = dict(lane.sandbox, readonly=list(dict.fromkeys(protected_roots)))
+    sb = sandboxing.from_lane(sandbox_policy, (str(wt.resolve()),), lane.timeout_s + 120,
                               **({"attempt_id": c.attempt_id} if lease_guard is not None or adapter_fn is None else {}))
     if sandbox_holder is not None:
         sandbox_holder.append(sb)
