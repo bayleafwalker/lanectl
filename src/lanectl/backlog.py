@@ -17,6 +17,7 @@ import json
 import re
 import subprocess
 import sys
+import tomllib
 from pathlib import Path
 
 from .config import home, load_release, load_releases, load_repos
@@ -269,6 +270,22 @@ def _find(release_id: str):
     return next((r for r in load_releases() if r.id == release_id), None)
 
 
+def _lint_override(toml: Path) -> str:
+    """The planner's recorded ``[lint] override`` text, or "" when absent.
+
+    A planner records the reason a lint problem is acceptable in the release
+    itself, next to the outcome it qualifies, so publishing stays a text edit
+    a person can review. An empty or non-string value records nothing.
+    """
+    try:
+        raw = tomllib.loads(toml.read_text())
+    except (OSError, tomllib.TOMLDecodeError):
+        return ""
+    lint = raw.get("lint")
+    override = lint.get("override") if isinstance(lint, dict) else None
+    return override.strip() if isinstance(override, str) else ""
+
+
 def _publish(args) -> int:
     rel = _find(args.id)
     if rel is None:
@@ -287,11 +304,14 @@ def _publish(args) -> int:
             print(f"{name}: still the stub ({STUB_MESSAGE})")
             return 1
     problems = lint_release(release_dir)
+    toml = release_dir / "release.toml"
     if problems:
         for problem in problems:
             print(problem)
-        return 1
-    toml = release_dir / "release.toml"
+        override = _lint_override(toml)
+        if not override:
+            return 1
+        print(f"lint override: {override}")
     toml.write_text(_drop_draft(toml.read_text()))
     return 0
 

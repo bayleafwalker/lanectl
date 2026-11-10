@@ -32,11 +32,27 @@ _EXPECTED = (
     # argparse rejects a command or flag that the CLI does not implement yet.
     re.compile(r"\bunrecognized arguments\b"),
     re.compile(r"\binvalid choice\b"),
+    # A quoted key the product data does not carry yet (a row or mapping field
+    # the feature is supposed to add); a bare KeyError stays unknown.
+    re.compile(r"""\bKeyError:\s*(?:'[^']*'|"[^"]*")"""),
+)
+
+# pytest.raises that did not raise: the code that should raise is absent, and
+# that holds for any exception the test names, including ContractError. It is
+# checked before _SPEC_GAP so the named class does not decide the kind.
+_DID_NOT_RAISE = re.compile(r"\bDID NOT RAISE\b")
+
+# A ContractError the test or its fixtures actually raised, rather than one a
+# test merely expected: a traceback line (``ContractError: ...``) or pytest's
+# ``E   lanectl.contracts.ContractError`` line.
+_CONTRACT_RAISED = re.compile(
+    r"(?:\bE\s+(?:lanectl\.contracts\.)?ContractError\b"
+    r"|(?:^|\n)[ \t]*(?:lanectl\.contracts\.)?ContractError:)"
 )
 
 # Failures raised by the test itself rather than by missing product code.
 _SPEC_GAP = (
-    re.compile(r"\bContractError\b"),
+    _CONTRACT_RAISED,
     re.compile(r"\bSyntaxError\b"),
     re.compile(r"\bNameError\b"),
 )
@@ -71,6 +87,8 @@ def _sections(output: str) -> list[str]:
 
 
 def _classify_one(output: str) -> str:
+    if _DID_NOT_RAISE.search(output):
+        return "expected"
     if any(p.search(output) for p in _SPEC_GAP):
         return "spec-gap"
     if any(p.search(output) for p in _EXPECTED):
