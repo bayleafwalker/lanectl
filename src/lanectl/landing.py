@@ -29,12 +29,17 @@ def load_authority(path: str | Path | None = None) -> dict:
     """
     target = Path(path) if path is not None else home() / DEFAULT_AUTHORITY
     raw = tomllib.loads(target.read_text())
-    return {
+    result = {
         "revision": int(raw.get("revision", 0)),
         "autonomous_classes": list(raw.get("autonomous_classes", ())),
         "fix_budget_lines": int(raw.get("fix_budget_lines", 0)),
         "allowed_fix_classes": list(raw.get("allowed_fix_classes", ())),
     }
+    if "integrator_host" in raw:
+        if not isinstance(raw["integrator_host"], str) or not raw["integrator_host"]:
+            raise ValueError("integrator_host must be a nonempty hostname")
+        result["integrator_host"] = raw["integrator_host"]
+    return result
 
 
 def _latest_evaluations(events: list[dict]) -> dict[str, str]:

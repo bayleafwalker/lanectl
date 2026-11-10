@@ -41,7 +41,7 @@ def configure(monkeypatch):
     monkeypatch.setenv('LANECTL_TEST_TOKEN','private-test-value')
     owner=Owner()
     monkeypatch.setattr(coordination,'configured',lambda *a,**k:owner)
-    monkeypatch.setattr(work,'_call',lambda *a,**k:SimpleNamespace(returncode=0,stdout='',stderr=''))
+    monkeypatch.setattr(work,'_call',lambda *a,**k: (_ for _ in ()).throw(AssertionError('coordinated work must not use operator tracker credentials')))
     return owner
 
 

@@ -204,6 +204,20 @@ def _coordinated(repo_name):
     return path.exists() and repo_name in tomllib.loads(path.read_text()).get("repos", {})
 
 
+def _retry_admission(fn):
+    @functools.wraps(fn)
+    def bounded_retry(*args, **kwargs):
+        from .remote_events import StreamConflict
+        for _ in range(3):
+            try:
+                return fn(*args, **kwargs)
+            except StreamConflict:
+                continue  # no external execution occurred before claim commit
+        return "served admission changed concurrently; retry next tick"
+    return bounded_retry
+
+
+@_retry_admission
 def admit(lane_name: str, log: EventLog, only: str | None = None) -> Claim | str:
     """Return a Claim, or a string saying why nothing was admitted.
 
@@ -401,7 +415,7 @@ def _coordinate_execution(native):
                 raise coordination.CoordinationError("coordinated releases require a complete Work outcome")
             work_id = int(c.rel.work.split("#", 1)[1])
             owner.start(c.attempt_id, work_id, c.model,
-                        hashlib.sha256(render_prompt(c.rel, c.lane, c.repo).encode()).hexdigest(),
+                        "sha256:" + hashlib.sha256(render_prompt(c.rel, c.lane, c.repo).encode()).hexdigest(),
                         recipe_id=f"lanectl/{c.lane.lane}/v{c.lane.revision}")
             cancel = threading.Event()
             sandbox_holder = []
@@ -468,7 +482,7 @@ def execute(c: Claim, log: EventLog, adapter_fn=None, *, lease_guard=None,
     git(wt, "checkout", "-q", "-b", branch, rel.base_sha)
     git(wt, "remote", "remove", "origin", check=False)   # do not advertise the main checkout
     sb = sandboxing.from_lane(lane.sandbox, (str(wt),), lane.timeout_s + 120,
-                              **({"attempt_id": c.attempt_id} if lease_guard else {}))
+                              **({"attempt_id": c.attempt_id} if lease_guard is not None or adapter_fn is None else {}))
     if sandbox_holder is not None:
         sandbox_holder.append(sb)
     acc = _copy_acceptance(rel, wt)
@@ -503,6 +517,7 @@ def execute(c: Claim, log: EventLog, adapter_fn=None, *, lease_guard=None,
                  status_file=runs / f"{c.attempt_id}.json", timeout_s=lane.timeout_s,
                  external=c.model in lane.external_models, env=env,
                  **({"cancel_event": cancel_event} if cancel_event is not None and adapter_fn is None else {}),
+                 **({"stop_callback": sb.cancel} if adapter_fn is None and c.worker in ("opencode", "codex", "claude") else {}),
                  **({"sandbox": sb} if c.worker == "local" else {}))
     except Exception as exc:  # adapter crash is an attempt outcome, not a runner crash
         res = adapters.AdapterResult("failed", 1, f"adapter error: {exc}", None)

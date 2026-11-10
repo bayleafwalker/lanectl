@@ -9,6 +9,7 @@ from __future__ import annotations
 import fcntl
 import json
 import subprocess
+import socket
 from pathlib import Path
 
 from . import deploy, evaluator, landing, runner, work
@@ -117,6 +118,9 @@ def cycle(log, *, max_trains=3, publish_fn=None, only_attempt=None):
     allowed = set(authority.get('autonomous_classes', ()))
     if not allowed:
         return []
+    from .remote_events import RemoteEventLog
+    if isinstance(log, RemoteEventLog) and authority.get('integrator_host') != socket.gethostname():
+        return ['integrator: served effects require this host to be the designated integrator_host']
     lock_path = log.path.with_suffix('.integrator.lock')
     with open(lock_path, 'a') as lock:
         try:

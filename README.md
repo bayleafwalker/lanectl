@@ -64,3 +64,9 @@ proof where configured), using the actual train check receipt; closure also
 requires a fresh owner read reporting done/accepted. Awaiting verification remains
 pending. `lanectl work reconcile` retries exact owner-journal completion after a
 restart without substituting operator tracker status writes.
+
+For a served event stream, autonomous effect execution additionally requires
+`integrator_host` in the reviewed integrator policy to match this host's kernel
+hostname. Other hosts may admit workers using atomic stream CAS but cannot deploy,
+publish or land trains. Admission conflicts are recomputed before any worker
+starts; external effects are reconciled from receipts instead of blindly replayed.

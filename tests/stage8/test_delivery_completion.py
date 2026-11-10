@@ -169,3 +169,15 @@ def test_recheck_invalidates_a_tip_changed_during_check(estate,monkeypatch):
     assert 'FAILED' in runner.recheck_train(log,'tt')
     assert not [e['data'] for e in log.read() if e['type']=='train.built'][-1]['passed']
     assert not [e for e in log.read() if e['type']=='item.landed']
+
+
+def test_admission_conflict_retries_only_before_returning_claim():
+    from lanectl.remote_events import StreamConflict
+    calls=[]
+    def claim():
+        calls.append(True)
+        if len(calls)<3:
+            raise StreamConflict('concurrent admission')
+        return 'committed'
+    assert runner._retry_admission(claim)()=='committed'
+    assert len(calls)==3

@@ -95,6 +95,14 @@ def sync(rel, train_id: str, landed_sha: str, repos, run=subprocess.run, *, skip
     result = {"work": rel.work, "train_id": train_id, "closed": False, "ok": True}
     noted = bool(skip_note)
     try:
+        from .config import home
+        import tomllib
+        config_path = home() / "governance" / "vuoro.toml"
+        owner_managed = (config_path.exists() and rel.repo in
+                         tomllib.loads(config_path.read_text()).get("repos", {}))
+        if owner_managed:
+            result.update(pending_owner=True)
+            return result
         path = tracker_path(rel.work, repos)
         if not skip_note:
             _call(run, path, ["item", "note", "--id", rel.work, "--type", "update",
@@ -102,14 +110,6 @@ def sync(rel, train_id: str, landed_sha: str, repos, run=subprocess.run, *, skip
                           "--git-sha", landed_sha, "--actor", "lanectl"])
         noted = True
         if not rel.work_complete:
-            return result
-        from .config import home
-        import tomllib
-        config_path = home() / "governance" / "vuoro.toml"
-        owner_managed = (config_path.exists() and rel.repo in
-                         tomllib.loads(config_path.read_text()).get("repos", {}))
-        if owner_managed:
-            result.update(pending_owner=True, noted=True)
             return result
         repo = repos.get(rel.repo)
         if repo is not None and repo.landing == "pr" and not merged(repo, landed_sha, run):

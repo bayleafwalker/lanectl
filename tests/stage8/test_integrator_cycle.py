@@ -75,3 +75,19 @@ def test_many_small_fixes_cannot_exceed_train_budget(tmp_path, monkeypatch):
         return '20\t0\tsrc/f.py'
     monkeypatch.setattr(runner,'git',git)
     assert integrator._fix_warnings(SimpleNamespace(path=tmp_path),{'train_id':'tt','base_sha':'a'*40},[],AUTH)
+
+
+def test_served_integration_requires_designated_host(monkeypatch):
+    from lanectl.remote_events import RemoteEventLog
+    log=RemoteEventLog.__new__(RemoteEventLog)
+    monkeypatch.setattr(integrator,'_authority',lambda:dict(AUTH,integrator_host='other-host'))
+    monkeypatch.setattr(integrator,'_cycle',lambda *a: (_ for _ in ()).throw(AssertionError('effects on wrong host')))
+    assert 'designated' in integrator.cycle(log)[0]
+
+
+def test_served_integration_without_host_is_not_unrestricted(monkeypatch):
+    from lanectl.remote_events import RemoteEventLog
+    log=RemoteEventLog.__new__(RemoteEventLog)
+    monkeypatch.setattr(integrator,'_authority',lambda:AUTH)
+    monkeypatch.setattr(integrator,'_cycle',lambda *a: (_ for _ in ()).throw(AssertionError('effects without host pin')))
+    assert 'designated' in integrator.cycle(log)[0]
