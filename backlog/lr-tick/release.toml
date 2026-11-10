@@ -1,0 +1,35 @@
+id = "lr-tick"
+repo = "lanectl"
+base_sha = "e15f24a795c194265a9a41fc920168d440069475"
+revision = 1
+title = "lanectl tick: doctor, reap, run in one unattended step"
+task_class = "tooling"
+size = "S"
+data_class = "public"
+
+outcome = """
+One unattended step for a timer (ladder rung 4): health check, reap expired dev deploys,
+then run lanes, without a planner session.
+
+New module src/lanectl/tick.py:
+- tick(log, *, max_items=3, lane="implement", doctor_fn=None, reap_fn=None, run_fn=None)
+  -> dict. Defaults: doctor_fn(log) = doctor.run(log); reap_fn(log) = deploy.reap(log);
+  run_fn(log, max_items, lane) = the same admit/execute loop as `lanectl run` (stop at the
+  first admit message, or after an infra rejection), returning the printed lines as a list.
+- Order: doctor first. If any finding is ERROR, return
+  {"doctor": "error", "reaped": [], "ran": [], "stopped": "doctor"} without calling reap or
+  run. Otherwise call reap, then run, and return
+  {"doctor": "warn" if any WARN else "ok", "reaped": <reap result>, "ran": <run lines>,
+   "stopped": None}.
+- Command `lanectl tick [--max N] [--lane L]` (register() plugin) prints
+  "tick: doctor=<ok|warn|error> reaped=<n> ran=<n>" then each reaped and ran line, and exits
+  1 when doctor is error, else 0.
+No new event types.
+"""
+
+[scope]
+paths = ["src/lanectl/tick.py", "tests/**"]
+
+[acceptance]
+files = ["tests/stage8/test_acc_tick.py"]
+exec = ["uv run --no-sync pytest -q -p no:cacheprovider tests/stage8/test_acc_tick.py"]

@@ -1,0 +1,40 @@
+id = "lr-operator-cost"
+repo = "lanectl"
+base_sha = "e15f24a795c194265a9a41fc920168d440069475"
+revision = 1
+title = "Operator (planner+integrator) cost per landed release"
+task_class = "projection"
+size = "S"
+data_class = "public"
+
+outcome = """
+Report what operator (planner and integrator) time costs per landed release next to lane
+cost, so ADR 0001's "pause if integrator cost per landed item exceeds doing it
+interactively" has a number (ladder rung 4).
+
+costs.py: _UNIT_COLUMNS also prices cache_write_tokens from a tier's "cache_write" column
+(a tier without that column prices it at 0, as before). Nothing else in costs.py changes.
+
+New module src/lanectl/operator_cost.py:
+- operator_cost(events, policy_raw) -> dict with keys
+  "releases": {item_id: {"lane_usd", "operator_usd", "landed"}} for every item with usage or
+  an item.landed event; "landed" (count); "lane_usd_per_landed" and
+  "operator_usd_per_landed" (sum over landed releases / count, None when nothing landed);
+  "unattributed_operator_usd"; "unpriced_events".
+- Operator usage: usage.recorded with data.source == "claude-code-interactive". Lane usage:
+  every other usage.recorded with an item_id. Price each event with costs.price_usage,
+  trying every provider's price table (as cost_summary does); an event no table prices is
+  counted in unpriced_events and adds nothing. Operator usage with item_id None adds to
+  unattributed_operator_usd.
+- report_section() -> ("operator_cost", fn, fmt); fn(events) loads governance/allocation.toml
+  the way costs.cost_usd does. The text form is one header line
+  "operator_cost (estimate from published prices):" and one line
+  "  landed=<n> lane_usd/landed=<x.xx|-> operator_usd/landed=<x.xx|-> unattributed_operator_usd=<x.xx> unpriced=<n>".
+"""
+
+[scope]
+paths = ["src/lanectl/costs.py", "src/lanectl/operator_cost.py", "tests/**"]
+
+[acceptance]
+files = ["tests/stage8/test_acc_operator_cost.py"]
+exec = ["uv run --no-sync pytest -q -p no:cacheprovider tests/stage8/test_acc_operator_cost.py"]

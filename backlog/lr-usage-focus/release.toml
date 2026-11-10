@@ -1,0 +1,38 @@
+id = "lr-usage-focus"
+repo = "lanectl"
+base_sha = "e15f24a795c194265a9a41fc920168d440069475"
+revision = 1
+title = "Attribute interactive usage to a release (focus + hook)"
+task_class = "tooling"
+size = "S"
+data_class = "public"
+
+outcome = """
+Interactive Claude Code usage (the Stop hook, source "claude-code-interactive") is attributed
+to the release a planner or integrator session is working on, so cost per landed item can
+include operator time (ladder rung 4; ADR 0001 stop condition).
+
+New module src/lanectl/focus.py:
+- set_focus(release_id, role) writes state_dir()/focus.json:
+  {"release_id": ..., "role": ..., "set_at": "<ISO UTC, Z>"}.
+- clear_focus() removes it; current_focus() returns that dict, or None when the file is
+  absent, unreadable, or set_at is older than 12 hours.
+- Command `lanectl focus [release_id] [--role planner|integrator] [--clear]`
+  (register() plugin). With an id: the release must load from
+  $LANECTL_HOME/backlog/<id>/release.toml, else print an error and exit 2 without writing;
+  role defaults to planner; prints "focus: <id> (<role>)". With --clear: prints
+  "focus cleared". With neither: prints the current "focus: <id> (<role>)" or "no focus".
+
+usage_hook.handle_hook: the recorded usage.recorded event gets item_id from the
+LANECTL_RELEASE environment variable (stripped, non-empty), else from current_focus(),
+else None; and data["role"] from LANECTL_ROLE, else the focus role, else "interactive".
+A role outside planner|integrator|interactive becomes "interactive". The hook still never
+raises. No new event types; existing required keys unchanged.
+"""
+
+[scope]
+paths = ["src/lanectl/usage_hook.py", "src/lanectl/focus.py", "tests/**"]
+
+[acceptance]
+files = ["tests/stage8/test_acc_usage_focus.py"]
+exec = ["uv run --no-sync pytest -q -p no:cacheprovider tests/stage8/test_acc_usage_focus.py"]

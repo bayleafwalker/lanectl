@@ -1,0 +1,44 @@
+id = "lr-otel-export"
+repo = "lanectl"
+base_sha = "e15f24a795c194265a9a41fc920168d440069475"
+revision = 1
+title = "Export attempts and operator sessions as OTLP/JSON spans"
+task_class = "adapter"
+size = "M"
+data_class = "public"
+
+outcome = """
+Export the log as OpenTelemetry spans (OTLP/JSON) so lane attempts and operator sessions
+can be read in any OTel backend through a collector's otlpjsonfile receiver (ladder rung 4).
+No new dependency: write the JSON by hand.
+
+New module src/lanectl/otel.py:
+- spans(events, policy_raw) -> dict, an OTLP/JSON ExportTraceServiceRequest:
+  {"resourceSpans": [{"resource": {"attributes": [service.name = "lanectl"]},
+   "scopeSpans": [{"scope": {"name": "lanectl"}, "spans": [...]}]}]}.
+- Attributes are lists of {"key", "value"} where value is {"stringValue": s},
+  {"intValue": "<decimal string>"} or {"doubleValue": f}.
+- One "lane.attempt" span per item.claimed: traceId = sha256(item_id) hex[:32],
+  spanId = sha256(attempt_id) hex[:16], startTimeUnixNano = claim ts, endTimeUnixNano =
+  that attempt's experiment.recorded ts, else the latest event whose data.attempt_id is the
+  attempt (both as decimal strings of nanoseconds). Attributes: lanectl.release_id,
+  lanectl.attempt_id, gen_ai.request.model (the claim's model), lanectl.decision (from
+  experiment.recorded; omitted when absent), gen_ai.usage.input_tokens and
+  gen_ai.usage.output_tokens (ints summed over usage.recorded with that attempt_id),
+  lanectl.cost_usd_est (double, costs.price_usage over those events with any provider's
+  price table; omitted when unpriced).
+- One "operator.session" span per usage.recorded with source "claude-code-interactive" and
+  an item_id: traceId of the item, spanId = sha256(session_id + ts) hex[:16], start = end =
+  event ts. Attributes: lanectl.release_id, lanectl.role (data.role, default "interactive"),
+  gen_ai.request.model, gen_ai.usage.input_tokens, gen_ai.usage.output_tokens.
+- Command `lanectl otel export --out PATH` (register() plugin) writes spans(...) as one JSON
+  line (governance/allocation.toml read as costs.cost_usd does) and prints
+  "<n> spans -> PATH".
+"""
+
+[scope]
+paths = ["src/lanectl/otel.py", "tests/**"]
+
+[acceptance]
+files = ["tests/stage8/test_acc_otel_export.py"]
+exec = ["uv run --no-sync pytest -q -p no:cacheprovider tests/stage8/test_acc_otel_export.py"]

@@ -1,0 +1,38 @@
+id = "lr-model-windows"
+repo = "lanectl"
+base_sha = "e15f24a795c194265a9a41fc920168d440069475"
+revision = 1
+title = "Model-scoped capacity windows (report and doctor; burn ignores them)"
+task_class = "projection"
+size = "M"
+data_class = "public"
+
+outcome = """
+A capacity window can be scoped to models, so a per-model provider limit (OpenCode Go caps
+DeepSeek V4 Pro at $15/month separately from V4.1 Flash) is tracked and warned on
+(ladder rung 4). Model-scoped windows are informational: admission and burn keep using
+unscoped windows only.
+
+capacity.py:
+- WindowPolicy gains models: tuple[str, ...] = (). _window parses an optional "models"
+  array of non-empty strings (anything else raises PolicyError naming provider and window).
+- project(): a window with models counts only usage.recorded rows whose data.model is in
+  models; the view gains "models": list(models) (an empty list for unscoped windows).
+  Unscoped windows are computed exactly as before.
+
+burn.py: _tightest_burnable and every other burn/admission path skip windows with models,
+so a scoped window never changes burn or admission results.
+
+doctor.py: check_model_windows(events, policy, now) -> list[Finding]. For each scoped
+window, WARN "<provider>/<window>: <pct>% of budget used (models: <m1,m2>)" when
+used >= 80% of budget (pct rounded to a whole number). When no scoped window is at or over
+80%, one OK finding "model windows: <n> within budget". doctor.run adds these findings when
+governance/allocation.toml loads; check name "model-windows".
+"""
+
+[scope]
+paths = ["src/lanectl/capacity.py", "src/lanectl/burn.py", "src/lanectl/doctor.py", "tests/**"]
+
+[acceptance]
+files = ["tests/stage8/test_acc_model_windows.py"]
+exec = ["uv run --no-sync pytest -q -p no:cacheprovider tests/stage8/test_acc_model_windows.py"]
