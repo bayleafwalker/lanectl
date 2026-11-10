@@ -97,8 +97,11 @@ class ProviderPolicy:
     # policies (rev 4 and earlier, and tests that omit both) keep the legacy
     # ledger-only projection instead of treating every absence as unknown.
     qualified: bool = False
+    admission_mode: str = "shadow"
 
     def __post_init__(self) -> None:
+        if self.admission_mode not in ("shadow", "enforce"):
+            raise PolicyError("admission_mode must be shadow or enforce")
         if not self.pool:
             object.__setattr__(self, "pool", f"{self.name}:default")
 
@@ -166,6 +169,7 @@ class AllocationPolicy:
                 windows=windows, reservations=reservations, estimates=estimates,
                 pool=pool, freshness_s=freshness_s,
                 qualified="pool" in spec or "freshness_s" in spec,
+                admission_mode=spec.get("admission_mode", "shadow"),
             )
         return cls(revision=revision, providers=providers)
 
