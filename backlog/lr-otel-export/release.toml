@@ -1,7 +1,7 @@
 id = "lr-otel-export"
 repo = "lanectl"
-base_sha = "e15f24a795c194265a9a41fc920168d440069475"
-revision = 1
+base_sha = "3322f81e1625a74a4138dbc7d3221968a504498c"
+revision = 2
 title = "Export attempts and operator sessions as OTLP/JSON spans"
 task_class = "adapter"
 size = "M"

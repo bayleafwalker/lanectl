@@ -1,7 +1,7 @@
 id = "lr-tick"
 repo = "lanectl"
-base_sha = "e15f24a795c194265a9a41fc920168d440069475"
-revision = 1
+base_sha = "3322f81e1625a74a4138dbc7d3221968a504498c"
+revision = 2
 title = "lanectl tick: doctor, reap, run in one unattended step"
 task_class = "tooling"
 size = "S"
