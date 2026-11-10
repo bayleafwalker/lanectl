@@ -335,6 +335,18 @@ def _tidy(value: float) -> int | float:
     return int(value) if float(value).is_integer() else value
 
 
+def _whole(value: int | float | None) -> str | int:
+    """Render a capacity figure for the text view as a nearest whole number.
+
+    Operators read the text output to judge headroom, so thousands of decimals
+    obscure the answer; ``--json`` keeps the exact ledger values.
+    """
+    if value is None:
+        return "-"
+    whole = math.floor(abs(float(value)) + 0.5)
+    return int(whole) if value >= 0 else -int(whole)
+
+
 def _as_utc(value: datetime) -> datetime:
     if value.tzinfo is None:
         return value.replace(tzinfo=timezone.utc)
@@ -651,15 +663,17 @@ def _cmd(args, log) -> int:
     print(f"as of {format_ts(now)} (allocation revision {policy.revision})")
     for provider, view in qualified_views.items():
         observed = view["observed_at"] or "-"
-        outside = "-" if view["outside_lane"] is None else view["outside_lane"]
+        outside = _whole(view["outside_lane"])
         stale = " stale" if view["stale"] else ""
         denied = " denied" if view["denied"] else ""
         print(f"{provider:16} pool={view['pool']} basis={view['basis']}{stale}{denied} "
-              f"observed_at={observed} outside_lane={outside} in_flight={view['in_flight']}")
+              f"observed_at={observed} outside_lane={outside} "
+              f"in_flight={_whole(view['in_flight'])}")
     for provider, windows in views.items():
         for name, w in windows.items():
             burn = "allowed" if w["burn_down_allowed"] else "held"
             print(f"{provider:16} {name:8} {w['window_start']} .. {w['window_end']}  "
-                  f"used={w['used']} remaining={w['remaining']} "
-                  f"reserved={w['reserved_effective']} burnable={w['burnable']} ({burn})")
+                  f"used={_whole(w['used'])} remaining={_whole(w['remaining'])} "
+                  f"reserved={_whole(w['reserved_effective'])} burnable={_whole(w['burnable'])} "
+                  f"({burn})")
     return 0
