@@ -72,7 +72,8 @@ class RemoteEventLog:
             raise
         expected = pending['envelope']['arguments']['expected_revision']
         count = len(pending['envelope']['arguments']['events'])
-        if result.get('revision') != expected + count or result.get('count') != count:
+        if (result.get('previous_revision') != expected
+                or result.get('revision') != expected + count or result.get('count') != count):
             raise CoordinationError('owner batch receipt does not match submitted events')
         self.path.unlink()
 
@@ -124,7 +125,7 @@ class RemoteEventLog:
         with self._mutex:
             if self._transaction:
                 event = make_event(etype, data, item_id=item_id)
-                self._buffer.append(event)
+                self._buffer.append(json.loads(encode(event)))
                 return event
             with self.locked():
                 return self.append(etype, data, item_id=item_id)
@@ -132,7 +133,7 @@ class RemoteEventLog:
     def read(self):
         with self._mutex:
             if self._transaction:
-                return self._events + self._buffer
+                return json.loads(encode(self._events + self._buffer))
             with self._local_lock():
                 self._recover()
                 events, _ = self._read_remote()

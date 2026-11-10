@@ -158,3 +158,16 @@ def test_import_cli_dry_run_hash_check_execute_and_repeat(client,tmp_path,monkey
     assert not (tmp_path/'host-state/backend.json').exists()
     receipt=json.loads((tmp_path/'host-state/stream-import-receipt.json').read_text())
     assert receipt['source_sha256']==args.source_sha256 and receipt['events']==1
+
+
+def test_remote_append_and_read_snapshot_cannot_be_mutated_after_recording(client,tmp_path):
+    log=RemoteEventLog(client,tmp_path/'pending.json')
+    data={'release_id':'release-x','revision':1}
+    with log.locked():
+        returned=log.append('release.published',data,item_id='release-x')
+        data['revision']=99
+        returned['data']['revision']=88
+        snapshot=log.read()
+        snapshot[0]['data']['revision']=77
+        assert log.read()[0]['data']['revision']==1
+    assert log.read()[0]['data']['revision']==1
