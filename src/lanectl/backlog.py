@@ -317,6 +317,12 @@ def _publish(args) -> int:
         if path.is_file() and STUB_MESSAGE in path.read_text():
             print(f"{name}: still the stub ({STUB_MESSAGE})")
             return 1
+    from .specification import validate_for_publish
+    spec_problems = validate_for_publish(release_dir)
+    if spec_problems:
+        for problem in spec_problems:
+            print(problem)
+        return 1
     problems = lint_release(release_dir)
     toml = release_dir / "release.toml"
     if problems:
