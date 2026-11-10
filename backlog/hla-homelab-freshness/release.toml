@@ -1,0 +1,41 @@
+id = "hla-homelab-freshness"
+repo = "homelab-analytics"
+base_sha = "ffe05f0a8a2da97ed369c13e259c48e8d4ae48b5"
+revision = 1
+title = "Freshness templates match every domain pack's real source datasets"
+task_class = "glue"
+size = "S"
+data_class = "public"
+work = "homelab-analytics#1553"
+work_complete = true
+
+outcome = """
+Item #1553 part 2: freshness configs for non-finance sources. DOMAIN_FRESHNESS_CONFIGS in
+packages/pipelines/source_freshness_bootstrap.py has a "homelab" entry keyed "homelab_metrics"
+and "homelab_costs", but HOMELAB_PACK (packages/domains/homelab/manifest.py) declares the
+sources ha_service_states, ha_backup_runs, ha_storage_sensors and ha_workload_sensors, so
+ensure_domain_freshness_configs never creates a homelab config.
+
+Change only DOMAIN_FRESHNESS_CONFIGS:
+- Replace the two homelab keys with one template per HOMELAB_PACK source dataset:
+  ha_service_states and ha_workload_sensors: pull, weekly, calendar_week, due_day_of_month None,
+  expected_window_days 2, freshness_sla_days 7, sensitivity low, reminder_channel
+  operator_dashboard, requires_human_action False.
+  ha_storage_sensors: the same, freshness_sla_days 14.
+  ha_backup_runs: pull, weekly, calendar_week, None, 2, freshness_sla_days 8, low,
+  operator_dashboard, False.
+- Every source dataset declared by FINANCE_PACK, UTILITIES_PACK and HOMELAB_PACK has a template
+  under its pack's name (add any missing one, using monthly/calendar_month values like its
+  domain's existing templates).
+- Every template uses an expected_frequency in {"ad_hoc", "weekly", "monthly", "quarterly",
+  "annual"}.
+Keep ensure_domain_freshness_configs's behaviour otherwise unchanged. Do not modify existing
+tests.
+"""
+
+[scope]
+paths = ["packages/pipelines/source_freshness_bootstrap.py", "tests/**"]
+
+[acceptance]
+files = ["tests/test_acc_domain_freshness_templates.py"]
+exec = ["uv run --no-sync python -m pytest -q -p no:cacheprovider tests/test_acc_domain_freshness_templates.py"]
