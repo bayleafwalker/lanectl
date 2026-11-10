@@ -8,8 +8,10 @@ Added 2026-11-08 after OpenCode workers wrote into the main checkout.
 from __future__ import annotations
 
 import os
+import hashlib
 import shlex
 import shutil
+import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -24,6 +26,7 @@ class Sandbox:
     readonly: tuple[str, ...]         # roots mounted read-only (e.g. /projects)
     writable: tuple[str, ...]         # exceptions: the attempt checkout, scratch dirs
     timeout_s: int
+    unit: str | None = None
 
     def prefix(self, cwd: Path, env_path: str | None = None) -> list[str]:
         if self.mode == "none":
@@ -35,6 +38,8 @@ class Sandbox:
             raise RuntimeError("sandbox mode systemd-run but systemd-run is not on PATH")
         argv = [exe, "--user", "--quiet", "--pipe", "--wait", "--collect",
                 "-p", f"RuntimeMaxSec={self.timeout_s}", f"--working-directory={cwd}"]
+        if self.unit:
+            argv.append(f"--unit={self.unit}")
         argv += [f"-pReadOnlyPaths={p}" for p in self.readonly]
         argv += [f"-pReadWritePaths={p}" for p in self.writable]
         for name in PASS_ENV:
@@ -42,6 +47,19 @@ class Sandbox:
             if val:
                 argv.append(f"--setenv={name}={val}")
         return argv
+
+    def cancel(self) -> bool:
+        """Stop only this attempt's named transient service after authority loss."""
+        if self.mode == "none":
+            return True
+        if not self.unit:
+            return False
+        try:
+            result = subprocess.run(["systemctl", "--user", "stop", self.unit],
+                                    capture_output=True, timeout=15)
+            return result.returncode == 0
+        except (OSError, subprocess.TimeoutExpired):
+            return False
 
     def wrap_shell(self, cmd: str, cwd: Path) -> str:
         """A shell command string that runs `cmd` inside the sandbox."""
@@ -71,6 +89,8 @@ class Sandbox:
         return dest
 
 
-def from_lane(raw: dict, writable: tuple[str, ...], timeout_s: int) -> Sandbox:
+def from_lane(raw: dict, writable: tuple[str, ...], timeout_s: int, *, attempt_id=None) -> Sandbox:
+    unit = ("lanectl-attempt-" + hashlib.sha256(attempt_id.encode()).hexdigest()[:24] + ".service"
+            if attempt_id is not None else None)
     return Sandbox(mode=raw.get("mode", "none"), readonly=tuple(raw.get("readonly", ())),
-                   writable=writable + tuple(raw.get("writable", ())), timeout_s=timeout_s)
+                   writable=writable + tuple(raw.get("writable", ())), timeout_s=timeout_s, unit=unit)
