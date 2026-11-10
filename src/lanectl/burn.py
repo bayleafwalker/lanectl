@@ -65,6 +65,8 @@ def _tightest_burnable(spec, windows: dict, outside: float,
     """
     tightest: float | None = None
     for window in spec.windows:
+        if window.models:
+            continue
         used = float((windows.get(window.name) or {}).get("used") or 0.0)
         value = max(0.0, float(window.budget) - used - outside - held)
         tightest = value if tightest is None else min(tightest, value)
@@ -181,6 +183,8 @@ def check(events: list[dict], policy_raw: dict, now: datetime) -> list[str]:
         if not spec.expiring:
             continue
         for window in spec.windows:
+            if window.models:
+                continue
             if window.budget_basis != "verified":
                 reasons.append(
                     f"window {provider}/{window.name} budget basis is {window.budget_basis!r}: "
@@ -257,6 +261,8 @@ def plan_burn(events: list[dict], policy_raw: dict, now: datetime,
         # the amount it may spend is still the provider-wide tightest headroom.
         ending = None
         for window in spec.windows:
+            if window.models:
+                continue
             end = parse_ts((windows.get(window.name) or {}).get("window_end"))
             if end is None:
                 continue

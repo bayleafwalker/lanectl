@@ -78,6 +78,9 @@ class WindowPolicy:
     budget: int | float
     anchor: datetime | None = None
     budget_basis: str = "placeholder"
+    #: When non-empty, the window only counts usage rows for these models. Such
+    #: windows are informational (report/doctor); admission and burn ignore them.
+    models: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -206,8 +209,20 @@ def _window(provider: str, raw: object) -> WindowPolicy:
     if basis not in BUDGET_BASES:
         raise PolicyError(f"provider {provider!r} window {name!r}: budget_basis must be one of "
                           f"{BUDGET_BASES}: {basis!r}")
+    models_raw = raw.get("models")
+    if models_raw is None:
+        models_raw = []
+    if not isinstance(models_raw, list):
+        raise PolicyError(f"provider {provider!r} window {name!r}: models must be an array "
+                          f"of non-empty strings")
+    models: list[str] = []
+    for model in models_raw:
+        if not isinstance(model, str) or not model:
+            raise PolicyError(f"provider {provider!r} window {name!r}: models must be an array "
+                              f"of non-empty strings")
+        models.append(model)
     return WindowPolicy(name=name, length_s=length, budget=budget, anchor=anchor,
-                        budget_basis=basis)
+                        budget_basis=basis, models=tuple(models))
 
 
 def _window_bounds(now: datetime, anchor: datetime | None, length_s: int) -> tuple[datetime, datetime]:
@@ -252,8 +267,9 @@ def _observed_anchor(events: list[dict], provider: str, window: str,
     return newest[1] if newest is not None else fallback
 
 
-def _usage(events: list[dict], provider: str, unit: str) -> list[tuple[datetime, float, str]]:
-    """Ledger usage rows, with overlapping sources folded once.
+def _usage_rows(events: list[dict], provider: str,
+                unit: str) -> list[tuple[datetime, float, str, str]]:
+    """Ledger usage rows with their model, with overlapping sources folded once.
 
     One source may report an attempt in several rows (incremental records); those
     still sum.  Distinct sources (an adapter and a hook) overlap and each report
@@ -261,8 +277,8 @@ def _usage(events: list[dict], provider: str, unit: str) -> list[tuple[datetime,
     same ``(provider, attempt_id)`` only the latest row counts.  Rows without an
     ``attempt_id`` cannot be attributed and are all counted.
     """
-    rows: list[tuple[datetime, float, str]] = []
-    grouped: dict[str, list[tuple[int, datetime, float, str]]] = {}
+    rows: list[tuple[datetime, float, str, str]] = []
+    grouped: dict[str, list[tuple[int, datetime, float, str, str]]] = {}
     for index, ev in enumerate(events):
         if not isinstance(ev, dict) or ev.get("type") != "usage.recorded":
             continue
@@ -277,18 +293,25 @@ def _usage(events: list[dict], provider: str, unit: str) -> list[tuple[datetime,
         if isinstance(amount, bool) or not isinstance(amount, (int, float)):
             continue
         source = str(data.get("source", ""))
+        model = str(data.get("model") or "")
         attempt_id = data.get("attempt_id")
         if isinstance(attempt_id, str) and attempt_id:
-            grouped.setdefault(attempt_id, []).append((index, ts, float(amount), source))
+            grouped.setdefault(attempt_id, []).append((index, ts, float(amount), source, model))
         else:
-            rows.append((ts, float(amount), source))
+            rows.append((ts, float(amount), source, model))
     for observations in grouped.values():
-        if len({source for _, _, _, source in observations}) <= 1:
-            rows.extend((ts, amount, source) for _, ts, amount, source in observations)
+        if len({source for _, _, _, source, _ in observations}) <= 1:
+            rows.extend((ts, amount, source, model)
+                        for _, ts, amount, source, model in observations)
         else:
-            _, ts, amount, source = max(observations, key=lambda row: (row[1], row[0]))
-            rows.append((ts, amount, source))
+            _, ts, amount, source, model = max(observations, key=lambda row: (row[1], row[0]))
+            rows.append((ts, amount, source, model))
     return rows
+
+
+def _usage(events: list[dict], provider: str, unit: str) -> list[tuple[datetime, float, str]]:
+    """Ledger usage rows without their model (see :func:`_usage_rows`)."""
+    return [(ts, amount, source) for ts, amount, source, _ in _usage_rows(events, provider, unit)]
 
 
 def project(events: list[dict], policy: AllocationPolicy, now: datetime) -> dict[str, dict[str, dict]]:
@@ -299,15 +322,17 @@ def project(events: list[dict], policy: AllocationPolicy, now: datetime) -> dict
         now = now.astimezone(timezone.utc)
     out: dict[str, dict[str, dict]] = {}
     for provider, spec in policy.providers.items():
-        rows = _usage(events, provider, spec.unit)
+        rows = _usage_rows(events, provider, spec.unit)
         views: dict[str, dict] = {}
         for window in spec.windows:
             anchor = _observed_anchor(events, provider, window.name, window.anchor)
             start, end = _window_bounds(now, anchor, window.length_s)
             used = 0.0
             reserved_used = 0.0
-            for ts, amount, source in rows:
+            for ts, amount, source, model in rows:
                 if not start <= ts <= now:
+                    continue
+                if window.models and model not in window.models:
                     continue
                 used += amount
                 if any(_matches(source, key) for key in spec.reservations):
@@ -325,6 +350,7 @@ def project(events: list[dict], policy: AllocationPolicy, now: datetime) -> dict
                 "reserved_effective": _tidy(reserved_effective),
                 "burnable": _tidy(burnable),
                 "burn_down_allowed": bool(spec.expiring and burnable > 0),
+                "models": list(window.models),
             }
         out[provider] = views
     return out
@@ -383,11 +409,22 @@ def _summed_usage(events: list[dict], provider: str, unit: str,
                if start <= ts <= end)
 
 
+def _unscoped(spec: ProviderPolicy) -> set[str]:
+    """Names of windows that budget the provider.
+
+    Model-scoped windows are informational (report and doctor only): admission
+    and burn ignore them, so they never change a decision.
+    """
+    return {window.name for window in spec.windows if not window.models}
+
+
 def _denied(events: list[dict], provider: str, spec: ProviderPolicy,
             now: datetime) -> bool:
     """A denial observed in a current window that has not reset yet."""
     bounds = []
     for window in spec.windows:
+        if window.models:
+            continue
         anchor = _observed_anchor(events, provider, window.name, window.anchor)
         bounds.append(_window_bounds(now, anchor, window.length_s))
     if not bounds:
@@ -455,7 +492,9 @@ def qualified(events: list[dict], policy: AllocationPolicy,
     for provider, spec in policy.providers.items():
         pool = spec.pool or f"{provider}:default"
         windows = projected.get(provider, {})
-        lane_used = _tidy(max((w["used"] for w in windows.values()), default=0.0))
+        unscoped = _unscoped(spec)
+        lane_used = _tidy(max((w["used"] for name, w in windows.items()
+                               if name in unscoped), default=0.0))
         rows = _capacity_rows(events, provider, pool, "cumulative")
         observed_at: datetime | None = rows[-1][0] if rows else None
         basis = "unknown"
@@ -579,8 +618,10 @@ def capacity_admission(events: list[dict], policy: AllocationPolicy | None,
     estimate, reasons = _estimate(events, spec, provider, size)
     if not spec.qualified:
         windows = project(events, policy, now).get(provider, {})
+        unscoped = _unscoped(spec)
         held = in_flight(events, provider, spec.pool)
-        burned = min((w["burnable"] for w in windows.values()), default=0.0)
+        burned = min((w["burnable"] for name, w in windows.items() if name in unscoped),
+                     default=0.0)
         burnable = _tidy(max(0.0, burned - held))
         decision = "admit" if burnable >= estimate else "block"
         reasons.append(f"burnable {burnable} {'>=' if decision == 'admit' else '<'} "
@@ -603,9 +644,10 @@ def capacity_admission(events: list[dict], policy: AllocationPolicy | None,
     outside = view["outside_lane"]
     held = view["in_flight"]
     windows = project(events, policy, now).get(provider, {})
-    budgets = {window.name: window.budget for window in spec.windows}
+    unscoped = _unscoped(spec)
+    budgets = {window.name: window.budget for window in spec.windows if not window.models}
     floor = min((budgets.get(name, 0) - w["used"] - outside - w["reserved_effective"])
-                for name, w in windows.items()) if windows else 0.0
+                for name, w in windows.items() if name in unscoped) if unscoped else 0.0
     burnable = _tidy(max(0.0, floor - held))
     decision = "admit" if burnable >= estimate else "block"
     reasons.append(f"burnable {burnable} {'>=' if decision == 'admit' else '<'} "

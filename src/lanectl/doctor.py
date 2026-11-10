@@ -13,11 +13,12 @@ Every check is read-only: no event is appended and no file is written.
 from __future__ import annotations
 
 import json
+import math
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 
-from .capacity import AllocationPolicy, parse_ts
+from .capacity import AllocationPolicy, parse_ts, project
 from .config import RepoSpec, WorkRelease, home, load_lane, load_release, load_repos
 from .deploy import list_deploys
 from .events import EventLog, ItemView, project_items
@@ -196,6 +197,46 @@ def check_deploys(events: list[dict], now: datetime) -> list[Finding]:
                     f"{expired} live past expires_at (lanectl deploy reap)")]
 
 
+#: Fraction of a model-scoped budget at which the doctor starts warning.
+MODEL_WINDOW_WARN_AT = 0.8
+
+
+def check_model_windows(events: list[dict], policy: AllocationPolicy,
+                        now: datetime) -> list[Finding]:
+    """Warn when a model-scoped window has spent 80% or more of its budget.
+
+    Model-scoped windows are informational: they track a provider's per-model
+    limit and never gate admission or burn.  One WARN per window at or above
+    the threshold; when none is, a single OK line counts them.
+    """
+    views = project(events, policy, now)
+    findings: list[Finding] = []
+    total = 0
+    for provider, spec in policy.providers.items():
+        provider_windows = views.get(provider, {})
+        for window in spec.windows:
+            if not window.models:
+                continue
+            total += 1
+            used = float((provider_windows.get(window.name) or {}).get("used") or 0.0)
+            budget = float(window.budget)
+            if budget > 0:
+                fraction = used / budget
+            else:
+                fraction = 1.0 if used >= budget else 0.0
+            if fraction < MODEL_WINDOW_WARN_AT:
+                continue
+            pct = int(math.floor(fraction * 100 + 0.5))
+            findings.append(Finding(
+                WARN, "model-windows",
+                f"{provider}/{window.name}: {pct}% of budget used "
+                f"(models: {','.join(window.models)})"))
+    if not findings:
+        findings.append(Finding(OK, "model-windows",
+                                f"model windows: {total} within budget"))
+    return findings
+
+
 def run(log: EventLog, *, root: Path | None = None,
         now: datetime | None = None) -> list[Finding]:
     """Run every check and return the findings in report order."""
@@ -214,6 +255,12 @@ def run(log: EventLog, *, root: Path | None = None,
         findings += check_attempts(views, now)
         findings += check_base_drift(releases, repos, views)
         findings += check_deploys(events, now)
+        try:
+            policy = AllocationPolicy.load(root=base)
+        except Exception:   # check_policy already reported an unparsable policy
+            policy = None
+        if policy is not None:
+            findings += check_model_windows(events, policy, now)
     return findings
 
 
