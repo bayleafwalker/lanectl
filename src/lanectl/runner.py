@@ -15,7 +15,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 
-from . import adapters, capacity, decisions, evaluator, report, sandbox as sandboxing
+from . import adapters, capacity, decisions, evaluator, gatejobs, report, sandbox as sandboxing
 from .config import RepoSpec, load_lane, load_releases, load_repos, match
 from .contracts import LaneRevision, WorkRelease
 from .events import EventLog, ItemView, project_items, state_dir
@@ -470,6 +470,10 @@ def run_gates(c: Claim, wt: Path, seed_sha: str, head: str, acc: dict[str, bytes
         if p.returncode:
             fails.append(f"exit {p.returncode}: {cmd} :: {(p.stdout + p.stderr)[-600:]}")
     gates["acceptance"] = fails
+    # Gate jobs are extra repo-declared checks, so they run only after acceptance
+    # is green and while the planner's acceptance bytes are still in the worktree.
+    if not fails and repo.gate_jobs:
+        gates.update(gatejobs.run_jobs(repo.gate_jobs, wt, wrap))
     git(wt, "checkout", "-q", "--", ".", check=False)
     return gates
 
