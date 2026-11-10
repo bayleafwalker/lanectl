@@ -85,7 +85,15 @@ def sync_releases(log: EventLog, releases: list[WorkRelease]) -> None:
 
 
 def provider_for(model: str) -> str:
-    """Allocation-policy provider key for a routed model (``opencode-go/*`` -> ``opencode``)."""
+    """Allocation-policy provider key for a routed model.
+
+    ``opencode-go/*`` and ``opencode/*`` map to ``opencode``; ``claude-*`` maps
+    to ``anthropic``, the allocation provider interactive Claude sessions draw
+    on (``windows.provider_for``).  Any other model keeps the worker name, else
+    the prefix before ``/``.
+    """
+    if model.startswith("claude-"):
+        return "anthropic"
     try:
         return adapters.worker_for(model)
     except ValueError:
@@ -243,7 +251,7 @@ def admit(lane_name: str, log: EventLog, only: str | None = None) -> Claim | str
                 "lane_digest": lane.digest, "model": model, "worker": worker,
                 "release_revision": rel.revision, "base_sha": rel.base_sha,
                 "branch": f"lane/{attempt_id}"}, item_id=rel.id)
-            reserve_capacity(log, events, rel, worker, attempt_id)
+            reserve_capacity(log, events, rel, provider_for(model), attempt_id)
             decisions.dispatch(log, lane=lane, rel=rel, attempt_id=attempt_id,
                                cycle_id=cycle_id, model=model, alternatives=alternatives)
             record_shadow(log, events, rel, model, "admit")
@@ -372,7 +380,7 @@ def execute(c: Claim, log: EventLog, adapter_fn=None) -> str:
                "main_changed": main_changed}, item_id=rel.id)
     git(repo.path, "fetch", "-q", str(wt), f"+{branch}:{branch}")
     if res.usage:
-        log.append("usage.recorded", {"provider": c.worker, "source": "adapter",
+        log.append("usage.recorded", {"provider": provider_for(c.model), "source": "adapter",
                    "units": res.usage, "attempt_id": c.attempt_id, "model": c.model}, item_id=rel.id)
     # Hold the log lock across read-and-append: a concurrent reap must not also
     # see this reservation open and reconcile it a second time.
