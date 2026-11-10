@@ -91,4 +91,4 @@ def test_ready_all_labels_landed_and_keeps_ready_rows(estate, capsys):
     assert cli.main(["ready", "--all"]) == 0
     lines = capsys.readouterr().out.splitlines()
     assert [line for line in lines if line.startswith("LANDED") and "aa-landed" in line]
-    assert [line for line in lines if line.startswith("READY") and "bb-open" in line]
+    assert [line for line in lines if line.startswith("PARKED") and "bb-open" in line]
