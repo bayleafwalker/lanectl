@@ -15,7 +15,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 
-from . import adapters, capacity, decisions, evaluator, report, sandbox as sandboxing
+from . import adapters, capacity, decisions, deploy, evaluator, report, sandbox as sandboxing
 from .config import RepoSpec, load_lane, load_releases, load_repos, match
 from .contracts import LaneRevision, WorkRelease
 from .events import EventLog, ItemView, project_items, state_dir
@@ -558,6 +558,10 @@ def land(log: EventLog, train_id: str) -> str:
         return f"unknown train {train_id}"
     d = tb["data"]
     repo = load_repos()[d["repo"]]
+    requires_deploy = repo.deploy is not None
+    if requires_deploy and train_id not in deploy.live(events):
+        return (f"{train_id}: repo {repo.name} declares a deploy; run "
+                f"`lanectl deploy run {train_id}` and pass its health check before landing")
     if git(repo.path, "rev-parse", repo.main) != d["base_sha"]:
         return f"{repo.main} moved since {train_id} was built; rebuild the train"
     tip = git(repo.path, "rev-parse", f"train/{train_id}")
@@ -581,6 +585,8 @@ def land(log: EventLog, train_id: str) -> str:
     for aid in d["attempts"]:
         log.append("item.landed", {"attempt_id": aid, "train_id": train_id,
                                    "fix_commits": fixes.get(aid, [])}, item_id=by_attempt[aid])
+    if requires_deploy:
+        deploy.teardown(log, train_id, "landed")
     _discard(repo, Path(d["worktree"]))
     for aid in d["attempts"]:
         _discard(repo, repo.worktree_root / aid)
