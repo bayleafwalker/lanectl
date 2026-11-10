@@ -1,0 +1,40 @@
+id = "s3-repo-config"
+repo = "lanectl"
+base_sha = "baf75cef5648d6543323b7e796d85506a048d340"
+revision = 1
+title = "Gate jobs and deploy spec in repos.toml"
+task_class = "glue"
+size = "S"
+data_class = "public"
+
+outcome = """
+Plan docs/plans/2026-11-10-stage3-gate-jobs-and-train-deploys.md, release s3-repo-config.
+governance/repos.toml gains two optional per-repo tables; config.load_repos parses and validates
+them into RepoSpec. Repos without them load exactly as today.
+
+  [[repos.<r>.gate_jobs]]        name (str), cmd (str), timeout_s (int, default 600)
+  [repos.<r>.deploy]             cmd, health_cmd, teardown_cmd (str, all required),
+                                 ttl_s (int, default 3600), env_allow (list of str, default [])
+
+Add frozen dataclasses in src/lanectl/config.py:
+  GateJob(name: str, cmd: str, timeout_s: int = 600)
+  DeploySpec(cmd: str, health_cmd: str, teardown_cmd: str, ttl_s: int = 3600,
+             env_allow: tuple[str, ...] = ())
+and RepoSpec fields gate_jobs: tuple[GateJob, ...] = () and deploy: DeploySpec | None = None,
+in the order the toml lists the jobs.
+
+Raise contracts.ContractError, with the repo name in the message, when: a gate job lacks name or
+cmd; a job name is not lowercase letters, digits and hyphens starting with a letter or digit; two
+jobs in one repo share a name; timeout_s or ttl_s is not a positive integer; deploy lacks cmd,
+health_cmd or teardown_cmd; an env_allow entry starts with "LANE_" (reserved for lanectl).
+"""
+
+# lint-release override (planner, 2026-11-10): base failures are AttributeError x4 (no gate_jobs/deploy
+# fields) and "DID NOT RAISE ContractError" x11 (validation missing); lint matches ContractError in the
+# pytest.raises message as a spec gap. Fixed by s3-lint-expected.
+[scope]
+paths = ["src/lanectl/config.py", "tests/stage8/**"]
+
+[acceptance]
+files = ["tests/stage8/test_acc_repo_config.py"]
+exec = ["uv run --no-sync pytest -q -p no:cacheprovider tests/stage8/test_acc_repo_config.py"]

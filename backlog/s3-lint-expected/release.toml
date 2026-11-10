@@ -1,0 +1,33 @@
+id = "s3-lint-expected"
+repo = "lanectl"
+base_sha = "baf75cef5648d6543323b7e796d85506a048d340"
+revision = 1
+title = "lint-release: DID NOT RAISE and KeyError are expected; recorded overrides"
+task_class = "glue"
+size = "S"
+data_class = "public"
+
+outcome = """
+lint-release misclassified the base failures of two planner releases (bx-report-polish,
+s3-repo-config), and backlog publish has no way to record a planner override. In
+src/lanectl/lint_release.py, classify_failure must treat these per-test failure sections as
+"expected" (feature missing), not "spec-gap":
+  - pytest.raises that did not raise: a section containing "Failed: DID NOT RAISE", whatever
+    exception it names (including ContractError);
+  - a KeyError on a quoted key, e.g. "KeyError: 'infra_attempts'".
+A section whose ContractError is actually raised (a traceback line "ContractError: ...", or
+"E   lanectl.contracts.ContractError") stays a spec gap, as do SyntaxError and NameError.
+
+In src/lanectl/backlog.py, "backlog publish <id>" honours a recorded override: when release.toml
+has a [lint] table with a non-empty string "override", publish still refuses a TODO outcome or a
+stub test, still runs lint_release and prints each problem, then prints
+"lint override: <override text>" and clears the draft flag (exit 0). Without the table the
+behaviour is unchanged.
+"""
+
+[scope]
+paths = ["src/lanectl/lint_release.py", "src/lanectl/backlog.py", "tests/stage8/**"]
+
+[acceptance]
+files = ["tests/stage8/test_acc_lint_expected.py"]
+exec = ["uv run --no-sync pytest -q -p no:cacheprovider tests/stage8/test_acc_lint_expected.py"]
