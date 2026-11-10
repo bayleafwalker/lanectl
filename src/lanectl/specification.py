@@ -14,11 +14,13 @@ import shlex
 import subprocess
 import tempfile
 import tomllib
+from dataclasses import replace
 from datetime import datetime, timezone
 from pathlib import Path, PurePosixPath
 
 from . import adapters, backlog
 from .config import home, load_lane, load_release, load_repos
+from .events import state_dir
 from .contracts import check_id
 from .gates.failonbase import run_tests_at
 from .lint_release import classify_failure
@@ -78,9 +80,10 @@ def _invoke(repo, lane, base_sha, model, prompt, *, adapter_fn=None, proposal=No
         if proposal is not None:
             (seed / 'proposal.json').write_text(json.dumps(proposal))
         before = _git(wt, 'rev-parse', 'HEAD')
-        sb = from_lane(lane.sandbox, (str(wt), str(root / 'runtime')), timeout_s + 30)
-        sb = Sandbox(sb.mode, tuple(dict.fromkeys((*sb.readonly, str(repo.path), str(home())))),
-                     sb.writable, sb.timeout_s)
+        sb = from_lane(lane.sandbox, (str(wt), str(root / 'runtime')), timeout_s + 30,
+                       attempt_id='spec-' + root.name)
+        sb = replace(sb, readonly=tuple(dict.fromkeys(
+            (*sb.readonly, str(repo.path), str(home()), str(state_dir())))))
         runtime = root / 'runtime'
         runtime.mkdir()
         shims = sb.shim_dir(runtime / 'shims', ('opencode', 'codex', 'claude'))
@@ -89,6 +92,8 @@ def _invoke(repo, lane, base_sha, model, prompt, *, adapter_fn=None, proposal=No
             env['PATH'] = f'{shims}{os.pathsep}{env.get("PATH", "")}'
         fn = adapter_fn or adapters.ADAPTERS[adapters.worker_for(model)]
         local_args = {'sandbox': sb} if adapters.worker_for(model) == 'local' else {}
+        if adapter_fn is None:
+            local_args['stop_callback'] = sb.cancel
         result = fn(model=model, worktree=wt, prompt=prompt,
                     status_file=runtime / 'status.json', timeout_s=timeout_s,
                     external=adapters.worker_for(model) == 'opencode' or model in lane.external_models, env=env,
@@ -172,7 +177,7 @@ def _base_lint(path, repo, lane, timeout_s):
         data = (path / 'files' / name).read_bytes()
         def wrap(cmd, wt):
             sb = from_lane(lane.sandbox, (str(wt),), timeout_s + 30)
-            sb = Sandbox(sb.mode, tuple(dict.fromkeys((*sb.readonly, str(repo.path), str(home())))),
+            sb = Sandbox(sb.mode, tuple(dict.fromkeys((*sb.readonly, str(repo.path), str(home()), str(state_dir())))),
                          sb.writable, sb.timeout_s)
             return sb.wrap_shell(cmd, wt)
         code, output = run_tests_at(repo.path, rel.base_sha, {name: data}, repo.test_cmd,
