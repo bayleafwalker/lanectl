@@ -2,7 +2,8 @@
 
 LANECTL_HOME is a checkout of this repository's main branch. Lanes write only to
 lane/* branches in worktrees, so the governance they are judged by is never in
-their write scope.
+their write scope. When LANECTL_HOME is unset the checkout is found by walking up
+from the working directory, so an installed lanectl works inside a checkout.
 """
 from __future__ import annotations
 
@@ -15,10 +16,21 @@ from pathlib import Path, PurePosixPath
 from .contracts import DATA_CLASSES, Acceptance, ContractError, LaneRevision, WorkRelease
 
 
+def _checkout_above(start: Path) -> Path | None:
+    """Nearest directory at or above ``start`` that holds a governance checkout."""
+    for candidate in (start, *start.parents):
+        if (candidate / "governance" / "repos.toml").is_file():
+            return candidate
+    return None
+
+
 def home() -> Path:
     h = os.environ.get("LANECTL_HOME")
     if h:
         return Path(h)
+    found = _checkout_above(Path.cwd())
+    if found is not None:
+        return found
     return Path(__file__).resolve().parents[2]
 
 
