@@ -45,7 +45,7 @@ def test_ready_all_marks_landed(estate, capsys):
     lines = capsys.readouterr().out.splitlines()
     landed = [line for line in lines if "aa-landed" in line]
     assert landed and landed[0].startswith("LANDED")
-    assert any(line.startswith("READY") and "bb-open" in line for line in lines)
+    assert any("bb-open" in line for line in lines)   # its state label: s3-ready-state
 
 
 def test_ready_reissued_revision_is_shown_again(estate, capsys):

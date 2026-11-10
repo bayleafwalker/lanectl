@@ -1,0 +1,37 @@
+id = "s3-gate-jobs"
+repo = "lanectl"
+base_sha = "185ed6c77c2605ccdb4f73030554c2fe53a6d530"
+revision = 2
+title = "Gate jobs run after acceptance as job:<name> gates"
+task_class = "glue"
+size = "S"
+data_class = "public"
+
+outcome = """
+Plan docs/plans/2026-11-10-stage3-gate-jobs-and-train-deploys.md, release s3-gate-jobs.
+config.RepoSpec.gate_jobs (tuple of config.GateJob(name, cmd, timeout_s), from s3-repo-config)
+declares per-repo gate jobs. Run them as gates.
+
+Add src/lanectl/gatejobs.py with run_jobs(jobs, worktree, wrap=None) -> dict[str, list[str]]:
+one entry per job, key "job:<name>", in job order. Each job runs cmd with shell=True, cwd=worktree,
+capturing output, wrapped as wrap(cmd, worktree) when wrap is given (the attempt sandbox, as for
+acceptance commands), with timeout=job.timeout_s. Value: [] on exit 0; on a non-zero exit
+["exit <code>: <name> :: <last 600 chars of stdout+stderr>"]; on timeout
+["timeout after <timeout_s>s: <name>"].
+
+In runner.run_gates: after the acceptance commands, and only when gates["acceptance"] is empty and
+repo.gate_jobs is non-empty, merge run_jobs(repo.gate_jobs, wt, wrap) into the gates dict, while the
+planner's acceptance bytes are still in the worktree (before the final checkout). execute() already
+records every gate as a gate.result event and decide() rejects on any violation; no change there.
+A repo with no gate jobs behaves exactly as today.
+"""
+
+# lint-release override (planner, 2026-11-10): base failures are KeyError 'job:first-ok' (gate not
+# recorded = feature missing) and AssertionError x2 (candidate instead of rejected); 1 test is a
+# regression guard that passes on base. KeyError classification is fixed by s3-lint-expected.
+[scope]
+paths = ["src/lanectl/gatejobs.py", "src/lanectl/runner.py", "tests/stage8/**"]
+
+[acceptance]
+files = ["tests/stage8/test_acc_gate_jobs.py"]
+exec = ["uv run --no-sync pytest -q -p no:cacheprovider tests/stage8/test_acc_gate_jobs.py"]

@@ -12,7 +12,7 @@ PY = sys.executable
 def test_unknown_shape_is_not_hidden_by_an_expected_failure():
     output = (
         "____________________________ test_a ____________________________\n"
-        "E   KeyError: 'mystery'\n"
+        "E   RuntimeError: mystery\n"
         "____________________________ test_b ____________________________\n"
         "E   AssertionError: nope\n"
     )
@@ -31,7 +31,7 @@ def test_every_section_must_be_expected():
         "____________________________ test_a ____________________________\n"
         "E   ImportError: cannot import name 'Y' from 'm'\n"
         "____________________________ test_b ____________________________\n"
-        "E   KeyError: 'mystery'\n"
+        "E   RuntimeError: mystery\n"
     )
     assert classify_failure(mixed) == "spec-gap"
 
