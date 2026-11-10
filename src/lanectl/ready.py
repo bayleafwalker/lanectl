@@ -43,6 +43,10 @@ def readiness(rel: WorkRelease, lane: LaneRevision, repos: dict[str, RepoSpec]) 
     for f in rel.acceptance.files:
         if not (Path(rel.release_dir) / "files" / f).is_file():
             r.append(f"acceptance file missing: files/{f}")
+    restricted = rel.data_class == "restricted" or (
+        repo is not None and repo.data_class_floor == "restricted")
+    if restricted and not lane.allow_restricted:
+        r.append(f"restricted work needs a lane with allow_restricted (not {lane.lane})")
     weights = eligible_models(rel, lane, repo)
     if not any(w > 0 for w in weights.values()):
         if rel.data_class == "restricted" and all(m in lane.external_models for m in lane.routing):

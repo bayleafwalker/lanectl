@@ -153,6 +153,7 @@ def load_lane(name: str, root: Path | None = None) -> LaneRevision:
             timeout_s=int(raw["routing"].get("timeout_s", 2700)),
             effects=dict(raw.get("effects", {})),
             sandbox=dict(raw.get("sandbox", {})),
+            allow_restricted=bool(raw["eligibility"].get("allow_restricted", False)),
             digest=_digest(path),
         )
     except KeyError as exc:

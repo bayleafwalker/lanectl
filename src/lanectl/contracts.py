@@ -178,4 +178,8 @@ class LaneRevision:
     timeout_s: int = 2700
     effects: dict[str, str] = field(default_factory=dict)
     sandbox: dict = field(default_factory=dict)     # see lanectl.sandbox
+    # Restricted work (release data_class or repo floor) is eligible only in a lane that sets
+    # [eligibility] allow_restricted = true; such lanes route first-party models and are run by
+    # hand, never by the tick timer (operator direction 2026-11-10).
+    allow_restricted: bool = False
     digest: str = ""
