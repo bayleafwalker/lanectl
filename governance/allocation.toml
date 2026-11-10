@@ -3,8 +3,9 @@
 # rev 4 (2026-11-08): burn-down rules.
 # rev 3 (2026-11-08): per-size output-token estimates for shadow admission.
 # rev 2 (2026-11-08): key renamed to "opencode" = provider recorded by the opencode adapter.
+# rev 7 (2026-11-10): published per-model prices for dollar estimates (bx-cost-usd).
 # rev 5 (2026-11-09): pool identity, observation freshness, reallocation dwell (decision-records plan).
-revision = 6
+revision = 7
 
 [providers.opencode]
 unit = "output_tokens"
@@ -32,6 +33,17 @@ name = "week"
 length_s = 604800
 budget = 3400000
 budget_basis = "verified"
+
+# Published OpenCode Go prices, USD per 1M tokens (opencode.ai/docs/go, read 2026-11-09).
+# Peak: 01:00-04:00 and 06:00-10:00 UTC, Monday-Friday; all other hours are off-peak.
+# Reasoning tokens are priced as output (estimate: the page lists no reasoning price).
+[providers.opencode.prices]
+peak_hours_utc = [[1, 4], [6, 10]]
+peak_weekdays = [0, 1, 2, 3, 4]
+
+[providers.opencode.prices.models."opencode-go/deepseek-v4.1-flash"]
+offpeak = { input = 0.15, output = 0.60, cache_read = 0.003 }
+peak = { input = 0.30, output = 1.20, cache_read = 0.006 }
 
 [providers.opencode.reservations]
 interactive = 0.0
