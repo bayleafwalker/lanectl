@@ -3,23 +3,25 @@
 ``check`` is the gate: placeholder budgets, unknown capacity and denied pools
 never burn, and a freshly applied allocation holds a ``[allocation]`` dwell
 until the burnable amount moves past the change threshold.  ``plan_burn`` is a
-pure planner over the qualified capacity projection only, using measured
-headroom (budget minus lane, outside-lane and in-flight spend).  When a provider
-window is about to expire it fills that headroom with the oldest ready work
-whose policy estimates fit, while respecting the same WIP caps admission
-enforces.  ``execute_plan`` records the allocation decision, revalidates before
-each item and correlates every applied item with the claim it dispatched.  The
+pure planner over the qualified capacity projection only.  Window bounds and
+per-window usage come from :func:`capacity.project`, and the burnable amount is
+the tightest headroom across all of a provider's windows (the minimum of
+``budget - used - outside-lane - in-flight``).  When a provider window is about
+to expire it fills that headroom with the oldest ready work whose policy
+estimates fit, while respecting the same WIP caps admission enforces.
+``execute_plan`` records the allocation decision, revalidates before each item
+and correlates every applied item with the claim it dispatched.  The
 ``lanectl burn`` command prints that plan, records it, and can execute it.
 """
 from __future__ import annotations
 
-import math
 import tomllib
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 
 from . import runner
-from .capacity import AllocationPolicy, PolicyError, format_ts, parse_ts, qualified
+from .capacity import (AllocationPolicy, PolicyError, format_ts, parse_ts, project,
+                       qualified)
 from .config import home, load_lane, load_releases, load_repos
 from .events import EventLog, project_items
 from .ready import readiness
@@ -52,43 +54,34 @@ def _policy_revision(policy_raw: dict) -> str:
     return f"allocation@{revision}"
 
 
-def _observation_anchor(events: list[dict], provider: str, spec) -> datetime | None:
-    """Start of the measured range from the latest cumulative pool observation.
+def _tightest_burnable(spec, windows: dict, outside: float,
+                       held: float) -> float | None:
+    """The smallest remaining headroom across a provider's windows, or ``None``.
 
-    Unanchored policy windows are revalidated against that evidence rather than
-    assuming an epoch grid, so the burn window matches what was actually
-    measured.  Only fresh cumulative snapshots qualify, which :func:`check`
-    already requires before planning.
+    Each window keeps its own usage from :func:`capacity.project`, so an empty
+    5h window inside an exhausted week has no burnable room: the plan is bounded
+    by whichever window is tightest.  Headroom is
+    ``budget - used - outside-lane - in-flight``, floored at zero.
     """
-    pool = spec.pool or f"{provider}:default"
-    latest: tuple[datetime, datetime] | None = None
-    for ev in events:
-        if not isinstance(ev, dict) or ev.get("type") != "capacity.observed":
-            continue
-        data = ev.get("data")
-        if not isinstance(data, dict):
-            continue
-        if data.get("provider") != provider or data.get("pool") != pool:
-            continue
-        if data.get("value_kind") != "cumulative":
-            continue
-        start = parse_ts(data.get("window_start"))
-        if start is None:
-            continue
-        seen = parse_ts(ev.get("ts")) or start
-        if latest is None or seen >= latest[0]:
-            latest = (seen, start)
-    return latest[1] if latest is not None else None
+    tightest: float | None = None
+    for window in spec.windows:
+        used = float((windows.get(window.name) or {}).get("used") or 0.0)
+        value = max(0.0, float(window.budget) - used - outside - held)
+        tightest = value if tightest is None else min(tightest, value)
+    return tightest
 
 
-def _burn_window_bounds(now: datetime, anchor: datetime | None,
-                        length_s: int) -> tuple[datetime, datetime]:
-    """The fixed-length burn window containing ``now`` (UTC-day base by default)."""
-    base = anchor or now.replace(hour=0, minute=0, second=0, microsecond=0)
-    length = timedelta(seconds=length_s)
-    index = math.floor((now - base).total_seconds() / length_s)
-    start = base + length * index
-    return start, start + length
+def _measured_burnable(spec, windows: dict, view: dict) -> float | None:
+    """Burnable headroom for one provider, or None when capacity is unknown.
+
+    Uses the same per-window arithmetic as :func:`plan_burn`: the minimum across
+    the provider's windows of (budget - used - outside-lane - in-flight).
+    """
+    outside = view.get("outside_lane")
+    if view.get("basis") == "unknown" or view.get("denied") or outside is None:
+        return None
+    return _tightest_burnable(spec, windows, float(outside),
+                              float(view.get("in_flight") or 0.0))
 
 
 def _burn_rules(policy_raw: dict) -> tuple[float, float] | None:
@@ -125,29 +118,6 @@ def _allocation_rules(policy_raw: dict) -> tuple[float, float]:
     return max(0.0, dwell), max(0.0, threshold)
 
 
-def _measured_burnable(policy: AllocationPolicy, views: dict,
-                       provider: str) -> float | None:
-    """Burnable headroom using admission's arithmetic, or None when unknown.
-
-    ``budget - lane usage - outside-lane spend - in-flight reservations``: while
-    the qualified basis is unknown (or a denial holds the pool) there is no
-    measured figure and no capacity is assumed free.
-    """
-    spec = policy.providers[provider]
-    view = views.get(provider) or {}
-    outside = view.get("outside_lane")
-    if view.get("basis") == "unknown" or view.get("denied") or outside is None:
-        return None
-    lane_used = float(view.get("lane_used") or 0.0)
-    held = float(view.get("in_flight") or 0.0)
-    best: float | None = None
-    for window in spec.windows:
-        value = float(window.budget) - lane_used - float(outside) - held
-        value = max(0.0, value)
-        best = value if best is None else max(best, value)
-    return best
-
-
 def _dwell_reasons(events: list[dict], policy: AllocationPolicy, views: dict,
                    policy_raw: dict, now: datetime) -> list[str]:
     min_dwell_s, threshold = _allocation_rules(policy_raw)
@@ -174,10 +144,12 @@ def _dwell_reasons(events: list[dict], policy: AllocationPolicy, views: dict,
     if age >= min_dwell_s:
         return []
     current: float | None = None
+    windows = project(events, policy, now)
     for provider, spec in policy.providers.items():
         if not spec.expiring:
             continue
-        value = _measured_burnable(policy, views, provider)
+        value = _measured_burnable(spec, windows.get(provider) or {},
+                                   views.get(provider) or {})
         if value is not None:
             current = value if current is None else max(current, value)
     if current is None:
@@ -231,12 +203,15 @@ def plan_burn(events: list[dict], policy_raw: dict, now: datetime,
     """Plan a burn of expiring capacity, or return ``None``.
 
     ``ready`` is ``[(release_id, size)]`` in backlog order.  Nothing is planned
-    while :func:`check` reports a reason.  A window then qualifies when it ends
-    within ``burn.start_within_s`` and its measured burnable headroom (budget
-    minus lane, outside-lane and in-flight spend) is at least
-    ``burn.min_burnable``.  Items are taken in order while their summed policy
-    estimate fits the burnable headroom and the plan stays within
-    ``min(concurrency - running, accepted_unlanded_max - unlanded)``.
+    while :func:`check` reports a reason.  Window bounds and usage come from
+    :func:`capacity.project`, so burn sees exactly the windows capacity
+    reports.  A burn is planned when any window ends within
+    ``burn.start_within_s``; its size is the tightest headroom across all of the
+    provider's windows (budget minus that window's usage, outside-lane spend and
+    in-flight reservations), and must be at least ``burn.min_burnable``.  Items
+    are taken in order while their summed policy estimate fits that headroom and
+    the plan stays within ``min(concurrency - running, accepted_unlanded_max -
+    unlanded)``.
     """
     rules = _burn_rules(policy_raw)
     if rules is None:
@@ -255,6 +230,7 @@ def plan_burn(events: list[dict], policy_raw: dict, now: datetime,
         return None
     if check(events, policy_raw, now):
         return None
+    projected = project(events, policy, now)
     qualified_views = qualified(events, policy, now)
 
     for provider, spec in policy.providers.items():
@@ -266,48 +242,60 @@ def plan_burn(events: list[dict], policy_raw: dict, now: datetime,
             estimates = {}
         qview = qualified_views.get(provider) or {}
         outside = qview.get("outside_lane")
-        lane_used = float(qview.get("lane_used") or 0.0)
         held = float(qview.get("in_flight") or 0.0)
         if outside is None:
             continue
-        anchor = _observation_anchor(events, provider, spec)
+        windows = projected.get(provider) or {}
+        measured = _tightest_burnable(spec, windows, float(outside), held)
+        if measured is None:
+            continue
+        burnable = _tidy(measured)
+        if burnable < min_burnable:
+            continue
+
+        # The burn is for the window that expires soonest within the horizon;
+        # the amount it may spend is still the provider-wide tightest headroom.
+        ending = None
         for window in spec.windows:
-            _, end = _burn_window_bounds(now, window.anchor or anchor, window.length_s)
+            end = parse_ts((windows.get(window.name) or {}).get("window_end"))
+            if end is None:
+                continue
             remaining_s = (end - now).total_seconds()
             if remaining_s > start_within_s:
                 continue
-            measured = float(window.budget) - lane_used - float(outside) - held
-            burnable = _tidy(max(0.0, measured))
-            if burnable < min_burnable:
+            if ending is None or remaining_s < ending[1]:
+                ending = (window, remaining_s)
+        if ending is None:
+            continue
+        window, remaining_s = ending
+
+        total = 0
+        items: list[str] = []
+        reasons = [
+            f"window ends in {remaining_s:.0f}s (<= {start_within_s:g}s)",
+            f"burnable {burnable} >= min {min_burnable:g}",
+        ]
+        for release_id, size in ready:
+            if len(items) >= slots:
+                reasons.append(f"slot limit {slots} reached")
+                break
+            estimate = estimates.get(size)
+            if isinstance(estimate, bool) or not isinstance(estimate, (int, float)):
+                reasons.append(f"skip {release_id}: no policy estimate for size {size}")
                 continue
+            if total + estimate > burnable:
+                reasons.append(
+                    f"stop at {release_id}: {size} estimate {estimate} would exceed "
+                    f"burnable {burnable} (used {total})"
+                )
+                break
+            items.append(release_id)
+            total += estimate
+            reasons.append(f"{release_id}: {size} estimate {estimate} (sum {total}/{burnable})")
 
-            total = 0
-            items: list[str] = []
-            reasons = [
-                f"window ends in {remaining_s:.0f}s (<= {start_within_s:g}s)",
-                f"burnable {burnable} >= min {min_burnable:g}",
-            ]
-            for release_id, size in ready:
-                if len(items) >= slots:
-                    reasons.append(f"slot limit {slots} reached")
-                    break
-                estimate = estimates.get(size)
-                if isinstance(estimate, bool) or not isinstance(estimate, (int, float)):
-                    reasons.append(f"skip {release_id}: no policy estimate for size {size}")
-                    continue
-                if total + estimate > burnable:
-                    reasons.append(
-                        f"stop at {release_id}: {size} estimate {estimate} would exceed "
-                        f"burnable {burnable} (used {total})"
-                    )
-                    break
-                items.append(release_id)
-                total += estimate
-                reasons.append(f"{release_id}: {size} estimate {estimate} (sum {total}/{burnable})")
-
-            if items:
-                return {"provider": provider, "window": window.name,
-                        "burnable": burnable, "items": items, "reasons": reasons}
+        if items:
+            return {"provider": provider, "window": window.name,
+                    "burnable": burnable, "items": items, "reasons": reasons}
     return None
 
 
