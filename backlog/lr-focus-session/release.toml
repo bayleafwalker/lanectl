@@ -31,8 +31,8 @@ usage_hook: attribution order is LANECTL_RELEASE / LANECTL_ROLE, then
 current_focus(payload session_id), then the machine-wide current_focus(). A session's own
 focus wins over the machine-wide one.
 
-Existing tests that set a focus without CLAUDE_CODE_SESSION_ID (tests/stage8/test_usage_focus_extra.py)
-must set it or pass --all-sessions; the full suite runs as a gate job.
+Do not modify existing tests: test_acc_usage_focus.py and test_usage_focus_extra.py already pass
+with both the old and the new behaviour.
 """
 
 [scope]

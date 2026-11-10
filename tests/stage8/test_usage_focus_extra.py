@@ -5,12 +5,30 @@ import os
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
+import pytest
+
 from lanectl import cli
 from lanectl.events import EventLog
 from lanectl.focus import clear_focus, current_focus, focus_path, set_focus
 from lanectl.usage_hook import handle_hook
 
 ACC = "def test_ok():\n    assert True\n"
+
+
+@pytest.fixture(autouse=True)
+def _no_session(monkeypatch):
+    # These tests exercise the machine-wide focus; the operator's session id must not leak in.
+    monkeypatch.delenv("CLAUDE_CODE_SESSION_ID", raising=False)
+
+
+def _focus(*args):
+    """`lanectl focus` on the machine-wide file, before and after lr-focus-session."""
+    import inspect
+
+    from lanectl import focus as focus_mod
+    extra = ["--all-sessions"] if "session_id" in inspect.signature(focus_mod.set_focus).parameters \
+        and args and not args[0].startswith("-") else []
+    return cli.main(["focus", *args, *extra])
 
 
 def _event(log, tmp_path, session="s1", mid="m1"):
@@ -28,7 +46,7 @@ def _event(log, tmp_path, session="s1", mid="m1"):
 def test_focus_file_holds_release_role_and_utc_stamp(estate, tmp_path):
     _, release, _ = estate
     release("aa-work", ACC)
-    assert cli.main(["focus", "aa-work"]) == 0
+    assert _focus("aa-work") == 0
     raw = json.loads((Path(os.environ["LANECTL_STATE"]) / "focus.json").read_text())
     assert raw["release_id"] == "aa-work" and raw["role"] == "planner"
     set_at = datetime.strptime(raw["set_at"], "%Y-%m-%dT%H:%M:%SZ")
@@ -39,7 +57,7 @@ def test_focus_file_holds_release_role_and_utc_stamp(estate, tmp_path):
 def test_environment_release_keeps_focus_role(estate, tmp_path, monkeypatch):
     _, release, log = estate
     release("aa-work", ACC)
-    assert cli.main(["focus", "aa-work", "--role", "integrator"]) == 0
+    assert _focus("aa-work", "--role", "integrator") == 0
     monkeypatch.setenv("LANECTL_RELEASE", "aa-work")
     monkeypatch.delenv("LANECTL_ROLE", raising=False)
     ev = _event(log, tmp_path)
@@ -49,7 +67,7 @@ def test_environment_release_keeps_focus_role(estate, tmp_path, monkeypatch):
 def test_environment_role_without_release_uses_focus_id(estate, tmp_path, monkeypatch):
     _, release, log = estate
     release("aa-work", ACC)
-    assert cli.main(["focus", "aa-work"]) == 0
+    assert _focus("aa-work") == 0
     monkeypatch.setenv("LANECTL_ROLE", " integrator ")
     monkeypatch.delenv("LANECTL_RELEASE", raising=False)
     ev = _event(log, tmp_path)
@@ -59,7 +77,7 @@ def test_environment_role_without_release_uses_focus_id(estate, tmp_path, monkey
 def test_blank_environment_release_falls_back_to_focus(estate, tmp_path, monkeypatch):
     _, release, log = estate
     release("aa-work", ACC)
-    assert cli.main(["focus", "aa-work"]) == 0
+    assert _focus("aa-work") == 0
     monkeypatch.setenv("LANECTL_RELEASE", "   ")
     monkeypatch.delenv("LANECTL_ROLE", raising=False)
     ev = _event(log, tmp_path)
@@ -90,7 +108,7 @@ def test_unknown_release_writes_nothing(estate, capsys):
     _, release, _ = estate
     release("aa-work", ACC)
     clear_focus()
-    assert cli.main(["focus", "aa-nope"]) == 2
+    assert _focus("aa-nope") == 2
     assert not focus_path().exists()
     assert current_focus() is None
 
@@ -98,7 +116,7 @@ def test_unknown_release_writes_nothing(estate, capsys):
 def test_focus_stamp_just_inside_the_window_survives(estate):
     _, release, _ = estate
     release("aa-work", ACC)
-    assert cli.main(["focus", "aa-work", "--role", "integrator"]) == 0
+    assert _focus("aa-work", "--role", "integrator") == 0
     path = Path(os.environ["LANECTL_STATE"]) / "focus.json"
     raw = json.loads(path.read_text())
     raw["set_at"] = (datetime.now(timezone.utc) - timedelta(hours=11, minutes=55)).strftime(
