@@ -11,6 +11,10 @@ The transcript is an append-only JSONL stream in which every assistant turn
 carries ``message.id``, ``message.model`` and ``message.usage``.  Streamed
 turns may be repeated with the same id, so messages are deduplicated by id.
 
+Interactive usage is attributed to the release a planner or integrator session
+is working on: ``LANECTL_RELEASE`` wins, then ``lanectl focus``.  The role comes
+from ``LANECTL_ROLE``, then the focus, and defaults to ``interactive``.
+
 A per-session cursor (file offset plus the ids already seen) lives next to the
 event log, under the state directory.  Each run only reads the bytes appended
 since the previous run and records one ``usage.recorded`` event for the delta.
@@ -31,11 +35,15 @@ from collections import Counter
 from pathlib import Path
 
 from .events import EventLog
+from .focus import current_focus
 
 PROVIDER = "anthropic"
 SOURCE = "claude-code-interactive"
 CURSOR_DIR = "usage-hook"
 CHUNK = 1 << 20
+#: Roles an interactive session can claim; anything else is just ``interactive``.
+ROLES = ("planner", "integrator", "interactive")
+DEFAULT_ROLE = "interactive"
 
 # transcript usage key -> units key reported in the event
 UNITS = {
@@ -171,6 +179,21 @@ def _collect(path: Path, cursor: dict):
     return totals, models, messages, {"offset": offset, "messages": sorted(seen)}
 
 
+def _attribution() -> tuple[str | None, str]:
+    """``(release_id, role)``: environment first, then the recorded focus."""
+    release = os.environ.get("LANECTL_RELEASE", "").strip()
+    role = os.environ.get("LANECTL_ROLE", "").strip()
+    if not release or not role:
+        try:
+            focus = current_focus()
+        except Exception:       # attribution must never break the hook
+            focus = None
+        if focus:
+            release = release or focus["release_id"]
+            role = role or focus["role"]
+    return (release or None), (role if role in ROLES else DEFAULT_ROLE)
+
+
 def handle_hook(stdin, log: EventLog) -> int:
     """Handle one Stop-hook invocation.  Always returns 0; never raises."""
     try:
@@ -198,14 +221,16 @@ def handle_hook(stdin, log: EventLog) -> int:
             return 0
 
         model = models.most_common(1)[0][0] if models else "unknown"
+        item_id, role = _attribution()
         with log.locked():
             log.append("usage.recorded", {
                 "provider": PROVIDER,
                 "source": SOURCE,
                 "session_id": session_id,
                 "model": model,
+                "role": role,
                 "units": {**totals, "messages": messages},
-            })
+            }, item_id=item_id)
             _save_cursor(cursor_path, new_cursor)
     except Exception:       # a hook must never fail the interactive session
         return 0
