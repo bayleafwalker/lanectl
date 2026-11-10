@@ -72,11 +72,16 @@ sprintctl integration beyond carrying a work id on the release.
 | 4 | Instruments built (v0.1.28) | `lr-usage-focus`, `lr-operator-cost`, `lr-tick`, `lr-otel-export`, `lr-model-windows`: 5 releases, 5 attempts, all first-time gate passes, 1 integrator fix (model-error: a wall-clock test). Timer units in `contrib/systemd/`, not enabled (installing a recurring job needs the operator). |
 | 6 | Anthropic provider added | allocation rev 9: interactive sessions priced at API-equivalent rates; placeholder window, interactive reservation 1.0. |
 
-First operator-cost reading (estimates): lane work $0.03 per landed release; interactive Claude
-usage $104.88 this week, all unattributed because `lanectl focus` did not exist yet, which is
-about $1.59 per landed release over the 66 landed, roughly 50 times the lane cost. The planner
-and integrator, not the lanes, set the cost of a landed item; rung 2 (lanes write releases) is
-where that number moves.
+First operator-cost reading (estimates, corrected): lane work $0.03 per landed release.
+Operator cost per landed release is not yet measurable. The Stop hook is installed in the global
+`~/.claude/settings.json`, so the $104.88 of interactive usage recorded this week covers every
+Claude session on the workstation: agentops ($21.34), appservice ($2.05), a manual hook test
+written to the real log ($13.56), and two `/projects/dev` sessions ($43.86 and a partial $24.06)
+that are probably lanectl but are not verified. The 66 landed releases also include work from
+before the hook existed. An earlier "about 50 times the lane cost" divided all of that by all
+66 and was wrong. The number becomes real once sessions set a per-session `lanectl focus`
+(`lr-focus-session`) and enough focused releases land; `report` already counts only attributed
+usage in `operator_usd/landed`.
 
 Found on the way: implement rev 3 broke the seed fixture's literal weights replace (fixed: the
 fixture rewrites the whole line); lane-written deploy tests compared against 13:00 UTC today and
