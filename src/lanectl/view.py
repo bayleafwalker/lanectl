@@ -1,8 +1,10 @@
-"""Static HTML view of the lane log: items, report, capacity and triage.
+"""Static HTML view of the lane log: management sections, items, report, capacity, triage.
 
-``render`` is pure and self-contained (no external assets); every
-event-derived string is HTML-escaped.  Shadow-agreement tables appear only
-when the report carries those optional keys.
+``render`` is pure and self-contained (no external assets); every value taken
+from governance, the releases and the log is HTML-escaped.  Governance and
+backlog inputs are optional: ``None`` makes the matching section say it is
+unavailable, so the page still renders on a checkout without them.
+Shadow-agreement tables appear only when the report carries those optional keys.
 """
 from __future__ import annotations
 
@@ -10,9 +12,12 @@ import html
 from datetime import datetime, timezone
 from pathlib import Path
 
+from .backlog import backlog_rows
 from .capacity import AllocationPolicy, format_ts, project
-from .contracts import ITEM_STATES
+from .config import load_releases, load_repos
+from .contracts import ITEM_STATES, ContractError
 from .events import EventLog, project_items
+from .lanes import CAPS, rows as lane_rows
 from .report import build_report
 
 _STYLE = (
@@ -102,8 +107,87 @@ def _capacity_html(events: list[dict], now: datetime) -> str:
                       "RESERVED", "BURNABLE", "BURN-DOWN"), rows))
 
 
-def render(events: list[dict], now: datetime) -> str:
-    """Render the complete HTML document for *events* as of *now* (pure)."""
+def _unavailable(what: str) -> str:
+    return f'<p class="muted">unavailable (no {_esc(what)} input)</p>'
+
+
+def _backlog_html(releases, events: list[dict]) -> str:
+    if releases is None:
+        return _unavailable("releases")
+    rows = backlog_rows(releases, events)
+    open_rows = [r for r in rows if r["state"] != "landed"]
+    table = _table(
+        ("STATE", "ID", "REPO", "REV", "TRIES", "TITLE"),
+        [[r["state"], r["id"], r["repo"], r["revision"], r["tries"], r["title"]]
+         for r in open_rows],
+        empty="no open releases")
+    return table + f'<p class="muted">{len(rows) - len(open_rows)} landed</p>'
+
+
+def _attention_html(releases, events: list[dict]) -> str:
+    if releases is None:
+        return _unavailable("releases")
+    rows: list[list] = []
+    for item_id, item in project_items(events).items():
+        if item.state == "parked":
+            rows.append(["parked", item_id, item.last_reason])
+        elif item.state == "candidate":
+            rows.append(["candidate", item_id, "awaiting a train"])
+    for rel in releases:
+        if rel.draft:
+            rows.append(["draft", rel.id, rel.title])
+    rows.sort(key=lambda row: (row[1], row[0]))
+    return _table(("KIND", "ID", "DETAIL"), rows, empty="nothing needs attention")
+
+
+def _weight(value: float) -> str:
+    return f"{value:g}"
+
+
+def _lanes_html(lanes) -> str:
+    if lanes is None:
+        return _unavailable("lanes")
+    rows = []
+    for lane in lanes:
+        routing = " ".join(f"{model}={_weight(weight)}"
+                           for model, weight in sorted(lane["routing"].items())) or "-"
+        rows.append([lane["lane"], lane["revision"], routing,
+                     *[f"{lane['caps'][cap]['used']}/{lane['caps'][cap]['limit']}"
+                       for cap in CAPS]])
+    headers = ("LANE", "REVISION", "ROUTING") + tuple(cap.upper() for cap in CAPS)
+    return _table(headers, rows, empty="no lanes")
+
+
+def _governance_html(repos) -> str:
+    if repos is None:
+        return _unavailable("repos")
+    rows = [[spec.name, spec.path, spec.main, len(spec.protected_paths),
+             spec.data_class_floor] for _, spec in sorted(repos.items())]
+    return _table(("NAME", "PATH", "MAIN", "PROTECTED", "DATA_CLASS_FLOOR"), rows,
+                  empty="no repos")
+
+
+#: Section ids in page order, with their nav labels.
+SECTIONS = (
+    ("backlog", "Backlog"), ("attention", "Attention"), ("lanes", "Lanes"),
+    ("governance", "Governance"), ("items", "Items by state"), ("report", "Report"),
+    ("capacity", "Capacity"), ("triage", "Triage"),
+)
+
+
+def _nav() -> str:
+    links = " ".join(f'<a href="#{sid}">{_esc(label)}</a>' for sid, label in SECTIONS)
+    return f"<nav>{links}</nav>"
+
+
+def render(events: list[dict], now: datetime, *, releases=None, lanes=None,
+           repos=None) -> str:
+    """Render the complete HTML document for *events* as of *now* (pure).
+
+    ``releases`` (``WorkRelease`` rows), ``lanes`` (``lanes.rows``) and
+    ``repos`` (``config.load_repos``) are loaded by the command; when one is
+    ``None`` its section says it is unavailable.
+    """
     now = now.astimezone(timezone.utc) if now.tzinfo else now.replace(tzinfo=timezone.utc)
     report = build_report(events)
     headers = ("ATT", "GATE", "RULED", "CLEAN", "PREC", "MPREC", "FLAG", "MEAN_S", "USAGE")
@@ -126,6 +210,11 @@ def render(events: list[dict], now: datetime) -> str:
 <body>
 <h1>lanectl</h1>
 <p class="muted">as of {_esc(format_ts(now))}</p>
+{_nav()}
+<section id="backlog"><h2>Backlog</h2>{_backlog_html(releases, events)}</section>
+<section id="attention"><h2>Needs attention</h2>{_attention_html(releases, events)}</section>
+<section id="lanes"><h2>Lanes</h2>{_lanes_html(lanes)}</section>
+<section id="governance"><h2>Governance</h2>{_governance_html(repos)}</section>
 <section id="items"><h2>Items by state</h2>{_table(("STATE", "ITEMS"), [[s, n] for s, n in _counts(events).items()])}</section>
 <section id="report"><h2>Report</h2>{report_html}</section>
 <section id="capacity"><h2>Capacity</h2>{_capacity_html(events, now)}</section>
@@ -141,8 +230,21 @@ def register(sub) -> dict:
     return {"view": _cmd}
 
 
+def _try(load, *args, **kwargs):
+    """Load governance/backlog input, returning ``None`` when it is unreadable."""
+    try:
+        return load(*args, **kwargs)
+    except (OSError, ContractError):
+        return None
+
+
 def _cmd(args, log: EventLog) -> int:
-    page = render(log.read(), datetime.now(timezone.utc))
+    events = log.read()
+    now = datetime.now(timezone.utc)
+    page = render(events, now,
+                  releases=_try(load_releases),
+                  lanes=_try(lane_rows, events, today=now.strftime("%Y-%m-%d")),
+                  repos=_try(load_repos))
     if not args.html:
         print(page)
         return 0
