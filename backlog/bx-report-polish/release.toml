@@ -1,0 +1,26 @@
+id = "bx-report-polish"
+repo = "lanectl"
+base_sha = "78be49fb5702c7611deb402c90c705732e2dcbc7"
+revision = 1
+title = "Report: full names; label infra-stopped attempts"
+task_class = "view"
+size = "S"
+data_class = "public"
+outcome = """
+Plan docs/plans/2026-11-10-backlog-dx-and-admin-views.md, wave 1. report truncates class and model
+names to 10 characters (opencode-g, test-gener), and cost_feedback attempts (claims) disagree with
+report ATT (experiments) with no label.
+- src/lanectl/report.py _table: the name column is as wide as the longest name or the title,
+  whichever is longer; names are never truncated; the numeric columns keep their widths and
+  right alignment under the header.
+- src/lanectl/feedback.py: each model row gains infra_attempts = that model's claimed attempts whose
+  decision.recorded first reason starts with "infra:"; attempts keeps counting claims. The formatted
+  line gains " infra=<n>" after attempts=<n>.
+"""
+# lint-release override (planner, 2026-11-10): base failures are AssertionError x2 (names truncated
+# to 10 chars) and KeyError 'infra_attempts' (missing row key = missing feature, unclassified by lint).
+[scope]
+paths = ["src/lanectl/report.py", "src/lanectl/feedback.py", "tests/stage8/**", "tests/stage7/**"]
+[acceptance]
+exec = ["uv run --no-sync pytest -q -p no:cacheprovider"]
+files = ["tests/stage8/test_acc_report_polish.py"]

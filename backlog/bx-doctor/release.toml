@@ -1,0 +1,33 @@
+id = "bx-doctor"
+repo = "lanectl"
+base_sha = "78be49fb5702c7611deb402c90c705732e2dcbc7"
+revision = 1
+title = "lanectl doctor"
+task_class = "tooling"
+size = "M"
+data_class = "public"
+outcome = """
+Plan docs/plans/2026-11-10-backlog-dx-and-admin-views.md, wave 1. Broken releases, stale attempts,
+drifted bases and missing governance surface today only as failures mid-run. Add
+src/lanectl/doctor.py with a plugin command (module-level register(sub)) "doctor [--json]" that runs
+these checks and prints one line per finding, formatted f"{level:5} {check}: {detail}" with level
+OK, WARN or ERROR:
+- home: the resolved config.home() and whether governance/repos.toml exists there (ERROR if not).
+- releases: load every backlog/<dir>/release.toml individually with config.load_release; each
+  failure is an ERROR whose detail names the directory and the error; OK reports how many loaded.
+- repos: every repo in governance/repos.toml has an existing git checkout at its path (ERROR naming
+  the repo otherwise); OK when all exist.
+- events: the log reads and validates (ERROR with the message otherwise); OK reports the count.
+- policy: governance/allocation.toml absent is a WARN mentioning "policy"; a parse or policy error is
+  an ERROR; OK with its revision otherwise.
+- stale attempts: an item whose state is "claimed" and whose open attempt's claim ts is older than
+  the lane's timeout_s is a WARN naming the attempt_id and suggesting "lanectl reap".
+- base drift: a release whose item is not landed and whose base_sha differs from the repo's current
+  main commit (RepoSpec.main) is a WARN naming the release and "base_sha".
+Exit 1 when any ERROR, else 0. --json prints a JSON list of {"level", "check", "detail"} instead.
+"""
+[scope]
+paths = ["src/lanectl/doctor.py", "tests/stage8/**"]
+[acceptance]
+exec = ["uv run --no-sync pytest -q -p no:cacheprovider"]
+files = ["tests/stage8/test_acc_doctor.py"]

@@ -1,0 +1,21 @@
+id = "bx-home-default"
+repo = "lanectl"
+base_sha = "78be49fb5702c7611deb402c90c705732e2dcbc7"
+revision = 1
+title = "Find the checkout without LANECTL_HOME"
+task_class = "glue"
+size = "S"
+data_class = "public"
+outcome = """
+Plan docs/plans/2026-11-10-backlog-dx-and-admin-views.md, wave 1. Installed as a uv tool,
+config.home() falls back to the package's parents[2] (inside the tool environment), so commands run
+from the checkout print "no allocation policy" unless LANECTL_HOME is exported.
+Change config.home() in src/lanectl/config.py: LANECTL_HOME when set; otherwise the nearest
+directory at or above the current working directory that contains governance/repos.toml; otherwise
+the current fallback, Path(__file__).resolve().parents[2]. No other behaviour changes.
+"""
+[scope]
+paths = ["src/lanectl/config.py", "tests/stage8/**"]
+[acceptance]
+exec = ["uv run --no-sync pytest -q -p no:cacheprovider"]
+files = ["tests/stage8/test_acc_home_default.py"]

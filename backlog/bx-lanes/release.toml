@@ -1,0 +1,27 @@
+id = "bx-lanes"
+repo = "lanectl"
+base_sha = "78be49fb5702c7611deb402c90c705732e2dcbc7"
+revision = 1
+title = "lanectl lanes: routing, limits and live cap usage"
+task_class = "view"
+size = "S"
+data_class = "public"
+outcome = """
+Plan docs/plans/2026-11-10-backlog-dx-and-admin-views.md, wave 1. Lane routing and caps live in
+governance/lanes/*.toml and their usage only in the log. Add src/lanectl/lanes.py with a plugin
+command (module-level register(sub)) "lanes [--json]". For every governance/lanes/<name>.toml under
+config.home(), loaded with config.load_lane, print:
+  "<lane>  r<revision>  size_max=<S|M|L>  max_attempts=<n>  timeout_s=<n>"
+  "  routing: <model>=<weight> ..." (sorted by model)
+  "  caps: concurrency <used>/<limit>  items_per_day <used>/<limit>  accepted_unlanded_max <used>/<limit>"
+Usage per lane: concurrency = items whose state is "claimed" with an open attempt on that lane;
+items_per_day = item.claimed events for that lane whose ts falls on the current UTC date;
+accepted_unlanded_max = items whose state is "candidate" or "in-train" and whose last attempt was on
+that lane. Use events.project_items. --json prints a list of {"lane", "revision", "size_max",
+"max_attempts", "timeout_s", "routing": {model: weight}, "caps": {cap: {"used", "limit"}}}.
+"""
+[scope]
+paths = ["src/lanectl/lanes.py", "tests/stage8/**"]
+[acceptance]
+exec = ["uv run --no-sync pytest -q -p no:cacheprovider"]
+files = ["tests/stage8/test_acc_lanes.py"]
