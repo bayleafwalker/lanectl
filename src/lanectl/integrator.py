@@ -109,7 +109,7 @@ def _fix_warnings(repo, train, events, authority):
     return landing.fix_budget([e for e in events if e["type"] != "integrator.fix" or e["data"].get("train_id") == train["train_id"]], authority, counts)
 
 
-def cycle(log, *, max_trains=3, publish_fn=None):
+def cycle(log, *, max_trains=3, publish_fn=None, only_attempt=None):
     """Review/evaluate, train, deploy, land and publish within explicit authority."""
     if max_trains < 1:
         return []
@@ -123,7 +123,7 @@ def cycle(log, *, max_trains=3, publish_fn=None):
             fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except BlockingIOError:
             return ['integrator: another cycle is active']
-        return _cycle(log, allowed, max_trains, publish_fn or publish)
+        return _cycle(log, allowed, max_trains, publish_fn or publish, only_attempt)
 
 
 def _accepted(log, attempt_id):
@@ -136,7 +136,7 @@ def _accepted(log, attempt_id):
                 and verdict.get('rules_revision') == f"evaluator/v{rules['revision']}")
 
 
-def _cycle(log, allowed, max_trains, publish_fn):
+def _cycle(log, allowed, max_trains, publish_fn, only_attempt=None):
     repos = load_repos()
     releases = {r.id: r for r in load_releases()}
     lines = []
@@ -147,6 +147,8 @@ def _cycle(log, allowed, max_trains, publish_fn):
         if e['type'] != 'item.landed':
             continue
         d = e['data']; rel = releases.get(e['item_id'])
+        if only_attempt is not None and d["attempt_id"] != only_attempt:
+            continue
         if rel is None or rel.task_class not in allowed or rel.repo not in repos:
             continue
         repo = repos[rel.repo]
@@ -159,14 +161,17 @@ def _cycle(log, allowed, max_trains, publish_fn):
                 lines.append(publish_fn(repo, key, d['landed_sha']))
         except Exception as exc:
             lines.append(f'{key}: publication held: {exc}')
-    lines.extend(f"tracker {r['work']}: {'synced' if r['ok'] else r.get('error', 'failed')}" for r in work.reconcile(log))
+    lines.extend(f"tracker {r['work']}: {'synced' if r['ok'] else r.get('error', 'failed')}" for r in work.reconcile(log, settle_owner=getattr(runner._owner_context, "guard", None) is None))
     # Reuse unfinished trains before creating new ones.
     trains = {e['data']['train_id']: e['data'] for e in log.read() if e['type'] == 'train.built'}
     views = project_items(log.read())
     active = {a['attempt_id'] for v in views.values() if v.state == 'in-train' for a in v.attempts[-1:]}
-    ready_trains = [d for d in trains.values() if d['passed'] and set(d['attempts']) & active]
+    ready_trains = [d for d in trains.values() if d['passed'] and set(d['attempts']) & active
+                    and (only_attempt is None or set(d['attempts']) == {only_attempt})]
     grouped = {}
     for candidate in runner.candidates(log):
+        if only_attempt is not None and candidate["attempt_id"] != only_attempt:
+            continue
         rel = releases.get(candidate['item_id'])
         if rel is None or rel.task_class not in allowed:
             continue
@@ -198,7 +203,11 @@ def _cycle(log, allowed, max_trains, publish_fn):
         if any(not _accepted(log, aid) for aid in train['attempts']):
             lines.append(f"{train['train_id']}: evaluation held")
             continue
-        if repo.deploy is not None and train['train_id'] not in deploy.live(events):
+        deployed = deploy.live(events).get(train['train_id'])
+        expires = runner.capacity.parse_ts(deployed.get('expires_at')) if deployed else None
+        if (repo.deploy is not None and (not deployed or expires is None
+                or expires <= runner.datetime.now(runner.timezone.utc)
+                or deployed.get('checked_sha') != train.get('checked_sha'))):
             lines.append(deploy.deploy_train(log, train['train_id']))
         result = runner.land(log, train['train_id'])
         lines.append(result)
@@ -208,17 +217,25 @@ def _cycle(log, allowed, max_trains, publish_fn):
                 lines.append(publish_fn(repo, train['train_id'], sha))
             except Exception as exc:
                 lines.append(f"{train['train_id']}: publication held: {exc}")
-    lines.extend(f"tracker {r['work']}: {'synced' if r['ok'] else r.get('error', 'failed')}" for r in work.reconcile(log))
+    lines.extend(f"tracker {r['work']}: {'synced' if r['ok'] else r.get('error', 'failed')}" for r in work.reconcile(log, settle_owner=getattr(runner._owner_context, "guard", None) is None))
     return lines
 
 
 def register(sub):
     p = sub.add_parser('integrate', help='policy-bounded headless train integration')
     p.add_argument('--max-trains', type=int, default=3)
-    return {'integrate': _cmd}
+    check = sub.add_parser('recheck', help='requalify an existing train after fixes')
+    check.add_argument('train_id')
+    return {'integrate': _cmd, 'recheck': _recheck_cmd}
 
 
 def _cmd(args, log):
     for line in cycle(log, max_trains=args.max_trains):
         print(line)
     return 0
+
+
+def _recheck_cmd(args, log):
+    result = runner.recheck_train(log, args.train_id)
+    print(result)
+    return 0 if ': PASSED ' in result else 1

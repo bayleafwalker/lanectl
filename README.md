@@ -49,3 +49,18 @@ An old receipt without a landed commit is reported as unknown, never inferred
 from today's branch tip. A lost tracker-note acknowledgement may still produce
 a duplicate note: tracker status convergence is idempotent, while note delivery
 has no owner-provided idempotency key.
+
+After an integrator fix, run `lanectl recheck <train_id>` to record a fresh check
+bound to the updated commit, then redeploy that tip before landing where required.
+Manual execution of the repository check alone does not update the proof receipt.
+
+Configured Vuoro repositories require a complete Work release whose reference
+names that repository. Native children and setup commands do not inherit the
+configured coordination token environment variables. A lease guard covers native
+execution, gates and immediate authorized integration; authority loss cancels the
+process group and named sandbox service. Candidate acceptance does not settle
+Work. Successful settlement is reported only after landing (and canonical PR
+proof where configured), using the actual train check receipt; closure also
+requires a fresh owner read reporting done/accepted. Awaiting verification remains
+pending. `lanectl work reconcile` retries exact owner-journal completion after a
+restart without substituting operator tracker status writes.

@@ -133,3 +133,39 @@ def test_completed_deploy_landing_replays_after_teardown(estate,tmp_path):
     assert runner.land(log,'tt').startswith('landed')
     assert runner.land(log,'tt').startswith('landed')
     assert len([e for e in log.read() if e['type']=='item.landed'])==1
+
+
+def test_fixed_train_needs_fresh_recheck(estate):
+    repo,release,log=estate
+    release('fix-proof','def test_ok():\n    assert True\n')
+    base=_head(repo);_train(log,repo,'fix-proof',base)
+    train=[e['data'] for e in log.read() if e['type']=='train.built'][-1]
+    log.append('train.built',dict(train,checked_sha=base))
+    checkout=Path(train['worktree'])
+    subprocess.run(['git','-C',str(repo),'worktree','add',str(checkout),'train/tt'],check=True,capture_output=True)
+    (checkout/'notes.md').write_text('bounded fix\n')
+    subprocess.run(['git','-C',str(checkout),'add','notes.md'],check=True)
+    subprocess.run(['git','-C',str(checkout),'-c','user.name=test','-c','user.email=test@example.invalid','commit','-m','fix(fix-proof-a1): [spec-gap] note'],check=True,capture_output=True)
+    assert 'changed' in runner.land(log,'tt')
+    assert 'PASSED' in runner.recheck_train(log,'tt')
+    assert runner.land(log,'tt').startswith('landed')
+
+
+def test_recheck_invalidates_a_tip_changed_during_check(estate,monkeypatch):
+    repo,release,log=estate
+    release('moving-proof','def test_ok():\n    assert True\n')
+    base=_head(repo);_train(log,repo,'moving-proof',base)
+    train=[e['data'] for e in log.read() if e['type']=='train.built'][-1]
+    checkout=Path(train['worktree'])
+    subprocess.run(['git','-C',str(repo),'worktree','add',str(checkout),'train/tt'],check=True,capture_output=True)
+    real=runner.git;reads=[]
+    def git(path,*args,**kwargs):
+        if Path(path)==checkout and args==('rev-parse','HEAD'):
+            reads.append(True)
+            if len(reads)>1:
+                return 'f'*40
+        return real(path,*args,**kwargs)
+    monkeypatch.setattr(runner,'git',git)
+    assert 'FAILED' in runner.recheck_train(log,'tt')
+    assert not [e['data'] for e in log.read() if e['type']=='train.built'][-1]['passed']
+    assert not [e for e in log.read() if e['type']=='item.landed']

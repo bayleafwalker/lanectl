@@ -103,6 +103,14 @@ def sync(rel, train_id: str, landed_sha: str, repos, run=subprocess.run, *, skip
         noted = True
         if not rel.work_complete:
             return result
+        from .config import home
+        import tomllib
+        config_path = home() / "governance" / "vuoro.toml"
+        owner_managed = (config_path.exists() and rel.repo in
+                         tomllib.loads(config_path.read_text()).get("repos", {}))
+        if owner_managed:
+            result.update(pending_owner=True, noted=True)
+            return result
         repo = repos.get(rel.repo)
         if repo is not None and repo.landing == "pr" and not merged(repo, landed_sha, run):
             result.update(pending_close=True, noted=True)
@@ -143,7 +151,7 @@ def merged(repo, sha, run=subprocess.run):
     return git("merge-base", "--is-ancestor", sha, head, allowed=(0, 1)).returncode == 0
 
 
-def reconcile(log, *, repos=None, releases=None, run=None):
+def reconcile(log, *, repos=None, releases=None, run=None, settle_owner=False):
     """Retry incomplete tracker effects, including PR completion, without relanding."""
     from .config import load_releases, load_repos
     from types import SimpleNamespace
@@ -170,6 +178,27 @@ def reconcile(log, *, repos=None, releases=None, run=None):
             results.append({"work": rel.work, "train_id": d["train_id"], "ok": False,
                             "closed": False, "error": "historical landing has no landed_sha"})
             continue
+        if settle_owner and rel.work_complete:
+            from . import coordination
+            owner = coordination.configured(rel.repo)
+            if owner is not None:
+                result = {"work": rel.work, "train_id": d["train_id"], "closed": False,
+                          "ok": True, "pending_owner": True}
+                try:
+                    repo = repos[rel.repo]
+                    if repo.landing == "pr" and not merged(repo, sha, run or subprocess.run):
+                        result["pending_close"] = True
+                    else:
+                        owner.append_evidence(d["attempt_id"], "landed", "Observation", d)
+                        completed = report_owner_completion(owner, d["attempt_id"], rel, d)
+                        result = {"work": rel.work, "train_id": d["train_id"], "closed": completed,
+                                  "ok": True, "owner_reported": True, "pending_owner": not completed}
+                except Exception as exc:
+                    result.update(ok=False, error=f"owner completion pending: {type(exc).__name__}")
+                log.append("work.synced", result, item_id=rel.id)
+                latest[(rel.id, d["train_id"])] = result
+                results.append(result)
+                continue
         kwargs = {"skip_note": previous.get("noted", False)}
         if run is not None:
             kwargs["run"] = run
@@ -189,7 +218,21 @@ def register(sub):
 
 
 def _cmd(args, log):
-    results = reconcile(log)
+    results = reconcile(log, settle_owner=True)
     for result in results:
         print(json.dumps(result, sort_keys=True))
     return 1 if any(not r["ok"] for r in results) else 0
+
+
+def report_owner_completion(owner, attempt_id, rel, receipt):
+    """A reported success is not a terminal owner fact."""
+    result = owner.report_outcome(attempt_id, "succeeded", "Checked release landed",
+                                  checks=receipt.get("owner_checks", []),
+                                  payload={"release_id": rel.id, "landed_sha": receipt["landed_sha"]})
+    # The acknowledgement may remain awaiting-verification forever under its
+    # idempotency key. A later independent owner read can confirm verifier action.
+    if (not isinstance(result, dict) or not isinstance(result.get("settled"), bool)
+            or result.get("settlement_effect") not in ("settled", "awaiting-verification")):
+        return False
+    observed = owner.completion(attempt_id)
+    return isinstance(observed, dict) and observed.get("closed") is True

@@ -12,6 +12,8 @@ import shutil
 import subprocess
 import time
 import tomllib
+import threading
+import json
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -52,18 +54,27 @@ def attempts_used(view: ItemView, revision: int) -> int:
 
 
 def candidate_weights(rel: WorkRelease, lane: LaneRevision, view: ItemView,
-                      repo: RepoSpec | None = None) -> dict[str, float]:
+                      repo: RepoSpec | None = None, *, events=None) -> dict[str, float]:
     """Eligible weights the dispatch hash can choose from (retry filter applied)."""
-    weights = eligible_models(rel, lane, repo)
+    from . import specification
+    weights = specification.implementation_models(rel, eligible_models(rel, lane, repo))
     if lane.retry == "different_model":
         untried = {m: w for m, w in weights.items() if m not in view.models_tried}
         weights = untried or weights
-    return {m: w for m, w in weights.items() if w > 0}
+    weights = {m: w for m, w in weights.items() if w > 0}
+    if events is not None:
+        from . import learning, steering
+        try:
+            policy = learning.load_limits()
+        except FileNotFoundError:
+            policy = {}
+        weights = steering.effective_weights(events, weights, rel.task_class, policy)
+    return weights
 
 
 def pick_model(rel: WorkRelease, lane: LaneRevision, view: ItemView,
-               repo: RepoSpec | None = None) -> str | None:
-    weights = candidate_weights(rel, lane, view, repo)
+               repo: RepoSpec | None = None, *, weights=None) -> str | None:
+    weights = candidate_weights(rel, lane, view, repo) if weights is None else weights
     if not weights:
         return None
     # deterministic weighted choice: reproducible from the log
@@ -187,6 +198,12 @@ def reconcile_capacity(log: EventLog, events: list[dict], attempt_id: str, *,
     return True
 
 
+def _coordinated(repo_name):
+    from .config import home
+    path = home() / "governance" / "vuoro.toml"
+    return path.exists() and repo_name in tomllib.loads(path.read_text()).get("repos", {})
+
+
 def admit(lane_name: str, log: EventLog, only: str | None = None) -> Claim | str:
     """Return a Claim, or a string saying why nothing was admitted.
 
@@ -237,17 +254,33 @@ def admit(lane_name: str, log: EventLog, only: str | None = None) -> Claim | str
         skipped = []
         for rel, v in ready:
             reasons = readiness(rel, lane, repos)
+            if _coordinated(rel.repo) and (not rel.work or not rel.work_complete
+                                              or rel.work.split("#", 1)[0] != rel.repo):
+                reasons.append("coordinated releases require a complete Work outcome")
             if reasons:
                 skipped.append(f"{rel.id}: {'; '.join(reasons)}")
                 continue
-            model = pick_model(rel, lane, v, repos.get(rel.repo))
+            alternatives = candidate_weights(rel, lane, v, repos.get(rel.repo), events=events)
+            model = pick_model(rel, lane, v, repos.get(rel.repo), weights=alternatives)
             if model is None:
                 skipped.append(f"{rel.id}: no eligible model")
+                continue
+            from . import steering
+            try:
+                policy = capacity.AllocationPolicy.load()
+            except capacity.PolicyError:
+                policy = None
+            provider = provider_for(model)
+            spec = policy.providers.get(provider) if policy is not None else None
+            verdict = steering.admission(events, policy, datetime.now(timezone.utc),
+                                         provider, rel.size, model,
+                                         enforce=spec is not None and spec.admission_mode == "enforce")
+            if verdict["decision"] == "block":
+                skipped.append(f"{rel.id}: {'; '.join(verdict['reasons'])}")
                 continue
             n = len(v.attempts) + 1
             attempt_id = f"{rel.id}-a{n}"
             worker = adapters.worker_for(model)
-            alternatives = candidate_weights(rel, lane, v, repos.get(rel.repo))
             log.append("item.claimed", {
                 "attempt_id": attempt_id, "lane": lane.lane, "lane_revision": lane.revision,
                 "lane_digest": lane.digest, "model": model, "worker": worker,
@@ -337,7 +370,92 @@ def _main_fingerprint(repo: RepoSpec) -> str:
                        git(repo.path, "status", "--porcelain", "--untracked-files=all", check=False)))
 
 
-def execute(c: Claim, log: EventLog, adapter_fn=None) -> str:
+_owner_context = threading.local()
+
+
+def _coordination_park(c, log, error):
+    events = log.read()
+    if not any(e["type"] == "attempt.finished" and e["data"]["attempt_id"] == c.attempt_id for e in events):
+        log.append("attempt.finished", {"attempt_id": c.attempt_id, "outcome": "failed",
+                   "exit_code": -1, "head_sha": "", "elapsed_s": 0.0,
+                   "escalation_reason": "owner coordination unavailable"}, item_id=c.rel.id)
+    with log.locked():
+        reconcile_capacity(log, log.read(), c.attempt_id, actual=None, outcome="recovered", item_id=c.rel.id)
+    record_decision(log, item_id=c.rel.id, attempt_id=c.attempt_id, model=c.model,
+                    worker=c.worker, task_class=c.rel.task_class, size=c.rel.size,
+                    dec="parked", reasons=["owner coordination unavailable: " + str(error)[:300]],
+                    follow="park", elapsed_s=0.0, lane_revision=c.lane.revision, gates={})
+    return f"{c.attempt_id}: parked: owner coordination unavailable"
+
+
+def _coordinate_execution(native):
+    @functools.wraps(native)
+    def execute(c: Claim, log: EventLog, adapter_fn=None) -> str:
+        from . import coordination, integrator
+        try:
+            owner = coordination.configured(c.repo.name)
+            if owner is None:
+                return native(c, log, adapter_fn)
+            if (not c.rel.work or not c.rel.work_complete
+                    or c.rel.work.split("#", 1)[0] != c.rel.repo):
+                raise coordination.CoordinationError("coordinated releases require a complete Work outcome")
+            work_id = int(c.rel.work.split("#", 1)[1])
+            owner.start(c.attempt_id, work_id, c.model,
+                        hashlib.sha256(render_prompt(c.rel, c.lane, c.repo).encode()).hexdigest(),
+                        recipe_id=f"lanectl/{c.lane.lane}/v{c.lane.revision}")
+            cancel = threading.Event()
+            sandbox_holder = []
+            def lost():
+                cancel.set()
+                if sandbox_holder:
+                    sandbox_holder[0].cancel()
+            settlement = None
+            with owner.guard(c.attempt_id, on_lost=lost) as guard:
+                _owner_context.guard = guard
+                out = native(c, log, adapter_fn, lease_guard=guard,
+                               cancel_event=cancel, sandbox_holder=sandbox_holder)
+                guard.assert_active()
+                view = project_items(log.read())[c.rel.id]
+                owner.append_evidence(c.attempt_id, "candidate", "Observation",
+                                      {"release_id": c.rel.id, "attempt_id": c.attempt_id,
+                                       "state": view.state, "result": out})
+                if view.state == "candidate":
+                    integrator.cycle(log, only_attempt=c.attempt_id)
+                guard.assert_active()
+                landings = [e for e in log.read() if e["type"] == "item.landed"
+                            and e["data"]["attempt_id"] == c.attempt_id]
+                if landings and c.rel.work_complete:
+                    receipt = landings[-1]["data"]
+                    if c.repo.landing == "pr" and not work.merged(c.repo, receipt["landed_sha"]):
+                        return out + "; owner completion awaits canonical merge"
+                    owner.append_evidence(c.attempt_id, "landed", "Observation", receipt)
+                    settlement = receipt
+            # Stop background heartbeats before settlement deactivates the lease.
+            # report_outcome itself revalidates authority, or replays exact uncertain bytes.
+            if settlement is None and view.state not in ("candidate", "in-train", "landed"):
+                owner.report_outcome(c.attempt_id, "failed", "Lane attempt did not pass acceptance",
+                                     payload={"release_id": c.rel.id, "state": view.state})
+            if settlement is not None:
+                completed = work.report_owner_completion(owner, c.attempt_id, c.rel, settlement)
+                log.append("work.synced", {"work": c.rel.work, "train_id": settlement["train_id"],
+                           "closed": completed, "ok": True, "owner_reported": True,
+                           "pending_owner": not completed}, item_id=c.rel.id)
+            return out
+        except Exception as exc:
+            # After an acknowledged landing, uncertainty belongs in the owner journal;
+            # never rewrite a successful Git effect as a failed implementation.
+            if any(e["type"] == "item.landed" and e["data"]["attempt_id"] == c.attempt_id for e in log.read()):
+                return f"{c.attempt_id}: landed; owner completion pending: {type(exc).__name__}"
+            return _coordination_park(c, log, exc)
+        finally:
+            _owner_context.guard = None
+
+    return execute
+
+
+@_coordinate_execution
+def execute(c: Claim, log: EventLog, adapter_fn=None, *, lease_guard=None,
+             cancel_event=None, sandbox_holder=None) -> str:
     rel, repo, lane = c.rel, c.repo, c.lane
     wt = repo.worktree_root / c.attempt_id
     branch = f"lane/{c.attempt_id}"
@@ -349,23 +467,43 @@ def execute(c: Claim, log: EventLog, adapter_fn=None) -> str:
     git(repo.path, "clone", "-q", "--shared", "--no-checkout", str(repo.path), str(wt))
     git(wt, "checkout", "-q", "-b", branch, rel.base_sha)
     git(wt, "remote", "remove", "origin", check=False)   # do not advertise the main checkout
-    sb = sandboxing.from_lane(lane.sandbox, (str(wt),), lane.timeout_s + 120)
+    sb = sandboxing.from_lane(lane.sandbox, (str(wt),), lane.timeout_s + 120,
+                              **({"attempt_id": c.attempt_id} if lease_guard else {}))
+    if sandbox_holder is not None:
+        sandbox_holder.append(sb)
     acc = _copy_acceptance(rel, wt)
     seed_sha = _commit_all(wt, f"lane(acceptance): {rel.id} r{rel.revision}")
+    native_env = None
+    if lease_guard is not None:
+        from .config import home
+        config = tomllib.loads((home() / "governance" / "vuoro.toml").read_text())
+        native_env = dict(os.environ)
+        for target in config.get("repos", {}).values():
+            native_env.pop(target.get("token_env", ""), None)
     if repo.setup_cmd:
-        subprocess.run(repo.setup_cmd, shell=True, cwd=wt, capture_output=True)
+        subprocess.run(repo.setup_cmd, shell=True, cwd=wt, capture_output=True,
+                       **({"env": native_env} if native_env is not None else {}))
 
     runs = state_dir() / "runs"
     runs.mkdir(exist_ok=True)
     shims = sb.shim_dir(state_dir() / "shims" / c.attempt_id, ("opencode", "codex", "claude"))
-    env = dict(os.environ, PATH=f"{shims}{os.pathsep}{os.environ.get('PATH', '')}") if shims else None
+    env = dict(native_env or os.environ, PATH=f"{shims}{os.pathsep}{os.environ.get('PATH', '')}") if shims else native_env
+    if lease_guard is not None:
+        from .config import home
+        config = tomllib.loads((home() / "governance" / "vuoro.toml").read_text())
+        env = dict(os.environ) if env is None else env
+        for target in config.get("repos", {}).values():
+            env.pop(target.get("token_env", ""), None)
+        lease_guard.assert_active()
     main_before = _main_fingerprint(repo)
     started = time.monotonic()
     fn = adapter_fn or adapters.ADAPTERS[c.worker]
     try:
         res = fn(model=c.model, worktree=wt, prompt=render_prompt(rel, lane, repo),
                  status_file=runs / f"{c.attempt_id}.json", timeout_s=lane.timeout_s,
-                 external=c.model in lane.external_models, env=env)
+                 external=c.model in lane.external_models, env=env,
+                 **({"cancel_event": cancel_event} if cancel_event is not None and adapter_fn is None else {}),
+                 **({"sandbox": sb} if c.worker == "local" else {}))
     except Exception as exc:  # adapter crash is an attempt outcome, not a runner crash
         res = adapters.AdapterResult("failed", 1, f"adapter error: {exc}", None)
     elapsed = round(time.monotonic() - started, 1)
@@ -394,6 +532,8 @@ def execute(c: Claim, log: EventLog, adapter_fn=None) -> str:
                                actual=usage_actual(reservation.get("unit"), res.usage),
                                outcome="completed", item_id=rel.id)
 
+    if lease_guard is not None:
+        lease_guard.assert_active()
     if breach:
         res = adapters.AdapterResult("failed", res.exit_code, res.final_tail, None)
         gates = {}
@@ -411,6 +551,8 @@ def execute(c: Claim, log: EventLog, adapter_fn=None) -> str:
                                            changed=head != seed_sha)
     if breach:
         reasons = ["infra: isolation breach - main checkout changed during the attempt; inspect it"]
+    if lease_guard is not None:
+        lease_guard.assert_active()
     record_decision(log, item_id=rel.id, attempt_id=c.attempt_id, model=c.model,
                     worker=c.worker, task_class=rel.task_class, size=rel.size, dec=dec,
                     reasons=reasons, follow=follow, elapsed_s=elapsed,
@@ -622,14 +764,23 @@ def land(log: EventLog, train_id: str) -> str:
     if git(repo.path, "rev-parse", repo.main) not in (d["base_sha"], tip):
         return f"{repo.main} moved since {train_id} was built; rebuild the train"
     fixes = {}
+    recorded_fixes = {(e["data"]["attempt_id"], e["data"]["commit"])
+                      for e in events if e["type"] == "integrator.fix"
+                      and e["data"].get("train_id") == train_id}
     for line in git(repo.path, "log", "--format=%H %s", f"{d['base_sha']}..{tip}").splitlines():
         sha, subj = line.split(" ", 1)
         if subj.startswith("fix(") and "): [" in subj:
             aid = subj[4:subj.index(")")]
             cls = subj[subj.index("[") + 1:subj.index("]")]
             fixes.setdefault(aid, []).append(sha)
-            log.append("integrator.fix", {"attempt_id": aid, "commit": sha, "fix_class": cls,
-                                          "train_id": train_id})
+            if (aid, sha) not in recorded_fixes:
+                log.append("integrator.fix", {"attempt_id": aid, "commit": sha, "fix_class": cls,
+                                              "train_id": train_id})
+    guard = getattr(_owner_context, "guard", None)
+    if _coordinated(repo.name) and guard is None:
+        return f"{train_id}: owner lease required before coordinated landing"
+    if guard is not None:
+        guard.assert_active()
     cur = git(repo.path, "branch", "--show-current", check=False)
     if cur == repo.main:
         if git(repo.path, "status", "--porcelain", "--untracked-files=no"):
@@ -646,7 +797,8 @@ def land(log: EventLog, train_id: str) -> str:
         rel = releases.get(by_attempt[aid])
         request = ({k: getattr(rel, k) for k in ("id", "repo", "work", "work_complete")} if rel is not None else {})
         log.append("item.landed", {"attempt_id": aid, "train_id": train_id,
-                                   "fix_commits": fixes.get(aid, []), "landed_sha": tip, "work_request": request}, item_id=by_attempt[aid])
+                                   "fix_commits": fixes.get(aid, []), "landed_sha": tip, "work_request": request,
+                                   "owner_checks": [{"name": "train", "status": "passed", "ref": f"lanectl:{train_id}:{tip}"}]}, item_id=by_attempt[aid])
     # The land is done; the tracker note/close is best effort and never fails it.
     releases = {r.id: r for r in load_releases()}
     for aid in d["attempts"]:
@@ -767,3 +919,29 @@ def metrics(events: list[dict]) -> dict:
                                 if ruled else None),
             "fix_classes": attributed["fix_classes"],
             "per_model": per_model}
+
+
+def recheck_train(log: EventLog, train_id: str) -> str:
+    """Requalify an existing train after bounded judgment-plane fixes."""
+    with log.locked():
+        built = next((e['data'] for e in reversed(log.read())
+                      if e['type'] == 'train.built' and e['data']['train_id'] == train_id), None)
+        if built is None:
+            return f'{train_id}: unknown train'
+        repo = load_repos()[built['repo']]
+        checkout = Path(built['worktree'])
+        if not checkout.exists():
+            return f'{train_id}: train worktree missing; rebuild'
+        tip = git(repo.path, 'rev-parse', f'train/{train_id}')
+        if (git(checkout, 'rev-parse', 'HEAD') != tip
+                or git(checkout, 'status', '--porcelain', '--untracked-files=no')):
+            log.append('train.built', dict(built, passed=False, checked_sha=None,
+                       check_tail='worktree differs from train tip or has tracked changes'))
+            return f'{train_id}: dirty or mismatched worktree; not checked'
+        p = subprocess.run(repo.check_cmd, shell=True, cwd=checkout, capture_output=True, text=True)
+        passed = (p.returncode == 0 and git(checkout, 'rev-parse', 'HEAD') == tip
+                  and git(repo.path, 'rev-parse', f'train/{train_id}') == tip
+                  and not git(checkout, 'status', '--porcelain', '--untracked-files=no'))
+        log.append('train.built', dict(built, passed=passed, checked_sha=tip,
+                   check_tail=(p.stdout + p.stderr)[-800:]))
+        return f"{train_id}: {'PASSED' if passed else 'FAILED'} recheck at {tip}"
