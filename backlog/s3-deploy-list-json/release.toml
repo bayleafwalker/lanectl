@@ -1,0 +1,24 @@
+id = "s3-deploy-list-json"
+repo = "lanectl"
+base_sha = "cfa35eacab7d643f6ce0d799e510a3d8f651dade"
+revision = 1
+title = "deploy list --json prints [] when nothing is live"
+task_class = "view"
+size = "S"
+data_class = "public"
+
+outcome = """
+"lanectl deploy list --json" prints the text "no live deploys" when no deploy is live, so a
+script parsing it fails. In src/lanectl/deploy.py, with --json always print a JSON list (an empty
+list "[]" when nothing is live); the text form is unchanged.
+"""
+
+[scope]
+paths = ["src/lanectl/deploy.py", "tests/stage8/**"]
+
+[acceptance]
+files = ["tests/stage8/test_acc_deploy_list_json.py"]
+exec = ["uv run --no-sync pytest -q -p no:cacheprovider tests/stage8/test_acc_deploy_list_json.py"]
+
+[lint]
+override = "base failure is JSONDecodeError on the text output: the missing behaviour itself"
