@@ -24,6 +24,8 @@ class AdapterResult:
 
 
 def worker_for(model: str) -> str:
+    if model.startswith("local/"):
+        return "local"
     if model.startswith(("opencode-go/", "opencode/")):
         return "opencode"
     if model.startswith("gpt-"):
@@ -90,3 +92,8 @@ from .adapters_claude import run_claude as _run_claude  # registration anchor im
 ADAPTERS["claude"] = _run_claude
 
 # spacer
+
+# @anchor local-native
+from .adapters_local import run_local
+
+ADAPTERS["local"] = run_local
