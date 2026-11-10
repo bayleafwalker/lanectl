@@ -149,7 +149,7 @@ def test_doctor_run_adds_model_window_findings(estate, capsys):
         f"  {{ name = \"pro-week\", length_s = 604800, budget = 1000, models = [\"{PRO}\"] }},\n"
         "]\n")
     log.path.parent.mkdir(parents=True, exist_ok=True)
-    ts = format_ts(datetime.now(timezone.utc) - timedelta(hours=1))
+    ts = format_ts(datetime.now(timezone.utc) - timedelta(seconds=1))
     with open(log.path, "a") as fh:
         fh.write(json.dumps(_use(PRO, 900, ts)) + "\n")
     assert cli.main(["doctor"]) == 0
