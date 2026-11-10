@@ -76,9 +76,18 @@ class RepoSpec:
     routing: dict[str, float] = field(default_factory=dict)  # overrides lane weights when set
     gate_jobs: tuple[GateJob, ...] = ()     # in the order repos.toml lists them
     deploy: DeploySpec | None = None        # None means the repo has no dev deploy
+    # "local": `land` is the landing. "pr": main reaches the forge through a reviewed PR, so a
+    # tracker item closes only once the landed commit is on origin/<main> (operator, 2026-11-10).
+    landing: str = "local"
 
 
 _GATE_JOB_NAME = re.compile(r"[a-z0-9][a-z0-9-]*")     # gate names are also event keys
+
+
+def _landing(repo: str, value) -> str:
+    if value not in ("local", "pr"):
+        raise ContractError(f"{repo}: landing must be \"local\" or \"pr\"")
+    return value
 
 
 def _positive_int(repo: str, where: str, key: str, value) -> int:
@@ -175,7 +184,8 @@ def load_repos(root: Path | None = None) -> dict[str, RepoSpec]:
                              data_class_floor=floor,
                              routing={k: float(v) for k, v in r.get("routing", {}).items()},
                              gate_jobs=_gate_jobs(name, r.get("gate_jobs", ())),
-                             deploy=_deploy(name, r["deploy"]) if "deploy" in r else None)
+                             deploy=_deploy(name, r["deploy"]) if "deploy" in r else None,
+                             landing=_landing(name, r.get("landing", "local")))
     return out
 
 

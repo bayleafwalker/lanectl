@@ -19,6 +19,7 @@ timeout_s = 900
 # repo root on sys.path (plain pytest fails collection in both public repos).
 # homelab-analytics: public (github). Fast suite 2679 passed in 11m on a fresh worktree.
 [repos.homelab-analytics]
+landing = "pr"     # GitHub PR + CI; tracker items close on merge
 path = "/projects/dev/homelab-analytics"
 main = "main"
 setup_cmd = "uv sync -q --extra dev"

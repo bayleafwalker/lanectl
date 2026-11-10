@@ -38,7 +38,8 @@ EVENT_TYPES: dict[str, tuple[str, ...]] = {
     "train.built": ("train_id", "base_sha", "attempts", "passed"),
     "item.landed": ("attempt_id", "train_id", "fix_commits"),
     # V1 (2026-11-10): the tracker item a landed release reports to. ok=False carries `error`;
-    # a failed sync never fails the land.
+    # a failed sync never fails the land. Optional `pending_close`: true when the release is
+    # work_complete but its repo lands by PR, so the close waits for the merge.
     "work.synced": ("work", "train_id", "closed", "ok"),
     "item.parked": ("reason",),
     "item.requeued": ("reason",),
