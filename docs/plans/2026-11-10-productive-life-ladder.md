@@ -14,7 +14,7 @@ lanes on the rung below it.
 | No routing plurality | `implement` lane: one model at weight 1.0 (`deepseek-v4-pro` is listed, not routed). `retry = "different_model"` and the learning projection have had nothing to compare. |
 | No autonomy | `integrator.toml` `autonomous_classes = []`; `lanectl run` is started by hand. |
 | A stop condition with no instrument | ADR 0001: "pause the lane if integrator minutes per landed item exceed the cost of doing the work interactively". Lane cost is reported per attempt; planner and integrator cost per landed item is not recorded. |
-| Restricted lane has no pool | vuoro-cloud routes to first-party models only, but `allocation.toml` has no Anthropic pool and the interactive reservation is 0.0. |
+| Restricted work has no route and no pool | vuoro-cloud's `data_class_floor = "restricted"` admits first-party models only (`ready.py`), but `implement` routes only OpenCode Go models, so no restricted release is eligible today. `allocation.toml` has no Anthropic pool to budget one against, and the only reservation (`opencode`) is 0.0 interactive. |
 
 The precision evidence comes from the easiest class there is: small, greenfield, test-first
 modules with a 60-second suite. homelab-analytics has an 11-minute fast suite and only `ruff` as
@@ -55,7 +55,8 @@ qualified, and the specs, not the code, are shown to be the asset.
    LaneRevision; the model is already in `external_models`).
 3. Rung 4, first steps: the devbox timer, and attribution of planner and integrator usage to
    release ids (the usage hook already records sessions).
-4. Rung 6, first step: the Anthropic pool in `allocation.toml`.
+4. Rung 6, first step: the Anthropic pool in `allocation.toml`, with an interactive reservation,
+   before any first-party model is routed for restricted work.
 5. Rung 2 starts once rung 1 has produced its first ruled product items, so the spec lane is
    measured against product releases, not lanectl's own.
 
