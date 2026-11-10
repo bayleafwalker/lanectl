@@ -36,7 +36,7 @@ def worker_for(model: str) -> str:
 
 
 def agentops_dispatch(worker: str, model: str, worktree: Path, prompt: str, status_file: Path,
-                      timeout_s: int, external: bool, env: dict | None = None, cancel_event=None) -> AdapterResult:
+                      timeout_s: int, external: bool, env: dict | None = None, cancel_event=None, stop_callback=None) -> AdapterResult:
     exe = shutil.which("agentops")
     if not exe:
         raise RuntimeError("agentops CLI not on PATH")
@@ -46,13 +46,13 @@ def agentops_dispatch(worker: str, model: str, worktree: Path, prompt: str, stat
     if external:
         cmd.append("--data-boundary-attested")
     cmd.append(prompt)
-    if cancel_event is None:
+    if cancel_event is None and stop_callback is None:
         p = subprocess.run(cmd, stdin=subprocess.DEVNULL, capture_output=True, text=True, env=env)
     else:
         from .child_process import communicate
         p = subprocess.Popen(cmd, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
                              stderr=subprocess.PIPE, text=True, env=env, start_new_session=True)
-        stdout, stderr, stopped = communicate(p, timeout_s, cancel_event)
+        stdout, stderr, stopped = communicate(p, timeout_s, cancel_event, on_stop=stop_callback)
         if stopped:
             return AdapterResult("failed", 130 if stopped == "cancelled" else 124,
                                  "native execution " + stopped, None)

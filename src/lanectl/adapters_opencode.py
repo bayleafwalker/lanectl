@@ -122,7 +122,7 @@ def _marker_text(output: str) -> str:
 
 
 def run_opencode(*, model: str, worktree: Path, prompt: str, status_file: Path,
-                 timeout_s: int, external: bool, env: dict | None = None, cancel_event=None) -> AdapterResult:
+                 timeout_s: int, external: bool, env: dict | None = None, cancel_event=None, stop_callback=None) -> AdapterResult:
     """Run OpenCode once and return its outcome, usage and escalation state."""
     started = _utcnow()
     cmd = ["opencode", "run", "--format", "json", "--model", model, "--", prompt]
@@ -144,9 +144,9 @@ def run_opencode(*, model: str, worktree: Path, prompt: str, status_file: Path,
 
     timed_out = False
     try:
-        if cancel_event is not None:
+        if cancel_event is not None or stop_callback is not None:
             from .child_process import communicate
-            output, _, stopped = communicate(proc, timeout_s, cancel_event)
+            output, _, stopped = communicate(proc, timeout_s, cancel_event, on_stop=stop_callback)
             timed_out = bool(stopped)
         else:
             output, _ = proc.communicate(timeout=timeout_s)

@@ -197,7 +197,7 @@ def _record(outcome: str, exit_code: int, final_tail: str, reason: str | None,
 
 
 def _run_child(cmd: list[str], worktree: Path, timeout_s: float,
-               env: dict | None = None, cancel_event=None) -> tuple[str, str, int, bool]:
+               env: dict | None = None, cancel_event=None, stop_callback=None) -> tuple[str, str, int, bool]:
     """Run the CLI in its own process group so a timeout kills descendants."""
     proc = subprocess.Popen(
         cmd,
@@ -209,9 +209,9 @@ def _run_child(cmd: list[str], worktree: Path, timeout_s: float,
         start_new_session=True,
         env=env,
     )
-    if cancel_event is not None:
+    if cancel_event is not None or stop_callback is not None:
         from .child_process import communicate
-        stdout, stderr, stopped = communicate(proc, timeout_s, cancel_event)
+        stdout, stderr, stopped = communicate(proc, timeout_s, cancel_event, on_stop=stop_callback)
         return stdout or "", stderr or "", 130 if stopped == "cancelled" else 124 if stopped else proc.returncode, bool(stopped)
     try:
         stdout, stderr = proc.communicate(timeout=timeout_s)
@@ -226,7 +226,7 @@ def _run_child(cmd: list[str], worktree: Path, timeout_s: float,
 
 
 def run_claude(*, model: str, worktree: Path, prompt: str, status_file: Path,
-               timeout_s: float, external: bool, env: dict | None = None, cancel_event=None) -> AdapterResult:
+               timeout_s: float, external: bool, env: dict | None = None, cancel_event=None, stop_callback=None) -> AdapterResult:
     """Run Claude Code headless and return a normalised result.
 
     A timeout is recorded as ``failed`` with exit code 124.  The status file is
@@ -255,6 +255,8 @@ def run_claude(*, model: str, worktree: Path, prompt: str, status_file: Path,
     cmd[0] = exe
     try:
         kwargs = {"cancel_event": cancel_event} if cancel_event is not None else {}
+        if stop_callback is not None:
+            kwargs["stop_callback"] = stop_callback
         stdout, stderr, exit_code, timed_out = _run_child(cmd, worktree, timeout_s, env, **kwargs)
     except OSError as exc:
         result = _result("failed", 1, f"claude launch failed: {exc}", None)
