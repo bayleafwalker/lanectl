@@ -25,7 +25,7 @@ from .contracts import check_id
 from .gates.failonbase import run_tests_at
 from .lint_release import classify_failure
 from .ready import _first_party
-from .sandbox import Sandbox, from_lane
+from .sandbox import from_lane
 
 SCHEMA = 'lanectl-specification/v1'
 MAX_RESPONSE_BYTES = 65536
@@ -177,8 +177,8 @@ def _base_lint(path, repo, lane, timeout_s):
         data = (path / 'files' / name).read_bytes()
         def wrap(cmd, wt):
             sb = from_lane(lane.sandbox, (str(wt),), timeout_s + 30)
-            sb = Sandbox(sb.mode, tuple(dict.fromkeys((*sb.readonly, str(repo.path), str(home()), str(state_dir())))),
-                         sb.writable, sb.timeout_s)
+            sb = replace(sb, readonly=tuple(dict.fromkeys(
+                (*sb.readonly, str(repo.path), str(home()), str(state_dir())))))
             return sb.wrap_shell(cmd, wt)
         code, output = run_tests_at(repo.path, rel.base_sha, {name: data}, repo.test_cmd,
                                     repo.setup_cmd, timeout=timeout_s, wrap=wrap, tail=None)
