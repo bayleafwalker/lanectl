@@ -272,6 +272,8 @@ def admit(lane_name: str, log: EventLog, only: str | None = None) -> Claim | str
             reasons = readiness(rel, lane, repos)
             if _coordinated(rel.repo) and lane.sandbox.get("mode") != "systemd-run":
                 reasons.append("coordinated execution requires credential-isolating systemd sandbox")
+            if _coordinated(rel.repo) and getattr(repos.get(rel.repo), 'train_isolation', 'namespace') != 'namespace':
+                reasons.append("coordinated execution requires namespace train isolation")
             if _coordinated(rel.repo) and (not rel.work or not rel.work_complete
                                               or rel.work.split("#", 1)[0] != rel.repo):
                 reasons.append("coordinated releases require a complete Work outcome")
@@ -420,6 +422,8 @@ def _coordinate_execution(native):
                 return native(c, log, adapter_fn)
             if c.lane.sandbox.get("mode") != "systemd-run":
                 raise coordination.CoordinationError("coordinated execution requires credential-isolating systemd sandbox")
+            if c.repo.train_isolation != 'namespace':
+                raise coordination.CoordinationError("coordinated execution requires namespace train isolation")
             if (not c.rel.work or not c.rel.work_complete
                     or c.rel.work.split("#", 1)[0] != c.rel.repo):
                 raise coordination.CoordinationError("coordinated releases require a complete Work outcome")
@@ -680,8 +684,16 @@ def _merge_failure_reason(p: subprocess.CompletedProcess) -> str:
 
 
 def _train_command(repo, checkout: Path, command: str):
-    """Execute candidate train setup/check without operator credential access."""
+    """Apply the reviewed repository's train boundary, never silently fall back."""
     from .config import home
+    if repo.train_isolation == 'environment':
+        if _coordinated(repo.name):
+            return subprocess.CompletedProcess(command, 1, '', 'coordinated execution requires namespace train isolation')
+        try:
+            return subprocess.run(command, shell=True, cwd=checkout, capture_output=True, text=True,
+                                  env=sandboxing.transport_environment(), timeout=1800)
+        except (OSError, subprocess.TimeoutExpired) as exc:
+            return subprocess.CompletedProcess(command, 1, '', f'train command failed: {type(exc).__name__}')
     sb = sandboxing.for_train(readonly=(str(state_dir().resolve()), str(home().resolve()),
                                        str(Path(repo.path).resolve())),
                               writable=(str(checkout.resolve()),), timeout_s=1800)

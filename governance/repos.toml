@@ -48,6 +48,11 @@ env_allow = ["PATH", "HOME"]
 
 # sovite: public (github). Full suite exit 0 in 8m on a fresh worktree.
 [repos.sovite]
+# Explicit uncoordinated exception: user namespaces project trusted root-owned
+# ancestors as UID 65534. Actual comparison: 2797 passed outside; 66 failures +
+# 25 setup errors inside. Keep environment stripping; disk credentials remain
+# readable by same-user train code. Never coordinate this mode.
+train_isolation = "environment"
 path = "/projects/dev/sovite"
 main = "main"
 setup_cmd = "uv sync -q --extra test"

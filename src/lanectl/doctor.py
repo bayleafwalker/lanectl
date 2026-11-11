@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import json
 import math
+import tomllib
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -103,6 +104,28 @@ def check_events(log: EventLog) -> tuple[list[dict] | None, list[Finding]]:
     except Exception as exc:   # unreadable or torn: the rest of the log is unusable
         return None, [Finding(ERROR, "events", str(exc))]
     return events, [Finding(OK, "events", f"{len(events)} event(s)")]
+
+
+def check_train_isolation(root: Path, repos: dict[str, RepoSpec]) -> list[Finding]:
+    path = root / 'governance/vuoro.toml'
+    if not path.exists():
+        return []
+    try:
+        coordinated = tomllib.loads(path.read_text()).get('repos', {})
+    except (OSError, ValueError):
+        return [Finding(ERROR, 'train-isolation', 'cannot read coordination configuration')]
+    if not coordinated:
+        return []
+    unfenced = {name for name, repo in repos.items() if repo.train_isolation != 'namespace'}
+    findings = []
+    unsafe = sorted(unfenced.intersection(coordinated))
+    if unsafe:
+        findings.append(Finding(ERROR, 'train-isolation',
+            'coordinated repos require namespace isolation: ' + ', '.join(unsafe)))
+    if unfenced:
+        findings.append(Finding(WARN, 'train-isolation',
+            'environment-only trains can read same-user credential files: ' + ', '.join(sorted(unfenced))))
+    return findings
 
 
 def check_policy(root: Path) -> list[Finding]:
@@ -247,6 +270,7 @@ def run(log: EventLog, *, root: Path | None = None,
     findings += release_findings
     repos, repo_findings = check_repos(base)
     findings += repo_findings
+    findings += check_train_isolation(base, repos)
     events, event_findings = check_events(log)
     findings += event_findings
     findings += check_policy(base)

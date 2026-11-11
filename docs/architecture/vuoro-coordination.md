@@ -29,9 +29,10 @@ checks the authenticated handshake and catalog without claiming work.
 ### Workstation service activation
 
 Keep coordination disabled until runner enrollment is approved and a scoped
-credential is installed outside the checkout. Train setup and checks run in a
-mandatory namespace with a minimal environment and known credential paths
-inaccessible. This protects direct file and environment access; it is not full
+credential is installed outside the checkout. Coordinated train setup and checks
+require `train_isolation = "namespace"` (the repository default): a minimal
+environment and known credential paths made inaccessible. This protects direct
+file and environment access; it is not full
 isolation against arbitrary hostile code sharing the operator's user identity.
 The credential drop-in alone does not provide that isolation. Read the actual environment name
 from the authenticated handshake; do not infer it from the URL. Validate the
@@ -50,6 +51,21 @@ environment would also expose it to candidate train checks. The drop-in leaves
 the credential value out of command arguments, unit text and process environments.
 It does not enable the timer or select a served event authority. Keep JSONL
 authoritative until the separate served-store qualification and cutover below.
+
+Repository governance may explicitly select `train_isolation = "environment"`
+for uncoordinated repositories. This strips inherited secrets but preserves host
+ownership IDs; it provides no credential-file barrier. Sovite uses this exception
+because its ownership checks reject UID 65534 projections under user namespaces:
+its real baseline passed 2,797 tests while namespace execution failed 66 with
+25 setup errors. The checks remain unchanged. Such trains can read same-user
+credential files, including runner credentials for other repositories. With
+coordination configured, `doctor` names every environment-only repository;
+coordinated admission and execution refuse this mode. No command silently falls
+back from a failed namespace. A different fenced backend needs separate full-suite
+qualification before this exception can be removed.
+
+A failed post-merge setup now fails the train rather than allowing a green check
+to hide it. Rechecks and historical qualification use the same selected boundary.
 
 ## Native integration API
 

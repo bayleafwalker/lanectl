@@ -79,6 +79,7 @@ class RepoSpec:
     # "local": `land` is the landing. "pr": main reaches the forge through a reviewed PR, so a
     # tracker item closes only once the landed commit is on origin/<main> (operator, 2026-11-10).
     landing: str = "local"
+    train_isolation: str = "namespace"
 
 
 _GATE_JOB_NAME = re.compile(r"[a-z0-9][a-z0-9-]*")     # gate names are also event keys
@@ -87,6 +88,12 @@ _GATE_JOB_NAME = re.compile(r"[a-z0-9][a-z0-9-]*")     # gate names are also eve
 def _landing(repo: str, value) -> str:
     if value not in ("local", "pr"):
         raise ContractError(f"{repo}: landing must be \"local\" or \"pr\"")
+    return value
+
+
+def _train_isolation(repo: str, value) -> str:
+    if value not in ("namespace", "environment"):
+        raise ContractError(f'{repo}: train_isolation must be "namespace" or "environment"')
     return value
 
 
@@ -185,7 +192,8 @@ def load_repos(root: Path | None = None) -> dict[str, RepoSpec]:
                              routing={k: float(v) for k, v in r.get("routing", {}).items()},
                              gate_jobs=_gate_jobs(name, r.get("gate_jobs", ())),
                              deploy=_deploy(name, r["deploy"]) if "deploy" in r else None,
-                             landing=_landing(name, r.get("landing", "local")))
+                             landing=_landing(name, r.get("landing", "local")),
+                             train_isolation=_train_isolation(name, r.get("train_isolation", "namespace")))
     return out
 
 
