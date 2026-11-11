@@ -38,7 +38,18 @@ The credential drop-in alone does not provide that isolation. Read the actual en
 from the authenticated handshake; do not infer it from the URL. Validate the
 configured repository with `lanectl coordinate` before changing its recurring
 service. The optional `contrib/systemd/lanectl-tick-coordinated.conf` adds only
-`LoadCredential=` to the existing service. Install it after validation:
+credential loading and the workstation CA bundle to the existing service. For a
+one-off check, keep the draft configuration in a separate reviewed worktree:
+
+```sh
+systemd-run --user --pipe --wait --collect \
+  --setenv=LANECTL_HOME=/path/to/reviewed-worktree \
+  --setenv=SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt \
+  -p LoadCredential=lanectl-runner:"$HOME/.config/vuoro/credentials/lanectl-runner.token" \
+  "$HOME/.local/bin/lanectl" coordinate example
+```
+
+Install the optional drop-in only after validation:
 
 ```sh
 install -Dm0644 contrib/systemd/lanectl-tick-coordinated.conf \
