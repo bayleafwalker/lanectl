@@ -6,7 +6,18 @@ import shlex
 import subprocess
 import sys
 
+import pytest
+
 from lanectl import runner, sandbox
+
+
+@pytest.mark.parametrize('path', ['/tmp/credential dir', "/tmp/credential'dir", '/tmp/credential\\dir'])
+def test_unsupported_credential_paths_fail_closed_before_raw_argv(path, tmp_path):
+    sb=sandbox.Sandbox('systemd-run', (), (str(tmp_path),), 60, inaccessible=(path,))
+    with pytest.raises(ValueError,match='credential paths'):
+        sb.prefix(tmp_path)
+    with pytest.raises(ValueError,match='credential paths'):
+        sb.wrap_shell('true',tmp_path)
 
 
 def synthetic_environment(tmp_path):

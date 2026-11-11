@@ -45,7 +45,10 @@ class Sandbox:
             argv.append(f"--unit={self.unit}")
         argv += [f"-pReadOnlyPaths={p}" for p in self.readonly]
         argv += [f"-pReadWritePaths={p}" for p in self.writable]
-        argv += [f"-pInaccessiblePaths=-{shlex.quote(p)}" for p in self.inaccessible]
+        for path in self.inaccessible:
+            if any(char.isspace() or char in "'\"\\\0" for char in path):
+                raise ValueError('credential paths with whitespace or quoting are unsupported')
+            argv.append(f"-pInaccessiblePaths=-{path}")
         source = dict(self.environment) if self.environment is not None else os.environ
         for name in PASS_ENV:
             val = env_path if (name == "PATH" and env_path) else source.get(name)

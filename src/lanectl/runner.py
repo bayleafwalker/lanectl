@@ -689,7 +689,7 @@ def _train_command(repo, checkout: Path, command: str):
         return subprocess.run(sb.wrap_shell(command, checkout), shell=True, cwd=checkout,
                               capture_output=True, text=True,
                               env=sandboxing.transport_environment(), timeout=1830)
-    except (OSError, RuntimeError, subprocess.TimeoutExpired) as exc:
+    except (OSError, RuntimeError, ValueError, subprocess.TimeoutExpired) as exc:
         return subprocess.CompletedProcess(command, 1, '', f'train isolation failed: {type(exc).__name__}')
 
 
