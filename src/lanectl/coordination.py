@@ -59,7 +59,9 @@ class VuoroClient:
         self._opener = build_opener(_NoRedirect)
 
     def _request(self, path, body=None):
-        headers = {'X-Vuoro-Client-Protocol': '1', 'Accept': 'application/json'}
+        from . import __version__
+        headers = {'X-Vuoro-Client-Protocol': '1', 'Accept': 'application/json',
+                   'User-Agent': f'lanectl/{__version__}'}
         token = self.token_resolver()
         if not isinstance(token, str) or not token or '\n' in token or '\r' in token:
             raise CoordinationError('runner credential unavailable')

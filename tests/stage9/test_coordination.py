@@ -20,7 +20,7 @@ def expires(seconds=3600):
 
 @contextmanager
 def owner():
-    state = {'calls': [], 'effects': {}, 'tail': None, 'deny': None, 'drop': None,
+    state = {'calls': [], 'effects': {}, 'tail': None, 'deny': None, 'drop': None, 'user_agents': [],
              'environment': 'test', 'correlation': None, 'completion': {'authority':'sprintctl','state':'ok',
              'as_of':'2026-11-10T00:00:00Z','item':{'work_id':123,'status':'active','resolution':None}}, 'lease': {'lease_id': 'lease_test', 'state': 'active',
              'generation': 1, 'expires_at': expires(), 'heartbeat_interval_seconds': 20}}
@@ -38,6 +38,7 @@ def owner():
             self.wfile.write(data)
 
         def do_GET(self):
+            state['user_agents'].append(self.headers['User-Agent'])
             assert self.headers['Authorization'] == 'Bearer synthetic-runner'
             if self.path == '/api/meta/v1/handshake':
                 return self.respond({'client_protocol': {'minimum': 1, 'maximum': 1},
@@ -47,6 +48,7 @@ def owner():
                 {'name': 'work.' + op + '-v1'} for op in OPS]})
 
         def do_POST(self):
+            state['user_agents'].append(self.headers['User-Agent'])
             assert self.path == '/api/invoke/v1'
             assert self.headers['Authorization'] == 'Bearer synthetic-runner'
             p = json.loads(self.rfile.read(int(self.headers['Content-Length'])))
@@ -128,6 +130,8 @@ def test_full_protocol_and_owner_retains_settlement(tmp_path):
         acquire = s['calls'][1]['arguments']
         assert 'ttl_seconds' not in acquire
         assert s['tail']['chain_seq'] == 1 and s['tail']['chain_prev_digest'].startswith('sha256:')
+        from lanectl import __version__
+        assert s['user_agents'] and set(s['user_agents']) == {f'lanectl/{__version__}'}
 
 
 def test_restart_revalidates_lease_without_new_registration(tmp_path):
