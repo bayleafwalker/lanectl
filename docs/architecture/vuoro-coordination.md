@@ -29,10 +29,11 @@ checks the authenticated handshake and catalog without claiming work.
 ### Workstation service activation
 
 Keep coordination disabled until runner enrollment is approved and a scoped
-credential is installed outside the checkout. Candidate train checks currently
-run as the operator user and can read its credential files: sandbox and deny
-those paths before recurring activation. The credential drop-in alone does not
-provide that isolation. Read the actual environment name
+credential is installed outside the checkout. Train setup and checks run in a
+mandatory namespace with a minimal environment and known credential paths
+inaccessible. This protects direct file and environment access; it is not full
+isolation against arbitrary hostile code sharing the operator's user identity.
+The credential drop-in alone does not provide that isolation. Read the actual environment name
 from the authenticated handshake; do not infer it from the URL. Validate the
 configured repository with `lanectl coordinate` before changing its recurring
 service. The optional `contrib/systemd/lanectl-tick-coordinated.conf` adds only
