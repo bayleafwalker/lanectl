@@ -41,6 +41,30 @@ def test_draft_has_independent_review_and_fails_on_real_base(estate):
     assert json.loads((d / 'specification.json').read_text())['review']['verdict'] == 'accept'
 
 
+def test_base_lint_preserves_runner_credential_file_fence(estate, tmp_path, monkeypatch):
+    from dataclasses import replace
+    from lanectl.config import load_lane, load_repos
+    repo, release, _ = estate
+    credential = tmp_path / 'synthetic-credentials' / 'runner'
+    credential.parent.mkdir()
+    credential.write_text('synthetic-only')
+    observed = tmp_path / 'observed-lint-boundary'
+    monkeypatch.setenv('CREDENTIALS_DIRECTORY', str(credential.parent))
+    acceptance = (
+        'from pathlib import Path\n'
+        f'try: Path({str(credential)!r}).read_bytes()\n'
+        f'except (PermissionError, FileNotFoundError): Path({str(observed)!r}).write_text("blocked")\n'
+        f'else: Path({str(observed)!r}).write_text("leaked")\n' + ACC)
+    release('lint-secret-fence', acceptance)
+    path = Path(os.environ['LANECTL_HOME']) / 'backlog/lint-secret-fence'
+    assert spec._base_lint(path, load_repos()['target'], load_lane('implement'), 30) == []
+    assert observed.read_text() == 'blocked'
+    real = spec.from_lane
+    monkeypatch.setattr(spec, 'from_lane', lambda *a, **k: replace(real(*a, **k), inaccessible=()))
+    assert spec._base_lint(path, load_repos()['target'], load_lane('implement'), 30) == []
+    assert observed.read_text() == 'leaked'
+
+
 def test_planner_alone_publishes_and_edits_invalidate_review(estate, capsys):
     d = make(estate)
     f = d / 'files/tests/test_acc_spec.py'
