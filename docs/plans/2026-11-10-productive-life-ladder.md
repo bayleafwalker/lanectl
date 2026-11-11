@@ -81,7 +81,15 @@ sprintctl integration beyond carrying a work id on the release.
 | 3 | Exit met | implement rev 3 routes deepseek-v4-pro at 0.25; `hla-freshness-recovery-a2` was the first `retry = "different_model"` and changed the outcome (a1 Flash rejected, a2 Pro landed). |
 | 4 | Instruments built (v0.1.28) | `lr-usage-focus`, `lr-operator-cost`, `lr-tick`, `lr-otel-export`, `lr-model-windows`: 5 releases, 5 attempts, all first-time gate passes, 1 integrator fix (model-error: a wall-clock test). Timer units in `contrib/systemd/`, not enabled (installing a recurring job needs the operator). v0.1.29: `lr-focus-session` makes focus per Claude session (the operator found the machine-wide focus would misbill concurrent sessions); a1 rejected for editing existing tests (planner error: stale base and an outcome that asked for it), a2 on V4 Pro landed. allocation rev 10 models V4 Pro's own weekly limit. |
 | 6 | Anthropic provider added | allocation rev 9: interactive sessions priced at API-equivalent rates; placeholder window, interactive reservation 1.0. |
-| 5 | Client activation preparation (2026-11-11); live qualification pending | Native coordination and canonical merge-before-close shipped in 0.2.0. Actual owner-schema verification accepts seven requests and rejects incompatible requests. Optional systemd credential loading keeps the token value outside candidate-check environments; 763 tests pass. Runner enrolled and live discovery passes with a product User-Agent; public-work invocation returned `identity-required` (HTTP 401), escalated to the owner. No repository coordination or recurring activation enabled; the first real product release remains pending and JSONL remains authoritative. |
+| 5 | Client activation prepared (0.2.1); live product qualification pending | Runner enrolled; credential-loaded live discovery passes with a product User-Agent. Actual owner-schema verification accepts seven requests and rejects incompatible requests; 782 tests pass. Public-work invocation returned `identity-required` (HTTP 401), escalated to the owner. No repository coordination or recurring activation enabled; the first real product release remains pending and JSONL remains authoritative. |
+
+The 0.2.1 train boundary was exercised with actual repository setup/check commands:
+namespace execution passes for homelab-analytics, lanectl and appservice. Sovite's
+ownership guards reject user-namespace UID projections, so its explicit
+environment-only mode retains normal ownership and matches its full baseline:
+2,797 passed, 1,140 skipped. Coordinated work refuses that mode; `doctor` reports
+its remaining same-user credential-file exposure when coordination is configured.
+An ownership-compatible fenced backend is separate served work `lanectl#2889`.
 
 First operator-cost reading (estimates, corrected): lane work $0.03 per landed release.
 Operator cost per landed release is not yet measurable. The Stop hook is installed in the global
