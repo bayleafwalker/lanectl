@@ -257,12 +257,15 @@ def attention_reasons(snapshot, *, now=None, stale_after_s=None):
     for name, fact in facts.items():
         if fact.get("state") == "unknown":
             if name in READS:
-                reasons.append(_reason("owner-unknown", [{"fact": name, "identifiers": {}}],
+                identifiers = {key: snapshot[key] for key in ("item_id", "run_id", "attempt_id")
+                               if snapshot.get(key) is not None}
+                reasons.append(_reason("owner-unknown", [{"fact": name, "identifiers": identifiers}],
                                        ["lanectl lifecycle --repo R --item N"]))
     lease = facts.get("work.lease.read-v1", {})
     if lease.get("state") == "unknown" or (lease.get("state") == "observed" and
                                               lease.get("value", {}).get("lease") not in ("active", "held", None)):
-        reasons.append(_reason("lease-uncertainty", [{"fact": "work.lease.read-v1", "identifiers": {}}],
+        reasons.append(_reason("lease-uncertainty", [{"fact": "work.lease.read-v1", "identifiers": {
+            "item_id": snapshot.get("item_id")}}],
                                ["lanectl lifecycle --repo R --item N", "owner work lease read"] ))
         # Kept for callers of the initial UI-01 surface; new consumers should
         # use the precise, documented ``lease-uncertainty`` code above.
@@ -274,7 +277,8 @@ def attention_reasons(snapshot, *, now=None, stale_after_s=None):
         value = item.get("value", {})
         # The item result itself stays opaque; only catalog-independent terms are classified.
         if value.get("state") in ("pending-verification", "awaiting-verification"):
-            reasons.append(_reason("pending-verification", [{"fact": "work.public.item-v1", "identifiers": {}}],
+            reasons.append(_reason("pending-verification", [{"fact": "work.public.item-v1", "identifiers": {
+                "item_id": snapshot.get("item_id")}}],
                                    ["lanectl lifecycle --repo R --item N", "owner work item read"]))
     attempt, train, receipt = (_values(facts.get(name, {})) for name in ("local.attempt", "local.train", "local.receipt"))
     gates = [e for e in attempt if e.get("type") == "gate.result" and not e.get("data", {}).get("passed")]
@@ -300,7 +304,8 @@ def attention_reasons(snapshot, *, now=None, stale_after_s=None):
             except (AttributeError, ValueError):
                 continue
             if age > stale_after_s:
-                reasons.append(_reason("stale-deploy", [{"fact": name, "identifiers": {"observed_at": stamp}}],
+                reasons.append(_reason("stale-deploy", [{"fact": name, "identifiers": {
+                    "item_id": snapshot.get("item_id"), "observed_at": stamp}}],
                                        ["lanectl deploy list", "lanectl lifecycle --repo R --item N"]))
                 break
     return reasons
@@ -311,8 +316,11 @@ def render_rows(rows):
     lines = ["ITEM  ATTEMPT  OWNER  LOCAL  REASONS"]
     for row in rows:
         facts = row["facts"]
-        owner = ",".join(name.rsplit(".", 1)[0] for name in READS
-                         if facts.get(name, {}).get("state") == "unknown") or "observed"
+        unknown_owner = [name.rsplit(".", 1)[0] for name in READS
+                         if facts.get(name, {}).get("state") == "unknown"]
+        owner = ",".join(unknown_owner) if unknown_owner else "observed"
+        if not unknown_owner and not any(facts.get(name, {}).get("state") == "observed" for name in READS):
+            owner = "unknown"
         local = ",".join(name[6:] for name in LOCAL_FACTS
                          if facts.get(name, {}).get("state") == "observed") or "unknown"
         codes = ",".join(reason["code"] for reason in row.get("reasons", ())) or "-"
