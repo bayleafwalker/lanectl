@@ -14,6 +14,8 @@ import time
 import tomllib
 import threading
 import json
+import tempfile
+from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -268,6 +270,8 @@ def admit(lane_name: str, log: EventLog, only: str | None = None) -> Claim | str
         skipped = []
         for rel, v in ready:
             reasons = readiness(rel, lane, repos)
+            if _coordinated(rel.repo) and lane.sandbox.get("mode") != "systemd-run":
+                reasons.append("coordinated execution requires credential-isolating systemd sandbox")
             if _coordinated(rel.repo) and (not rel.work or not rel.work_complete
                                               or rel.work.split("#", 1)[0] != rel.repo):
                 reasons.append("coordinated releases require a complete Work outcome")
@@ -414,6 +418,8 @@ def _coordinate_execution(native):
             owner = coordination.configured(c.repo.name)
             if owner is None:
                 return native(c, log, adapter_fn)
+            if c.lane.sandbox.get("mode") != "systemd-run":
+                raise coordination.CoordinationError("coordinated execution requires credential-isolating systemd sandbox")
             if (not c.rel.work or not c.rel.work_complete
                     or c.rel.work.split("#", 1)[0] != c.rel.repo):
                 raise coordination.CoordinationError("coordinated releases require a complete Work outcome")
@@ -497,16 +503,15 @@ def execute(c: Claim, log: EventLog, adapter_fn=None, *, lease_guard=None,
         sandbox_holder.append(sb)
     acc = _copy_acceptance(rel, wt)
     seed_sha = _commit_all(wt, f"lane(acceptance): {rel.id} r{rel.revision}")
-    native_env = None
+    native_env = dict(os.environ)
+    native_env.pop("CREDENTIALS_DIRECTORY", None)
     vuoro_config = home() / "governance" / "vuoro.toml"
     if vuoro_config.exists():
         config = tomllib.loads(vuoro_config.read_text())
-        native_env = dict(os.environ)
         for target in config.get("repos", {}).values():
             native_env.pop(target.get("token_env", ""), None)
     if repo.setup_cmd:
-        subprocess.run(repo.setup_cmd, shell=True, cwd=wt, capture_output=True,
-                       **({"env": native_env} if native_env is not None else {}))
+        _train_command(repo, wt, repo.setup_cmd)
 
     runs = state_dir() / "runs"
     runs.mkdir(exist_ok=True)
@@ -674,6 +679,35 @@ def _merge_failure_reason(p: subprocess.CompletedProcess) -> str:
     return f"merge failed: {(lines[-1] if lines else '')[:200]}"
 
 
+def _train_command(repo, checkout: Path, command: str):
+    """Execute candidate train setup/check without operator credential access."""
+    from .config import home
+    sb = sandboxing.for_train(readonly=(str(state_dir().resolve()), str(home().resolve()),
+                                       str(Path(repo.path).resolve())),
+                              writable=(str(checkout.resolve()),), timeout_s=1800)
+    try:
+        return subprocess.run(sb.wrap_shell(command, checkout), shell=True, cwd=checkout,
+                              capture_output=True, text=True,
+                              env=sandboxing.transport_environment(), timeout=1830)
+    except (OSError, RuntimeError, subprocess.TimeoutExpired) as exc:
+        return subprocess.CompletedProcess(command, 1, '', f'train isolation failed: {type(exc).__name__}')
+
+
+@contextmanager
+def _historical_checkout(repo, checkout, tip):
+    """Never grant candidate checks writable access to the canonical checkout."""
+    if checkout.exists() and checkout.resolve() != Path(repo.path).resolve():
+        yield checkout
+        return
+    with tempfile.TemporaryDirectory(prefix="lanectl-historical-train-") as folder:
+        scratch = Path(folder) / 'checkout'
+        git(repo.path, 'worktree', 'add', '--detach', '-q', str(scratch), tip)
+        try:
+            yield scratch
+        finally:
+            _discard(repo, scratch)
+
+
 def build_train(log: EventLog, repo_name: str, attempt_ids: list[str] | None = None) -> str:
     repo = load_repos()[repo_name]
     cands = [c for c in candidates(log, repo_name) if not attempt_ids or c["attempt_id"] in attempt_ids]
@@ -692,7 +726,7 @@ def build_train(log: EventLog, repo_name: str, attempt_ids: list[str] | None = N
     # merges, since candidates may change dependencies.  A setup failure here
     # excludes nothing: the merges proceed and any hook failure is reported.
     if repo.setup_cmd:
-        subprocess.run(repo.setup_cmd, shell=True, cwd=wt, capture_output=True)
+        _train_command(repo, wt, repo.setup_cmd)
     included, excluded = [], []
     for c in cands:
         subject = f"Merge lane/{c['attempt_id']}: {c['title']}"
@@ -714,10 +748,9 @@ def build_train(log: EventLog, repo_name: str, attempt_ids: list[str] | None = N
                                  "reason": _merge_failure_reason(q)})
                 continue
         included.append(c["attempt_id"])
-    if repo.setup_cmd:
-        subprocess.run(repo.setup_cmd, shell=True, cwd=wt, capture_output=True)
+    setup = _train_command(repo, wt, repo.setup_cmd) if repo.setup_cmd else None
     checked_sha = git(wt, "rev-parse", "HEAD")
-    p = subprocess.run(repo.check_cmd, shell=True, cwd=wt, capture_output=True, text=True)
+    p = setup if setup is not None and setup.returncode else _train_command(repo, wt, repo.check_cmd)
     passed = (p.returncode == 0 and bool(included)
               and git(wt, "rev-parse", "HEAD") == checked_sha
               and not git(wt, "status", "--porcelain", "--untracked-files=no"))
@@ -760,17 +793,17 @@ def land(log: EventLog, train_id: str) -> str:
         # Historical records predate commit-bound checks. Requalify rather than
         # treating a historical pass as evidence for an arbitrary current tip.
         checkout = Path(d["worktree"])
-        if not checkout.exists():
-            if tip != git(repo.path, "rev-parse", repo.main):
-                return f"{train_id}: missing checked tip; rebuild the train"
-            checkout = repo.path
-        if (git(checkout, "rev-parse", "HEAD") != tip
-                or git(checkout, "status", "--porcelain", "--untracked-files=no")):
-            return f"{train_id}: historical worktree differs from train tip; rebuild"
-        checked = subprocess.run(repo.check_cmd, shell=True, cwd=checkout, capture_output=True, text=True)
-        if (checked.returncode or git(checkout, "rev-parse", "HEAD") != tip
-                or git(checkout, "status", "--porcelain", "--untracked-files=no")):
-            return f"{train_id}: failed recheck; not landing"
+        if not checkout.exists() and tip != git(repo.path, "rev-parse", repo.main):
+            return f"{train_id}: missing checked tip; rebuild the train"
+        with _historical_checkout(repo, checkout, tip) as checkout:
+            if (git(checkout, "rev-parse", "HEAD") != tip
+                    or git(checkout, "status", "--porcelain", "--untracked-files=no")):
+                return f"{train_id}: historical worktree differs from train tip; rebuild"
+            setup = _train_command(repo, checkout, repo.setup_cmd) if repo.setup_cmd else None
+            checked = setup if setup is not None and setup.returncode else _train_command(repo, checkout, repo.check_cmd)
+            if (checked.returncode or git(checkout, "rev-parse", "HEAD") != tip
+                    or git(checkout, "status", "--porcelain", "--untracked-files=no")):
+                return f"{train_id}: failed recheck; not landing"
         d = dict(d, checked_sha=tip)
         log.append("train.built", d)
     requires_deploy = repo.deploy is not None
@@ -958,7 +991,8 @@ def recheck_train(log: EventLog, train_id: str) -> str:
             log.append('train.built', dict(built, passed=False, checked_sha=None,
                        check_tail='worktree differs from train tip or has tracked changes'))
             return f'{train_id}: dirty or mismatched worktree; not checked'
-        p = subprocess.run(repo.check_cmd, shell=True, cwd=checkout, capture_output=True, text=True)
+        setup = _train_command(repo, checkout, repo.setup_cmd) if repo.setup_cmd else None
+        p = setup if setup is not None and setup.returncode else _train_command(repo, checkout, repo.check_cmd)
         passed = (p.returncode == 0 and git(checkout, 'rev-parse', 'HEAD') == tip
                   and git(repo.path, 'rev-parse', f'train/{train_id}') == tip
                   and not git(checkout, 'status', '--porcelain', '--untracked-files=no'))
