@@ -65,6 +65,22 @@ def test_owner_success_only_after_land_and_no_tracker_double_settlement(estate,m
     assert [e['data'] for e in log.read() if e['type']=='work.synced'][-1]['owner_reported']
 
 
+def test_runner_credential_is_stripped_for_uncoordinated_work(estate,monkeypatch):
+    _,release,log=estate
+    release('local-proof',TEST)
+    configure(monkeypatch)
+    path=Path(os.environ['LANECTL_HOME'])/'governance'/'vuoro.toml'
+    path.write_text(path.read_text().replace('[repos.target]','[repos.other]'))
+    monkeypatch.setattr(coordination,'configured',lambda *a,**k:None)
+    observed=[]
+    def worker(**kwargs):
+        observed.append(kwargs['env'])
+        return good(**kwargs)
+    runner.execute(runner.admit('implement',log),log,adapter_fn=worker)
+    assert observed and observed[0] is not None
+    assert 'LANECTL_TEST_TOKEN' not in observed[0]
+
+
 def test_revoked_owner_cannot_accept_candidate(estate,monkeypatch):
     _,release,log=estate
     release('revoked-proof',TEST);_set_work('revoked-proof','target#12',True)

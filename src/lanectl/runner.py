@@ -498,9 +498,9 @@ def execute(c: Claim, log: EventLog, adapter_fn=None, *, lease_guard=None,
     acc = _copy_acceptance(rel, wt)
     seed_sha = _commit_all(wt, f"lane(acceptance): {rel.id} r{rel.revision}")
     native_env = None
-    if lease_guard is not None:
-        from .config import home
-        config = tomllib.loads((home() / "governance" / "vuoro.toml").read_text())
+    vuoro_config = home() / "governance" / "vuoro.toml"
+    if vuoro_config.exists():
+        config = tomllib.loads(vuoro_config.read_text())
         native_env = dict(os.environ)
         for target in config.get("repos", {}).values():
             native_env.pop(target.get("token_env", ""), None)
@@ -513,11 +513,6 @@ def execute(c: Claim, log: EventLog, adapter_fn=None, *, lease_guard=None,
     shims = sb.shim_dir(state_dir() / "shims" / c.attempt_id, ("opencode", "codex", "claude"))
     env = dict(native_env or os.environ, PATH=f"{shims}{os.pathsep}{os.environ.get('PATH', '')}") if shims else native_env
     if lease_guard is not None:
-        from .config import home
-        config = tomllib.loads((home() / "governance" / "vuoro.toml").read_text())
-        env = dict(os.environ) if env is None else env
-        for target in config.get("repos", {}).values():
-            env.pop(target.get("token_env", ""), None)
         lease_guard.assert_active()
     main_before = _main_fingerprint(repo)
     started = time.monotonic()

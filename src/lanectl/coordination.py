@@ -360,7 +360,8 @@ def configured(repo_name, *, root=None, journal_path=None):
     """Load opt-in protected governance; credentials are resolved only at request time.
 
     [repos.NAME] in governance/vuoro.toml requires endpoint, repo_id,
-    expected_environment and token_env. Missing configuration disables coordination.
+    expected_environment and exactly one of token_env or credential_name.
+    Missing configuration disables coordination.
     """
     from .config import home
     from .events import state_dir
@@ -370,10 +371,30 @@ def configured(repo_name, *, root=None, journal_path=None):
     raw = tomllib.loads(config.read_text()).get('repos', {}).get(repo_name)
     if raw is None:
         return None
-    required = ('endpoint', 'repo_id', 'expected_environment', 'token_env')
+    required = ('endpoint', 'repo_id', 'expected_environment')
     if any(not isinstance(raw.get(key), str) or not raw[key] for key in required):
-        raise CoordinationError('Vuoro configuration requires endpoint, repo_id, expected_environment, token_env')
-    client = VuoroClient(raw['endpoint'], raw['repo_id'], lambda: os.environ.get(raw['token_env']),
+        raise CoordinationError('Vuoro configuration requires endpoint, repo_id, expected_environment')
+    sources = [key for key in ('token_env', 'credential_name') if key in raw]
+    if len(sources) != 1 or not isinstance(raw[sources[0]], str) or not raw[sources[0]]:
+        raise CoordinationError('configure exactly one token_env or credential_name')
+    source = sources[0]
+    name = raw[source]
+    if source == 'credential_name' and (name in ('.', '..') or '/' in name or '\\' in name):
+        raise CoordinationError('credential_name must be a single file name')
+    def resolve_token():
+        if source == 'token_env':
+            return os.environ.get(name)
+        directory = os.environ.get('CREDENTIALS_DIRECTORY')
+        if not directory:
+            raise CoordinationError('systemd runner credential unavailable')
+        try:
+            token = (Path(directory) / name).read_text().strip()
+        except (OSError, ValueError):
+            raise CoordinationError('systemd runner credential unavailable') from None
+        if not token or any(char.isspace() for char in token):
+            raise CoordinationError('systemd runner credential invalid')
+        return token
+    client = VuoroClient(raw['endpoint'], raw['repo_id'], resolve_token,
                          expected_environment=raw['expected_environment'])
     safe = hashlib.sha256(repo_name.encode()).hexdigest()[:20]
     return Coordinator(client, journal_path or state_dir() / ('coordination-' + safe + '.sqlite'))

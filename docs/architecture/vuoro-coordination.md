@@ -16,11 +16,39 @@ expected_environment = "the-environment-name-from-handshake"
 token_env = "LANECTL_RUNNER_TOKEN"
 ```
 
-The token is resolved from the named environment variable at request time. The
-journal never stores it. Enroll an appropriately scoped runner using the owner's
+The token is resolved from the named environment variable at request time. For
+systemd services, replace `token_env` with `credential_name = "lanectl-runner"`
+and load that credential through `LoadCredential=`. Exactly one credential
+source is required. The file is read again for each request, so rotation does
+not require putting the token in the coordinator or candidate-check environment.
+The journal never stores it. Enroll an appropriately scoped runner using the owner's
 existing flow, and keep that credential outside worker environments. HTTPS is
 required outside loopback; redirects are refused. `lanectl coordinate example`
 checks the authenticated handshake and catalog without claiming work.
+
+### Workstation service activation
+
+Keep coordination disabled until runner enrollment is approved and a scoped
+credential is installed outside the checkout. Candidate train checks currently
+run as the operator user and can read its credential files: sandbox and deny
+those paths before recurring activation. The credential drop-in alone does not
+provide that isolation. Read the actual environment name
+from the authenticated handshake; do not infer it from the URL. Validate the
+configured repository with `lanectl coordinate` before changing its recurring
+service. The optional `contrib/systemd/lanectl-tick-coordinated.conf` adds only
+`LoadCredential=` to the existing service. Install it after validation:
+
+```sh
+install -Dm0644 contrib/systemd/lanectl-tick-coordinated.conf \
+  ~/.config/systemd/user/lanectl-tick.service.d/coordinated.conf
+systemctl --user daemon-reload
+```
+
+Use `credential_name` for timer activation. Exporting a token into the timer's
+environment would also expose it to candidate train checks. The drop-in leaves
+the credential value out of command arguments, unit text and process environments.
+It does not enable the timer or select a served event authority. Keep JSONL
+authoritative until the separate served-store qualification and cutover below.
 
 ## Native integration API
 
