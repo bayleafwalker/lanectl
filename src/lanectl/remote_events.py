@@ -77,8 +77,10 @@ class RemoteEventLog:
             raise CoordinationError('owner batch receipt does not match submitted events')
         self.path.unlink()
 
-    def _read_remote(self):
-        events, cursor, revision = [], 0, None
+    def _read_remote(self, *, after=0):
+        if type(after) is not int or after < 0:
+            raise CoordinationError('lane stream cursor must be a nonnegative integer')
+        events, cursor, revision = [], after, None
         while True:
             args = {'stream': self.stream, 'after': cursor, 'limit': 256}
             if revision is not None:
@@ -130,13 +132,15 @@ class RemoteEventLog:
             with self.locked():
                 return self.append(etype, data, item_id=item_id)
 
-    def read(self):
+    def read(self, *, after=0):
         with self._mutex:
+            if type(after) is not int or after < 0:
+                raise CoordinationError('lane stream cursor must be a nonnegative integer')
             if self._transaction:
-                return json.loads(encode(self._events + self._buffer))
+                return json.loads(encode((self._events + self._buffer)[after:]))
             with self._local_lock():
                 self._recover()
-                events, _ = self._read_remote()
+                events, _ = self._read_remote(after=after)
                 return events
 
     def import_history(self, events, *, source_check=None):

@@ -1,9 +1,13 @@
 """UI-04 refresh/offline contract coverage with injected readers and clock."""
 from datetime import datetime, timedelta, timezone
+from threading import Event
 
 from lanectl.tui import (
-    initial_refresh_state, refresh_state, render_plain_table, render_screen,
+    OwnerRefreshWorker, handle_key, initial_refresh_state, initial_state,
+    query_snapshot, refresh_state, render_plain_table, render_screen,
 )
+from lanectl.coordination import CoordinationError
+from test_lifecycle import Client
 
 
 NOW = datetime(2026, 11, 11, 12, tzinfo=timezone.utc)
@@ -47,10 +51,58 @@ def test_reconnect_resumes_checkpoint_without_duplicate_rows():
     state = initial_refresh_state()
     state = refresh_state(state, lambda checkpoint: ([event("one", "a1")], 1), owner,
                           now=NOW, random_value=lambda: .5)
-    state = refresh_state(state, lambda checkpoint: ([event("one", "a1"), event("two", "a2")], 2), owner,
+    def resumed(checkpoint):
+        assert checkpoint == 1
+        return [event("two", "a2")], 2
+    state = refresh_state(state, resumed, owner,
                           now=NOW + timedelta(seconds=1), random_value=lambda: .5)
     assert state["event_checkpoint"] == 2
     assert [row["item_id"] for row in state["snapshot"]["rows"]] == ["one", "two"]
+
+
+def test_refused_lifecycle_read_is_an_owner_outage_and_keeps_last_good_facts():
+    event44 = event(44, "a1")
+    state = initial_refresh_state()
+    state = refresh_state(state, lambda checkpoint: ([event44], 1),
+                          lambda events, revision: query_snapshot(Client(), events), now=NOW)
+    observed = state["snapshot"]["rows"][0]["facts"]["work.public.item-v1"]["observed_at"]
+
+    class RefusingClient(Client):
+        def invoke(self, envelope):
+            if envelope["operation"] == "work.lease.read-v1":
+                raise CoordinationError("owner refused: runner-operation-denied (HTTP 403)")
+            return super().invoke(envelope)
+
+    state = refresh_state(state, lambda checkpoint: ([], checkpoint),
+                          lambda events, revision: query_snapshot(RefusingClient(), events),
+                          now=NOW + timedelta(seconds=1), random_value=lambda: 0)
+    snapshot = state["snapshot"]
+    assert snapshot["sources"]["owner"]["state"] == "offline"
+    assert snapshot["actions_allowed"] is False
+    assert state["owner_failures"] == 1 and state["next_owner_attempt_at"] > NOW
+    assert snapshot["rows"][0]["facts"]["work.public.item-v1"]["observed_at"] == observed
+    assert "OWNER OFFLINE" in render_plain_table(snapshot, "Active")
+
+
+def test_slow_real_query_runs_outside_key_handling_with_injected_clock():
+    entered, release = Event(), Event()
+
+    class SlowClient(Client):
+        def invoke(self, envelope):
+            entered.set()
+            assert release.wait(1)
+            return super().invoke(envelope)
+
+    ticks = iter((10.0, 11.0))
+    worker = OwnerRefreshWorker(lambda events, revision: query_snapshot(SlowClient(), events),
+                                [event(44, "a1")], None, clock=lambda: next(ticks))
+    assert entered.wait(.2) and worker.poll() is None
+    state = initial_state({"ready": {"value": {"items": []}}, "rows": []})
+    assert handle_key(state, "j") == state  # key transition does not await owner I/O
+    release.set()
+    worker._thread.join(1)
+    result, error = worker.poll()
+    assert error is None and result["rows"][0]["item_id"] == 44 and worker.started_at == 10.0
 
 
 def test_backoff_is_bounded_monotonic_and_jittered():

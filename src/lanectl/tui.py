@@ -8,6 +8,8 @@ from __future__ import annotations
 from datetime import datetime, timedelta, timezone
 import curses
 import os
+from queue import Empty, Queue
+from threading import Thread
 import time
 
 from .lifecycle import READS, attention_reasons, lifecycle_rows, local_facts, ready_work
@@ -81,16 +83,23 @@ def _event_rows(events, now):
     return rows
 
 
-def _unique_events(existing, incoming):
-    """Accept a replayed checkpoint page without duplicating local projections."""
-    import json
-    result, seen = [], set()
-    for event in [*existing, *incoming]:
-        key = json.dumps(event, sort_keys=True, separators=(",", ":"), default=str)
-        if key not in seen:
-            seen.add(key)
-            result.append(event)
-    return result
+def _owner_failure(snapshot):
+    """Return an owner-read failure reason embedded by lifecycle readers.
+
+    Lifecycle intentionally turns refused reads into unknown facts.  They are
+    useful row-level evidence, but are not a successful owner refresh.  Missing
+    optional identifiers are the one expected unknown and do not mean the
+    owner is offline.
+    """
+    ready = snapshot.get("ready", {})
+    if ready.get("state") != "observed":
+        return ready.get("reason", "owner list unavailable")
+    for row in snapshot.get("rows", []):
+        for name in READS:
+            fact = row.get("facts", {}).get(name, {})
+            if fact.get("state") == "unknown" and fact.get("reason") != "no item identifier available" and fact.get("reason") != "no run identifier available":
+                return fact.get("reason", f"owner read unavailable: {name}")
+    return None
 
 
 def _cached_owner_snapshot(previous, events, now):
@@ -108,11 +117,53 @@ def _cached_owner_snapshot(previous, events, now):
     # A row that no longer has a local claim is still a useful cached inspection.
     known = {_identity(row) for row in rows}
     rows.extend(row for identity, row in cached.items() if identity not in known)
-    return build_snapshot(old.get("ready", {"state": "unknown", "source": "owner"}), rows,
-                          observed_at=_stamp(now))
+    snapshot = build_snapshot(old.get("ready", {"state": "unknown", "source": "owner"}), rows,
+                              observed_at=_stamp(now))
+    snapshot["sources"] = dict(old.get("sources", {}))
+    return snapshot
 
 
-def refresh_state(state, event_reader, owner_reader, *, now=None, random_value=None,
+def _apply_owner_result(state, outcome, *, now, random_value, stale_after_s,
+                        backoff_base_s, backoff_cap_s):
+    """Apply an owner worker completion to serializable refresh state."""
+    result = dict(state)
+    previous = result.get("snapshot", {})
+    owner_status = dict(previous.get("sources", {}).get("owner", {}))
+    try:
+        if isinstance(outcome, Exception):
+            raise outcome
+        failure = _owner_failure(outcome)
+        if failure:
+            raise RuntimeError(failure)
+        snapshot = outcome
+        result["owner_revision"] = snapshot.get("ready", {}).get("revision")
+        result["owner_failures"] = 0
+        result["next_owner_attempt_at"] = None
+        owner_status = {"state": "fresh", "observed_at": _stamp(now),
+                        "revision": result["owner_revision"]}
+    except Exception as exc:  # cached inspection deliberately survives outage
+        result["owner_failures"] = result.get("owner_failures", 0) + 1
+        raw = min(backoff_cap_s, backoff_base_s * (2 ** (result["owner_failures"] - 1)))
+        delay = min(backoff_cap_s, raw * (1 + max(0, min(1, random_value())) / 2))
+        result["next_owner_attempt_at"] = now + timedelta(seconds=delay)
+        snapshot = _cached_owner_snapshot(result, result.get("events", []), now)
+        owner_status.update(state="offline", reason=str(exc), failures=result["owner_failures"],
+                            next_attempt_at=_stamp(result["next_owner_attempt_at"]))
+    # A worker may have completed against an earlier event checkpoint.  Keep
+    # subsequently read local rows without pretending they have owner facts.
+    if snapshot is not previous:
+        staged = dict(result, snapshot=snapshot)
+        snapshot = _cached_owner_snapshot(staged, result.get("events", []), now)
+    age = _age(owner_status.get("observed_at"), now)
+    if owner_status.get("state") in ("fresh", "offline") and age is not None and age > stale_after_s:
+        owner_status["state"] = "stale"
+    snapshot["sources"] = {**snapshot.get("sources", {}), "owner": owner_status}
+    snapshot["actions_allowed"] = owner_status.get("state") == "fresh"
+    result["snapshot"] = snapshot
+    return result
+
+
+def refresh_state(state, event_reader, owner_reader=None, *, now=None, random_value=None,
                   stale_after_s=60, backoff_base_s=2, backoff_cap_s=60):
     """Refresh local events and owner facts independently.
 
@@ -128,7 +179,9 @@ def refresh_state(state, event_reader, owner_reader, *, now=None, random_value=N
     event_status = {"state": "fresh", "checkpoint": result.get("event_checkpoint"), "observed_at": _stamp(now)}
     try:
         incoming, checkpoint = event_reader(result.get("event_checkpoint"))
-        result["events"] = _unique_events(result.get("events", []), incoming)
+        # Readers are cursor based: incoming is strictly after checkpoint.
+        # This preserves repeated event content as distinct append-only records.
+        result["events"] = [*result.get("events", []), *incoming]
         result["event_checkpoint"] = checkpoint
         event_status["checkpoint"] = checkpoint
     except Exception as exc:  # source failure is data for this read-only UI
@@ -136,22 +189,16 @@ def refresh_state(state, event_reader, owner_reader, *, now=None, random_value=N
         event_status.update(state="offline", reason=str(exc))
     due = result.get("next_owner_attempt_at") is None or now >= result["next_owner_attempt_at"]
     owner_status = dict(previous.get("sources", {}).get("owner", {}))
-    if due:
+    if due and owner_reader is not None:
         try:
-            snapshot = owner_reader(result.get("events", []), result.get("owner_revision"))
-            result["owner_revision"] = snapshot.get("ready", {}).get("revision")
-            result["owner_failures"] = 0
-            result["next_owner_attempt_at"] = None
-            owner_status = {"state": "fresh", "observed_at": _stamp(now),
-                            "revision": result["owner_revision"]}
-        except Exception as exc:  # cached inspection deliberately survives outage
-            result["owner_failures"] = result.get("owner_failures", 0) + 1
-            raw = min(backoff_cap_s, backoff_base_s * (2 ** (result["owner_failures"] - 1)))
-            delay = min(backoff_cap_s, raw * (1 + max(0, min(1, random_value())) / 2))
-            result["next_owner_attempt_at"] = now + timedelta(seconds=delay)
-            snapshot = _cached_owner_snapshot(result, result.get("events", []), now)
-            owner_status.update(state="offline", reason=str(exc), failures=result["owner_failures"],
-                                next_attempt_at=_stamp(result["next_owner_attempt_at"]))
+            outcome = owner_reader(result.get("events", []), result.get("owner_revision"))
+        except Exception as exc:
+            outcome = exc
+        result = _apply_owner_result(result, outcome, now=now, random_value=random_value,
+                                     stale_after_s=stale_after_s, backoff_base_s=backoff_base_s,
+                                     backoff_cap_s=backoff_cap_s)
+        snapshot = result["snapshot"]
+        owner_status = snapshot["sources"]["owner"]
     else:
         snapshot = _cached_owner_snapshot(result, result.get("events", []), now)
     age = _age(owner_status.get("observed_at"), now)
@@ -167,6 +214,26 @@ def refresh_state(state, event_reader, owner_reader, *, now=None, random_value=N
     snapshot["actions_allowed"] = owner_status.get("state") == "fresh"
     result["snapshot"] = snapshot
     return result
+
+
+class OwnerRefreshWorker:
+    """One non-blocking owner read; completion is applied by the UI thread."""
+    def __init__(self, reader, events, revision, *, clock=time.monotonic):
+        self._results = Queue()
+        self.started_at = clock()
+        def run():
+            try:
+                self._results.put((reader(events, revision), None))
+            except Exception as exc:
+                self._results.put((None, exc))
+        self._thread = Thread(target=run, daemon=True)
+        self._thread.start()
+
+    def poll(self):
+        try:
+            return self._results.get_nowait()
+        except Empty:
+            return None
 
 
 def source_status_line(snapshot):
@@ -265,7 +332,7 @@ def handle_key(state, key, *, snapshot=None):
     """Pure TUI state transition. ``snapshot`` supplies a refresh result."""
     state = dict(state)
     rows = view_rows(state["snapshot"], state["view"], state["filter"])
-    if key == "refresh":
+    if key in ("refresh", "owner_result"):
         if snapshot is not None:
             state["snapshot"] = snapshot
         return _reconcile(state, previous_rows=rows)
@@ -457,8 +524,9 @@ def _cmd(args, log):
         return 1
     no_color = args.no_color or bool(os.environ.get("NO_COLOR"))
     def event_reader(checkpoint):
-        events = log.read()
-        return events, len(events)
+        offset = checkpoint or 0
+        events = log.read(after=offset)
+        return events, offset + len(events)
     def owner_reader(events, revision):
         # ``revision`` is retained by refresh_state as the resume point.  The
         # currently advertised owner reads are snapshots, so no unsupported
@@ -471,9 +539,10 @@ def _cmd(args, log):
         return 0
     def run(screen):
         screen.keypad(True)
-        refresh = refresh_state(initial_refresh_state(), event_reader, owner_reader)
+        refresh = refresh_state(initial_refresh_state(), event_reader)
         snapshot = refresh["snapshot"]
         state, refreshed = initial_state(snapshot, args.view.title(), args.filter), time.monotonic()
+        worker = None
         while True:
             snapshot, view, filter_text = state["snapshot"], state["view"], state["filter"]
             rows, selected = view_rows(snapshot, view, filter_text), state["selected"]
@@ -482,10 +551,24 @@ def _cmd(args, log):
                 try: screen.addnstr(y, 0, line, max(0, screen.getmaxyx()[1] - 1))
                 except curses.error: pass
             screen.refresh()
-            screen.timeout(max(0, int((args.refresh - (time.monotonic() - refreshed)) * 1000)))
+            if worker is None and (refresh.get("next_owner_attempt_at") is None or
+                                   datetime.now(timezone.utc) >= refresh["next_owner_attempt_at"]):
+                worker = OwnerRefreshWorker(owner_reader, list(refresh.get("events", [])),
+                                            refresh.get("owner_revision"))
+            if worker is not None:
+                completed = worker.poll()
+                if completed is not None:
+                    outcome, error = completed
+                    refresh = _apply_owner_result(refresh, error or outcome,
+                                                  now=datetime.now(timezone.utc),
+                                                  random_value=__import__("random").random,
+                                                  stale_after_s=60, backoff_base_s=2, backoff_cap_s=60)
+                    state = handle_key(state, "owner_result", snapshot=refresh["snapshot"])
+                    worker = None
+            screen.timeout(min(100, max(0, int((args.refresh - (time.monotonic() - refreshed)) * 1000))))
             key = screen.getch()
             if key == -1 or (key == ord("r") and not state["filtering"]):
-                refresh = refresh_state(refresh, event_reader, owner_reader)
+                refresh = refresh_state(refresh, event_reader)
                 state = handle_key(state, "refresh", snapshot=refresh["snapshot"])
                 refreshed = time.monotonic()
             else:

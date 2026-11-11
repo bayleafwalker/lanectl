@@ -45,7 +45,10 @@ class EventLog:
             os.fsync(fh.fileno())
         return ev
 
-    def read(self) -> list[dict]:
+    def read(self, *, after: int = 0) -> list[dict]:
+        """Read validated events strictly after a one-based local offset."""
+        if type(after) is not int or after < 0:
+            raise ValueError("event offset must be a nonnegative integer")
         out = []
         with open(self.path) as fh:
             for n, line in enumerate(fh, 1):
@@ -53,7 +56,9 @@ class EventLog:
                 if not line:
                     continue
                 try:
-                    out.append(validate_event(json.loads(line)))
+                    event = validate_event(json.loads(line))
+                    if n > after:
+                        out.append(event)
                 except Exception as exc:  # a torn tail line must not hide the rest
                     raise ValueError(f"{self.path}:{n}: {exc}") from exc
         return out
