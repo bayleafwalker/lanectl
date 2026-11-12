@@ -1,0 +1,52 @@
+id = "ui-07-permalink"
+repo = "lanectl"
+base_sha = "175ccb463cd483612714827503bb93ef5477ddb1"
+revision = 1
+draft = true
+title = "Read-only lifecycle permalink and shareable review page"
+task_class = "view"
+size = "M"
+data_class = "public"
+
+outcome = """
+Approved UI-07, served lanectl#2897. Add stdlib-only lanectl.lifecycle_web.
+locator(repo, row, *, base_url='') -> deterministic URL with percent-encoded
+repo/item/attempt identity under /lifecycle/; include run_id and train_id when
+known in query; resolve_locator(url) -> dict repo,item_id,attempt_id,run_id,train_id
+round-trips all supplied linked IDs, rejects unsupported scheme/userinfo/malformed
+or duplicate query/identity/path traversal and never contacts a network. A locator
+is a read-only identity, not authority. render_lifecycle(repo,row,*,base_url='')
+returns standalone accessible HTML using the existing lifecycle fact schema and
+attention reason codes, sharing the verification evidence_bundle where available.
+No new status ledger or mutation controls. Every displayed fact group shows state,
+source, revision/checkpoint, observed_at; unknown owners visibly unavailable.
+Explicit known identifiers (release/work, attempt, run, train) and canonical locator
+are shown, with corresponding lanectl tui --repo R --item ID --attempt A jump.
+Render safe explicit references only, never arbitrary raw values, bodies, logs,
+credentials, local absolute paths, active markup or inline event handlers. Local
+facts are labelled local-only with a host-side CLI jump; no browser file fetches.
+Missing/rejected/stale/unknown remain distinct, reported success stays pending.
+Use self-contained CSS, no JS/fonts/network assets: paper blue #f3f7fb, navy #19344d,
+white #ffffff, slate #526779, blue #255e9a, warning #8b4b14; readable sans type and
+monospace only for IDs/commands; left-aligned header with lifecycle identity,
+provenance strip, evidence table (responsive horizontal scrolling), reason list.
+Use semantic heading/table markup, text states, visible focus, no decorative cards
+or animation. Escape every untrusted value and URL, allow only safe https/lane refs
+without credentials/query/fragment; local refs are labels not clickable fetches.
+export_lifecycle(root,repo,row,*,base_url='') writes only a deterministic HTML path
+under root matching locator path plus index.html and returns Path, refuses escape
+and symlink destinations. Query IDs live in the page too, so serving the directory
+can resolve the permalink. Plugin lifecycle-web --repo R --item ID --output DIR
+[--base-url HTTPS_ORIGIN] queries existing lifecycle rows and exports each known
+attempt. No automatic hosting or production mutation; clearly label snapshots as
+observed, not live. Base origin must be https with no userinfo/query/fragment/path.
+Add tests for unknowns, exact identity round-trip, XSS/secret/log exclusion, traversal,
+offline/self-contained output, provenance, deterministic exports and source reasons.
+"""
+
+[scope]
+paths = ["src/lanectl/lifecycle_web.py", "tests/stage9/test_lifecycle_web*.py"]
+
+[acceptance]
+files = ["tests/stage9/test_acc_lifecycle_web.py"]
+exec = ["uv run --no-sync pytest -q -p no:cacheprovider tests/stage9/test_acc_lifecycle_web.py"]

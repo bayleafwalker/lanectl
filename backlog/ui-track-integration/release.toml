@@ -1,0 +1,57 @@
+id = "ui-track-integration"
+repo = "lanectl"
+base_sha = "175ccb463cd483612714827503bb93ef5477ddb1"
+revision = 1
+draft = true
+title = "Join operator surfaces to real owner identities and acceptance"
+task_class = "view"
+size = "M"
+data_class = "public"
+
+outcome = """
+Finish approved UI-05..08 against actual owner contracts, preserving prior flat
+synthetic fixture compatibility but using nested owner responses as primary.
+Do not add ledger state, mutations, dependencies, new events or govern policy.
+1. Lifecycle identity: keep row.item_id as local release id and local fact filtering
+on that id. Resolve numeric work_id from journal_binding's item_id, or an optional
+work_ids mapping (release id -> integer) added to lifecycle_rows. Pass work_ids from
+configured WorkRelease.work refs in lifecycle CLI, TUI query_snapshot and verification
+CLI. Prefer explicit mapping and require journal agreement; conflicting IDs must
+remain unknown with a mismatch reason, never silently join. Owner calls use numeric
+work ids and run ids from journal, never local release strings. Rows expose work_id
+separately and retain run/attempt/train links; unknown binding stays unknown.
+2. Owner public item uses {authority:'sprintctl',state:'ok',as_of,item:{work_id,status,
+resolution}}. Surface nested item.status as owner work state and classify pending
+verification without interpreting top-level state ok as work status. Only done plus
+resolution accepted, authoritative state ok, valid as_of and matching work_id means
+accepted. completed/rejected/withdrawn/unknown/mismatched are never accepted. Keep
+verification projection consistent with Coordinator.completion and update tests
+written in the earlier UI-06 contract interactively (worker must not edit them).
+3. TUI Ready joins owner-ordered list entries (strings or objects with work_id/id)
+to local row.work_id, not str(dict). TUI --item RELEASE --attempt ATTEMPT allows
+permalink's exact jump; invalid/unknown selection renders no matching row explicitly,
+never another lifecycle. query_snapshot supports those optional selectors.
+4. TUI evidence drill-down uses evidence_bundle and render_bundle across local gate,
+train/deploy/landing and owner facts, preserving provenance, states and safe references;
+successful report stays pending. source_lines no longer scavenges arbitrary raw data
+for paths or links; reuse explicit safe-reference rules and label local-only facts.
+5. UI-05 preview digest must not bind the owner as_of read clock (it changes every
+read). Bind semantic item identity/status/resolution and owner catalog revision.
+Require current configured coordination immediately before execute when no injected
+test client, and verify the returned Claim identity/config matches the freshly
+loaded release/lane/repo before runner.execute. Never reimplement lease authority:
+existing runner must still refuse a missing coordinated configuration between
+preview and admission. If effect-time configuration changes, refuse rather than
+falling back to uncoordinated execution. Add bounded existing-path check if needed
+(runner.py is in scope for an optional require_coordination=True keyword on the
+existing execute wrapper; ordinary callers retain existing behavior). Preserve
+exact uncertainty replay. claim-run must pass that keyword, so a removed owner
+configuration cannot fall through to native uncoordinated execution.
+"""
+
+[scope]
+paths = ["src/lanectl/lifecycle.py", "src/lanectl/tui.py", "src/lanectl/verification.py", "src/lanectl/claim_preview.py", "src/lanectl/runner.py", "tests/stage9/test_ui_integration*.py"]
+
+[acceptance]
+files = ["tests/stage9/test_acc_ui_integration.py"]
+exec = ["uv run --no-sync pytest -q -p no:cacheprovider tests/stage9/test_acc_ui_integration.py"]
