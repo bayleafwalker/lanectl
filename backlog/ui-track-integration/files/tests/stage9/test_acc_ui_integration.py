@@ -113,6 +113,8 @@ def test_tui_sources_never_publish_raw_paths_or_secret_query_refs():
     assert "private transcript" not in text and "/home/user/private" not in text
     assert "token=secret" not in text
     assert "https://example.test/safe" in text
+    detail = "\n".join(tui.detail_lines(row))
+    assert "private transcript" not in detail and "token=secret" not in detail
 
 
 def test_preview_binds_release_semantics_and_owner_audience(monkeypatch):
