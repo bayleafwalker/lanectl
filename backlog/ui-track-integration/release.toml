@@ -44,6 +44,10 @@ never another lifecycle. query_snapshot supports those optional selectors.
 train/deploy/landing and owner facts, preserving provenance, states and safe references;
 successful report stays pending. source_lines no longer scavenges arbitrary raw data
 for paths or links; reuse explicit safe-reference rules and label local-only facts.
+Evidence entries expose an allowlisted details dict for the actual checked_sha,
+landed_sha, train_id, deploy expires_at and gate names/passed values where available;
+render_bundle prints these safe fields so the operator can inspect commit binding,
+not just a green label. Never add check_tail, violations/log/body/transcript bytes.
 5. UI-05 preview digest must not bind the owner as_of read clock (it changes every
 read). Bind semantic item identity/status/resolution and owner catalog revision,
 plus client endpoint/repo_id when available (never credentials). Bind full release

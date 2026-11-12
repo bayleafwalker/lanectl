@@ -140,3 +140,8 @@ def test_real_deploy_events_join_by_train_without_equating_attempt_and_train_sha
     trains = row["facts"]["local.train"]["value"]
     assert [e["data"]["train_id"] for e in trains] == ["train-right", "train-right"]
     assert "revalidation" not in {r["code"] for r in attention_reasons(row)}
+    from lanectl.verification import evidence_bundle, render_bundle
+    bundle = evidence_bundle(row)
+    text = render_bundle(bundle)
+    assert "merged-train-commit" in text and "train-right" in text
+    assert "2099-01-01T00:00:00Z" in text
