@@ -190,14 +190,19 @@ def _attributed(ev, item_id, attempt_id) -> bool:
 
 
 def _compute_usage(events, policy_raw, item_id, attempt_id):
-    """Lane/operator usage sections plus attributed/unattributed counts.
+    """Lane/operator sections plus in-scope, out-of-scope and unassigned counts.
 
-    Unattributed usage is counted explicitly, never silently charged, and the
-    projection never infers absent measurements as full attribution coverage.
+    Only usage records whose item and attempt match the query are charged to it.
+    A record for another known item, another known attempt, or (in an attempt
+    query) the release itself is counted as *outside scope*, not as unknown
+    attribution.  A record with no item identity at all stays genuinely
+    unattributed, and the projection never infers absent measurements as full
+    attribution coverage.
     """
     sections = {"lane": _empty_section(), "operator": _empty_section()}
     attributed = 0
     unattributed = 0
+    outside_scope = 0
     for ev in events:
         if not isinstance(ev, dict) or ev.get("type") != "usage.recorded":
             continue
@@ -206,11 +211,38 @@ def _compute_usage(events, policy_raw, item_id, attempt_id):
             attributed += 1
             name = "operator" if data.get("source") == _OPERATOR_SOURCE else "lane"
             _add_usage(sections[name], ev, data, policy_raw)
-        else:
+        elif ev.get("item_id") is None:
             unattributed += 1
+        else:
+            outside_scope += 1
     for section in sections.values():
         _finalize_section(section)
-    return sections, attributed, unattributed
+    return sections, attributed, unattributed, outside_scope
+
+
+def _attribution(attributed, unattributed, outside_scope) -> dict:
+    """Attribution counts and coverage over observed usage records only.
+
+    Coverage is full only when the selected scope observed at least one record
+    and no record lacked item identity.  Any unassigned pool, or an empty
+    selected set, leaves coverage unknown: records outside the scope are never
+    charged to the query, and absent observations never prove instrumentation.
+    """
+    if attributed == 0 or unattributed > 0:
+        coverage = None
+        basis = ("observed usage.recorded records only; unassigned records or no "
+                 "selected measurements leave coverage unknown")
+    else:
+        coverage = 1.0
+        basis = ("observed usage.recorded records only; every observed record "
+                 "has item identity")
+    return {
+        "attributed_events": attributed,
+        "unattributed_events": unattributed,
+        "outside_scope_events": outside_scope,
+        "coverage": coverage,
+        "basis": basis,
+    }
 
 
 def _interval(kind, start, end, *, basis="event log checkpoints",
@@ -381,17 +413,14 @@ def accounting_timeline(events, policy_raw, *, item_id, attempt_id=None) -> dict
     """
     events = list(events or ())
     phases = _compute_phases(events, item_id, attempt_id)
-    usage, attributed, unattributed = _compute_usage(events, policy_raw, item_id,
-                                                     attempt_id)
+    usage, attributed, unattributed, outside_scope = _compute_usage(
+        events, policy_raw, item_id, attempt_id)
     return {
         "item_id": item_id,
         "attempt_id": attempt_id,
         "phases": phases,
         "usage": usage,
-        "attribution": {
-            "attributed_events": attributed,
-            "unattributed_events": unattributed,
-        },
+        "attribution": _attribution(attributed, unattributed, outside_scope),
         "price_revision": _price_revision(policy_raw),
     }
 
@@ -446,11 +475,15 @@ def render_timeline(result) -> str:
             f"known_usd_est={_fmt_usd(section['known_usd_est'])}")
         lines.append(f"    units: {_fmt_units(section.get('units'))}")
     attribution = result["attribution"]
-    total = attribution["attributed_events"] + attribution["unattributed_events"]
-    coverage = "unknown" if total == 0 else f"{attribution['attributed_events']}/{total}"
+    # Coverage is a fraction of observed records, never a matched/global-stream
+    # share; an unassigned pool or absent measurements leave it unknown.
+    value = attribution.get("coverage")
+    coverage = "unknown" if value is None else f"{value:.3f}"
     lines.append(
         f"attribution: attributed={attribution['attributed_events']} "
-        f"unattributed={attribution['unattributed_events']} coverage={coverage}")
+        f"unattributed={attribution['unattributed_events']} "
+        f"outside_scope={attribution.get('outside_scope_events', 0)} "
+        f"coverage={coverage}")
     return "\n".join(lines)
 
 
