@@ -1,8 +1,7 @@
 id = "ui-track-integration"
 repo = "lanectl"
-base_sha = "175ccb463cd483612714827503bb93ef5477ddb1"
-revision = 1
-draft = true
+base_sha = "8df8554cc558d420caea425a76cd575ceeb2fa49"
+revision = 2
 title = "Join operator surfaces to real owner identities and acceptance"
 task_class = "view"
 size = "M"
@@ -16,7 +15,7 @@ Do not add ledger state, mutations, dependencies, new events or govern policy.
 on that id. Resolve numeric work_id from journal_binding's item_id, or an optional
 work_ids mapping (release id -> integer) added to lifecycle_rows. Pass work_ids from
 configured WorkRelease.work refs in lifecycle CLI, TUI query_snapshot and verification
-CLI and lifecycle-web CLI. Prefer explicit mapping and require journal agreement; conflicting IDs must
+CLI. Prefer explicit mapping and require journal agreement; conflicting IDs must
 remain unknown with a mismatch reason, never silently join. Owner calls use numeric
 work ids and run ids from journal, never local release strings. Rows expose work_id
 separately and retain run/attempt/train links; unknown binding stays unknown.
@@ -72,18 +71,14 @@ Bind the fresh client endpoint/repo_id through an optional expected_owner mappin
 on runner.execute; compare it with the configured coordinator client before start.
 This closes a configuration change between preview/admission and effects. Existing
 callers may omit it; claim-run supplies it with require_coordination=True.
-6. Complete permalink joins: locator/resolve_locator round-trip optional work_id
-when supplied (keep the previous exact key set when absent); show numeric work ID
-separately from release ID. lifecycle-web reads configured release work bindings.
-Never recurse into body/log/transcript/detail/claims runtime payloads when finding
-references; only known metadata wrappers and explicit reference keys may publish
-locators. Malformed URL refs must be ignored without crashing a snapshot render.
-Emit shell-safe CLI jump arguments for repository and identity selectors.
 """
 
 [scope]
-paths = ["src/lanectl/lifecycle.py", "src/lanectl/tui.py", "src/lanectl/verification.py", "src/lanectl/claim_preview.py", "src/lanectl/runner.py", "src/lanectl/lifecycle_web.py", "tests/stage9/test_ui_integration*.py"]
+paths = ["src/lanectl/lifecycle.py", "src/lanectl/tui.py", "src/lanectl/verification.py", "src/lanectl/claim_preview.py", "src/lanectl/runner.py", "tests/stage9/test_ui_integration*.py"]
 
 [acceptance]
 files = ["tests/stage9/test_acc_ui_integration.py", "tests/stage9/test_acc_verification.py", "tests/stage9/test_verification.py", "tests/stage9/test_tui.py", "tests/stage9/test_lifecycle_local.py", "tests/stage9/test_claim_preview_integration.py"]
 exec = ["uv run --no-sync pytest -q -p no:cacheprovider tests/stage9/test_acc_ui_integration.py"]
+
+[lint]
+override = "Verified 10 independent primary acceptance failures on current base: missing work_ids, owner acceptance, preview bindings, safe sources, and CLI selectors. The classifier calls argparse SystemExit for the missing --item/--attempt feature a spec-gap. Two planner-owned compatibility correction files intentionally pass on base; the primary new acceptance fails and the full suite still gates implementation."

@@ -1,0 +1,39 @@
+id = "ui-web-integration"
+repo = "lanectl"
+base_sha = "8df8554cc558d420caea425a76cd575ceeb2fa49"
+revision = 1
+draft = true
+title = "Join lifecycle permalinks to work identities and safe evidence"
+task_class = "view"
+size = "S"
+data_class = "public"
+
+outcome = """
+Approved UI-07 final integration, following ui-07-permalink and owner UI integration.
+Given the landed lifecycle_web module, complete these review-proven gaps; preserve
+existing locator/path/HTML compatibility, stdlib-only read-only behavior and tests.
+6. Complete permalink joins: locator/resolve_locator round-trip optional work_id
+when supplied (keep the previous exact key set when absent); show numeric work ID
+separately from release ID. lifecycle-web reads configured release work bindings.
+Never recurse into body/log/transcript/detail/claims runtime payloads when finding
+references; only known metadata wrappers and explicit reference keys may publish
+locators. Malformed URL refs must be ignored without crashing a snapshot render.
+Emit shell-safe CLI jump arguments for repository and identity selectors.
+
+Use existing lifecycle binding helpers for configured work_ids; do not create owner
+state or read raw evidence bytes. Owner acceptance remains in the shared verification
+projection, never inferred in web code. Include numeric work_id separately in HTML
+and round-trip it as a numeric optional query field; absent work_id retains the
+previous exact resolver key set. Avoid reading runtime payloads while discovering
+references and handle malformed URL references as absent, not a render crash.
+Keep the public export path usable through a standard static HTTP server, including
+percent-encoded repository identifiers; reject decoded path traversal and symlinks.
+No network assets, JS, mutations, hosting or production effects.
+"""
+
+[scope]
+paths = ["src/lanectl/lifecycle_web.py", "tests/stage9/test_ui_web_integration*.py"]
+
+[acceptance]
+files = ["tests/stage9/test_acc_ui_web_integration.py"]
+exec = ["uv run --no-sync pytest -q -p no:cacheprovider tests/stage9/test_acc_ui_web_integration.py"]
