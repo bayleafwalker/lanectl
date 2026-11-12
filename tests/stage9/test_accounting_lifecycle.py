@@ -77,7 +77,9 @@ def test_attempt_query_excludes_release_level_and_other_attempt_usage():
     assert release["usage"]["lane"]["units"]["output_tokens"] == 70
     attempt = accounting_timeline(events, POLICY, item_id="account-work", attempt_id="a2")
     assert attempt["usage"]["lane"]["units"]["output_tokens"] == 20
-    assert attempt["attribution"] == {"attributed_events": 1, "unattributed_events": 2}
+    assert attempt["attribution"]["attributed_events"] == 1
+    assert attempt["attribution"]["unattributed_events"] == 0
+    assert attempt["attribution"].get("outside_scope_events") == 2
 
 
 def test_operator_source_is_operator_and_unknown_units_are_preserved():
