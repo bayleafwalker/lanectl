@@ -26,3 +26,28 @@ def test_web_ignores_malformed_references_without_crashing():
     assert "snapshot" in render_lifecycle("lanectl", row)
 
 
+def test_exported_permalink_resolves_through_a_standard_static_server(tmp_path):
+    from functools import partial
+    from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
+    from threading import Thread
+    from urllib.request import build_opener, ProxyHandler
+    from lanectl.lifecycle_web import locator, export_lifecycle
+    row = dict(item_id="ui-work", work_id=2895, attempt_id="ui-work-a1", facts={})
+    path = export_lifecycle(tmp_path, "repo name", row)
+    class QuietHandler(SimpleHTTPRequestHandler):
+        def log_message(self, *args):
+            pass
+    server = ThreadingHTTPServer(("127.0.0.1", 0), partial(QuietHandler, directory=str(tmp_path)))
+    thread = Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        url = f"http://127.0.0.1:{server.server_port}" + locator("repo name", row)
+        with build_opener(ProxyHandler({})).open(url, timeout=3) as response:
+            assert response.status == 200
+            assert response.read().decode() == path.read_text()
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=2)
+
+
