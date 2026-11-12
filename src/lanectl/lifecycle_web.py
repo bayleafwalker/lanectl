@@ -15,8 +15,8 @@ from urllib.parse import quote, unquote, urlsplit
 
 from .lifecycle import REASON_RULES, attention_reasons, lifecycle_rows
 
-#: Query keys a locator may carry; both are optional, each at most once.
-_LINKED_IDS = ("run_id", "train_id")
+#: Query keys a locator may carry; all optional, each at most once.
+_LINKED_IDS = ("run_id", "train_id", "lease_id", "source_session")
 
 #: Optional numeric work id a locator may carry, at most once.
 _WORK_ID = "work_id"
@@ -112,9 +112,10 @@ def locator(repo: str, row: dict, *, base_url: str = "") -> str:
     """Deterministic, percent-encoded lifecycle identity URL.
 
     The path is ``/lifecycle/<repo>/<item>/<attempt>`` and the query carries
-    ``run_id`` and ``train_id`` only when known, plus the numeric ``work_id``
-    when the row resolves one.  ``base_url``, when given, is an https origin
-    prepended verbatim; otherwise the result is relative.
+    ``run_id``, ``train_id``, ``lease_id`` and ``source_session`` only when
+    known, plus the numeric ``work_id`` when the row resolves one.
+    ``base_url``, when given, is an https origin prepended verbatim; otherwise
+    the result is relative.
     """
     origin = _origin(base_url)
     segments = (repo, row.get("item_id"), row.get("attempt_id"))
@@ -196,6 +197,11 @@ def resolve_locator(url: str) -> dict:
             query[key] = unquote(value)
     resolved = {"repo": repo, "item_id": item_id, "attempt_id": attempt_id,
                 "run_id": query.get("run_id"), "train_id": query.get("train_id")}
+    # The optional links are omitted when absent, preserving the exact key set
+    # older locators and callers already rely on.
+    for key in ("lease_id", "source_session"):
+        if key in query:
+            resolved[key] = query[key]
     if _WORK_ID in query:
         raw = query[_WORK_ID]
         try:
@@ -499,6 +505,8 @@ def render_lifecycle(repo: str, row: dict, *, base_url: str = "") -> str:
     attempt_id = row.get("attempt_id")
     run_id = row.get("run_id")
     train_id = row.get("train_id")
+    lease_id = row.get("lease_id")
+    source_session = row.get("source_session")
     work_id = row.get("work_id")
     observed_at = _latest_observed_at(facts)
     owner_revision = facts.get("work.public.item-v1", {}).get("revision")
@@ -509,7 +517,9 @@ def render_lifecycle(repo: str, row: dict, *, base_url: str = "") -> str:
         f'<dt>work</dt><dd>{_ident(work_id)}</dd>'
         f'<dt>attempt</dt><dd>{_ident(attempt_id)}</dd>'
         f'<dt>run</dt><dd>{_ident(run_id)}</dd>'
-        f'<dt>train</dt><dd>{_ident(train_id)}</dd>')
+        f'<dt>train</dt><dd>{_ident(train_id)}</dd>'
+        f'<dt>lease</dt><dd>{_ident(lease_id)}</dd>'
+        f'<dt>source session</dt><dd>{_ident(source_session)}</dd>')
     provenance = (
         f"<div><dt>Observed</dt><dd>{_esc(observed_at)}</dd></div>"
         f"<div><dt>Owner revision</dt><dd>{_ident(owner_revision)}</dd></div>"
