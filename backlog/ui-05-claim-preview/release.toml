@@ -1,0 +1,47 @@
+id = "ui-05-claim-preview"
+repo = "lanectl"
+base_sha = "28e299a5cc28e5092ce50445ba4238d904a40454"
+revision = 1
+title = "Preview and safely execute coordinated claim-and-run"
+task_class = "view"
+size = "M"
+data_class = "public"
+
+outcome = """
+Approved UI-05, served lanectl#2895. Add lanectl.claim_preview, a plugin command
+claim-run --item RELEASE [--lane implement] [--json] [--execute --expect DIGEST].
+Default is read-only preview, not claim-only: no registration, lease, admission,
+log write or worker. Do not offer claim-only in this slice. preview_claim(client,
+release, lane, repos) returns release_id, repo, work_id (integer from release.work),
+lane, release_revision, lane_revision, owner_revision, observed_at, allowed,
+reasons and digest. Use catalog-checked lifecycle work.public.item-v1 fresh read;
+actual owner response shape is {authority,state,as_of,item:{work_id,status,resolution}}.
+Require matching item id, owner state ok, item pending, complete matching work ref,
+configured repository, and local readiness. Unknown/unavailable/refused owner is
+not allowed. Digest binds release/lane/repo identity and relevant configuration,
+release base/revisions, owner revision and item fact value, but excludes wall-clock
+read times. Preview is descriptive only, never authority for later effects.
+execute_preview(preview, log, *, client=None) reloads release, lane and repositories,
+freshly rebuilds preview and refuses disallowed or changed digest BEFORE admission.
+Get configured coordinator client when none injected; missing coordination refuses.
+After fresh checks call existing runner.admit(lane,log,only=release_id), and only
+if it returns a matching Claim call existing runner.execute(claim,log). Never call
+native adapters, Coordinator.start or guard directly: existing execution handles
+durable exact idempotency, refusal, lease-loss cancellation and candidate effects.
+If admission returns text, return it without execute; do not loop/retry admission or
+start another attempt after uncertain execution. CLI prints preview with exact repo,
+work, release, lane, revision/digest and command to execute; missing/mismatched expect
+refuses. No new events, policies, dependencies, mutable cache or alternate run path.
+Add tests with catalog-schema fake owner and mocks verifying default preview never
+mutates, unknown/mismatched owner refuses, digest stable over observed_at but changes
+on owner/config revision, fresh-read refusal never admits, and duplicate admission
+refusal never calls execute. Existing coordination tests exercise actual exact replay
+and lease-loss; retain them and add integration coverage where practical.
+"""
+
+[scope]
+paths = ["src/lanectl/claim_preview.py", "tests/stage9/test_claim_preview*.py"]
+
+[acceptance]
+files = ["tests/stage9/test_acc_claim_preview.py"]
+exec = ["uv run --no-sync pytest -q -p no:cacheprovider tests/stage9/test_acc_claim_preview.py"]
