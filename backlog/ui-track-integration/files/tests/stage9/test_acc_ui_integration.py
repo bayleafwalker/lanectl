@@ -123,3 +123,20 @@ def test_preview_binds_release_semantics_and_owner_audience(monkeypatch):
     assert cp.preview_claim(owner, changed, lane, repos)["digest"] != preview["digest"]
     owner.repo_id = "repo-b"
     assert cp.preview_claim(owner, release, lane, repos)["digest"] != preview["digest"]
+
+
+def test_real_deploy_events_join_by_train_without_equating_attempt_and_train_shas():
+    events = [make_event("item.claimed", dict(attempt_id="ui-work-a1", lane="implement",
+                         model="model-a", worker="fake"), item_id="ui-work"),
+        make_event("attempt.finished", dict(attempt_id="ui-work-a1", outcome="done", exit_code=0,
+                   head_sha="attempt-commit"), item_id="ui-work"),
+        make_event("train.built", dict(train_id="train-right", base_sha="base",
+                   attempts=["ui-work-a1"], passed=True, checked_sha="merged-train-commit")),
+        make_event("train.deployed", dict(train_id="train-right", repo="lanectl", namespace="dev",
+                   passed=True, checked_sha="merged-train-commit", expires_at="2099-01-01T00:00:00Z")),
+        make_event("train.deployed", dict(train_id="train-other", repo="lanectl", namespace="other",
+                   passed=False, checked_sha="other", expires_at="2099-01-01T00:00:00Z"))]
+    row = lifecycle_rows(RealOwner(), events, work_ids={"ui-work": 2895})[0]
+    trains = row["facts"]["local.train"]["value"]
+    assert [e["data"]["train_id"] for e in trains] == ["train-right", "train-right"]
+    assert "revalidation" not in {r["code"] for r in attention_reasons(row)}

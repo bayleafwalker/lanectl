@@ -20,6 +20,12 @@ CLI. Prefer explicit mapping and require journal agreement; conflicting IDs must
 remain unknown with a mismatch reason, never silently join. Owner calls use numeric
 work ids and run ids from journal, never local release strings. Rows expose work_id
 separately and retain run/attempt/train links; unknown binding stays unknown.
+Join train.deployed/train.torn_down to matching train.built by train_id (those
+events do not repeat attempt ids). Never join another attempt's train or deploy.
+Do not compare train checked_sha with attempt.finished head_sha: merging candidates
+creates a new train commit. Revalidation must use missing checked_sha or explicit
+commit-bound deploy/landing mismatches; planner adjusts old synthetic tests whose
+assumption incorrectly equated attempt and train commits.
 2. Owner public item uses {authority:'sprintctl',state:'ok',as_of,item:{work_id,status,
 resolution}}. Surface nested item.status as owner work state and classify pending
 verification without interpreting top-level state ok as work status. Only done plus
@@ -27,6 +33,9 @@ resolution accepted, authoritative state ok, valid as_of and matching work_id me
 accepted. completed/rejected/withdrawn/unknown/mismatched are never accepted. Keep
 verification projection consistent with Coordinator.completion and update tests
 written in the earlier UI-06 contract interactively (worker must not edit them).
+The outcome label reports owner acceptance; local evidence gaps remain separate
+entry states and must not replace an observed accepted owner decision with a local
+verdict. Absent optional deploy evidence cannot override owner authority.
 3. TUI Ready joins owner-ordered list entries (strings or objects with work_id/id)
 to local row.work_id, not str(dict). TUI --item RELEASE --attempt ATTEMPT allows
 permalink's exact jump; invalid/unknown selection renders no matching row explicitly,
