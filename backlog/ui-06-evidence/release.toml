@@ -1,0 +1,42 @@
+id = "ui-06-evidence"
+repo = "lanectl"
+base_sha = "e1ea62cdcdcac755d0e738f9fa07e1aca28b6722"
+revision = 1
+title = "Lifecycle evidence bundle and verification review"
+task_class = "view"
+size = "M"
+data_class = "public"
+
+outcome = """
+Approved UI-06, served lanectl#2896. Add a stdlib-only read-only verification
+projection in lanectl.verification. evidence_bundle(row, now=None) returns a
+dict containing item_id, attempt_id, outcome and entries. Each entry has kind,
+state, source, revision, checkpoint, observed_at and references (safe locator
+strings only). Kinds: gates, checked-commit, deploy, landing, evidence-chain,
+outcome-report, owner-decision. States distinguish observed, missing, rejected,
+stale, unknown. Preserve provenance from lifecycle fact groups. Read event payloads
+from local.attempt/train/receipt and owner values from work.evidence.tail-v1 and
+work.public.item-v1; never mutate these snapshots, write events, or contact owners.
+The actual public owner result nests status/resolution under item, with authority,
+state and as_of at top level. Only owner item status done plus resolution completed
+is accepted; awaiting-verification and work.synced owner_reported are pending.
+Unknown/unavailable owner facts never imply acceptance. Successful train requires
+checked_sha, deploy must match checked_sha and be unexpired, landing must carry
+landed_sha matching checked_sha. Explicit failures are rejected; expired deploy or
+SHA mismatch is stale; incomplete local records are missing. Do not assume every
+repo requires deploy: its absence is missing, not a verdict that landing is invalid.
+References are explicit ref/reference fields using https:// or lane:// with no
+userinfo, query or fragment; do not recursively publish logs, bodies, credentials,
+file paths or arbitrary strings as links. Evidence body remains local. Provide
+render_bundle(bundle) plain text, showing all entry states/provenance and outcome.
+Add a verification plugin command --repo R --item ID [--json] that reads the same
+lifecycle query, formats bundles, and refuses unconfigured coordination. Tests
+must cover nested owner shapes, partial history, commit mismatch and safe refs.
+"""
+
+[scope]
+paths = ["src/lanectl/verification.py", "tests/stage9/test_verification*.py"]
+
+[acceptance]
+files = ["tests/stage9/test_acc_verification.py"]
+exec = ["uv run --no-sync pytest -q -p no:cacheprovider tests/stage9/test_acc_verification.py"]
