@@ -210,6 +210,9 @@ def _fact(client, catalog, operation, values):
         result = client.invoke(client.envelope(operation, _arguments(definition, values), None))
         if not _valid(result, definition["result_schema"]):
             raise CoordinationError("owner result does not match catalog result schema")
+        if (operation in ("work.public.item-v1", LIST) and isinstance(result, dict)
+                and "authority" in result and result.get("state") != "ok"):
+            raise CoordinationError("owner reports unavailable work state")
         return {"state": "observed", "source": operation, "revision": catalog["revision"],
                 "observed_at": observed_at, "value": result}
     except CoordinationError as exc:
@@ -325,10 +328,10 @@ REASON_RULES = {
     # Rules are deliberately adjacent to the exported codes: these are UI hints,
     # never authority to mutate a work item.
     "lease-uncertainty": "The owner lease fact is unknown or not active.",
-    "revalidation": "A passed train has no checked tip, or its checked tip differs from an attempt head.",
+    "revalidation": "A passed train has no checked tip, or deployment or landing commits disagree with it.",
     "gate-failure": "A local gate, train check, or deploy health record reports passed=false.",
     "stale-deploy": "A successful deploy has expired, or a local fact exceeds the requested freshness threshold.",
-    "pending-verification": "The owner item explicitly awaits verification.",
+    "pending-verification": "Owner verification is pending, or a reported outcome awaits owner confirmation.",
     "reconcile": "A landing/receipt is incomplete: tracker sync failed or an attempt lacks an outcome.",
     "owner-unknown": "A catalog-advertised owner read could not establish a fact.",
 }

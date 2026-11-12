@@ -348,7 +348,7 @@ Planner-owned acceptance files (read them, never edit them):
 - Do not modify or delete existing tests; add new test files instead.
 - Any test you add must fail without your change.
 - No skip/xfail markers, no new dependencies{"" if not rel.allow_deps else " unless required"}.
-- Keep the change under ~{lane.size_budget_lines.get(rel.size, 0)} changed lines.
+- Strict limit: {lane.size_budget_lines.get(rel.size, 0)} added plus deleted lines; count after formatting and leave a margin.
 - Do not touch: {", ".join(protected)} (except paths your write scope names explicitly;
   those changes are reviewed interactively before landing).
 - Commits are optional; uncommitted changes are collected.
