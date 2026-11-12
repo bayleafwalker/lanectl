@@ -16,7 +16,7 @@ Do not add ledger state, mutations, dependencies, new events or govern policy.
 on that id. Resolve numeric work_id from journal_binding's item_id, or an optional
 work_ids mapping (release id -> integer) added to lifecycle_rows. Pass work_ids from
 configured WorkRelease.work refs in lifecycle CLI, TUI query_snapshot and verification
-CLI. Prefer explicit mapping and require journal agreement; conflicting IDs must
+CLI and lifecycle-web CLI. Prefer explicit mapping and require journal agreement; conflicting IDs must
 remain unknown with a mismatch reason, never silently join. Owner calls use numeric
 work ids and run ids from journal, never local release strings. Rows expose work_id
 separately and retain run/attempt/train links; unknown binding stays unknown.
@@ -63,10 +63,17 @@ falling back to uncoordinated execution. Add bounded existing-path check if need
 existing execute wrapper; ordinary callers retain existing behavior). Preserve
 exact uncertainty replay. claim-run must pass that keyword, so a removed owner
 configuration cannot fall through to native uncoordinated execution.
+6. Complete permalink joins: locator/resolve_locator round-trip optional work_id
+when supplied (keep the previous exact key set when absent); show numeric work ID
+separately from release ID. lifecycle-web reads configured release work bindings.
+Never recurse into body/log/transcript/detail/claims runtime payloads when finding
+references; only known metadata wrappers and explicit reference keys may publish
+locators. Malformed URL refs must be ignored without crashing a snapshot render.
+Emit shell-safe CLI jump arguments for repository and identity selectors.
 """
 
 [scope]
-paths = ["src/lanectl/lifecycle.py", "src/lanectl/tui.py", "src/lanectl/verification.py", "src/lanectl/claim_preview.py", "src/lanectl/runner.py", "tests/stage9/test_ui_integration*.py"]
+paths = ["src/lanectl/lifecycle.py", "src/lanectl/tui.py", "src/lanectl/verification.py", "src/lanectl/claim_preview.py", "src/lanectl/runner.py", "src/lanectl/lifecycle_web.py", "tests/stage9/test_ui_integration*.py"]
 
 [acceptance]
 files = ["tests/stage9/test_acc_ui_integration.py"]
