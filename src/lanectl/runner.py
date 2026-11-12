@@ -414,12 +414,25 @@ def _coordination_park(c, log, error):
 
 def _coordinate_execution(native):
     @functools.wraps(native)
-    def execute(c: Claim, log: EventLog, adapter_fn=None) -> str:
+    def execute(c: Claim, log: EventLog, adapter_fn=None, *, require_coordination=False,
+                expected_owner=None) -> str:
         from . import coordination, integrator
         try:
             owner = coordination.configured(c.repo.name)
             if owner is None:
+                if require_coordination:
+                    raise coordination.CoordinationError("owner coordination is not configured")
                 return native(c, log, adapter_fn)
+            if expected_owner is not None:
+                # A preview binds the owner audience it was shown against.  If
+                # the configured endpoint/repository moved, refuse rather than
+                # execute against a different owner.
+                client = getattr(owner, "client", None)
+                for key in ("endpoint", "repo_id"):
+                    if key in expected_owner and expected_owner[key] is not None \
+                            and getattr(client, key, None) != expected_owner[key]:
+                        raise coordination.CoordinationError(
+                            f"owner {key} changed since the preview")
             if c.lane.sandbox.get("mode") != "systemd-run":
                 raise coordination.CoordinationError("coordinated execution requires credential-isolating systemd sandbox")
             if c.repo.train_isolation != 'namespace':
