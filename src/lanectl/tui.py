@@ -7,12 +7,14 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
 import curses
+import json
 import os
 from queue import Empty, Queue
 from threading import Thread
 import time
 
-from .lifecycle import READS, attention_reasons, lifecycle_rows, local_facts, ready_work
+from .lifecycle import (READS, attention_reasons, lifecycle_rows, local_facts,
+                        ready_work, release_work_ids)
 
 READY = "Ready"
 ACTIVE = "Active"
@@ -33,7 +35,11 @@ def _facts(row):
 
 
 def _state(row):
-    return _facts(row).get("work.public.item-v1", {}).get("value", {}).get("state", "unknown")
+    value = _facts(row).get("work.public.item-v1", {}).get("value", {})
+    item = value.get("item") if isinstance(value, dict) else None
+    if isinstance(item, dict):
+        return item.get("status", "unknown")
+    return value.get("state", "unknown") if isinstance(value, dict) else "unknown"
 
 
 def _has_events(row, name):
@@ -110,6 +116,7 @@ def _cached_owner_snapshot(previous, events, now):
     for row in rows:
         prior = cached.get(_identity(row))
         if prior:
+            row["work_id"] = prior.get("work_id")
             for name in READS:
                 if name in prior.get("facts", {}):
                     row["facts"][name] = dict(prior["facts"][name])
@@ -265,18 +272,31 @@ def source_status_line(snapshot):
     return f"{event_part} · OWNER {owner_state} {capability} · {owner_part}"
 
 
+def _ready_key(item):
+    """Owner list entries may be a string id or an object with work_id/id."""
+    if isinstance(item, dict):
+        return item.get("work_id", item.get("id"))
+    return item
+
+
 def view_rows(snapshot, view, filter_text=""):
     """Return normalized rows for a view, preserving owner order for Ready."""
     all_rows = snapshot.get("rows", [])
-    by_item = {}
+    by_item, by_work = {}, {}
     for row in all_rows:
         by_item.setdefault(_text(row.get("item_id")), row)
+        if row.get("work_id") is not None:
+            by_work.setdefault(_text(row.get("work_id")), row)
     if view == READY:
         items = snapshot.get("ready", {}).get("value", {}).get("items", [])
         rows = []
         for item in items:
-            key = _text(item)
-            rows.append(by_item.get(key, {"item_id": item, "attempt_id": None, "facts": {}, "reasons": []}))
+            key = _ready_key(item)
+            match = by_work.get(_text(key)) if isinstance(item, dict) else by_item.get(_text(key))
+            if match is None:
+                match = by_item.get(_text(key), by_work.get(_text(key)))
+            rows.append(match or {"item_id": key, "work_id": key if isinstance(item, dict) else None,
+                                  "attempt_id": None, "facts": {}, "reasons": []})
     elif view == ACTIVE:
         rows = [row for row in all_rows if _has_events(row, "local.attempt") or
                 _facts(row).get("work.lease.read-v1", {}).get("state") == "observed"]
@@ -431,14 +451,17 @@ def render_plain_table(snapshot, view, filter_text=""):
 
 
 def detail_lines(row, *, evidence_only=False):
-    """Render all selected facts with source, revision and observation time."""
+    """Render provenance plus the shared safe-detail allowlist."""
+    from .verification import safe_fact_details
     lines = []
     for name, fact in _facts(row).items():
         if evidence_only and "evidence" not in name:
             continue
         lines.append(f"{name}: {fact.get('state', 'unknown')} · source={fact.get('source', '-')} · rev={fact.get('revision', '-')} · observed={fact.get('observed_at', '-')}")
         if fact.get("state") == "observed":
-            lines.append(f"  value: {_text(fact.get('value'))}")
+            details = safe_fact_details(name, fact)
+            if details:
+                lines.append(f"  {json.dumps(details, sort_keys=True, default=str)}")
         else:
             lines.append(f"  reason: {_text(fact.get('reason'))}")
     for reason in row.get("reasons", []):
@@ -451,23 +474,25 @@ def detail_lines(row, *, evidence_only=False):
 
 
 def source_lines(row):
-    """List fact provenance and URL/path references separately from detail."""
+    """List fact provenance and explicit safe references only."""
+    from .verification import _references
     lines = []
-    references = set()
+    references = []
+
     def collect(value):
         if isinstance(value, dict):
-            for child in value.values(): collect(child)
+            for reference in _references(value):
+                if reference not in references:
+                    references.append(reference)
+            for child in value.values():
+                collect(child)
         elif isinstance(value, (list, tuple)):
-            for child in value: collect(child)
-        elif isinstance(value, str):
-            for token in value.split():
-                token = token.strip("()[]{}<>,;\"'")
-                if token.startswith(("https://", "http://", "file://", "/", "./", "../")):
-                    references.add(token)
+            for child in value:
+                collect(child)
+
     for name, fact in _facts(row).items():
-        source = fact.get("source", "-")
-        lines.append(f"{name}: source={source} · revision={fact.get('revision', '-')}")
-        collect(source)
+        local = " · local-only" if name.startswith("local.") else ""
+        lines.append(f"{name}: source={fact.get('source', '-')} · revision={fact.get('revision', '-')}{local}")
         collect(fact.get("value"))
     lines.extend(f"link: {reference}" for reference in sorted(references))
     return lines or ["No sources were available for this row."]
@@ -486,6 +511,9 @@ def render_screen(snapshot, view, *, width, height, selected=0, filter_text="", 
     shown_filter = filter_draft if filtering else filter_text
     lines = [f"{view} (read-only) · observed {stamp}", source_status_line(snapshot), f"FILTER {shown_filter or '-'} · {len(rows)} rows",
              _fit(_columns(view), width)]
+    if snapshot.get("selection_missing") and not (help or detail is not None or filtering):
+        item, attempt = snapshot["selection_missing"]
+        lines.append(f"NO MATCHING ROW item={_text(item)} attempt={_text(attempt)}")
     if filtering:
         lines.append("FILTER TEXT (Enter apply · Esc cancel): " + filter_draft)
     if help:
@@ -499,7 +527,13 @@ def render_screen(snapshot, view, *, width, height, selected=0, filter_text="", 
         else:
             row = rows[detail_index]
             lines.append(("SOURCES " if mode == "sources" else "EVIDENCE " if mode in ("evidence", True) else "DETAIL ") + _text(row.get("item_id")))
-            lines.extend(source_lines(row) if mode == "sources" else detail_lines(row, evidence_only=mode in ("evidence", True)))
+            if mode == "sources":
+                lines.extend(source_lines(row))
+            elif mode in ("evidence", True):
+                from .verification import evidence_bundle, render_bundle
+                lines.extend(render_bundle(evidence_bundle(row)).splitlines())
+            else:
+                lines.extend(detail_lines(row))
     else:
         for index, row in enumerate(rows):
             lines.append(_fit(_cells(row, view), width, "> " if index == selected else "  "))
@@ -508,10 +542,31 @@ def render_screen(snapshot, view, *, width, height, selected=0, filter_text="", 
     return "\n".join(line[:width] for line in lines[:height])
 
 
-def query_snapshot(client, events, *, journal_path=None):
-    rows = lifecycle_rows(client, events, journal_path=journal_path)
+def query_snapshot(client, events, *, journal_path=None, work_ids=None,
+                   item=None, attempt=None):
+    if work_ids is None:
+        try:
+            from .config import load_releases
+            work_ids = release_work_ids(load_releases())
+        except (OSError, ValueError):
+            work_ids = None
+    rows = lifecycle_rows(client, events, item_id=item, attempt_id=attempt,
+                          journal_path=journal_path, work_ids=work_ids)
     for row in rows:
         row["reasons"] = attention_reasons(row)
+    if item is not None or attempt is not None:
+        # A permalink selects an exact identity; an unknown selection is empty
+        # rather than an invitation to fall through to another lifecycle.
+        ready = {"state": "observed", "source": "selection", "revision": None,
+                 "value": {"items": [
+                     row.get("item_id") if row.get("work_id") is None else
+                     {"work_id": row.get("work_id"), "item_id": row.get("item_id")}
+                     for row in rows]}}
+        snapshot = build_snapshot(ready, rows)
+        snapshot["selection"] = (item, attempt)
+        if not rows:
+            snapshot["selection_missing"] = (item, attempt)
+        return snapshot
     return build_snapshot(ready_work(client), rows)
 
 
@@ -523,6 +578,8 @@ def _cmd(args, log):
         print(f"{args.repo}: Vuoro coordination is not configured")
         return 1
     no_color = args.no_color or bool(os.environ.get("NO_COLOR"))
+    from .config import load_releases
+    work_ids = release_work_ids(load_releases())
     def event_reader(checkpoint):
         offset = checkpoint or 0
         events = log.read(after=offset)
@@ -532,10 +589,15 @@ def _cmd(args, log):
         # currently advertised owner reads are snapshots, so no unsupported
         # revision argument is manufactured for the owner.
         del revision
-        return query_snapshot(coordinator.client, events, journal_path=coordinator.path)
+        return query_snapshot(coordinator.client, events, journal_path=coordinator.path,
+                              work_ids=work_ids, item=args.item, attempt=args.attempt)
     if args.plain:
         refreshed = refresh_state(initial_refresh_state(), event_reader, owner_reader)
-        print(render_plain_table(refreshed["snapshot"], args.view.title(), args.filter))
+        snapshot = refreshed["snapshot"]
+        if (args.item is not None or args.attempt is not None) and not snapshot.get("rows"):
+            print(f"no matching lifecycle row for item={args.item} attempt={args.attempt}")
+            return 1
+        print(render_plain_table(snapshot, args.view.title(), args.filter))
         return 0
     def run(screen):
         screen.keypad(True)
@@ -583,6 +645,8 @@ def register(sub):
     parser.add_argument("--repo", required=True, help="configured owner repository")
     parser.add_argument("--view", choices=("ready", "active", "verification"), default="ready")
     parser.add_argument("--filter", default="", help="initial text filter")
+    parser.add_argument("--item", help="exact local release id to jump to")
+    parser.add_argument("--attempt", help="exact attempt id to jump to")
     parser.add_argument("--plain", action="store_true", help="print the same query snapshot as the TUI")
     parser.add_argument("--no-color", action="store_true", help="disable terminal color")
     parser.add_argument("--refresh", type=float, default=15.0, help="refresh interval in seconds (default: 15)")

@@ -11,7 +11,7 @@ def fact(value, source="lanectl.events"):
 
 
 def row():
-    return dict(item_id="ui-work", attempt_id="ui-work-a1", facts={
+    return dict(item_id="ui-work", work_id=2896, attempt_id="ui-work-a1", facts={
         "local.attempt": fact([make_event("gate.result", dict(
             attempt_id="ui-work-a1", gate="suite", passed=True, violations=[]))]),
         "local.train": fact([
@@ -56,7 +56,7 @@ def test_receipts_are_pending_until_fresh_owner_acceptance():
         assert by_kind[kind]["revision"] == "r7"
         assert by_kind[kind]["observed_at"]
     snapshot["facts"]["work.public.item-v1"]["value"]["item"].update(
-        status="done", resolution="completed")
+        status="done", resolution="accepted")
     assert evidence_bundle(snapshot, now=NOW)["outcome"] == "accepted"
 
 

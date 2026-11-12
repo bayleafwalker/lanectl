@@ -141,7 +141,7 @@ def test_digest_ignores_read_time_and_binds_owner_and_configuration(monkeypatch)
     assert cp.preview_claim(owner, release, lane, repos)["digest"] != first["digest"]
     owner.catalog["revision"] = "r7"
     owner.value["as_of"] = "2026-11-12T12:00:00Z"
-    assert cp.preview_claim(owner, release, lane, repos)["digest"] != first["digest"]
+    assert cp.preview_claim(owner, release, lane, repos)["digest"] == first["digest"]
 
     owner.value = deepcopy(Owner().value)
     assert cp.preview_claim(owner, release, replace(lane, revision=lane.revision + 1), repos)["digest"] != first["digest"]

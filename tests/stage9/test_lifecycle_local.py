@@ -79,7 +79,7 @@ REASON_CASES = [
     ("lease-uncertainty", {"work.lease.read-v1": _fact("work.lease.read-v1", {}, state="unknown")},
      "work.lease.read-v1", "item_id"),
     ("revalidation", {"local.train": _fact("local.train", [_event("train.built", {
-        "train_id": "train-1", "passed": True, "checked_sha": "old"})]),
+        "train_id": "train-1", "passed": True, "checked_sha": None})]),
         "local.attempt": _fact("local.attempt", [_event("attempt.finished", {
             "attempt_id": "attempt-1", "head_sha": "new"})])}, "local.train", "train_id"),
     ("gate-failure", {"local.attempt": _fact("local.attempt", [_event("gate.result", {

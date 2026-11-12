@@ -47,6 +47,12 @@ def work_id(release):
     return int(number)
 
 
+def _audience(client):
+    """Safe owner audience fields; never credentials or tokens."""
+    return {"endpoint": getattr(client, "endpoint", None),
+            "repo_id": getattr(client, "repo_id", None)}
+
+
 def _owner(client, item_id):
     """One fresh, catalog-checked item read; never a cached or joined fact."""
     try:
@@ -89,11 +95,16 @@ def _bound(release, lane, repo, owner, item, item_id):
             "id": release.id, "repo": release.repo, "revision": release.revision,
             "base_sha": release.base_sha, "work": release.work,
             "work_complete": release.work_complete, "draft": release.draft,
+            "title": release.title, "outcome": release.outcome,
             "size": release.size, "task_class": release.task_class,
             "data_class": release.data_class, "scope_paths": list(release.scope_paths),
+            "constraints": list(release.constraints),
+            "escalate_when": list(release.escalate_when),
+            "allow_deps": release.allow_deps, "allow_test_edits": release.allow_test_edits,
             "eligible_lanes": list(release.eligible_lanes),
             "acceptance_exec": list(release.acceptance.exec),
             "acceptance_files": list(release.acceptance.files),
+            "acceptance_fail_on_base": release.acceptance.fail_on_base,
         },
         "lane": {
             "lane": lane.lane, "revision": lane.revision, "digest": lane.digest,
@@ -147,7 +158,8 @@ def preview_claim(client, release, lane, repos):
         "revision": owner["revision"],
         "authority": owner["value"].get("authority") if isinstance(owner["value"], dict) else None,
         "state": owner["value"].get("state") if isinstance(owner["value"], dict) else None,
-        "as_of": owner["value"].get("as_of") if isinstance(owner["value"], dict) else None,
+        "endpoint": _audience(client).get("endpoint"),
+        "repo_id": _audience(client).get("repo_id"),
     }, item, item_id)
     return {
         "release_id": release.id,
@@ -176,6 +188,17 @@ def command(preview):
             f"--execute --expect {preview['digest']}")
 
 
+def _same_claim(claim, release, lane, repo):
+    """The admitted claim must still describe the freshly loaded configuration."""
+    rel = claim.rel
+    return (rel.id == release.id and rel.revision == release.revision
+            and rel.base_sha == release.base_sha and rel.repo == release.repo
+            and rel.work == release.work and rel.work_complete == release.work_complete
+            and claim.lane.lane == lane.lane and claim.lane.revision == lane.revision
+            and claim.lane.digest == lane.digest
+            and repo is not None and claim.repo.name == repo.name)
+
+
 def execute_preview(preview, log, *, client=None):
     """Re-read everything, re-check the digest, then use the existing run path.
 
@@ -193,6 +216,7 @@ def execute_preview(preview, log, *, client=None):
         raise PreviewRefused(f"configuration unavailable: {exc}") from None
     if release is None:
         raise PreviewRefused(f"release {release_id!r} is no longer available")
+    injected = client is not None
     if client is None:
         client = _client_for(release.repo)
     fresh = preview_claim(client, release, lane, repos)
@@ -203,10 +227,18 @@ def execute_preview(preview, log, *, client=None):
     claim = runner.admit(lane.lane, log, only=release_id)
     if isinstance(claim, str):
         return claim
-    if claim.rel.id != release_id or claim.rel.revision != release.revision \
-            or claim.rel.base_sha != release.base_sha:
+    if not _same_claim(claim, release, lane, repos.get(release.repo)):
         raise PreviewRefused("admission returned a claim for different release content")
-    return runner.execute(claim, log)
+    expected_owner = _audience(client)
+    if not injected:
+        # Effect-time revalidation: the same owner audience must still be
+        # configured immediately before admission hands over to execution.
+        current = _client_for(release.repo)
+        if _audience(current) != expected_owner:
+            raise PreviewRefused("owner configuration changed since the preview")
+        expected_owner = _audience(current)
+    return runner.execute(claim, log, require_coordination=True,
+                          expected_owner=expected_owner)
 
 
 def render(preview):
@@ -239,6 +271,7 @@ def register(sub):
 
 def _cmd(args, log, *, client=None):
     """CLI adapter kept thin so tests can inject a fake catalog client."""
+    provided = client is not None
     try:
         release = next((rel for rel in load_releases() if rel.id == args.item), None)
         if release is None:
@@ -260,7 +293,10 @@ def _cmd(args, log, *, client=None):
         if args.expect != preview["digest"]:
             print(f"refusing to execute: --expect {args.expect} is not the current digest {preview['digest']}")
             return 1
-        print(execute_preview(preview, log, client=client))
+        # An injected client belongs to the caller (tests); a production
+        # claim-run re-reads the configured owner immediately before effects.
+        print(execute_preview(preview, log, client=client) if provided
+              else execute_preview(preview, log))
         return 0
     except (PreviewRefused, CoordinationError, OSError, ValueError) as exc:
         print(f"claim-run: {exc}")

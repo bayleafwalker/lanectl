@@ -61,14 +61,36 @@ def local_facts(events, *, item_id=None, attempt_id=None, run_id=None):
         attempts = [(n, e) for n, e in numbered if e.get("item_id") == item_id
                     and e.get("type") in ("item.claimed", "attempt.finished", "gate.result", "decision.recorded")]
     attempt_ids = {e.get("data", {}).get("attempt_id") for _, e in attempts}
-    trains = [(n, e) for n, e in numbered if e.get("type") in ("train.built", "train.deployed", "train.torn_down")
-              and (attempt_id is None or attempt_id in e.get("data", {}).get("attempts", [])
-                   or e.get("data", {}).get("attempt_id") == attempt_id)]
+    if attempt_id is not None:
+        attempt_ids = {attempt_id}
+
+    def belongs(event):
+        """Whether an event names one of this row's attempts."""
+        data = event.get("data", {}) if isinstance(event, dict) else {}
+        if not attempt_ids:
+            return True
+        if data.get("attempt_id") in attempt_ids:
+            return True
+        return bool(set(data.get("attempts") or ()) & attempt_ids)
+
+    # ``train.deployed`` and ``train.torn_down`` do not repeat attempt ids:
+    # join them only to a build this row already owns, by train id.
+    built_ids = {e.get("data", {}).get("train_id") for _, e in numbered
+                 if e.get("type") == "train.built" and belongs(e)}
+    trains = [(n, e) for n, e in numbered
+              if (e.get("type") == "train.built" and belongs(e))
+              or (e.get("type") in ("train.deployed", "train.torn_down")
+                  and (not attempt_ids or e.get("data", {}).get("train_id") in built_ids))]
     train_ids = {e.get("data", {}).get("train_id") for _, e in trains}
-    receipts = [(n, e) for n, e in numbered if e.get("type") in ("item.landed", "work.synced")
-                and (attempt_id is None or e.get("data", {}).get("attempt_id") == attempt_id
-                     or e.get("data", {}).get("train_id") in train_ids)
-                and (item_id is None or e.get("item_id") == item_id or e.get("data", {}).get("attempt_id") in attempt_ids)]
+    if attempt_id is not None:
+        receipts = [(n, e) for n, e in numbered if e.get("type") in ("item.landed", "work.synced")
+                    and (e.get("data", {}).get("attempt_id") == attempt_id
+                         or e.get("data", {}).get("train_id") in train_ids)
+                    and (item_id is None or e.get("item_id") == item_id)]
+    else:
+        receipts = [(n, e) for n, e in numbered if e.get("type") in ("item.landed", "work.synced")
+                    and (item_id is None or e.get("item_id") == item_id
+                         or e.get("data", {}).get("train_id") in train_ids)]
     return {"local.release": _event_fact("local.release", releases),
             "local.attempt": _event_fact("local.attempt", attempts),
             "local.train": _event_fact("local.train", trains),
@@ -137,6 +159,50 @@ def journal_binding(journal_path, attempt_id):
         return None
 
 
+def _integer(value):
+    return value if isinstance(value, int) and not isinstance(value, bool) else None
+
+
+def _binding(item_id, attempt_id, journal_path, work_ids):
+    """Resolve the numeric owner work id without silently joining identities.
+
+    ``item_id`` stays the local release id.  An explicit ``work_ids`` mapping
+    wins, but only when the persisted journal agrees; a conflict is returned as
+    a reason so the caller publishes an unknown owner fact instead of asking
+    about someone else's work.
+    """
+    hint = journal_binding(journal_path, attempt_id) or {}
+    run_id = hint.get("run_id") if isinstance(hint, dict) else None
+    journal_item = _integer(hint.get("item_id")) if isinstance(hint, dict) else None
+    explicit = None
+    if isinstance(work_ids, dict) and item_id in work_ids:
+        explicit = _integer(work_ids[item_id])
+    if explicit is not None:
+        if journal_item is not None and journal_item != explicit:
+            return None, run_id, (f"work identifier mismatch: release {item_id!r} maps to "
+                                  f"{explicit}, journal records {journal_item}")
+        return explicit, run_id, None
+    if journal_item is not None:
+        return journal_item, run_id, None
+    local = _integer(item_id)
+    if local is not None:
+        return local, run_id, None
+    return None, run_id, "no numeric work identifier available"
+
+
+def release_work_ids(releases):
+    """Map configured local release ids to their complete ``repo#id`` work ids."""
+    mapping = {}
+    for release in releases or ():
+        work, repo = getattr(release, "work", None), getattr(release, "repo", None)
+        if not work:
+            continue
+        owner, _, number = str(work).partition("#")
+        if owner == repo and number.isdigit() and int(number) > 0:
+            mapping[getattr(release, "id", None)] = int(number)
+    return mapping
+
+
 def _fact(client, catalog, operation, values):
     observed_at = _now()
     try:
@@ -151,16 +217,21 @@ def _fact(client, catalog, operation, values):
                 "observed_at": observed_at, "reason": str(exc)}
 
 
-def lifecycle(client, *, item_id=None, run_id=None, attempt_id=None, journal_path=None, events=None):
+def lifecycle(client, *, item_id=None, work_id=None, run_id=None, attempt_id=None,
+              journal_path=None, events=None, work_ids=None, binding_error=None):
     """Join fresh owner reads into one snapshot without manufacturing state.
 
-    ``attempt_id`` and ``journal_path`` may recover identifiers after restart,
-    but all returned owner values come from fresh catalog-advertised reads.
+    ``item_id`` remains the local release identifier and selects local facts.
+    ``work_id`` is the numeric owner identifier used for owner calls.  It comes
+    from the journal binding or an explicit ``work_ids`` mapping; the two must
+    agree, and an unknown binding stays unknown.
     """
-    hint = journal_binding(journal_path, attempt_id)
-    if hint:
-        item_id = item_id if item_id is not None else hint.get("item_id")
-        run_id = run_id if run_id is not None else hint.get("run_id")
+    if work_id is None and binding_error is None:
+        work_id, journal_run, binding_error = _binding(item_id, attempt_id, journal_path, work_ids)
+        run_id = run_id if run_id is not None else journal_run
+    elif run_id is None:
+        hint = journal_binding(journal_path, attempt_id) or {}
+        run_id = hint.get("run_id") if isinstance(hint, dict) else None
     try:
         catalog = client.discover()
         if not isinstance(catalog.get("revision"), str):
@@ -171,43 +242,66 @@ def lifecycle(client, *, item_id=None, run_id=None, attempt_id=None, journal_pat
         facts = {name: dict(unknown, source=name) for name in READS}
         if events is not None:
             facts.update(local_facts(events, item_id=item_id, attempt_id=attempt_id, run_id=run_id))
-        return {"item_id": item_id, "run_id": run_id, "attempt_id": attempt_id, "facts": facts}
-    values = {"item_id": item_id, "work_id": item_id, "run_id": run_id}
+        return {"item_id": item_id, "work_id": work_id, "run_id": run_id,
+                "attempt_id": attempt_id, "facts": facts}
+    values = {"item_id": work_id, "work_id": work_id, "run_id": run_id}
     facts = {}
     for operation in READS:
-        if operation in ("work.public.item-v1", "work.lease.read-v1") and item_id is None:
+        missing = ("no item identifier available"
+                   if operation in ("work.public.item-v1", "work.lease.read-v1")
+                   else "no run identifier available")
+        if binding_error is not None:
             facts[operation] = {"state": "unknown", "source": operation,
                                 "revision": catalog["revision"], "observed_at": _now(),
-                                "reason": "no item identifier available"}
-        elif operation in ("work.run.resolve-v1", "work.evidence.tail-v1") and run_id is None:
+                                "reason": binding_error}
+        elif work_id is None and operation in ("work.public.item-v1", "work.lease.read-v1"):
             facts[operation] = {"state": "unknown", "source": operation,
                                 "revision": catalog["revision"], "observed_at": _now(),
-                                "reason": "no run identifier available"}
+                                "reason": missing}
+        elif run_id is None and operation in ("work.run.resolve-v1", "work.evidence.tail-v1"):
+            facts[operation] = {"state": "unknown", "source": operation,
+                                "revision": catalog["revision"], "observed_at": _now(),
+                                "reason": missing}
         else:
             facts[operation] = _fact(client, catalog, operation, values)
     if events is not None:
         facts.update(local_facts(events, item_id=item_id, attempt_id=attempt_id, run_id=run_id))
-    return {"item_id": item_id, "run_id": run_id, "attempt_id": attempt_id, "facts": facts}
+    return {"item_id": item_id, "work_id": work_id, "run_id": run_id,
+            "attempt_id": attempt_id, "facts": facts}
 
 
-def lifecycle_rows(client, events, *, item_id=None, run_id=None, journal_path=None):
+def lifecycle_rows(client, events, *, item_id=None, work_ids=None, attempt_id=None,
+                   run_id=None, journal_path=None):
     """Return one normalized lifecycle row for every local attempt.
 
-    The item id comes from the local claim event and is passed unchanged to the
-    owner.  Thus an owner/local ID mismatch is visible in the two facts instead
-    of being coerced into a false join.
+    The item id comes from the local claim event and is passed unchanged to
+    local fact filtering.  Only a resolved numeric work id reaches the owner,
+    so an owner/local ID mismatch is visible instead of being coerced into a
+    false join.
     """
     claims = [event for event in events if event.get("type") == "item.claimed"
-              and (item_id is None or event.get("item_id") == item_id)]
-    if not claims and item_id is not None:
+              and (item_id is None or event.get("item_id") == item_id)
+              and (attempt_id is None or event.get("data", {}).get("attempt_id") == attempt_id)]
+    if not claims:
+        if item_id is None:
+            return []
+        # An explicit attempt selector is an exact jump: an unknown selection
+        # yields no row rather than another lifecycle.
+        if attempt_id is not None:
+            return []
         return [lifecycle(client, item_id=item_id, run_id=run_id, events=events,
-                          journal_path=journal_path)]
+                          journal_path=journal_path, work_ids=work_ids)]
     rows = []
     for claim in claims:
         data = claim["data"]
-        rows.append(lifecycle(client, item_id=claim.get("item_id"), run_id=run_id,
+        local_item = claim.get("item_id")
+        resolved, journal_run, error = _binding(local_item, data.get("attempt_id"),
+                                                journal_path, work_ids)
+        rows.append(lifecycle(client, item_id=local_item, work_id=resolved,
+                              run_id=run_id if run_id is not None else journal_run,
                               attempt_id=data.get("attempt_id"), events=events,
-                              journal_path=journal_path))
+                              journal_path=journal_path, work_ids=work_ids,
+                              binding_error=error))
     return rows
 
 
@@ -273,12 +367,29 @@ def attention_reasons(snapshot, *, now=None, stale_after_s=None):
             reasons.append({"code": "lease-unknown", "fact": "work.lease.read-v1",
                             "next_action": "wait for an authorized lease read"})
     item = facts.get("work.public.item-v1", {})
+    receipt_values = _values(facts.get("local.receipt", {}))
     if item.get("state") == "observed":
         value = item.get("value", {})
-        # The item result itself stays opaque; only catalog-independent terms are classified.
-        if value.get("state") in ("pending-verification", "awaiting-verification"):
+        nested = value.get("item") if isinstance(value, dict) else None
+        # Nested ``item.status`` is owner work state; top-level ``state: ok``
+        # only says the owner read succeeded.
+        status = nested.get("status") if isinstance(nested, dict) else (
+            value.get("state") if isinstance(value, dict) else None)
+        if status in ("pending-verification", "awaiting-verification"):
             reasons.append(_reason("pending-verification", [{"fact": "work.public.item-v1", "identifiers": {
-                "item_id": snapshot.get("item_id")}}],
+                "item_id": snapshot.get("item_id"), "work_id": snapshot.get("work_id")}}],
+                                   ["lanectl lifecycle --repo R --item N", "owner work item read"]))
+    if not any(reason["code"] == "pending-verification" for reason in reasons):
+        pending = next((e for e in reversed(receipt_values)
+                        if e.get("type") == "work.synced"
+                        and e.get("data", {}).get("owner_reported") is True
+                        and e.get("data", {}).get("pending_owner") is True), None)
+        if pending is not None:
+            # A sourced hint from the local report: never an owner status or
+            # proof of acceptance.
+            reasons.append(_reason("pending-verification", [{"fact": "local.receipt", "identifiers": {
+                "item_id": snapshot.get("item_id"), "attempt_id": snapshot.get("attempt_id"),
+                "work": pending.get("data", {}).get("work")}}],
                                    ["lanectl lifecycle --repo R --item N", "owner work item read"]))
     attempt, train, receipt = (_values(facts.get(name, {})) for name in ("local.attempt", "local.train", "local.receipt"))
     gates = [e for e in attempt if e.get("type") == "gate.result" and not e.get("data", {}).get("passed")]
@@ -289,9 +400,23 @@ def attention_reasons(snapshot, *, now=None, stale_after_s=None):
                                ["lanectl events --item N", "lanectl train R"]))
     built = next((e for e in reversed(train) if e.get("type") == "train.built" and e.get("data", {}).get("passed")), None)
     finished = next((e for e in reversed(attempt) if e.get("type") == "attempt.finished"), None)
-    if built and (not built["data"].get("checked_sha") or (finished and built["data"].get("checked_sha") != finished["data"].get("head_sha"))):
-        reasons.append(_reason("revalidation", [{"fact": "local.train", "identifiers": built["data"]}],
-                               ["lanectl recheck TRAIN_ID", "lanectl deploy run TRAIN_ID"]))
+    if built:
+        built_data = built.get("data", {})
+        checked_sha, train_id = built_data.get("checked_sha"), built_data.get("train_id")
+        deploy = next((e for e in reversed(train) if e.get("type") == "train.deployed"
+                       and (train_id is None or e.get("data", {}).get("train_id") == train_id)), None)
+        landing = next((e for e in reversed(receipt) if e.get("type") == "item.landed"), None)
+        deploy_sha = deploy.get("data", {}).get("checked_sha") if deploy else None
+        landed = landing.get("data", {}) if landing else {}
+        landed_sha, landed_train = landed.get("landed_sha"), landed.get("train_id")
+        # A merged train commit is not the attempt commit, so compare only
+        # commit-bound deploy/landing records with the train's checked tip.
+        if (not checked_sha
+                or (deploy_sha and deploy_sha != checked_sha)
+                or (landed_train and train_id and landed_train != train_id)
+                or (landed_sha and landed_sha != checked_sha)):
+            reasons.append(_reason("revalidation", [{"fact": "local.train", "identifiers": built_data}],
+                                   ["lanectl recheck TRAIN_ID", "lanectl deploy run TRAIN_ID"]))
     if (receipt and (not finished or any(not e.get("data", {}).get("ok", True) for e in receipt if e.get("type") == "work.synced"))):
         reasons.append(_reason("reconcile", [{"fact": "local.receipt", "identifiers": receipt[-1].get("data", {})}],
                                ["lanectl work reconcile", "lanectl lifecycle --repo R --item N"]))
@@ -348,7 +473,10 @@ def _cmd(args, log, *, client=None):
         journal_path = coordinator.path
     else:
         journal_path = None
-    rows = lifecycle_rows(client, log.read(), item_id=args.item, journal_path=journal_path)
+    from .config import load_releases
+    work_ids = release_work_ids(load_releases())
+    rows = lifecycle_rows(client, log.read(), item_id=args.item, work_ids=work_ids,
+                          journal_path=journal_path)
     for row in rows:
         row["reasons"] = attention_reasons(row)
     if args.json:
