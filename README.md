@@ -6,6 +6,7 @@ gates decide preliminary acceptance; an integrator lands candidate trains.
 
 Design and invariants: [ADR 0001](docs/adr/0001-autonomous-lanes.md).
 Full delivery stack and activation: [operation guide](docs/full-stack-operation.md).
+Operator lifecycle, claims, verification and accounting: [operator guide](docs/operator-ui.md).
 Planner cycle: [.claude/skills/lane-planner/SKILL.md](.claude/skills/lane-planner/SKILL.md).
 
 ```sh

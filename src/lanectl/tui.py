@@ -571,7 +571,7 @@ def query_snapshot(client, events, *, journal_path=None, work_ids=None,
 
 
 def _cmd(args, log):
-    """Interactive read-only command.  No key invokes an owner operation."""
+    """Interactive read-only command. No key mutates owner state."""
     from .coordination import configured
     coordinator = configured(args.repo)
     if coordinator is None:

@@ -1,10 +1,13 @@
-# Full delivery stack (0.2.0)
+# Full delivery stack (0.2.2)
 
 Lanectl now carries an intent through independently authored draft acceptance,
 native implementation, deterministic gates, a checked train, disposable dev
 deployment and landing. Optional Vuoro coordination supplies leases, evidence,
 owner-confirmed completion and a served lane event stream. The operator still
 owns policy, protected-path review and production promotion.
+
+For lifecycle inspection, claim previews and holds, verification, shareable
+snapshots and time/cost accounting, see the [operator UI guide](operator-ui.md).
 
 ## Intent and maintenance intake
 
