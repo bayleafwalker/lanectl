@@ -109,3 +109,17 @@ def test_tui_sources_never_publish_raw_paths_or_secret_query_refs():
     assert "private transcript" not in text and "/home/user/private" not in text
     assert "token=secret" not in text
     assert "https://example.test/safe" in text
+
+
+def test_preview_binds_release_semantics_and_owner_audience(monkeypatch):
+    from dataclasses import replace
+    from lanectl import claim_preview as cp
+    from tests.stage9.test_acc_claim_preview import config, Owner
+    release, lane, repos = config(monkeypatch)
+    owner = Owner()
+    owner.endpoint, owner.repo_id = "https://owner.example.test", "repo-a"
+    preview = cp.preview_claim(owner, release, lane, repos)
+    changed = replace(release, outcome=release.outcome + " changed")
+    assert cp.preview_claim(owner, changed, lane, repos)["digest"] != preview["digest"]
+    owner.repo_id = "repo-b"
+    assert cp.preview_claim(owner, release, lane, repos)["digest"] != preview["digest"]

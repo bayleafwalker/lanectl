@@ -36,7 +36,10 @@ train/deploy/landing and owner facts, preserving provenance, states and safe ref
 successful report stays pending. source_lines no longer scavenges arbitrary raw data
 for paths or links; reuse explicit safe-reference rules and label local-only facts.
 5. UI-05 preview digest must not bind the owner as_of read clock (it changes every
-read). Bind semantic item identity/status/resolution and owner catalog revision.
+read). Bind semantic item identity/status/resolution and owner catalog revision,
+plus client endpoint/repo_id when available (never credentials). Bind full release
+semantics including outcome/constraints/acceptance, lane and repo configuration;
+an edit without a revision bump must not silently reuse an earlier preview.
 Require current configured coordination immediately before execute when no injected
 test client, and verify the returned Claim identity/config matches the freshly
 loaded release/lane/repo before runner.execute. Never reimplement lease authority:
