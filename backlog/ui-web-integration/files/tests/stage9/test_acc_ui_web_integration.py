@@ -3,6 +3,7 @@ def test_web_roundtrips_owner_work():
     row = dict(item_id="ui-work", work_id=2895, attempt_id="ui-work-a1", facts={})
     assert resolve_locator(locator("lanectl", row))["work_id"] == 2895
     assert "2895" in render_lifecycle("lanectl", row)
+    assert "--view active" in render_lifecycle("lanectl", row)
 
 
 def test_web_excludes_runtime_payload_references():

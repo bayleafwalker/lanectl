@@ -19,6 +19,8 @@ Never recurse into body/log/transcript/detail/claims runtime payloads when findi
 references; only known metadata wrappers and explicit reference keys may publish
 locators. Malformed URL refs must be ignored without crashing a snapshot render.
 Emit shell-safe CLI jump arguments for repository and identity selectors.
+Include --view active in the host TUI jump so a historical or verification-stage
+lifecycle is still inspectable when it is absent from the owner's Ready list.
 
 Use existing lifecycle binding helpers for configured work_ids; do not create owner
 state or read raw evidence bytes. Owner acceptance remains in the shared verification
