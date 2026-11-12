@@ -213,6 +213,15 @@ def _fact(client, catalog, operation, values):
         if (operation in ("work.public.item-v1", LIST) and isinstance(result, dict)
                 and "authority" in result and result.get("state") != "ok"):
             raise CoordinationError("owner reports unavailable work state")
+        if operation == "work.public.item-v1" and isinstance(result, dict):
+            # An explicitly reported owner item must be the work we asked about.
+            # A legacy read without an id is still a valid observation.
+            item = result.get("item")
+            reported = item.get("work_id") if isinstance(item, dict) else None
+            requested = values.get("work_id")
+            if reported is not None and requested is not None and reported != requested:
+                raise CoordinationError(f"owner public item work_id mismatch: requested "
+                                        f"{requested!r}, owner reports {reported!r}")
         return {"state": "observed", "source": operation, "revision": catalog["revision"],
                 "observed_at": observed_at, "value": result}
     except CoordinationError as exc:
@@ -273,14 +282,49 @@ def lifecycle(client, *, item_id=None, work_id=None, run_id=None, attempt_id=Non
             "attempt_id": attempt_id, "facts": facts}
 
 
+def _last_event_id(fact, kind, key="train_id"):
+    """Return the newest id from a matching local event, never a guess."""
+    value = fact.get("value") if isinstance(fact, dict) else None
+    for event in reversed(value if isinstance(value, list) else ()):
+        data = event.get("data", {}) if isinstance(event, dict) else {}
+        found = data.get(key)
+        if event.get("type") == kind and isinstance(found, str) and found:
+            return found
+    return None
+
+
+def _known_links(row):
+    """Attach only links already present in this row's own observed facts.
+
+    ``train_id`` prefers the newest matching ``train.built`` and falls back to
+    a matching landing receipt when no build is recorded.  ``lease_id`` comes
+    solely from an observed owner lease object; neither value is invented from
+    the journal or from a selector.
+    """
+    facts = row.get("facts", {})
+    train = _last_event_id(facts.get("local.train", {}), "train.built")
+    row["train_id"] = train or _last_event_id(facts.get("local.receipt", {}), "item.landed")
+    lease = facts.get("work.lease.read-v1", {})
+    value = lease.get("value") if lease.get("state") == "observed" else None
+    leased = value.get("lease") if isinstance(value, dict) else None
+    lease_id = leased.get("lease_id") if isinstance(leased, dict) else None
+    row["lease_id"] = lease_id if isinstance(lease_id, str) and lease_id else None
+    row.setdefault("source_session", None)
+    return row
+
+
 def lifecycle_rows(client, events, *, item_id=None, work_ids=None, attempt_id=None,
                    run_id=None, journal_path=None):
     """Return one normalized lifecycle row for every local attempt.
 
-    The item id comes from the local claim event and is passed unchanged to
-    local fact filtering.  Only a resolved numeric work id reaches the owner,
-    so an owner/local ID mismatch is visible instead of being coerced into a
-    false join.
+    ``item_id`` is the local release identifier and ``work_id`` the numeric
+    owner work identifier; they stay distinct even when joined.  ``train_id``
+    comes from this row's latest matching observed ``train.built`` (or its
+    landing receipt), ``lease_id`` from the observed owner lease object, and
+    ``source_session`` from the selected claim's explicit metadata.  An absent
+    link stays ``None`` rather than being copied from the journal.  Only a
+    resolved numeric work id reaches the owner, so an owner/local ID mismatch
+    is visible instead of being coerced into a false join.
     """
     claims = [event for event in events if event.get("type") == "item.claimed"
               and (item_id is None or event.get("item_id") == item_id)
@@ -292,19 +336,23 @@ def lifecycle_rows(client, events, *, item_id=None, work_ids=None, attempt_id=No
         # yields no row rather than another lifecycle.
         if attempt_id is not None:
             return []
-        return [lifecycle(client, item_id=item_id, run_id=run_id, events=events,
-                          journal_path=journal_path, work_ids=work_ids)]
+        return [_known_links(lifecycle(client, item_id=item_id, run_id=run_id, events=events,
+                                       journal_path=journal_path, work_ids=work_ids))]
     rows = []
     for claim in claims:
         data = claim["data"]
         local_item = claim.get("item_id")
         resolved, journal_run, error = _binding(local_item, data.get("attempt_id"),
                                                 journal_path, work_ids)
-        rows.append(lifecycle(client, item_id=local_item, work_id=resolved,
-                              run_id=run_id if run_id is not None else journal_run,
-                              attempt_id=data.get("attempt_id"), events=events,
-                              journal_path=journal_path, work_ids=work_ids,
-                              binding_error=error))
+        row = lifecycle(client, item_id=local_item, work_id=resolved,
+                        run_id=run_id if run_id is not None else journal_run,
+                        attempt_id=data.get("attempt_id"), events=events,
+                        journal_path=journal_path, work_ids=work_ids,
+                        binding_error=error)
+        _known_links(row)
+        session = data.get("source_session")
+        row["source_session"] = session if isinstance(session, str) and session else None
+        rows.append(row)
     return rows
 
 
