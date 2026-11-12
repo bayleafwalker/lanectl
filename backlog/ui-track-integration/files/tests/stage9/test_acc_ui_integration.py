@@ -69,3 +69,43 @@ def test_claim_path_never_falls_back_to_native_when_coordination_disappears(monk
     log = SimpleNamespace(read=lambda: [])
     result = wrapped(claim, log, require_coordination=True)
     assert calls == [] and "refused" in result
+
+
+def test_owner_read_clock_does_not_make_a_preview_impossible_to_execute(monkeypatch):
+    from lanectl import claim_preview as cp
+    from tests.stage9.test_acc_claim_preview import config, Owner
+    release, lane, repos = config(monkeypatch)
+    owner = Owner()
+    first = cp.preview_claim(owner, release, lane, repos)
+    owner.value["as_of"] = "2026-11-12T10:00:05Z"
+    assert cp.preview_claim(owner, release, lane, repos)["digest"] == first["digest"]
+    owner.value["item"]["status"] = "active"
+    assert cp.preview_claim(owner, release, lane, repos)["digest"] != first["digest"]
+
+
+def test_conflicting_journal_never_joins_another_owners_work(tmp_path):
+    import sqlite3
+    import json
+    journal = tmp_path / "binding.sqlite"
+    with sqlite3.connect(journal) as db:
+        db.execute("CREATE TABLE bindings (attempt TEXT, binding TEXT)")
+        db.execute("INSERT INTO bindings VALUES (?, ?)", ("ui-work-a1",
+                   json.dumps({"item_id": 999, "run_id": "run-wrong"})))
+    events = [make_event("item.claimed", dict(attempt_id="ui-work-a1", lane="implement",
+                         model="model-a", worker="fake"), item_id="ui-work")]
+    owner = RealOwner()
+    row = lifecycle_rows(owner, events, work_ids={"ui-work": 2895}, journal_path=journal)[0]
+    assert row["facts"]["work.public.item-v1"]["state"] == "unknown"
+    assert "mismatch" in row["facts"]["work.public.item-v1"].get("reason", "").lower()
+    assert not any(call["operation"] == "work.public.item-v1" for call in owner.calls)
+
+
+def test_tui_sources_never_publish_raw_paths_or_secret_query_refs():
+    row = {"item_id": "ui-work", "facts": {"local.receipt": {
+        "state": "observed", "source": "lanectl.events", "value": [{"data": {
+            "body": "private transcript at /home/user/private", "ref": "https://example.test/r?token=secret",
+            "reference": "https://example.test/safe"}}]}}}
+    text = "\n".join(tui.source_lines(row))
+    assert "private transcript" not in text and "/home/user/private" not in text
+    assert "token=secret" not in text
+    assert "https://example.test/safe" in text
