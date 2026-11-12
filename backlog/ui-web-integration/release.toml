@@ -5,7 +5,7 @@ revision = 1
 draft = true
 title = "Join lifecycle permalinks to work identities and safe evidence"
 task_class = "view"
-size = "S"
+size = "M"
 data_class = "public"
 
 outcome = """
@@ -31,6 +31,16 @@ references and handle malformed URL references as absent, not a render crash.
 Keep the public export path usable through a standard static HTTP server, including
 percent-encoded repository identifiers; reject decoded path traversal and symlinks.
 No network assets, JS, mutations, hosting or production effects.
+Join the approved UI-08 accounting timeline into this same review page. The CLI
+adapter computes accounting_timeline from its already-read events and governance
+prices for the selected release/attempt, attaching the result under row.accounting
+with source=lanectl.events, event checkpoint and observed_at. The pure renderer
+shows an optional Accounting timeline section with queued/execution/integration/
+verification seconds, known duration subtotals, lane/operator units and known cost
+subtotals (USD with four decimals, matching render_timeline), estimate labels, price revision and attribution coverage. Missing totals
+remain unknown, never zero. Preserve source/freshness and avoid raw payloads. When
+accounting is absent say unavailable rather than inventing a zero-cost lifecycle.
+This is the same existing accounting projection, not a second calculation or state.
 """
 
 [scope]
