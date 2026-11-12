@@ -1,0 +1,34 @@
+id = "ui-accounting-coverage"
+repo = "lanectl"
+base_sha = "427ac28537f8921a1958fe24b0e38f9b9bffbc7c"
+revision = 1
+title = "Distinguish outside-scope usage from unknown attribution"
+task_class = "view"
+size = "S"
+data_class = "public"
+
+outcome = """
+Repair UI-08 attribution using actual event assignments. Current real stream has
+3 records for ui-08-accounting, 101 assigned to other work and 196 truly unassigned;
+the latter two groups are incorrectly merged as unattributed, yielding task share
+instead of attribution coverage. Keep attributed_events as selected item/attempt
+matches; unattributed_events means genuinely missing item identity only. Add
+outside_scope_events for other known items, other known attempts and release-level
+records excluded from an attempt query. Never charge those records to the query.
+Add attribution.coverage (fraction 1.0 only for a nonempty selected observed set
+with no unassigned records; None when any unassigned pool exists or no selected
+measurements exist) and basis naming observed usage records only. Do not pretend
+unassigned global records belong to this item or that absent observations prove
+full instrumentation. render_timeline includes outside_scope=N and coverage=unknown
+when coverage is None, rather than matched/global-stream share. Preserve pricing,
+units, phases, estimate labels and all previous behavior otherwise. The frozen
+planner compatibility test updates the previous ambiguous two-counter assertion.
+Read-only projection, stdlib only, no new state/events/dependencies.
+"""
+
+[scope]
+paths = ["src/lanectl/accounting.py", "tests/stage9/test_accounting_coverage*.py"]
+
+[acceptance]
+files = ["tests/stage9/test_acc_accounting_coverage.py", "tests/stage9/test_accounting_lifecycle.py"]
+exec = ["uv run --no-sync pytest -q -p no:cacheprovider tests/stage9/test_acc_accounting_coverage.py"]
