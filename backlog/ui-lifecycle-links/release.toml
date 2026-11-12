@@ -1,0 +1,37 @@
+id = "ui-lifecycle-links"
+repo = "lanectl"
+base_sha = "2e95a138b10211eee845db52d6807199ededb477"
+revision = 1
+title = "Carry known lifecycle identities from query facts into permalinks"
+task_class = "view"
+size = "S"
+data_class = "public"
+
+outcome = """
+Complete UI-07's all-known-IDs path from actual lifecycle_rows, not hand-built rows.
+Current query retains train.built facts but omits top-level train_id, so the real
+CLI export loses its train in the permalink/header. Populate row.train_id from
+the latest matching observed train.built fact (or matching landing receipt when
+build history is absent), row.lease_id from an observed owner lease object, and
+source_session from the selected claim's explicit source_session metadata when
+present. Never invent IDs or fill unavailable owner facts from cached journal data.
+Keep item_id as local release and work_id numeric. Preserve existing selectors,
+source facts, checkpoints and all older flat fixture shapes.
+Validate an explicit owner public item work_id against the requested work_id;
+a mismatched owner result becomes an unknown fact with a mismatch reason, never
+a foreign item silently joined. Preserve matching and legacy no-ID reads.
+locator/resolve_locator round-trip optional lease_id/source_session when supplied,
+alongside existing work/run/train/attempt/release identities. Missing optional new
+IDs retain the previous exact resolver key set. The pure page shows known Lease
+and Source session identifiers. Existing identities, export paths, escaped safe
+metadata and read-only behavior remain unchanged. No new events/dependencies,
+owner operations, policy or state. Update lifecycle_rows' stale docstring to explain
+its distinct release/work identifiers and observed links accurately.
+"""
+
+[scope]
+paths = ["src/lanectl/lifecycle.py", "src/lanectl/lifecycle_web.py", "tests/stage9/test_lifecycle_links*.py"]
+
+[acceptance]
+files = ["tests/stage9/test_acc_lifecycle_links.py"]
+exec = ["uv run --no-sync pytest -q -p no:cacheprovider tests/stage9/test_acc_lifecycle_links.py"]
