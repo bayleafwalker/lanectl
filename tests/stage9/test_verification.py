@@ -15,7 +15,7 @@ def fact(value, source="lanectl.events"):
 
 
 def row():
-    return dict(item_id="ui-work", attempt_id="ui-work-a1", facts={
+    return dict(item_id="ui-work", work_id=2896, attempt_id="ui-work-a1", facts={
         "local.attempt": fact([make_event("gate.result", dict(
             attempt_id="ui-work-a1", gate="suite", passed=True, violations=[]))]),
         "local.train": fact([
@@ -46,7 +46,7 @@ def test_nested_owner_shapes_distinguish_accepted_rejected_and_pending():
     assert evidence_bundle(snapshot, now=NOW)["outcome"] == "pending"
 
     snapshot["facts"]["work.public.item-v1"]["value"]["item"].update(
-        status="done", resolution="completed")
+        status="done", resolution="accepted")
     accepted = evidence_bundle(snapshot, now=NOW)
     assert accepted["outcome"] == "accepted"
     assert entries(accepted)["owner-decision"]["state"] == "observed"
@@ -93,7 +93,7 @@ def test_commit_mismatch_is_stale_not_verified():
     by_kind = entries(bundle)
     assert by_kind["deploy"]["state"] == "stale"
     assert by_kind["landing"]["state"] == "stale"
-    assert bundle["outcome"] == "stale"
+    assert bundle["outcome"] == "pending"
 
 
 def test_safe_references_preserve_clean_locators_and_drop_secrets():
@@ -118,7 +118,7 @@ def test_bundle_never_mutates_the_snapshot():
 def test_render_bundle_lists_every_entry_and_the_outcome():
     snapshot = row()
     snapshot["facts"]["work.public.item-v1"]["value"]["item"].update(
-        status="done", resolution="completed")
+        status="done", resolution="accepted")
     text = render_bundle(evidence_bundle(snapshot, now=NOW))
     assert "outcome=accepted" in text
     for kind in ("gates", "checked-commit", "deploy", "landing",

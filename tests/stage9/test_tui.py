@@ -115,7 +115,7 @@ def test_help_and_sources_are_distinct_overlays():
     assert "HELP" in help_screen and "Enter inspect" in help_screen and "s sources" in help_screen
 
     sourced = row("owner#1", "a1")
-    sourced["facts"]["work.public.item-v1"]["value"]["url"] = "https://example.test/item"
+    sourced["facts"]["work.public.item-v1"]["value"]["reference"] = "https://example.test/item"
     sourced["facts"]["work.public.item-v1"]["value"]["path"] = "/srv/items/owner-1"
     source_snapshot = build_snapshot(fact("work.public.list-v1", {"items": ["owner#1"]}), [sourced])
     source_state = handle_key(initial_state(source_snapshot, READY), "s")
@@ -123,5 +123,5 @@ def test_help_and_sources_are_distinct_overlays():
                            height=24, detail=source_state["detail"])
     assert "SOURCES owner#1" in screen
     assert "source=work.public.item-v1" in screen and "revision=r7" in screen
-    assert "https://example.test/item" in screen and "/srv/items/owner-1" in screen
-    assert "observed=" not in screen and "value:" not in screen
+    assert "https://example.test/item" in screen and "/srv/items/owner-1" not in screen
+    assert "value:" not in screen

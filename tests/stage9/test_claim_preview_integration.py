@@ -113,7 +113,7 @@ def test_owner_transport_preview_then_execute_rechecks_and_never_retries(monkeyp
                             "scripted/model", "claude")
 
     monkeypatch.setattr(runner, "admit", admit)
-    monkeypatch.setattr(runner, "execute", lambda claim, log: executions.append(claim) or "ran")
+    monkeypatch.setattr(runner, "execute", lambda claim, log, **kwargs: executions.append(claim) or "ran")
     with service() as (url, state):
         client = VuoroClient(url, "repo-a", lambda: "synthetic-runner")
         preview = cp.preview_claim(client, release, lane, repos)
