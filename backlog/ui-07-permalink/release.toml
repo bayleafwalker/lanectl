@@ -2,7 +2,6 @@ id = "ui-07-permalink"
 repo = "lanectl"
 base_sha = "175ccb463cd483612714827503bb93ef5477ddb1"
 revision = 1
-draft = true
 title = "Read-only lifecycle permalink and shareable review page"
 task_class = "view"
 size = "M"
