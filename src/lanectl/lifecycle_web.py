@@ -380,18 +380,22 @@ def _evidence_html(row: dict) -> str:
     for entry in entries:
         if not isinstance(entry, dict):
             continue
+        details = entry.get("details")
+        details = ("; ".join(f"{key}={value}" for key, value in details.items()) or "unavailable") if isinstance(details, dict) else "unavailable"
         rows.append("<tr>"
                     f"<td>{_esc(entry.get('kind'))}</td>"
                     f"<td>{_state_label(entry.get('state', 'unknown'))}</td>"
                     f"<td>{_esc(entry.get('source'))}</td>"
                     f"<td>{_esc(entry.get('revision'))}</td>"
                     f"<td>{_esc(entry.get('checkpoint'))}</td>"
-                    f"<td>{_esc(entry.get('observed_at'))}</td></tr>")
+                    f"<td>{_esc(entry.get('observed_at'))}</td>"
+                    f"<td>{_esc(details)}</td></tr>")
     table = ("<div class=\"table-wrap\"><table>"
              "<caption>Verification evidence bundle</caption>"
              "<thead><tr><th scope=\"col\">Kind</th><th scope=\"col\">State</th>"
              "<th scope=\"col\">Source</th><th scope=\"col\">Revision</th>"
              "<th scope=\"col\">Checkpoint</th><th scope=\"col\">Observed at</th>"
+             "<th scope=\"col\">Details</th>"
              "</tr></thead><tbody>" + "".join(rows) + "</tbody></table></div>")
     return f"<h2>Verification</h2><p>outcome: <code>{_esc(outcome)}</code></p>{table}"
 

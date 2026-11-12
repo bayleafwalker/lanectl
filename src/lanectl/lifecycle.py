@@ -68,7 +68,7 @@ def local_facts(events, *, item_id=None, attempt_id=None, run_id=None):
         """Whether an event names one of this row's attempts."""
         data = event.get("data", {}) if isinstance(event, dict) else {}
         if not attempt_ids:
-            return True
+            return item_id is None
         if data.get("attempt_id") in attempt_ids:
             return True
         return bool(set(data.get("attempts") or ()) & attempt_ids)
@@ -80,7 +80,7 @@ def local_facts(events, *, item_id=None, attempt_id=None, run_id=None):
     trains = [(n, e) for n, e in numbered
               if (e.get("type") == "train.built" and belongs(e))
               or (e.get("type") in ("train.deployed", "train.torn_down")
-                  and (not attempt_ids or e.get("data", {}).get("train_id") in built_ids))]
+                  and ((item_id is None and attempt_id is None) or e.get("data", {}).get("train_id") in built_ids))]
     train_ids = {e.get("data", {}).get("train_id") for _, e in trains}
     if attempt_id is not None:
         receipts = [(n, e) for n, e in numbered if e.get("type") in ("item.landed", "work.synced")
