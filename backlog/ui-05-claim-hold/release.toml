@@ -1,0 +1,52 @@
+id = "ui-05-claim-hold"
+repo = "lanectl"
+base_sha = "65aa00af82645b43993960cd7df1c49c77e61e31"
+revision = 2
+title = "Advanced owner-bounded claim-only hold with exact recovery"
+task_class = "view"
+size = "M"
+data_class = "public"
+
+outcome = """
+Complete the approved UI-05 recommendation: claim-and-run remains default; a
+separate advanced claim-only mode is time-bounded and requires an explicit reason.
+Add lanectl.claim_hold with preview_hold(client,release,lane,repos,*,reason),
+execute_hold(preview,*,coordinator=None), resume_hold(claim_id,*,coordinator).
+Expose configuration load_releases/load_lane/load_repos imports for test injection.
+Plugin claim-hold --item RELEASE --reason TEXT [--json] is read-only preview;
+--execute --expect DIGEST performs only the previewed owner claim. Recovery is
+claim-hold --repo REPO --resume HOLD_ID [--json], replaying that existing intent.
+Bind reason, claim-only mode, work/release/lane/config and owner identity in the
+preview digest; fresh checks apply before the first effect. Refuse blank reasons
+or changed/disallowed previews. Use existing Coordinator registration, acquisition,
+evidence and exact-request journal; never call runner.admit/execute, native workers,
+guard/heartbeat, landing or outcome reporting. There is no local item.claimed event.
+The result has state observed/unknown, mode claim-only, claim_id, run_id when known,
+item_id, expires_at when known, reason, worker_started=false, source and observed_at.
+A complete receipt reflects an owner observation, not permanent current authority.
+Require the owner's finite active lease expiry. Do not invent a TTL argument the
+owner does not advertise, extend leases, create a timer or force-release/complete
+work. The hold expires through existing owner expiry policy; clearly show its UTC
+deadline. Add a truthful Observation with the reason and claim-only intent to the
+owner evidence chain. Evidence/report success never means accepted work.
+Persist enough stable intent metadata in the existing registration request journal
+before its first mutation to recover after lost registration/acquisition/evidence
+acknowledgements. An optional Coordinator.start metadata argument is allowed, with
+default behavior unchanged; never add a second lease/status table or fake operation.
+On uncertainty return state unknown and the same claim_id for exact recovery.
+resume_hold refuses unknown IDs without any mutation, validates the saved claim-only
+intent and owner/repo/principal journal binding, and replays pending original bytes
+with the same idempotency/request identities. A known accepted binding must not
+reacquire or heartbeat/extend the hold; return its last-observed receipt (optionally
+fresh owner reads when advertised) and finish only pending evidence appends. Do not
+infer current authority from cached expiry. Different reasons/plans cannot rebind
+an existing claim id. Preserve normal Coordinator.start and all prior protocol
+tests. Use stdlib only, no new events, dependencies, policy/grants or production work.
+"""
+
+[scope]
+paths = ["src/lanectl/claim_hold.py", "src/lanectl/coordination.py", "tests/stage9/test_claim_hold*.py"]
+
+[acceptance]
+files = ["tests/stage9/test_acc_claim_hold.py"]
+exec = ["uv run --no-sync pytest -q -p no:cacheprovider tests/stage9/test_acc_claim_hold.py"]

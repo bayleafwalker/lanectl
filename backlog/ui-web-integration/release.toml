@@ -1,8 +1,7 @@
 id = "ui-web-integration"
 repo = "lanectl"
-base_sha = "8df8554cc558d420caea425a76cd575ceeb2fa49"
-revision = 1
-draft = true
+base_sha = "65aa00af82645b43993960cd7df1c49c77e61e31"
+revision = 2
 title = "Join lifecycle permalinks to work identities and safe evidence"
 task_class = "view"
 size = "M"
