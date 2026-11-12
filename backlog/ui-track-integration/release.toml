@@ -36,6 +36,9 @@ written in the earlier UI-06 contract interactively (worker must not edit them).
 The outcome label reports owner acceptance; local evidence gaps remain separate
 entry states and must not replace an observed accepted owner decision with a local
 verdict. Absent optional deploy evidence cannot override owner authority.
+The current owner may keep item.status active while verification is pending;
+work.synced owner_reported=true/pending_owner=true is a sourced pending-verification
+attention hint, never an owner status rewrite or evidence of acceptance.
 3. TUI Ready joins owner-ordered list entries (strings or objects with work_id/id)
 to local row.work_id, not str(dict). TUI --item RELEASE --attempt ATTEMPT allows
 permalink's exact jump; invalid/unknown selection renders no matching row explicitly,
@@ -76,5 +79,5 @@ Emit shell-safe CLI jump arguments for repository and identity selectors.
 paths = ["src/lanectl/lifecycle.py", "src/lanectl/tui.py", "src/lanectl/verification.py", "src/lanectl/claim_preview.py", "src/lanectl/runner.py", "src/lanectl/lifecycle_web.py", "tests/stage9/test_ui_integration*.py"]
 
 [acceptance]
-files = ["tests/stage9/test_acc_ui_integration.py"]
+files = ["tests/stage9/test_acc_ui_integration.py", "tests/stage9/test_acc_verification.py", "tests/stage9/test_verification.py", "tests/stage9/test_tui.py", "tests/stage9/test_lifecycle_local.py", "tests/stage9/test_claim_preview_integration.py"]
 exec = ["uv run --no-sync pytest -q -p no:cacheprovider tests/stage9/test_acc_ui_integration.py"]

@@ -18,7 +18,7 @@ class RealOwner(Client):
         if envelope["operation"] == "work.public.item-v1":
             assert envelope["arguments"] == {"work_id": 2895}
             return dict(authority="sprintctl", state="ok", as_of="2026-11-12T10:00:00Z",
-                        item=dict(work_id=2895, status="awaiting-verification", resolution=None))
+                        item=dict(work_id=2895, status="active", resolution=None))
         if envelope["operation"] == "work.public.list-v1":
             return {"items": [{"work_id": 2895, "status": "pending"}]}
         return super().invoke(envelope)
@@ -26,7 +26,11 @@ class RealOwner(Client):
 
 def test_release_and_owner_identity_remain_distinct_but_joined():
     events = [make_event("item.claimed", dict(attempt_id="ui-work-a1", lane="implement",
-                         model="model-a", worker="fake"), item_id="ui-work")]
+                         model="model-a", worker="fake"), item_id="ui-work"),
+        make_event("train.built", dict(train_id="train-test", base_sha="base",
+                   attempts=["ui-work-a1"], passed=True, checked_sha="train-commit")),
+        make_event("work.synced", dict(work="lanectl#2895", train_id="train-test", closed=False,
+                   ok=True, owner_reported=True, pending_owner=True), item_id="ui-work")]
     owner = RealOwner()
     rows = lifecycle_rows(owner, events, work_ids={"ui-work": 2895})
     assert len(rows) == 1
@@ -39,7 +43,7 @@ def test_release_and_owner_identity_remain_distinct_but_joined():
         value={"items": [{"work_id": 2895, "status": "pending"}]}), rows)
     assert tui.view_rows(snapshot, tui.READY)[0]["attempt_id"] == "ui-work-a1"
     text = tui.render_plain_table(snapshot, tui.VERIFICATION)
-    assert "awaiting-verification" in text and "ui-work" in text
+    assert "active" in text and "ui-work" in text
 
 
 def test_owner_acceptance_uses_existing_protocol_not_completed_resolution():
