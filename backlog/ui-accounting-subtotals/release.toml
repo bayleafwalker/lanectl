@@ -1,0 +1,33 @@
+id = "ui-accounting-subtotals"
+repo = "lanectl"
+base_sha = "6fdbc7d84862d17ba2f17f043fb75172639dfe22"
+revision = 1
+title = "Retain priced token subtotals within partially priced usage"
+task_class = "view"
+size = "S"
+data_class = "public"
+
+outcome = """
+Finish UI-08 against actual lane usage records. Smoke test of ui-08-accounting
+shows all 3 records unpriced because units contain steps alongside priced tokens.
+Keep usd_est=None for a record with any unpriced unit/rate, but preserve the known
+monetary subtotal of its individually priced token components in known_usd_est.
+Do not discard known input/output/cache/reasoning prices just because steps or an
+unknown unit has no price. Use the matching provider table and existing time-tier
+semantics. Missing model/table or no known measured priced components remains
+known_usd_est=None, not zero; measured zero priced token usage may be zero.
+Keep raw units, price revision, counts and estimate flags. unpriced_events still
+counts partially priced events, priced_events counts completely priced events;
+do not declare a total known or hide unpriced data to make costs look complete.
+Sum known components across fully and partly priced records without double
+counting. Preserve prior strict totals, all phase attribution and read-only CLI.
+Add regressions for actual steps+token shape, partially missing rate columns,
+all-unknown data and combined priced+partial records. No new events/dependencies.
+"""
+
+[scope]
+paths = ["src/lanectl/accounting.py", "tests/stage9/test_accounting_subtotal*.py"]
+
+[acceptance]
+files = ["tests/stage9/test_acc_accounting_subtotals.py"]
+exec = ["uv run --no-sync pytest -q -p no:cacheprovider tests/stage9/test_acc_accounting_subtotals.py"]
