@@ -94,3 +94,26 @@ def test_mixed_known_and_missing_price_columns_do_not_report_a_complete_total():
     assert section["unpriced_events"] == 1
     events = [usage("adapter", {"input_tokens": 100, "mystery_units": 50})]
     assert accounting_timeline(events, POLICY, item_id="account-work")["usage"]["lane"]["usd_est"] is None
+
+
+def test_partial_execution_duration_is_unknown_with_an_unfinished_attempt():
+    events = history()[:3] + [ev("item.claimed", dict(attempt_id="account-work-a2",
+        lane="implement", model="model-a", worker="fake"), 10)]
+    result = accounting_timeline(events, POLICY, item_id="account-work")
+    assert result["phases"]["execution"]["seconds"] is None
+    assert any(i["seconds"] is None for i in result["phases"]["execution"]["intervals"])
+
+
+def test_empty_and_invalid_unit_measurements_are_not_zero_cost():
+    for units in ({}, {"output_tokens": "unknown"}):
+        result = accounting_timeline([usage("adapter", units)], POLICY, item_id="account-work")
+        assert result["usage"]["lane"]["usd_est"] is None
+        assert result["usage"]["lane"]["unpriced_events"] == 1
+
+
+def test_verification_receipt_belongs_to_the_selected_attempt_and_train():
+    wrong = ev("work.synced", dict(work="lanectl#2898", train_id="tr-other", closed=True, ok=True), 11)
+    assert accounting_timeline(history()+[wrong], POLICY, item_id="account-work")["phases"]["verification"]["seconds"] is None
+    right = ev("work.synced", dict(work="lanectl#2898", train_id="tr-19", closed=True, ok=True), 12)
+    result = accounting_timeline(history()+[right], POLICY, item_id="account-work", attempt_id="account-work-a2")
+    assert not result["phases"]["verification"]["intervals"]

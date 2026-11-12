@@ -1,7 +1,7 @@
 id = "ui-08-accounting"
 repo = "lanectl"
 base_sha = "1ee6eedf148bedc72231af037099712c1ef1c1c7"
-revision = 2
+revision = 3
 title = "Lifecycle accounting with attribution and unknown costs"
 task_class = "view"
 size = "M"
@@ -41,6 +41,15 @@ and phase boundaries; every duration must carry its basis, no second lifecycle s
 Review correction: an event containing any reported nonzero usage unit without its
 price column is unpriced, even when another unit is priced. Never treat presence
 of one priced field as proof that the entire event is priced. Preserve raw units.
+Review correction 2: aggregate phase seconds is None when any contributing interval
+has an unknown endpoint; a known subtotal may be shown separately, never as the total.
+Empty units or nonnumeric measured unit values are unpriced, not a zero-dollar event.
+An attempt query must not borrow another attempt's landing/verification interval.
+Verification closure must match the selected landing train_id and have ok=true.
+The previous implementation at git object 97ab8b063605183dac9e8e772ac0b1c79d8d9f77
+contains the otherwise reviewed 383-line module and 112-line test file; it is
+available for inspection/reuse. Preserve its already passing pricing/retry behavior
+while repairing these targeted gaps, rather than regressing earlier acceptance.
 """
 
 [scope]

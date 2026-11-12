@@ -152,9 +152,10 @@ def test_real_deploy_events_join_by_train_without_equating_attempt_and_train_sha
 
 
 def test_web_roundtrips_owner_work():
-    from lanectl.lifecycle_web import locator, resolve_locator
+    from lanectl.lifecycle_web import locator, resolve_locator, render_lifecycle
     row = dict(item_id="ui-work", work_id=2895, attempt_id="ui-work-a1", facts={})
     assert resolve_locator(locator("lanectl", row))["work_id"] == 2895
+    assert "2895" in render_lifecycle("lanectl", row)
 
 
 def test_web_excludes_runtime_payload_references():
@@ -164,7 +165,7 @@ def test_web_excludes_runtime_payload_references():
             "item": {"ref": "https://example.test/safe", "body": {
                 "ref": "https://example.test/private-runtime-body"}}}}})
     text = render_lifecycle("lanectl", row)
-    assert "2895" in text and "https://example.test/safe" in text
+    assert "https://example.test/safe" in text
     assert "private-runtime-body" not in text
 
 
