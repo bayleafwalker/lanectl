@@ -1,13 +1,20 @@
 id = "ui-track-integration"
 repo = "lanectl"
-base_sha = "8df8554cc558d420caea425a76cd575ceeb2fa49"
-revision = 2
+base_sha = "5a22f43aade7dccef78bd639cb2909edbd713de5"
+revision = 4
 title = "Join operator surfaces to real owner identities and acceptance"
 task_class = "view"
 size = "M"
 data_class = "public"
 
 outcome = """
+Reuse the already reviewed source implementation at git object
+cd9ce893d94e2268284467bc6347be1ccec31786 (five in-scope source files). It passed
+126 focused tests; the only full-suite failure was an obsolete as_of-bound digest
+assertion, now corrected by the planner in the frozen test_claim_preview.py seed.
+Preserve/reuse its working implementation within scope, rerun all checks, and
+repair only any verified remaining acceptance gaps.
+
 Finish approved UI-05..08 against actual owner contracts, preserving prior flat
 synthetic fixture compatibility but using nested owner responses as primary.
 Do not add ledger state, mutations, dependencies, new events or govern policy.
@@ -77,7 +84,7 @@ callers may omit it; claim-run supplies it with require_coordination=True.
 paths = ["src/lanectl/lifecycle.py", "src/lanectl/tui.py", "src/lanectl/verification.py", "src/lanectl/claim_preview.py", "src/lanectl/runner.py", "tests/stage9/test_ui_integration*.py"]
 
 [acceptance]
-files = ["tests/stage9/test_acc_ui_integration.py", "tests/stage9/test_acc_verification.py", "tests/stage9/test_verification.py", "tests/stage9/test_tui.py", "tests/stage9/test_lifecycle_local.py", "tests/stage9/test_claim_preview_integration.py"]
+files = ["tests/stage9/test_acc_ui_integration.py", "tests/stage9/test_claim_preview.py", "tests/stage9/test_acc_verification.py", "tests/stage9/test_verification.py", "tests/stage9/test_tui.py", "tests/stage9/test_lifecycle_local.py", "tests/stage9/test_claim_preview_integration.py"]
 exec = ["uv run --no-sync pytest -q -p no:cacheprovider tests/stage9/test_acc_ui_integration.py"]
 
 [lint]
