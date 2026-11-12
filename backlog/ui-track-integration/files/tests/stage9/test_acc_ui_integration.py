@@ -151,15 +151,36 @@ def test_real_deploy_events_join_by_train_without_equating_attempt_and_train_sha
     assert "2099-01-01T00:00:00Z" in text
 
 
-def test_web_roundtrips_owner_work_and_excludes_runtime_payload_references():
-    from lanectl.lifecycle_web import locator, resolve_locator, render_lifecycle
+def test_web_roundtrips_owner_work():
+    from lanectl.lifecycle_web import locator, resolve_locator
+    row = dict(item_id="ui-work", work_id=2895, attempt_id="ui-work-a1", facts={})
+    assert resolve_locator(locator("lanectl", row))["work_id"] == 2895
+
+
+def test_web_excludes_runtime_payload_references():
+    from lanectl.lifecycle_web import render_lifecycle
     row = dict(item_id="ui-work", work_id=2895, attempt_id="ui-work-a1", facts={
         "work.evidence.tail-v1": {"state": "observed", "source": "owner", "value": {
             "item": {"ref": "https://example.test/safe", "body": {
                 "ref": "https://example.test/private-runtime-body"}}}}})
-    assert resolve_locator(locator("lanectl", row))["work_id"] == 2895
     text = render_lifecycle("lanectl", row)
     assert "2895" in text and "https://example.test/safe" in text
     assert "private-runtime-body" not in text
+
+
+def test_web_ignores_malformed_references_without_crashing():
+    from lanectl.lifecycle_web import render_lifecycle
+    row = dict(item_id="ui-work", attempt_id="ui-work-a1", facts={
+        "work.evidence.tail-v1": {"state": "observed", "source": "owner", "value": {
+            "item": {"ref": "https://[invalid"}}}})
     row["facts"]["work.evidence.tail-v1"]["value"]["item"]["ref"] = "https://[invalid"
     assert "snapshot" in render_lifecycle("lanectl", row)
+
+
+def test_permalink_tui_jump_selectors_are_real_arguments():
+    import argparse
+    parser = argparse.ArgumentParser()
+    tui.register(parser.add_subparsers(dest="command"))
+    args = parser.parse_args(["tui", "--repo", "lanectl", "--item", "ui-work",
+                              "--attempt", "ui-work-a1", "--plain"])
+    assert args.item == "ui-work" and args.attempt == "ui-work-a1"
