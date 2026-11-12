@@ -79,46 +79,54 @@ def _provider_prices(policy_raw, provider) -> dict | None:
     return prices if isinstance(prices, dict) else None
 
 
-def _price_event(units, model, ts, prices) -> float | None:
-    """USD for one usage event against one provider table, or ``None`` unpriced.
+def _price_event(units, model, ts, prices) -> tuple[float | None, bool]:
+    """Known USD subtotal for one usage event and whether it priced completely.
 
-    An event is priced only when it reports at least one unit and *every*
-    reported nonzero unit maps to a present, finite price column.  One priced
-    column never proves the whole event priced: an unknown unit, a nonnumeric
-    measurement, an empty units dict or a missing column all make the event
-    unpriced rather than silently zero.
+    The subtotal sums only units this provider table individually prices, so an
+    event carrying metadata such as ``steps`` alongside priced tokens keeps its
+    token money.  ``complete`` is true only when the event reports at least one
+    unit and *every* reported nonzero unit maps to a present, finite price
+    column.  One priced column never proves the whole event priced: an unknown
+    unit, a nonnumeric measurement, an empty units dict or a missing column all
+    make the event incomplete rather than silently zero.  A missing model or
+    table prices nothing, so the subtotal stays ``None``; a measured zero token
+    with a known rate contributes a known zero.
     """
     if not isinstance(units, dict) or not units:
-        return None
+        return None, False
     if not isinstance(prices, dict) or not isinstance(model, str) or not model:
-        return None
+        return None, False
     models = prices.get("models")
     entry = models.get(model) if isinstance(models, dict) else None
     if not isinstance(entry, dict):
-        return None
+        return None, False
     when = _parse_ts(ts)
     tier = entry.get("peak") if when is not None and _in_peak(when, prices) else None
     if not isinstance(tier, dict):
         tier = entry.get("offpeak") or {}
     if not isinstance(tier, dict):
-        return None
+        return None, False
     total = 0.0
+    known = False
+    complete = True
     for unit, amount in units.items():
         if not _is_number(amount):
-            return None                     # unmeasured / nonnumeric value
+            complete = False                # unmeasured / nonnumeric value
+            continue
         value = float(amount)
         if value < 0:
-            return None                     # a negative measurement is unknown
-        if value == 0:
-            continue                        # a measured zero needs no column
+            complete = False                # a negative measurement is unknown
+            continue
         column = _UNIT_COLUMN.get(unit)
-        if column is None:
-            return None                     # unknown unit
-        rate = tier.get(column)
-        if not _is_number(rate):
-            return None                     # missing / invalid price column
+        rate = tier.get(column) if column is not None else None
+        if column is None or not _is_number(rate):
+            if value == 0:
+                continue                    # a measured zero needs no column
+            complete = False                # unknown unit or missing column
+            continue
         total += value / _PER_MILLION * float(rate)
-    return total
+        known = True
+    return (total if known else None), complete
 
 
 def _empty_section() -> dict:
@@ -145,13 +153,17 @@ def _add_usage(section, ev, data, policy_raw) -> None:
         else:
             section["units"][unit] = amount
     section["events"] += 1
-    usd = _price_event(units, data.get("model"), ev.get("ts"),
-                       _provider_prices(policy_raw, data.get("provider")))
-    if usd is None:
-        section["unpriced_events"] += 1
-    else:
+    known, complete = _price_event(
+        units, data.get("model"), ev.get("ts"),
+        _provider_prices(policy_raw, data.get("provider")))
+    # The event is completely priced only when every unit priced; a partly
+    # priced event is still counted unpriced so its unknown share is visible.
+    if complete:
         section["priced_events"] += 1
-        section["known_usd_est"] = (section["known_usd_est"] or 0.0) + usd
+    else:
+        section["unpriced_events"] += 1
+    if known is not None:
+        section["known_usd_est"] = (section["known_usd_est"] or 0.0) + known
 
 
 def _finalize_section(section) -> dict:
@@ -160,8 +172,6 @@ def _finalize_section(section) -> dict:
         section["usd_est"] = None
     else:
         section["usd_est"] = section["known_usd_est"]
-    if section["priced_events"] == 0:
-        section["known_usd_est"] = None
     return section
 
 
