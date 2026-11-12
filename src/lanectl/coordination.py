@@ -188,11 +188,32 @@ class Coordinator:
         return result
 
     def _binding(self, attempt):
+        binding = self.recorded_binding(attempt)
+        if binding is None:
+            raise CoordinationError('attempt has no owner binding; call start first')
+        return binding
+
+    def recorded_binding(self, attempt):
+        """The persisted owner observation (identifiers, never authority), or None."""
         with self._db() as db:
             row = db.execute('SELECT binding FROM bindings WHERE attempt=?', (attempt,)).fetchone()
-        if row is None:
-            raise CoordinationError('attempt has no owner binding; call start first')
-        return json.loads(row[0])
+        return None if row is None else json.loads(row[0])
+
+    def saved_request(self, key):
+        """The journal's exact (intent, envelope, result) for a key, or None.
+
+        Recovery reads the request identities that were persisted before their
+        first effect; it never re-types an uncertain request from memory.
+        """
+        return self._saved(key)
+
+    def saved_metadata(self, attempt_id):
+        """Optional intent metadata saved with the run registration request."""
+        saved = self._saved(attempt_id + ':run')
+        if saved is None or not isinstance(saved[0], dict):
+            return None
+        metadata = saved[0].get('metadata')
+        return metadata if isinstance(metadata, dict) else None
 
     def _put(self, attempt, identity, binding):
         with self._db() as db:
@@ -202,18 +223,23 @@ class Coordinator:
             db.execute('INSERT OR REPLACE INTO bindings VALUES (?,?,?)',
                        (attempt, _json(identity), _json(binding)))
 
-    def start(self, attempt_id, item_id, model_id, profile_digest, recipe_id='lanectl/v1'):
+    def start(self, attempt_id, item_id, model_id, profile_digest, recipe_id='lanectl/v1',
+              *, metadata=None):
         if not isinstance(item_id, int) or isinstance(item_id, bool) or item_id <= 0:
             raise ValueError('item_id must be a positive integer')
         identity = [item_id, model_id, profile_digest, recipe_id]
+        # Optional caller intent is journalled with the registration, before its
+        # first effect, so an uncertain claim-only hold can be replayed exactly.
+        # Default callers keep the historical list-shaped intent unchanged.
+        intent = identity if metadata is None else {'identity': identity, 'metadata': metadata}
         prefix = 'lanectl-' + hashlib.sha256(attempt_id.encode()).hexdigest()
         from . import __version__
         run_args = {'harness_id': 'lanectl', 'harness_build': __version__, 'model_id': model_id,
                     'recipe_id': recipe_id, 'observed_profile': {'instruction_digest': profile_digest,
                     'skill_digests': []}, 'idempotency_key': prefix + '-run'}
-        run = self._call(attempt_id + ':run', 'work.run.register-v1', identity, run_args)['run']['run_id']
+        run = self._call(attempt_id + ':run', 'work.run.register-v1', intent, run_args)['run']['run_id']
         args = {'item_id': item_id, 'run_id': run, 'idempotency_key': prefix + '-claim'}
-        lease = self._call(attempt_id + ':claim', 'work.lease.acquire-v1', identity, args, revalidate=True)['lease']
+        lease = self._call(attempt_id + ':claim', 'work.lease.acquire-v1', intent, args, revalidate=True)['lease']
         self._check_lease(lease)
         binding = {'run_id': run, 'lease': lease, 'item_id': item_id}
         self._put(attempt_id, identity, binding)
