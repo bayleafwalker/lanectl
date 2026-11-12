@@ -9,6 +9,7 @@ handlers, browser file fetches, or external assets.
 from __future__ import annotations
 
 import html
+import shlex
 from pathlib import Path
 from urllib.parse import quote, unquote, urlsplit
 
@@ -17,8 +18,17 @@ from .lifecycle import REASON_RULES, attention_reasons, lifecycle_rows
 #: Query keys a locator may carry; both are optional, each at most once.
 _LINKED_IDS = ("run_id", "train_id")
 
+#: Optional numeric work id a locator may carry, at most once.
+_WORK_ID = "work_id"
+
 #: Explicit reference fields that may be shared, never arbitrary bodies/logs.
 _REF_KEYS = ("ref", "reference")
+
+#: Runtime payload keys that are never searched for references.
+_RUNTIME_KEYS = ("body", "log", "transcript", "detail", "claims")
+
+#: Accounting phases, in display order (mirrors accounting.render_timeline).
+_ACCOUNTING_PHASES = ("queued", "execution", "integration", "verification")
 
 #: Flat, semantic colour palette (paper blue / navy / white / slate / blue /
 #: warning).  No shadows, rounded corners, transitions or animation.
@@ -102,8 +112,9 @@ def locator(repo: str, row: dict, *, base_url: str = "") -> str:
     """Deterministic, percent-encoded lifecycle identity URL.
 
     The path is ``/lifecycle/<repo>/<item>/<attempt>`` and the query carries
-    ``run_id`` and ``train_id`` only when known.  ``base_url``, when given, is
-    an https origin prepended verbatim; otherwise the result is relative.
+    ``run_id`` and ``train_id`` only when known, plus the numeric ``work_id``
+    when the row resolves one.  ``base_url``, when given, is an https origin
+    prepended verbatim; otherwise the result is relative.
     """
     origin = _origin(base_url)
     segments = (repo, row.get("item_id"), row.get("attempt_id"))
@@ -113,6 +124,9 @@ def locator(repo: str, row: dict, *, base_url: str = "") -> str:
         value = row.get(key)
         if value is not None and str(value) != "":
             query.append(f"{key}={quote(str(value), safe='')}")
+    work_id = row.get(_WORK_ID)
+    if isinstance(work_id, int) and not isinstance(work_id, bool) and work_id > 0:
+        query.append(f"{_WORK_ID}={work_id}")
     url = path + ("?" + "&".join(query) if query else "")
     return origin + url
 
@@ -175,13 +189,23 @@ def resolve_locator(url: str) -> dict:
             else:
                 key, value = pair, ""
             key = unquote(key)
-            if key not in _LINKED_IDS:
+            if key not in _LINKED_IDS and key != _WORK_ID:
                 raise ValueError(f"unsupported locator query key: {key!r}")
             if key in query:
                 raise ValueError(f"duplicate locator query key: {key!r}")
             query[key] = unquote(value)
-    return {"repo": repo, "item_id": item_id, "attempt_id": attempt_id,
-            "run_id": query.get("run_id"), "train_id": query.get("train_id")}
+    resolved = {"repo": repo, "item_id": item_id, "attempt_id": attempt_id,
+                "run_id": query.get("run_id"), "train_id": query.get("train_id")}
+    if _WORK_ID in query:
+        raw = query[_WORK_ID]
+        try:
+            work_id = int(raw)
+        except (TypeError, ValueError):
+            raise ValueError(f"work_id must be a numeric query value: {raw!r}") from None
+        if str(work_id) != raw or work_id <= 0:
+            raise ValueError(f"work_id must be a canonical positive integer: {raw!r}")
+        resolved[_WORK_ID] = work_id
+    return resolved
 
 
 def _latest_observed_at(facts: dict) -> str:
@@ -203,12 +227,12 @@ def _ident(value, missing: str = "unavailable") -> str:
 
 
 def _jump(repo, item_id, attempt_id) -> str:
-    parts = ["lanectl", "tui", "--repo", str(repo)]
+    parts = ["lanectl", "tui", "--view", "active", "--repo", str(repo)]
     if item_id is not None:
         parts += ["--item", str(item_id)]
     if attempt_id is not None:
         parts += ["--attempt", str(attempt_id)]
-    return " ".join(parts)
+    return " ".join(shlex.quote(part) for part in parts)
 
 
 def _state_label(state: str) -> str:
@@ -283,6 +307,8 @@ def _reasons_html(reasons) -> str:
 def _collect_references(value, out: list[str]) -> None:
     if isinstance(value, dict):
         for key, child in value.items():
+            if key in _RUNTIME_KEYS:
+                continue
             if key in _REF_KEYS and isinstance(child, str):
                 out.append(child)
             else:
@@ -364,6 +390,100 @@ def _evidence_html(row: dict) -> str:
     return f"<h2>Verification</h2><p>outcome: <code>{_esc(outcome)}</code></p>{table}"
 
 
+def _fmt_duration(value) -> str:
+    return "unknown" if value is None else f"{value}s"
+
+
+def _fmt_usd(value) -> str:
+    return "unknown" if value is None else f"${value:.4f}"
+
+
+def _accounting_html(accounting) -> str:
+    """Render the shared accounting projection without inventing zero costs.
+
+    Only the projection's summary fields are emitted: phase durations, usage
+    units, known cost subtotals, attribution and price revision.  Raw event
+    payloads never appear, and missing totals stay ``unknown`` rather than zero.
+    """
+    if not isinstance(accounting, dict):
+        return ('<h2>Accounting timeline</h2>'
+                '<p class="muted">Accounting timeline unavailable</p>')
+    provenance = (
+        '<p class="muted">Accounting timeline · '
+        f'source <code>{_esc(accounting.get("source"))}</code> · '
+        f'checkpoint <code>{_esc(accounting.get("checkpoint"))}</code> · '
+        f'observed <code>{_esc(accounting.get("observed_at"))}</code></p>')
+    revision_html = (
+        f'<p>price revision: <code>{_esc(accounting.get("price_revision"))}</code> '
+        '<span class="muted">(estimate from published prices)</span></p>')
+
+    phases = accounting.get("phases")
+    phase_rows = []
+    if isinstance(phases, dict):
+        for kind in _ACCOUNTING_PHASES:
+            phase = phases.get(kind)
+            phase = phase if isinstance(phase, dict) else {}
+            phase_rows.append(
+                "<tr>"
+                f"<td>{_esc(kind)}</td>"
+                f"<td>{_esc(_fmt_duration(phase.get('seconds')))}</td>"
+                f"<td>{_esc(_fmt_duration(phase.get('known_seconds')))}</td>"
+                f"<td>{_esc(phase.get('basis'))}</td>"
+                "</tr>")
+    phases_html = (
+        '<div class="table-wrap"><table>'
+        '<caption>Phases (unknown is not zero)</caption>'
+        '<thead><tr><th scope="col">Phase</th><th scope="col">Seconds</th>'
+        '<th scope="col">Known subtotal</th><th scope="col">Basis</th>'
+        '</tr></thead><tbody>' + "".join(phase_rows) + "</tbody></table></div>")
+
+    usage = accounting.get("usage")
+    usage_rows = []
+    if isinstance(usage, dict):
+        for name in ("lane", "operator"):
+            section = usage.get(name)
+            section = section if isinstance(section, dict) else {}
+            units = section.get("units") or {}
+            units_text = ", ".join(f"{_esc(unit)} {_esc(amount)}"
+                                   for unit, amount in units.items())
+            estimate = "yes" if section.get("estimate", True) else "no"
+            usage_rows.append(
+                "<tr>"
+                f"<td>{_esc(name)}</td>"
+                f"<td>{_esc(section.get('events'))}</td>"
+                f"<td>{_esc(section.get('priced_events'))}</td>"
+                f"<td>{_esc(section.get('unpriced_events'))}</td>"
+                f"<td>{_esc(estimate)}</td>"
+                f"<td>{_esc(_fmt_usd(section.get('usd_est')))}</td>"
+                f"<td>{_esc(_fmt_usd(section.get('known_usd_est')))}</td>"
+                f"<td>{units_text}</td>"
+                "</tr>")
+    usage_html = (
+        '<div class="table-wrap"><table>'
+        '<caption>Usage (estimate; unknown is not zero)</caption>'
+        '<thead><tr><th scope="col">Unit</th><th scope="col">Events</th>'
+        '<th scope="col">Priced</th><th scope="col">Unpriced</th>'
+        '<th scope="col">Estimate</th><th scope="col">Cost (USD)</th>'
+        '<th scope="col">Known cost (USD)</th><th scope="col">Units</th>'
+        '</tr></thead><tbody>' + "".join(usage_rows) + "</tbody></table></div>")
+
+    attribution = accounting.get("attribution")
+    attribution_html = ""
+    if isinstance(attribution, dict):
+        attributed = attribution.get("attributed_events", 0)
+        unattributed = attribution.get("unattributed_events", 0)
+        total = attributed + unattributed
+        coverage = "unknown" if total == 0 else f"{attributed}/{total}"
+        attribution_html = (
+            '<p>attribution: attributed '
+            f'<code>{_esc(attributed)}</code> · unattributed '
+            f'<code>{_esc(unattributed)}</code> · coverage '
+            f'<code>{_esc(coverage)}</code></p>')
+
+    return ("<h2>Accounting timeline</h2>" + provenance + revision_html
+            + phases_html + usage_html + attribution_html)
+
+
 def render_lifecycle(repo: str, row: dict, *, base_url: str = "") -> str:
     """Render a standalone, accessible HTML review page for one lifecycle row.
 
@@ -377,12 +497,14 @@ def render_lifecycle(repo: str, row: dict, *, base_url: str = "") -> str:
     attempt_id = row.get("attempt_id")
     run_id = row.get("run_id")
     train_id = row.get("train_id")
+    work_id = row.get("work_id")
     observed_at = _latest_observed_at(facts)
     owner_revision = facts.get("work.public.item-v1", {}).get("revision")
     checkpoint = _local_checkpoint(facts)
     title = f"Lifecycle · {_esc(item_id or 'unknown')} · {_esc(attempt_id or 'unknown')}"
     identifiers = (
-        f'<dt>release / work</dt><dd>{_ident(item_id)}</dd>'
+        f'<dt>release</dt><dd>{_ident(item_id)}</dd>'
+        f'<dt>work</dt><dd>{_ident(work_id)}</dd>'
         f'<dt>attempt</dt><dd>{_ident(attempt_id)}</dd>'
         f'<dt>run</dt><dd>{_ident(run_id)}</dd>'
         f'<dt>train</dt><dd>{_ident(train_id)}</dd>')
@@ -426,6 +548,9 @@ def render_lifecycle(repo: str, row: dict, *, base_url: str = "") -> str:
 {_evidence_html(row)}
 {_references_html(facts)}
 </section>
+<section id="accounting" aria-label="Accounting timeline">
+{_accounting_html(row.get("accounting"))}
+</section>
 <section id="reasons" aria-label="Attention reasons">
 <h2>Attention reasons</h2>
 {_reasons_html(row.get("reasons"))}
@@ -464,8 +589,8 @@ def export_lifecycle(root, repo: str, row: dict, *, base_url: str = "") -> Path:
     page = render_lifecycle(repo, row, base_url=base_url)
     url = locator(repo, row, base_url=base_url)
     path = urlsplit(url).path
-    _decode_identity(path)  # refuse traversal / malformed identity segments
-    relative_dir = Path(path.strip("/"))
+    repo_seg, item_seg, attempt_seg = _decode_identity(path)  # refuse traversal
+    relative_dir = Path("lifecycle") / repo_seg / item_seg / attempt_seg
     root = Path(root)
     target = root / relative_dir / "index.html"
     if not _is_within(root.resolve(), target.parent.resolve()):
@@ -492,14 +617,30 @@ def _cmd(args, log) -> int:
         print(f"error: {exc}")
         return 2
     from .coordination import configured
+    from .config import load_releases
+    from .lifecycle import release_work_ids
+    from .accounting import accounting_timeline
+    from .costs import _load_policy_raw
+    from .contracts import utcnow
     coordinator = configured(args.repo)
     if coordinator is None:
         print(f"{args.repo}: Vuoro coordination is not configured")
         return 1
-    rows = lifecycle_rows(coordinator.client, log.read(), item_id=args.item,
-                          journal_path=coordinator.path)
+    events = log.read()
+    work_ids = release_work_ids(load_releases())
+    rows = lifecycle_rows(coordinator.client, events, item_id=args.item,
+                          work_ids=work_ids, journal_path=coordinator.path)
+    policy_raw = _load_policy_raw()
+    checkpoint = len(events)
+    observed_at = events[-1]["ts"] if events else utcnow()
     root = Path(args.output)
     for row in rows:
         row["reasons"] = attention_reasons(row)
+        accounting = accounting_timeline(events, policy_raw, item_id=row["item_id"],
+                                         attempt_id=row.get("attempt_id"))
+        accounting["source"] = "lanectl.events"
+        accounting["checkpoint"] = checkpoint
+        accounting["observed_at"] = observed_at
+        row["accounting"] = accounting
         print(export_lifecycle(root, args.repo, row, base_url=origin))
     return 0
