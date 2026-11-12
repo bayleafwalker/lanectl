@@ -66,6 +66,10 @@ falling back to uncoordinated execution. Add bounded existing-path check if need
 existing execute wrapper; ordinary callers retain existing behavior). Preserve
 exact uncertainty replay. claim-run must pass that keyword, so a removed owner
 configuration cannot fall through to native uncoordinated execution.
+Bind the fresh client endpoint/repo_id through an optional expected_owner mapping
+on runner.execute; compare it with the configured coordinator client before start.
+This closes a configuration change between preview/admission and effects. Existing
+callers may omit it; claim-run supplies it with require_coordination=True.
 6. Complete permalink joins: locator/resolve_locator round-trip optional work_id
 when supplied (keep the previous exact key set when absent); show numeric work ID
 separately from release ID. lifecycle-web reads configured release work bindings.

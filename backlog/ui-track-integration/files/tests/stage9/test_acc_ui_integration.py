@@ -185,3 +185,25 @@ def test_permalink_tui_jump_selectors_are_real_arguments():
     args = parser.parse_args(["tui", "--repo", "lanectl", "--item", "ui-work",
                               "--attempt", "ui-work-a1", "--plain"])
     assert args.item == "ui-work" and args.attempt == "ui-work-a1"
+
+
+def test_effect_time_owner_must_match_preview_audience(monkeypatch):
+    from lanectl import runner, coordination
+    from tests.stage9.test_acc_claim_preview import config
+    release, lane, repos = config(monkeypatch)
+    claim = runner.Claim(release, repos[release.repo], lane, "ui-work-a1", "model-a", "fake")
+    calls = []
+    def start(*args, **kwargs):
+        calls.append("start")
+        raise coordination.CoordinationError("test stops after start")
+    owner = SimpleNamespace(client=SimpleNamespace(endpoint="https://owner.example.test", repo_id="repo-b"), start=start)
+    monkeypatch.setattr(coordination, "configured", lambda *args: owner)
+    monkeypatch.setattr(runner, "_coordination_park", lambda *args: "coordination refused")
+    wrapped = runner._coordinate_execution(lambda *args: calls.append("native"))
+    log = SimpleNamespace(read=lambda: [])
+    expected = dict(endpoint="https://owner.example.test", repo_id="repo-a")
+    wrapped(claim, log, require_coordination=True, expected_owner=expected)
+    assert calls == []
+    owner.client.repo_id = "repo-a"
+    wrapped(claim, log, require_coordination=True, expected_owner=expected)
+    assert calls == ["start"]
