@@ -1,7 +1,7 @@
 id = "ui-08-accounting"
 repo = "lanectl"
 base_sha = "1ee6eedf148bedc72231af037099712c1ef1c1c7"
-revision = 1
+revision = 2
 title = "Lifecycle accounting with attribution and unknown costs"
 task_class = "view"
 size = "M"
@@ -38,6 +38,9 @@ coverage and unknown values. Plugin accounting --item ID [--attempt ID] [--json]
 uses validated event log plus existing governance prices. Include tests for retries,
 out of order timestamps, operator and release-level usage, partial/missing prices,
 and phase boundaries; every duration must carry its basis, no second lifecycle state.
+Review correction: an event containing any reported nonzero usage unit without its
+price column is unpriced, even when another unit is priced. Never treat presence
+of one priced field as proof that the entire event is priced. Preserve raw units.
 """
 
 [scope]

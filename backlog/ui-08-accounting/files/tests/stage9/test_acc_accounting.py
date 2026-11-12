@@ -82,3 +82,15 @@ def test_attempt_filter_and_retries_do_not_charge_other_attempts_or_waits():
     assert second["usage"]["lane"]["units"]["output_tokens"] == 20
     assert second["usage"]["operator"]["usd_est"] is None
     assert second["phases"]["execution"]["seconds"] == 120
+
+
+def test_mixed_known_and_missing_price_columns_do_not_report_a_complete_total():
+    from copy import deepcopy
+    policy = deepcopy(POLICY)
+    del policy["providers"]["test"]["prices"]["models"]["model-a"]["offpeak"]["output"]
+    events = [usage("adapter", {"input_tokens": 100, "output_tokens": 50})]
+    section = accounting_timeline(events, policy, item_id="account-work")["usage"]["lane"]
+    assert section["usd_est"] is None
+    assert section["unpriced_events"] == 1
+    events = [usage("adapter", {"input_tokens": 100, "mystery_units": 50})]
+    assert accounting_timeline(events, POLICY, item_id="account-work")["usage"]["lane"]["usd_est"] is None
