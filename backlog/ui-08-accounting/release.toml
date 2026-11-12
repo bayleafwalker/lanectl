@@ -1,0 +1,48 @@
+id = "ui-08-accounting"
+repo = "lanectl"
+base_sha = "1ee6eedf148bedc72231af037099712c1ef1c1c7"
+revision = 1
+title = "Lifecycle accounting with attribution and unknown costs"
+task_class = "view"
+size = "M"
+data_class = "public"
+
+outcome = """
+Approved UI-08, served lanectl#2898. Add lanectl.accounting, a pure projection
+accounting_timeline(events, policy_raw, *, item_id, attempt_id=None) -> dict.
+Return item_id, attempt_id, phases, usage, attribution, price_revision. No writes,
+new events, network or dependencies. Attribute only the requested item/attempt;
+usage with item but no attempt is release-level (include for release query, exclude
+for attempt query). Unattributed usage is counted explicitly, never silently charged.
+Keep phase durations in seconds, nullable when endpoints absent, plus source
+timestamps/checkpoints. Phases keys queued, execution, integration, verification:
+release.published -> item.claimed; item.claimed -> attempt.finished;
+attempt.finished -> item.landed; landed -> explicit work.synced closed=true.
+work.synced owner_reported/pending_owner never closes verification. Report phase
+intervals per attempt (do not join first claim to last finish across retries),
+exclude intervening waits from execution; aggregate durations only when known.
+No extrapolation to now, no overlapping/misordered negative durations, no invented
+owner completion: the verification endpoint is a local receipt of confirmed closure,
+not an independent owner fact. Preserve separate labels for execution and waiting.
+usage has lane and operator sections with units dict, usd_est nullable, known_usd_est,
+priced_events, unpriced_events, events; source claude-code-interactive is operator,
+other source values are lane. Use existing published costs.price_usage semantics,
+but do not render unknown units/model/missing price columns as zero. Missing usage
+means usd_est=None; partially priced means usd_est=None with known_usd_est subtotal;
+retain all reported units and count unpriced data. Select the matching provider
+price table (not any provider's rates), retain policy revision and estimate=true.
+attribution contains attributed_events and unattributed_events for usage records in
+the supplied stream; never infer absent measurements as full attribution coverage.
+render_timeline(result) plain text labels estimates, price revision, units,
+coverage and unknown values. Plugin accounting --item ID [--attempt ID] [--json]
+uses validated event log plus existing governance prices. Include tests for retries,
+out of order timestamps, operator and release-level usage, partial/missing prices,
+and phase boundaries; every duration must carry its basis, no second lifecycle state.
+"""
+
+[scope]
+paths = ["src/lanectl/accounting.py", "tests/stage9/test_accounting*.py"]
+
+[acceptance]
+files = ["tests/stage9/test_acc_accounting.py"]
+exec = ["uv run --no-sync pytest -q -p no:cacheprovider tests/stage9/test_acc_accounting.py"]
