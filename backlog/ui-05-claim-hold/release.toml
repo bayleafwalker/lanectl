@@ -1,13 +1,24 @@
 id = "ui-05-claim-hold"
 repo = "lanectl"
-base_sha = "65aa00af82645b43993960cd7df1c49c77e61e31"
-revision = 2
+base_sha = "d83fd553bbc714aa0244fb675d0aa83df0847ac3"
+revision = 3
 title = "Advanced owner-bounded claim-only hold with exact recovery"
 task_class = "view"
 size = "M"
 data_class = "public"
 
 outcome = """
+Reuse the reviewed implementation at git object
+d275ccb1662b6c53cee051833c2abc3d1ade9add (claim_hold.py, coordination.py and
+its unit tests). All existing gates passed. Repair the two reproduced review gaps:
+1. command(preview) must shell-quote the reason as literal text, including $() and
+backticks; JSON quoting is not shell quoting. Preserve CLI arguments literally.
+2. An acquisition-uncertain receipt must include a run_id when registration was
+acknowledged and journalled; do not discard that known owner link just because the
+lease binding is not yet stored. Unknown registration acknowledgement stays unknown.
+The frozen acceptance now exercises both gaps. Preserve prior exact-replay, no
+worker/no heartbeat, expiry and evidence behavior; avoid rewriting working parts.
+
 Complete the approved UI-05 recommendation: claim-and-run remains default; a
 separate advanced claim-only mode is time-bounded and requires an explicit reason.
 Add lanectl.claim_hold with preview_hold(client,release,lane,repos,*,reason),

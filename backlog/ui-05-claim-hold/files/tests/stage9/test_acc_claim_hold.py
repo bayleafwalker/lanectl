@@ -64,6 +64,7 @@ def test_lost_acquire_ack_replays_the_exact_request_without_extending_or_startin
         state["drop"] = "work.lease.acquire-v1"
         result = hold.execute_hold(preview, coordinator=coordinator)
         assert result["state"] == "unknown" and result["claim_id"] and result["worker_started"] is False
+        assert result["run_id"] == "run_test"
         resumed = hold.resume_hold(result["claim_id"], coordinator=coordinator)
         assert resumed["state"] == "observed" and resumed["expires_at"] == state["lease"]["expires_at"]
         requests = [p for p in state["calls"] if p["operation"] == "work.lease.acquire-v1"]
@@ -79,3 +80,13 @@ def test_unknown_recovery_and_blank_reason_refuse_without_mutation(tmp_path, mon
         with pytest.raises((PreviewRefused, ValueError)):
             hold.preview_hold(coordinator.client, release, lane, repos, reason=" ")
         assert mutations(state) == []
+
+
+def test_printed_hold_command_preserves_reason_as_literal_shell_text():
+    import subprocess
+    from lanectl.claim_hold import command
+    reason = "Inspect `printf EXPANDED` and $(printf EXPANDED)"
+    preview = dict(release_id="aa", lane="implement", reason=reason, digest="sha256:example")
+    script = 'lanectl() { printf "%s\\n" "$@"; }\n' + command(preview)
+    result = subprocess.run(["bash", "-c", script], text=True, capture_output=True, check=True)
+    assert reason in result.stdout.splitlines()
