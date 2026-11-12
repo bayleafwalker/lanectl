@@ -472,13 +472,15 @@ def _accounting_html(accounting) -> str:
     if isinstance(attribution, dict):
         attributed = attribution.get("attributed_events", 0)
         unattributed = attribution.get("unattributed_events", 0)
-        total = attributed + unattributed
-        coverage = "unknown" if total == 0 else f"{attributed}/{total}"
+        value = attribution.get("coverage")
+        coverage = "unknown" if value is None else f"{value:.0%}"
         attribution_html = (
             '<p>attribution: attributed '
             f'<code>{_esc(attributed)}</code> · unattributed '
-            f'<code>{_esc(unattributed)}</code> · coverage '
-            f'<code>{_esc(coverage)}</code></p>')
+            f'<code>{_esc(unattributed)}</code> · outside scope '
+            f'<code>{_esc(attribution.get("outside_scope_events", "unknown"))}</code> · coverage '
+            f'<code>{_esc(coverage)}</code> '
+            f'<span class="muted">{_esc(attribution.get("basis", "unavailable"))}</span></p>')
 
     return ("<h2>Accounting timeline</h2>" + provenance + revision_html
             + phases_html + usage_html + attribution_html)
