@@ -103,9 +103,9 @@ def test_resolve_locator_rejects_non_string():
 
 def test_render_never_leaks_bodies_logs_credentials_or_unsafe_refs():
     page = render_lifecycle("lanectl", snapshot())
-    for secret in ("raw secret transcript", "/home/user/private", "token=secret",
-                   "landed_sha"):
+    for secret in ("raw secret transcript", "/home/user/private", "token=secret"):
         assert secret not in page
+    assert "landed_sha=abc" in page
     parser = Links()
     parser.feed(page)
     assert not any(link.startswith(("file:", "javascript:", "/home/", "data:"))
