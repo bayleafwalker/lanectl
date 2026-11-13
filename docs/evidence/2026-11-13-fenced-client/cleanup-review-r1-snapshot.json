@@ -1,0 +1,5 @@
+{
+  "seed": "c294be33523d333d7afb1e8ca6dfb6e0cec81664",
+  "runner_sha256": "5cffc0824dd3949eeb3d672551a6efd0bccf8248ae20865b0daf842ea878049b",
+  "integration_precondition": "final native artifact must match exact reviewed bytes"
+}

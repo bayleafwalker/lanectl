@@ -1,7 +1,7 @@
 id = "train-cleanup-boundary"
 repo = "lanectl"
-base_sha = "2271ab760b42e56cdaddb36f682b03c1c2251b9d"
-revision = 1
+base_sha = "9c7d65e5f750a673ee2a1f542ec024c1ea5b5cd2"
+revision = 2
 title = "Prevent cleanup from deleting the canonical repository or its ancestors"
 task_class = "recovery"
 size = "S"
@@ -9,32 +9,46 @@ data_class = "public"
 eligible_lanes = ["implement"]
 
 outcome = """
-During #2889 historical-lifecycle qualification, the integrator safely reproduced
-a destructive cleanup gap using interceptors only. _historical_checkout explicitly
-handles a recorded checkout equal to the canonical repository by reconstructing a
-scratch checkout for checks, but land later passes the recorded path to _discard.
-_discard calls git worktree remove and then unconditional shutil.rmtree even if
-the git operation failed. For a canonical path this attempts deletion of main.
-No actual canonical data was deleted: the proof intercepted Git and rmtree.
+Complete the canonical cleanup boundary after independent review refined the
+planner's scope. R1's root/ancestor/alias guard met its literal acceptance and
+passed gates/review, but review found related gaps in the broader requirement
+that canonical data and historical recovery remain intact. This is a planner
+spec-gap refinement, not a claim R1 failed its own tests. Base is the complete R1
+artifact; preserve its deterministic guard and independent scratch cleanup.
 
-Refuse cleanup targeting the canonical repository, an ancestor containing it, or
-a symlink alias resolving to either, before any destructive Git or filesystem
-operation. Preserve the normal independent attempt/train/historical scratch
-cleanup paths and their existing call sites. A conservative refusal or explicit
-error is acceptable; never recursively delete canonical data after Git refuses.
-Keep the guard deterministic and independent of worker-controlled Git config or
-hooks. Do not weaken existing commit-bound, historical, isolation or landing gates.
+Also refuse deletion of unmanaged contents inside canonical, including .git and
+src, or their symlink aliases. Preserve legitimate explicitly configured managed
+worktree subdirectories, including a worktree_root strictly below canonical.
+Do not treat worktree_root equal to or above canonical as permission to delete
+canonical data. Never decide authorization from worker-controlled Git config.
 
-The planner froze three safe failure-case interceptors and a positive real scratch
-cleanup case. All tests are immutable. Scope only src/lanectl/runner.py; no broad
-refactoring, dependencies, skip/coverage suppression, governance edits or policy
-changes. Keep the correction <=250 added/deleted lines, preferably much smaller.
-Run the exact frozen acceptance and retain the full-suite repository gate.
+_historical_checkout must reconstruct a scratch checkout whenever the recorded
+path overlaps protected canonical data, including a containing ancestor or an
+unmanaged canonical subdirectory. Do not give checks a writable tree containing
+canonical. Ordinary valid managed checkouts retain their current behavior.
+
+Finally preserve a successful landing when post-land cleanup is refused for a
+protected recorded path. The canonical main and item.landed can already be
+committed before cleanup runs; do not throw an unqualified failure for that
+completed landing, and do not abandon cleanup of other safe attempt directories.
+Return a useful cleanup notice or otherwise keep the landed outcome truthful.
+Do not bypass checks, fabricate item events, or delete the protected target.
+
+The planner froze new safe subtree/alias and historical overlap regressions, a
+positive managed-inside-canonical cleanup, and a real synthetic historical land
+whose recorded checkout is canonical. All test data is temporary; destructive
+calls are intercepted in negative cleanup probes. Prior tests remain immutable.
+Scope only runner.py, <=250 added/deleted lines, no broad refactoring, dependencies,
+coverage suppression, governance or policy changes. Run exact frozen acceptance
+and the full-suite gate. No production/owner/credential effects are authorized.
 """
 
 [scope]
 paths = ["src/lanectl/runner.py"]
 
 [acceptance]
-files = ["tests/stage8/test_acc_train_cleanup_boundary.py"]
-exec = ["snip proxy -- uv run --no-sync pytest -q -p no:cacheprovider tests/stage8/test_acc_train_cleanup_boundary.py"]
+files = ["tests/stage8/test_acc_train_cleanup_boundary.py", "tests/stage8/test_acc_train_cleanup_recovery.py"]
+exec = ["snip proxy -- uv run --no-sync pytest -q -p no:cacheprovider tests/stage8/test_acc_train_cleanup_boundary.py tests/stage8/test_acc_train_cleanup_recovery.py"]
+
+[lint]
+override = "R2 deliberately targets the independently reviewed unlanded R1 guard. Prior root/ancestor tests and the new explicit managed-subtree positive already pass there. New subtree/historical assertions fail, including an intentional ValueError from cleanup after an otherwise successful landing; this is the behavior under correction, not a fixture failure. Combined fail-on-base remains mandatory."

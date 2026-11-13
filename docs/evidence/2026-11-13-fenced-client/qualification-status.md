@@ -130,3 +130,20 @@ _discard attempts rmtree on a canonical recorded checkout after Git refuses it.
 Safe interceptors prevented deletion. New public release train-cleanup-boundary
 freezes canonical/ancestor/alias failure cases and a real scratch positive case.
 This guard must land before closing #2889.
+
+## Configured compatibility and cleanup refinement
+
+HLA's actual configured namespace setup/check passed at canonicalb41e4c9a:
+2711passed/1skipped/28deselected,120subtests,544.51s. Appservice's existing
+namespace command also passed at recordeddd64b38b. Together with the package's
+989-test namespace train and actual Sovite full parity, this provides measured
+regression evidence for existing repository modes; it does not qualify every repo
+for direct systemd execution or silently switch policy.
+
+Cleanup R1 met its literal four-case acceptance, passed all gates and independent
+review. Review refined the broader intended boundary: unmanaged canonical
+contents also need protection, historical checks must reconstruct on overlap,
+and a completed landing must remain truthful after refused cleanup. R1 is
+requeued as planner spec-gap, not accepted or model-fixed. R2 pins its reviewed
+artifact and adds six failing safe regressions plus a managed-subtree positive.
+No tests/gates/policy or provider caps were weakened.

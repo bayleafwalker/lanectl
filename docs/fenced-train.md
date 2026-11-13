@@ -9,7 +9,7 @@ The host must install the reviewed account, template, launcher, spool, outside-t
 receipt directory and narrow coordinator authorization. The implemented host is
 gitops-nixos commit `dbf142e2636d0397c7aeb5cacad3b4b1adfe2df4`; its runbook is
 `docs/runbooks/lanectl-train-fence.md` in that repository. The workstation now has
-UID/GID1120, a non-login account, coordinator-owned0700 spool and root-owned0755
+UID/GID1120, a non-login account, coordinator-owned 0700 spool and root-owned 0755
 receipt directory. No general sudo grant is used.
 
 Each command gets a fresh self-contained checkout and private home. Setup runs
@@ -19,9 +19,9 @@ terminal state and ownership handback. Failed or uncertain stop acknowledgement
 retains a named orphan; remove it only after proving the exact service stopped.
 
 The installed-service qualification matches Sovite's ordinary baseline:
-2,797passed/1,140skipped. Synthetic probes deny24 read/write opens, strip secret
-environment names, preserve checkout writes and observe root/nixUID0 with the
-train atUID1120. Actual build, recheck, historical reconstruction, timeout,
+2,797 passed / 1,140 skipped. Synthetic probes deny 24 read/write opens, strip secret
+environment names, preserve checkout writes and observe root/nix UID 0 with the
+train at UID 1120. Actual build, recheck, historical reconstruction, timeout,
 cancellation and deliberate lost-stop acknowledgement also pass. Raw evidence
 and reproducible harnesses are in
 [`docs/evidence/2026-11-13-fenced-client/`](evidence/2026-11-13-fenced-client/).
@@ -36,7 +36,7 @@ systemd smoke tests found concrete limits:
   self-contained Makefile path also needs `make` on the fixed host tool path.
 - Lanectl's own integration suite needs a nested user manager; the dedicated
   system account does not currently provide one. Its configured namespace suite
-  passes989 tests. Do not weaken those tests to qualify systemd mode.
+  passes 989 tests. Do not weaken those tests to qualify systemd mode.
 
 The dedicated UID is shared by trains, so sibling processes remain a residual
 boundary. Network behavior is unchanged. This backend does not establish hosted
