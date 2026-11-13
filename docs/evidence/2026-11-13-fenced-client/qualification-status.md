@@ -75,3 +75,21 @@ from a bare inactive reading. The synthetic root control is3failed/1passed.
 A queued start is not proven cancelled without a successful stop acknowledgement.
 R8 freezes those cases and routes the tiny correction through the existing public
 implementation lane. A6 remains requeued, not landed. No gate waiver or cap change.
+
+## A7 source review and live boundary result
+
+A7 `c83fe800fcf7d1adb4adfa4d3b72c958ddca7e35` completed natively in186.9s.
+All normal gates passed (worker reported31 frozen acceptance/975 suite tests).
+Independent review PASS confirms failed/uncertain stops return false before
+terminal polling; exact final module bytes match the immutable reviewed snapshot.
+No coordinator implementation fixes were made. The correction is7added/3deleted.
+The new failed-stop control fails3/passes1 on A6, so the regression can fail.
+
+Actual installed-service probes on A7 pass24 denied read/write opens across
+synthetic credential/state, separate-project, canonical and governance paths,
+strip all three synthetic secret environment names, retain checkout writes,
+and observe UID1120 with root/nix ownership UID0. The same outside-fence control
+opens those paths and sees the environment, returning failure as required. No
+secret bytes were read. Evidence and reproducible qualification harness are in
+Git; all markers/temporary homes were removed. Full Sovite parity and remaining
+repository/lifecycle qualification are running or pending, not yet claimed.

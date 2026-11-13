@@ -1,6 +1,6 @@
 [project]
 name = "lanectl"
-version = "0.2.4"
+version = "0.2.5"
 description = "Autonomous implementation lanes: deterministic admission, gates and trains around cheap workers"
 requires-python = ">=3.13"
 dependencies = []

@@ -1,0 +1,153 @@
+{
+  "repo": "sovite",
+  "mode": "probes",
+  "elapsed_s": 0.42,
+  "result": {
+    "outside_control_exit": 1,
+    "outside_control": {
+      "checkout_writable": true,
+      "inherited_secret_names": [
+        "FJ_TOKEN",
+        "LANECTL_TEST_API_KEY",
+        "CREDENTIALS_DIRECTORY"
+      ],
+      "nix_uid": 0,
+      "root_uid": 0,
+      "rows": [
+        {
+          "path": "/home/bayleaf/.cache/lanectl-fence-home-963b47o6/.config/vuoro/credentials/runner",
+          "read": "OPENED",
+          "write": "OPENED"
+        },
+        {
+          "path": "/home/bayleaf/.cache/lanectl-fence-home-963b47o6/.config/forgejo/token",
+          "read": "OPENED",
+          "write": "OPENED"
+        },
+        {
+          "path": "/home/bayleaf/.cache/lanectl-fence-home-963b47o6/.local/share/forgejo-cli/keys.json",
+          "read": "OPENED",
+          "write": "OPENED"
+        },
+        {
+          "path": "/home/bayleaf/.cache/lanectl-fence-home-963b47o6/.local/share/opencode/auth.json",
+          "read": "OPENED",
+          "write": "OPENED"
+        },
+        {
+          "path": "/home/bayleaf/.cache/lanectl-fence-home-963b47o6/.codex/auth.json",
+          "read": "OPENED",
+          "write": "OPENED"
+        },
+        {
+          "path": "/home/bayleaf/.cache/lanectl-fence-home-963b47o6/.claude/.credentials.json",
+          "read": "OPENED",
+          "write": "OPENED"
+        },
+        {
+          "path": "/home/bayleaf/.cache/lanectl-fence-home-963b47o6/.ssh/key",
+          "read": "OPENED",
+          "write": "OPENED"
+        },
+        {
+          "path": "/home/bayleaf/.cache/lanectl-fence-home-963b47o6/runtime/credentials/runner",
+          "read": "OPENED",
+          "write": "OPENED"
+        },
+        {
+          "path": "/home/bayleaf/.cache/lanectl-fence-home-963b47o6/.local/state/lanectl/synthetic-state",
+          "read": "OPENED",
+          "write": "OPENED"
+        },
+        {
+          "path": "/projects/dev/lanectl-fence-project-s5jhso04/other-repo-marker",
+          "read": "OPENED",
+          "write": "OPENED"
+        },
+        {
+          "path": "/projects/dev/sovite/pyproject.toml",
+          "read": "OPENED",
+          "write": "OPENED"
+        },
+        {
+          "path": "/projects/dev/lanectl/governance/repos.toml",
+          "read": "OPENED",
+          "write": "OPENED"
+        }
+      ],
+      "uid": 1000
+    },
+    "fenced_exit": 0,
+    "fenced": {
+      "checkout_writable": true,
+      "inherited_secret_names": [],
+      "nix_uid": 0,
+      "root_uid": 0,
+      "rows": [
+        {
+          "path": "/home/bayleaf/.cache/lanectl-fence-home-963b47o6/.config/vuoro/credentials/runner",
+          "read": "EACCES",
+          "write": "EACCES"
+        },
+        {
+          "path": "/home/bayleaf/.cache/lanectl-fence-home-963b47o6/.config/forgejo/token",
+          "read": "EACCES",
+          "write": "EACCES"
+        },
+        {
+          "path": "/home/bayleaf/.cache/lanectl-fence-home-963b47o6/.local/share/forgejo-cli/keys.json",
+          "read": "EACCES",
+          "write": "EACCES"
+        },
+        {
+          "path": "/home/bayleaf/.cache/lanectl-fence-home-963b47o6/.local/share/opencode/auth.json",
+          "read": "EACCES",
+          "write": "EACCES"
+        },
+        {
+          "path": "/home/bayleaf/.cache/lanectl-fence-home-963b47o6/.codex/auth.json",
+          "read": "EACCES",
+          "write": "EACCES"
+        },
+        {
+          "path": "/home/bayleaf/.cache/lanectl-fence-home-963b47o6/.claude/.credentials.json",
+          "read": "EACCES",
+          "write": "EACCES"
+        },
+        {
+          "path": "/home/bayleaf/.cache/lanectl-fence-home-963b47o6/.ssh/key",
+          "read": "EACCES",
+          "write": "EACCES"
+        },
+        {
+          "path": "/home/bayleaf/.cache/lanectl-fence-home-963b47o6/runtime/credentials/runner",
+          "read": "EACCES",
+          "write": "EACCES"
+        },
+        {
+          "path": "/home/bayleaf/.cache/lanectl-fence-home-963b47o6/.local/state/lanectl/synthetic-state",
+          "read": "EACCES",
+          "write": "EACCES"
+        },
+        {
+          "path": "/projects/dev/lanectl-fence-project-s5jhso04/other-repo-marker",
+          "read": "EACCES",
+          "write": "EACCES"
+        },
+        {
+          "path": "/projects/dev/sovite/pyproject.toml",
+          "read": "EACCES",
+          "write": "EACCES"
+        },
+        {
+          "path": "/projects/dev/lanectl/governance/repos.toml",
+          "read": "EACCES",
+          "write": "EACCES"
+        }
+      ],
+      "uid": 1120
+    }
+  },
+  "source_commit": "c83fe800fcf7d1adb4adfa4d3b72c958ddca7e35",
+  "host_commit": "dbf142e2636d0397c7aeb5cacad3b4b1adfe2df4"
+}
