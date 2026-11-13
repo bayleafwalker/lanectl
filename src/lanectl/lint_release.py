@@ -55,6 +55,11 @@ _MISSING_TEST_MODULE = re.compile(
     r"\bModuleNotFoundError:\s*No module named [\"']tests(?:\.[^\"']+)?[\"']"
 )
 
+_MISSING_TEST_SYMBOL = re.compile(
+    r"\bImportError:\s*cannot import name [\"'][^\"']+[\"']\s+from "
+    r"[\"']tests(?:\.[A-Za-z_][A-Za-z0-9_]*)*[\"']"
+)
+
 _SPEC_GAP = (
     _CONTRACT_RAISED,
     re.compile(r"\bSyntaxError\b"),
@@ -91,7 +96,7 @@ def _sections(output: str) -> list[str]:
 
 
 def _classify_one(output: str) -> str:
-    if _MISSING_TEST_MODULE.search(output):
+    if _MISSING_TEST_MODULE.search(output) or _MISSING_TEST_SYMBOL.search(output):
         return "spec-gap"
     if _DID_NOT_RAISE.search(output):
         return "expected"

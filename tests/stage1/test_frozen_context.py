@@ -61,7 +61,12 @@ def test_missing_test_support_is_spec_gap_even_with_expected_failure():
     assert classify_failure('_____ test_feature _____\nE   AssertionError: missing\n'
                             '_____ ERROR collecting tests/test_typo.py _____\n' + missing) == 'spec-gap'
     assert classify_failure("E   ModuleNotFoundError: No module named 'lanectl.capacity'") == 'expected'
+    missing_symbol = "E   ImportError: cannot import name 'missing_helper' from 'tests.test_helper' (/tmp/tests/test_helper.py)"
+    assert classify_failure(missing_symbol) == 'spec-gap'
+    assert classify_failure('_____ test_feature _____\nE   AssertionError: missing\n'
+                            '_____ ERROR collecting tests/test_other.py _____\n' + missing_symbol) == 'spec-gap'
     assert classify_failure("E   ImportError: cannot import name 'new' from 'lanectl.product'") == 'expected'
+    assert classify_failure("E   Failed: DID NOT RAISE <class 'ImportError'>") == 'expected'
 
 
 def test_specification_materializes_every_file_and_selects_one(tmp_path, monkeypatch):
