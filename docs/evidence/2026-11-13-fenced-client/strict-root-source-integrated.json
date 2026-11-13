@@ -1,0 +1,28 @@
+{
+  "host_repository": "bayleaf/gitops-nixos",
+  "merged_source": "2e77a4eca60a4338aeab00b8f48756916c93d226",
+  "source_change": "a0e112c",
+  "pull_request": "https://git.apps.kotona.app/bayleaf/gitops-nixos/pulls/84",
+  "pull_request_ci": "passed",
+  "post_merge_ci_run": 2205,
+  "post_merge_ci": "passed",
+  "exact_deploy_source_build": {
+    "command": "python3 scripts/committed-flake.py --repo /projects/dev/gitops-nixos --revision 2e77a4eca60a4338aeab00b8f48756916c93d226 -- nix build '@COMMITTED_FLAKE@#nixosConfigurations.workstation.config.system.build.toplevel' --no-link --json",
+    "exit_code": 0,
+    "outputs": [
+      {
+        "drvPath": "/nix/store/mqfplzm7glzbpyvpd96z3k0cqqmsk2ss-nixos-system-workstation-26.11.20261111.d4f25a3.drv",
+        "outputs": {
+          "out": "/nix/store/kpndahh9nvq26ggcpz927dssfmxfz6g0-nixos-system-workstation-26.11.20261111.d4f25a3"
+        }
+      }
+    ]
+  },
+  "new_host_apply_observed": false,
+  "installed_previous_source": "dbf142e2636d0397c7aeb5cacad3b4b1adfe2df4",
+  "apply_precondition": "sudo -n true: password required",
+  "operator_command": "cd /projects/dev/gitops-nixos && ./scripts/deploy-host.sh --host workstation --switch",
+  "expected_after_apply": "RootDirectory=/run/lanectl-train/.rootfs; User=lanectl-train",
+  "remaining": "actual host boundary, DNS/TLS and full Sovite parity; acceptance audit/policy promotion and real repository lifecycle canary",
+  "durability": "cross-host-replicated after canonical publication"
+}

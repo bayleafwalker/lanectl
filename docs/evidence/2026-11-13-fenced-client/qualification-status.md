@@ -236,3 +236,16 @@ configured namespace validator atafec5b00 passed again with installed0.2.6:
 563passed/2skipped/95subtests plus all offline validators.
 
 HLA configured namespace rerun on installed0.2.6 also passed atb41e4c9a: 2711 passed, 1 skipped, 28 deselected, 5 warnings, 120 subtests passed in 549.09s (0:09:09). Raw output is in homelab-v026-namespace.json.
+
+## Strict-root source integrated; authenticated apply pending
+
+Canonical gitops PR84 merged at2e77a4eca60a4338aeab00b8f48756916c93d226.
+PR and post-main CIrun2205 both passed; the exact committed source used by the
+deploy helper also builds successfully. Final reviewed file hashes match
+canonical main. The source branch/worktree is retired. See
+strict-root-source-integrated.json for the source/build binding.
+
+The new host generation is not yet applied. sudo-n still requires a password;
+the operator must switch from /projects/dev/gitops-nixos before actual strict-root
+qualification. No failed units remain in either systemd manager. Sovite policy
+and #2889 completion remain withheld until the new live proofs pass.
