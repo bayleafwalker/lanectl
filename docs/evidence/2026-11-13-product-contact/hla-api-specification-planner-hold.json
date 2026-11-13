@@ -1,0 +1,41 @@
+{
+  "schema": "qualification-observation/v1",
+  "source_runtime": "lanectl0.2.6",
+  "hla_base": "9cf62cb7271ed0e15e35877ab772709808470bea",
+  "coordinator_real_namespace_runs": [
+    {
+      "case": "auth_in_isolation",
+      "exit_code": 2,
+      "classifier": "expected",
+      "missing_new_fixture_module": true,
+      "log": "/tmp/lanectl-hla-held-base-auth_in_isolation.log"
+    },
+    {
+      "case": "complete_packet",
+      "exit_code": 1,
+      "classifier": "expected",
+      "missing_new_fixture_module": false,
+      "log": "/tmp/lanectl-hla-held-base-complete_packet.log"
+    }
+  ],
+  "complete_packet_summary": "18 failed,1 deselected in42.44s; failures reached missing record routes or missing generated contract paths, with no missing new-fixture module. Slow Postgres case was deselected, not passed.",
+  "finding": "Isolated auth acceptance failed at collection on its missing NEW frozen sibling, but the classifier labeled it expected. Supplying the complete declared frozen packet reaches actual missing-feature assertions.",
+  "planner_disposition": "Original draft held; original independent accept verdict/lint_problems=[] preserved. Title changed deliberately invalidates review digest. validate_for_publish rejects the changed digest. No implementation attempt/publish/wholeWork completion.",
+  "full_intent_gaps": [
+    "Exact parameterized lookup before pagination was not enforced.",
+    "Failure and success JSON shapes were not exact.",
+    "Generated response schema assertion was shallow.",
+    "Partial-NULL known-row behavior required a precise contract."
+  ],
+  "revision_attempt_3": {
+    "result": "failed before response, no draft",
+    "outer_unit": "lanectl-hla-attention-records-spec-r3.service",
+    "outer_exit_code": 2,
+    "native_unit": "lanectl-attempt-e752528404d26e8f2a9137fa.service",
+    "native_session": "01ad8e41-794d-4301-955d-0d6636c597ec",
+    "explicit_provider_error": "rate_limit",
+    "provider_message": "You've hit your 5-hour limit \u00b7 resets 6:40pm (Europe/Helsinki)"
+  },
+  "next_attempt": "Official lanectl spec with eligible first-party gpt-6.1-terra author and independent GoPro reviewer; actual result recorded separately. No routing, cap or grant changed.",
+  "durability": "Committed observations and held packet are cross-host-replicated; original /tmp raw logs are session-local."
+}

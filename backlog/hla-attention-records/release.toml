@@ -1,0 +1,25 @@
+id = "hla-attention-records"
+repo = "homelab-analytics"
+base_sha = "9cf62cb7271ed0e15e35877ab772709808470bea"
+revision = 1
+draft = true
+title = "[PLANNER HOLD: revise frozen acceptance] Resolve each attention item through its authorized source record API"
+outcome = "Frozen acceptance for the attention record-read API stage (homelab-analytics#1593 prerequisite). Contract pinned by the tests: GET /reports/<own source segment>/records/<url-encoded opaque attention item_id> for transaction-anomalies, contract-review-candidates, contract-renewal-watchlist and upcoming-fixed-costs (the route must accept an encoded slash, e.g. a {item_id:path} parameter, so the middleware still keys authorization on the source segment). 200 returns {item_id, rows} where rows use the existing public row model (rows must equal, as a multiset, the list-endpoint rows whose canonical key equals the item_id: anomaly_<transaction_id>, review_<contract_id>_<reason>, renewal_<contract_id>_<renewal_date>, upcoming_<charge_id>_<expected_date>). Unknown/excluded well-formed keys -> 404; cross-type -> 400/404; malformed -> 400/404/422; all failures are JSON {detail} without rows or source names/other charge ids. PUBLISHED mode never falls back to the warehouse: a published row still resolves after the warehouse drops it, a warehouse-only row is 404, a missing published source relation is 503, and NULL published identity (all rows, or any row when absence cannot be proven) is 503 instead of 404 or a stringified None key. OpenAPI: live app and committed apps/web/frontend/generated/openapi.json must contain identical GET path items for the four /reports/<segment>/records/{item_id} paths whose 200 schema reaches the existing row model (TransactionAnomaliesRow, ContractReviewCandidatesRow, ContractRenewalWatchlistRow, UpcomingFixedCostsRow), and generated api.d.ts must list the paths. Modes exercised: tests/test_attention_record_api.py runs real seed/refresh transforms through create_app and the real router in explicit WAREHOUSE and explicit PUBLISHED modes; PUBLISHED uses a test-local DuckDB-backed publication store adapter that executes the reporting layer's real %s-parameterized SQL (no canned rows; Postgres-only SQL functions would not run there). tests/test_attention_record_api_auth.py runs the real auth middleware with permission-bound OIDC bearer tokens from MockOidcIssuer (hla_permissions only, no groups, reader group mapping configured). Deviation from the intent's fixture note: a machine-JWT token with permissions and no scope is permission_bound, but authorize_request still requires the reports:read service-token scope for every machine_jwt principal, so such tokens get 403 'reports:read scope required.' on all /reports paths and could never show source-permission success without an auth-policy edit. The OIDC bearer path is the existing permission-bound fixture that test_api_oidc already uses for publication permissions. tests/test_attention_record_api_postgres_integration.py (marked integration+slow, so the default addopts excludes it) covers the same contract against a disposable postgres:16-alpine PostgresReportingStore. It must be run explicitly before landing (pytest -m slow tests/test_attention_record_api_postgres_integration.py). The existing running_postgres_container helper skips without Docker, and a skip must not be reported as a pass. On base 9cf62cb every test fails on its positive record read (404 from a missing route) or on the missing OpenAPI paths, not on collection or fixtures. These tests were written with read-only inspection and were not run in this phase."
+task_class = "product-api"
+size = "M"
+data_class = "public"
+eligible_lanes = ["implement"]
+
+[scope]
+paths = ["packages/pipelines/reporting_service.py", "packages/pipelines/reporting_*record*.py", "packages/domains/overview/**", "apps/api/routes/report*.py", "apps/web/frontend/generated/**", "tests/**", "docs/**"]
+
+[acceptance]
+files = ["tests/test_attention_record_api.py", "tests/test_attention_record_api_auth.py", "tests/test_attention_record_api_postgres_integration.py"]
+exec = ["uv run --no-sync python -m pytest -q -p no:cacheprovider tests/test_attention_record_api.py tests/test_attention_record_api_auth.py tests/test_attention_record_api_postgres_integration.py"]
+fail_on_base = true
+
+[specification]
+schema = "lanectl-specification/v1"
+author_model = "claude-opus-5-5"
+reviewer_model = "opencode-go/deepseek-v4-pro"
+evidence = "specification.json"
