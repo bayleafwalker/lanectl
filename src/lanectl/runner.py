@@ -380,7 +380,23 @@ def _commit_all(wt: Path, msg: str) -> str:
     return git(wt, "rev-parse", "HEAD")
 
 
+def _contains_canonical(repo: RepoSpec, path: Path) -> bool:
+    """True when discarding *path* would reach the canonical checkout.
+
+    Historical train records are worker-influenced, so a recorded checkout can be
+    the canonical repository itself, an ancestor containing it, or a symlink alias
+    resolving to either. Resolution is pure path arithmetic: no Git config or hook
+    can change the answer.
+    """
+    # A path is relative to itself, so this also catches an exact match.
+    return Path(repo.path).resolve().is_relative_to(Path(path).resolve())
+
+
 def _discard(repo: RepoSpec, path: Path) -> None:
+    # Refuse before any destructive Git or filesystem call: Git can leave the tree
+    # in place, and the unconditional rmtree that follows would delete canonical data.
+    if _contains_canonical(repo, path):
+        raise ValueError(f"refusing to discard {path}: it contains the canonical checkout {repo.path}")
     git(repo.path, "worktree", "remove", "--force", str(path), check=False)
     shutil.rmtree(path, ignore_errors=True)
     git(repo.path, "worktree", "prune", check=False)
