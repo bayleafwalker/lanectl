@@ -1,0 +1,16 @@
+{
+  "source_commit": "e715121610d2f49faa653f30e79e2f992270d9ff",
+  "probe_sha256": "929cfa089de618dcf9599f0368d62baa4b5dbb1cb165335fb594ac943be02bff",
+  "evidence_kind": "first-party worker real disposable negative qualification; coordinator inspected probe",
+  "require_fixed_exit_code": 1,
+  "expected_commit_mismatch_exit_code": 2,
+  "mismatch_rejected_before_output_or_container": true,
+  "scope": "Three upcoming-record authority/identity boundary cases. Actual synthetic source import/HEAD binding and successful-run owned container removal are recorded in adjacent observations.",
+  "limitations": [
+    "requires compatible canonical frozen fixture helpers",
+    "warehouse observation delegates DuckDBStore fetchall/fetchall_dicts; raw connection access not covered",
+    "does not classify legitimate literal None contract IDs",
+    "does not prove every detail kind or UI behavior"
+  ],
+  "candidate_instruction": "Run only against a clean immutable terminal-candidate snapshot with exact expected commit. Expected negative failure on rejected a1 is not a candidate pass. Source inspection and other required checks remain necessary."
+}

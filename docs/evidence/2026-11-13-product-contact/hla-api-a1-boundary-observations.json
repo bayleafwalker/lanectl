@@ -1,0 +1,57 @@
+{
+  "source_commit": "e715121610d2f49faa653f30e79e2f992270d9ff",
+  "source_root": "/tmp/hla-a1-qualification/git-source",
+  "service_module": "/tmp/hla-a1-qualification/git-source/packages/pipelines/reporting_service.py",
+  "fixture_module": "/tmp/hla-a1-qualification/git-source/tests/test_attention_record_api.py",
+  "reference_date": "2026-11-13",
+  "case1_strict_no_store": {
+    "http_status": 200,
+    "warehouse_reads": [
+      {
+        "method": "fetchall",
+        "sql": "SELECT COUNT(*) FROM information_schema.tables WHERE table_name = ?"
+      },
+      {
+        "method": "fetchall_dicts",
+        "sql": "SELECT * FROM mart_upcoming_fixed_costs_30d WHERE 'upcoming_' || charge_id || '_' || CAST(expected_date AS VARCHAR) = ?"
+      }
+    ],
+    "route_item_id": "upcoming_43f67c62c7604000_2026-11-13",
+    "matched_rows": 1,
+    "required_behavior": false
+  },
+  "case2_published_missing_charge_column": {
+    "known_before_column_removal_status": 200,
+    "known_after_status": 500,
+    "known_exception": "psycopg.errors.UndefinedColumn",
+    "unknown_item_id": "upcoming_ffffffffffffffff_2026-11-13",
+    "unknown_after_status": 500,
+    "unknown_exception": "psycopg.errors.UndefinedColumn",
+    "warehouse_reads": [],
+    "required_behavior": false
+  },
+  "case3_empty_identity": {
+    "public_row_model_accepts_empty": true,
+    "publication_store_accepts_empty": true,
+    "forged_item_id": "upcoming__2026-11-13",
+    "http_status": 200,
+    "response_charge_ids": [
+      ""
+    ],
+    "response_detail_only": false,
+    "warehouse_reads": [],
+    "required_behavior": false,
+    "input_provenance": "explicit boundary mutation of a loader-generated row; no claim source ingestion generates empty IDs"
+  },
+  "all_required_behaviors": false,
+  "require_fixed": true,
+  "owned_container": "homelab-analytics-postgres-c6535030",
+  "fixture_rm_f_seen": true,
+  "container_absent_after_cleanup": true,
+  "limitations": [
+    "requires compatible frozen attention test fixture helpers",
+    "only these three scenarios are checked",
+    "warehouse reads tracked through DuckDBStore fetchall/fetchall_dicts",
+    "no inference about literal None in opaque contract IDs"
+  ]
+}
