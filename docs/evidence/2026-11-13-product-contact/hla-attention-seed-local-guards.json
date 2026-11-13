@@ -1,0 +1,22 @@
+{
+  "observed_repo_tip": "9cf62cb7271ed0e15e35877ab772709808470bea",
+  "interpreter": "/projects/dev/homelab-analytics/.venv/bin/python",
+  "pythonpath": "/projects/dev/homelab-analytics",
+  "script_sha256": "d2516b1ea87c5dd08d0c5f96dd7fcd7d31315efd61317a6aeb5e03daca06fdcb",
+  "guards": [
+    {
+      "case": "missing_revision",
+      "exit_code": 2
+    },
+    {
+      "case": "invalid_revision",
+      "exit_code": 2
+    },
+    {
+      "case": "nonempty_root",
+      "exit_code": 2
+    }
+  ],
+  "sentinel_preserved": true,
+  "qualification": "coordinator local guard failures; no Postgres mode executed"
+}

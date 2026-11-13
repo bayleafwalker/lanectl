@@ -1,0 +1,58 @@
+{
+  "caller_supplied_source_commit": "9cf62cb7271ed0e15e35877ab772709808470bea",
+  "reference_date": "2026-11-13",
+  "storage": "duckdb_local",
+  "warehouse": "/tmp/hla-attention-synthetic-root-check/warehouse.duckdb",
+  "control_plane": "/tmp/hla-attention-synthetic-root-check/control.db",
+  "postgres_schema": null,
+  "refreshed": [
+    "mart_subscription_summary",
+    "mart_upcoming_fixed_costs_30d",
+    "mart_contract_price_current",
+    "mart_contract_review_candidates",
+    "mart_contract_renewal_watchlist",
+    "mart_transaction_anomalies_current",
+    "mart_open_attention_items"
+  ],
+  "published": [
+    "mart_subscription_summary",
+    "mart_upcoming_fixed_costs_30d",
+    "mart_contract_price_current",
+    "mart_contract_review_candidates",
+    "mart_contract_renewal_watchlist",
+    "mart_transaction_anomalies_current",
+    "mart_open_attention_items"
+  ],
+  "counts": [
+    {
+      "item_type": "anomaly",
+      "domain": "finance",
+      "count": 1
+    },
+    {
+      "item_type": "contract_renewal",
+      "domain": "utilities",
+      "count": 3
+    },
+    {
+      "item_type": "contract_review",
+      "domain": "utilities",
+      "count": 2
+    },
+    {
+      "item_type": "upcoming_cost",
+      "domain": "finance",
+      "count": 2
+    }
+  ],
+  "upcoming_item_ids": [
+    "upcoming_d6518e54f1d396a6_2026-11-13",
+    "upcoming_9f05249f6696898f_2026-11-13"
+  ],
+  "slash_source": "normalized contract-price loader: contract_id=synthetic/utility",
+  "slash_item_ids": [
+    "renewal_synthetic/utility_2026-11-23",
+    "renewal_synthetic/utility_2026-12-03",
+    "review_synthetic/utility_multiple_contracts_same_type"
+  ]
+}
