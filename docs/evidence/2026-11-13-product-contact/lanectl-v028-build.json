@@ -1,0 +1,11 @@
+{
+  "version": "0.2.8",
+  "wheel": "lanectl-0.2.8-py3-none-any.whl",
+  "wheel_sha256": "35249ea2d97bcfe9797e0c0a3bcde2dd6dcb005a7c52bba26da01c9855584cf1",
+  "runtime_runner_matches_independently_reviewed_a2217fa": true,
+  "tested_suite": "1021pass119.8s worker,6pass0.13s integratedfocused",
+  "installed_runtime": "0.2.7 retained whileouterR3active",
+  "observed_at": "2026-11-13T18:30:00.999015+00:00",
+  "release_kind": "versioned Git source tag; install deferred while existing outer runner active",
+  "durability": "cross-host-replicated source/build evidence after canonical publication; /tmp build artifacts session-local"
+}
