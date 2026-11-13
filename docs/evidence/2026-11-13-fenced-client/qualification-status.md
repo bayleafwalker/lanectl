@@ -147,3 +147,21 @@ and a completed landing must remain truthful after refused cleanup. R1 is
 requeued as planner spec-gap, not accepted or model-fixed. R2 pins its reviewed
 artifact and adds six failing safe regressions plus a managed-subtree positive.
 No tests/gates/policy or provider caps were weakened.
+
+## Shared-container HOLD and public identity control
+
+Cleanup R2 passed its gates but independent review held source8bcd81a: the
+managed container itself could be deleted or yielded writable as a checkout.
+R3 freezes eight safe negative cases across inside/outside layouts, aliases
+and discard/historical paths. The historical-land positive now also proves
+that another safe attempt directory is removed after canonical refusal.
+No model-error fix was coordinator-authored.
+
+The published vuoro-client SDK uses the same Bearer header and repo_id envelope
+shape as lanectl. With the documented CA input, both the enrolled credential and
+a synthetic-invalid control receive HTTP401identity-required from both
+work.identity.current and work.public.list-v1. Public discovery is not identity
+proof. An initial probe without the CA could not observe authentication and was
+repeated with that input restored. No owner mutation, credential substitution or
+private-source transmission occurred. Private owner investigation approval is
+still pending; catalog advertises no enrollment-management operation.

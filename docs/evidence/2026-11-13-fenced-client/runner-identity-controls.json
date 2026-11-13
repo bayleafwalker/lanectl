@@ -1,0 +1,38 @@
+[
+  {
+    "credential": "synthetic-invalid",
+    "operation": "work.identity.current",
+    "state": "refused",
+    "refusal": {
+      "code": "identity-required",
+      "http": 401
+    }
+  },
+  {
+    "credential": "synthetic-invalid",
+    "operation": "work.public.list-v1",
+    "state": "refused",
+    "refusal": {
+      "code": "identity-required",
+      "http": 401
+    }
+  },
+  {
+    "credential": "enrolled-runner",
+    "operation": "work.identity.current",
+    "state": "refused",
+    "refusal": {
+      "code": "identity-required",
+      "http": 401
+    }
+  },
+  {
+    "credential": "enrolled-runner",
+    "operation": "work.public.list-v1",
+    "state": "refused",
+    "refusal": {
+      "code": "identity-required",
+      "http": 401
+    }
+  }
+]
