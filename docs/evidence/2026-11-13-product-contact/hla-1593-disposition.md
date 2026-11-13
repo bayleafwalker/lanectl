@@ -52,15 +52,27 @@ policy or grant was widened. Independent review, actual disposable Postgres
 upgrade/concurrency probes, coordinator promotion replay and full verify-fast
 passed; all canonical CI passed. This prerequisite is not a partial Work closeout.
 
-Stage B's complete release `hla-attention-records-r5` is published. Its native
+Stage B's complete release `hla-attention-records-r5` revision2 is published. Its native
 Codex author and separate GoPro reviewer cover four own-source record APIs,
 opaque identity/encoding, real permission middleware, source selection before
 filtering, current publication authority and typed generated contracts. Actual
 base-failure checks passed. One unused typing comment was removed with identical
 AST/compiled-code proof and fresh independent exact-byte review before publication.
-Governed attempt `hla-attention-records-r5-a1` is live on DeepSeek Flash; no
-implementation acceptance or product delivery is claimed yet. The first two
-drafts remain held by their actual publication guards.
+The first implementation passed portable functional gates at662 changed lines,
+but was rejected for a forbidden production suppression. Its frozen fixture also
+had a separate planner-owned Ruff import-order defect. Revision2 corrects that
+defect with identical assertions/import bindings, actual repository-context lint,
+fresh independent review and new base-failure evidence. The affected retries
+were stopped by their exact units and recorded as unchanged infra outcomes; the
+standing timer remains enabled. Current attempt `hla-attention-records-r5-a4`
+runs on DeepSeek Flash. No implementation acceptance or product delivery is
+claimed. The first two drafts remain held by their actual publication guards.
+
+Read-only pre-audit of rejected a1 found a strict-published/no-store fallback
+path; the missing-column and empty-component cases also need narrow qualification.
+See the adjacent semantic pre-audit and rejected production patch. Recheck the
+completed new candidate rather than treating a1's functional pass as full authority
+proof or assuming the new source shares its behavior.
 
 Coordinator prerequisites measured: existing repo Node20.20.1, GNUmake4.4.1 from
 the pinned Nix store, Docker29.9.2, Compose5.7.0. Locked npm ci completed and web
