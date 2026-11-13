@@ -407,6 +407,21 @@ def _managed_worktree_root(repo: RepoSpec) -> Path | None:
     return root if root != canonical and root.is_relative_to(canonical) else None
 
 
+def _managed_container(repo: RepoSpec, path: Path) -> bool:
+    """True when *path* is the shared managed worktree root, or an alias to it.
+
+    The worktree root holds every attempt checkout rather than one disposable
+    checkout, so it is never safe to discard or to hand to a candidate as a
+    writable historical tree. The equality holds whether the root is inside or
+    outside canonical; a root equal to or above canonical is already refused by
+    :func:`_contains_canonical`.
+    """
+    root = getattr(repo, "worktree_root", None)
+    if root is None:
+        return False
+    return Path(path).resolve() == Path(root).resolve()
+
+
 def _unmanaged_canonical(repo: RepoSpec, path: Path) -> bool:
     """True when *path* is canonical contents lanectl does not manage.
 
@@ -427,6 +442,8 @@ def _discard(repo: RepoSpec, path: Path) -> None:
     # in place, and the unconditional rmtree that follows would delete canonical data.
     if _contains_canonical(repo, path):
         raise ValueError(f"refusing to discard {path}: it contains the canonical checkout {repo.path}")
+    if _managed_container(repo, path):
+        raise ValueError(f"refusing to discard {path}: it is the shared managed worktree root")
     if _unmanaged_canonical(repo, path):
         raise ValueError(f"refusing to discard {path}: unmanaged contents inside the canonical checkout {repo.path}")
     git(repo.path, "worktree", "remove", "--force", str(path), check=False)
@@ -779,7 +796,8 @@ def _train_command(repo, checkout: Path, command: str):
 @contextmanager
 def _historical_checkout(repo, checkout, tip):
     """Never grant candidate checks a writable tree overlapping the canonical checkout."""
-    protected = _contains_canonical(repo, checkout) or _unmanaged_canonical(repo, checkout)
+    protected = (_contains_canonical(repo, checkout) or _unmanaged_canonical(repo, checkout)
+                 or _managed_container(repo, checkout))
     if checkout.exists() and not protected:
         yield checkout
         return
