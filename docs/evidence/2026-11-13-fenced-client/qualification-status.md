@@ -249,3 +249,13 @@ The new host generation is not yet applied. sudo-n still requires a password;
 the operator must switch from /projects/dev/gitops-nixos before actual strict-root
 qualification. No failed units remain in either systemd manager. Sovite policy
 and #2889 completion remain withheld until the new live proofs pass.
+
+## Current client 0.2.8; strict-host proof still pending
+
+The installed client is now0.2.8 at937b634c16c7b1b1df667041a064a11825e196be,
+with runner bytes matched to the independently reviewed retry-routing fix. See
+../2026-11-13-product-contact/lanectl-v028-installed.json. The0.2.6 results above
+are historical exact-version observations. Neither this client update nor the
+merged strict-root source replaces actual-host requalification after the
+authenticated switch. The latest host observation still has RootDirectory empty
+and User=lanectl-train; no policy promotion or #2889 closeout is claimed.

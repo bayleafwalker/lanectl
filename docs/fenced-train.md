@@ -14,10 +14,13 @@ receipt directory. No general sudo grant is used.
 
 That installed generation uses a read-only host tree with path denials. A live
 public-canary probe shows `/etc/issue` is still readable. It does not meet the
-design's filesystem allow-list requirement. A correction using an empty
-`RootDirectory` passed its NixOS VM tests and workstation build; independent
-review, integration, host apply and actual-host requalification remain required.
-Sovite's policy has not been promoted.
+design's filesystem allow-list requirement. The correction using an empty
+`RootDirectory` was independently reviewed and merged through gitops PR84 at
+`2e77a4eca60a4338aeab00b8f48756916c93d226`. Its NixOS VM tests, workstation
+build, exact committed deploy-source build, PR CI and post-merge CI passed. See
+[the source/build binding](evidence/2026-11-13-fenced-client/strict-root-source-integrated.json).
+Host apply and actual-host requalification remain required. Sovite's policy has
+not been promoted.
 
 Each command gets a fresh self-contained checkout and private home. Setup runs
 inside the same fence before a check. Nothing is copied back. The client accepts
@@ -42,8 +45,9 @@ systemd smoke tests found concrete limits:
 - Homelab-analytics needs its documented DuckDB library-loader context. Its
   self-contained Makefile path also needs `make` on the fixed host tool path.
 - Lanectl's own integration suite needs a nested user manager; the dedicated
-  system account does not currently provide one. Its configured namespace suite
-  passes 1,008 tests in released 0.2.6. Do not weaken those tests to qualify systemd mode.
+  system account does not currently provide one. Its historical configured
+  namespace suite passed 1,008 tests in release 0.2.6. Do not weaken those tests
+  to qualify systemd mode.
 
 ## Runtime and boundary contract
 
@@ -95,3 +99,10 @@ actual Claude and Go authentication beside the candidate credential-denial probe
 The dedicated UID is shared by trains, so sibling processes remain a residual
 boundary. Network behavior is unchanged. This backend does not establish hosted
 runner authentication or complete the delivery ladder's operational clocks.
+
+The current installed client is 0.2.8 at
+`937b634c16c7b1b1df667041a064a11825e196be`; its runner bytes match the reviewed
+retry-routing correction. See the
+[installation evidence](evidence/2026-11-13-product-contact/lanectl-v028-installed.json).
+The older host qualification above does not establish a strict-root pass for
+this client or the pending host generation.
