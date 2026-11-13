@@ -168,9 +168,16 @@ retry makes those types explicit and persists the native response before parsing
 tests and outcome are unchanged. That900-second retry then failed before
 returning a response: its actual native unit exited143 after900.110s. No verdict
 or provider outage is inferred. A same-artifact1800-second review, within the
-existing2700-second lane ceiling, will retain diagnostics while calling the
-official invocation unchanged. Review/base checks remain pending and no new
-implementation is admitted yet.
+existing2700-second lane ceiling, retained diagnostics while calling the
+official invocation unchanged. The actual native model completed successfully
+(exit0), accepted all13 recorded checks, and actual base lint plus publication
+validation passed. Guarded publication and canonical commite12feae preceded the
+real20:40:15UTC claim hla-attention-source-reader-a1 on Flash. That native source
+implementation is live; no candidate acceptance or source landing is claimed.
+Earlier release.published events for this draft were emitted by a discovered
+sync bug and are explicitly invalid publication/queue evidence; exact historical
+queue timing is unknown. See hla-source-reader-publication-proof.json. A separate
+producer/history repair is being designed without rewriting those events.
 
 Lanectl v0.2.8 at937b634c16c7b1b1df667041a064a11825e196be is installed and
 byte-matched to the independently reviewed retry correction. The old selection

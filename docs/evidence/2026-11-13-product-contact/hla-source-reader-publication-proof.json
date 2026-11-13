@@ -1,0 +1,85 @@
+{
+  "schema": "hla-source-reader-publication-proof/v1",
+  "observed_at": "2026-11-13T20:52:58.708479+00:00",
+  "packet_revision": 2,
+  "frozen_sha256": "b67ebe0894f3c33fbe18bc183064dbee6f0ef06e9fb938d9ee2a4bba880b4c8e",
+  "native_review": {
+    "actual_outcome": "done",
+    "actual_exit_code": 0,
+    "model": "opencode-go/deepseek-v4-pro",
+    "started": "2026-11-13T20:22:35Z",
+    "ended": "2026-11-13T20:35:09Z",
+    "verdict": "accept",
+    "base_lint_problems": [],
+    "retention_complete": true,
+    "raw_response_matches_packet_evidence": true
+  },
+  "guarded_publication": {
+    "canonical_commit": "e12feae2b9e19d0e5fe665192816797b5c8ace04",
+    "commit_recorded_at": "2026-11-13T22:40:13+02:00",
+    "proof": "prepared root script validated exactartifact and actualreview, freshcanonicalHLAheads, realbacklogpublish reranbasecheck, draftremoved/validationrechecked, exactpacketcommittedandpushed before nativeclaim",
+    "exact_transition_timestamp": "unknown; commit and subsequent claim bound observation, not fabricated historicalfliptime"
+  },
+  "contaminated_legacy_publication_events": {
+    "events": [
+      {
+        "data": {
+          "release_id": "hla-attention-source-reader",
+          "revision": 1
+        },
+        "item_id": "hla-attention-source-reader",
+        "schema": "lanectl.event/v1",
+        "ts": "2026-11-13T19:38:12Z",
+        "type": "release.published"
+      },
+      {
+        "data": {
+          "release_id": "hla-attention-source-reader",
+          "revision": 2
+        },
+        "item_id": "hla-attention-source-reader",
+        "schema": "lanectl.event/v1",
+        "ts": "2026-11-13T20:08:16Z",
+        "type": "release.published"
+      }
+    ],
+    "valid_publication_evidence": false,
+    "cause": "sync_releases incorrectly emitted for drafts before guardedpublish",
+    "queue_interval": "unknown/contaminated; never operationalclockproof",
+    "history_rewritten": false,
+    "repair": "prospectiveproducer andexplicitappend-onlyhistoricalcorrection designpending"
+  },
+  "actual_claim": {
+    "data": {
+      "attempt_id": "hla-attention-source-reader-a1",
+      "base_sha": "9cf62cb7271ed0e15e35877ab772709808470bea",
+      "branch": "lane/hla-attention-source-reader-a1",
+      "lane": "implement",
+      "lane_digest": "sha256:7bd3d1f327b84636",
+      "lane_revision": 3,
+      "model": "opencode-go/deepseek-v4.1-flash",
+      "release_revision": 2,
+      "runner_process": {
+        "boot_id": "61e4429f-8f5a-4b58-9b86-f308ad925091",
+        "host": "workstation",
+        "machine_id": "e681b85141f226386e176a1de00fcc3ab4546197d3aa937aad606d73ce133a5b",
+        "pid": 1252778,
+        "start_ticks": "5199341"
+      },
+      "worker": "opencode",
+      "worker_unit": "lanectl-attempt-5946e26997c7c4f7ec1b867c.service"
+    },
+    "item_id": "hla-attention-source-reader",
+    "schema": "lanectl.event/v1",
+    "ts": "2026-11-13T20:40:15Z",
+    "type": "item.claimed"
+  },
+  "native_unit_live_observed": {
+    "unit": "lanectl-attempt-5946e26997c7c4f7ec1b867c.service",
+    "MainPID": 1252859,
+    "ActiveState": "active"
+  },
+  "implementation_accepted": false,
+  "whole1593_complete": false,
+  "durability": "source/evidence Git cross-host-replicated after canonical publication; livejob/sessionlogs host/session local"
+}
