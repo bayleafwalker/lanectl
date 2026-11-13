@@ -34,9 +34,12 @@
     "probe_sha256": "dc5419631f2b8c76cc9d796d1baaccd2443218ef1830571f8f2aa43c6324fe23"
   },
   "pull_request": "https://github.com/bayleafwalker/homelab-analytics/pull/82",
-  "ci": "pending; run43426373048",
-  "canonical_merge": "notyet",
+  "ci": "PRall4passed; postmain3passed/appendonlyskipped",
+  "canonical_merge": "9cf62cb7271ed0e15e35877ab772709808470bea",
   "whole_hla1593": "active; APIs/UI/full delivery remain",
   "host_strict_fence": "sourcequalified; authenticated apply and renewed actual qualification pending",
-  "durability": "cross-host-replicated after canonical publication"
+  "durability": "cross-host-replicated after canonical publication",
+  "canonical_ancestry_verified": true,
+  "canonical_tree_equals_checked_candidate": true,
+  "cleanup": "ownedworktree/localbranchremoved; remoteheadalreadyautodeletedandpruned"
 }
