@@ -1,36 +1,40 @@
 id = "fenced-train-client"
 repo = "lanectl"
-base_sha = "e6aa0afb513787e7b1fbbdad182a0f4f22190948"
-revision = 2
+base_sha = "5dbe83e656e160e676457cc1d20cafe2c715edfc"
+revision = 3
 title = "Execute ownership-compatible train checks through the separate-UID service"
 task_class = "recovery"
-size = "M"
+size = "S"
 data_class = "public"
 
 outcome = """
-Revision 2: preserve and repair the existing complete implementation from
-artifact b646f969e2ab85f7e679ad25472e0b4590445c31 (git show that commit's
-src/lanectl/fenced_train.py, config.py, doctor.py, runner.py and new test file).
-It was rejected for a forbidden coverage-suppression directive. Remove it;
-do not copy suppression/skip directives into any source or tests. Reuse the
-reviewed staging and isolation architecture rather than rewriting it.
-The host contract was tightened after independent review: every request must
-carry a fresh secrets.token_hex(16) nonce, and its digest covers those bytes.
-A success receipt must include handed_back=true; require that field and reject
-missing/false completion before returning success. The host stop/handback limit
-is now 600s per phase, so allow bounded observation through that window without
-mistaking deactivation for terminal state. Preserve honest failure on unknowns.
-Interrupted uncertain starts already attempt stop, but currently re-raise a
-bare KeyboardInterrupt without identifying the still-live unit. When stop is
-unproved, preserve the directory and identify the exact orphan unit and path in
-the raised interruption message. Surface cleanup failures during interruption,
-too. The new frozen recovery test reproduces the missing actionable orphan.
-Keep _stage(checkout,dest) and _request(repo,command,timeout) signatures for the
-focused recovery falsifiers. A non-interruption lost-start-ack case already
-passes; preserve it. These changes include a planner host-contract correction
-and a model recovery-message error, alongside the correctly caught forbidden
-directive. Fit within the existing 700-line cap by trimming your own comments
-or redundant tests if needed, never weakening frozen acceptance or old tests.
+Revision 3 is a bounded safety correction on the complete reviewed candidate
+5dbe83e656e160e676457cc1d20cafe2c715edfc, deliberately used as base_sha so the
+existing whole feature remains unchanged and this diff fits the S/250 line cap.
+Do not rebase this corrective release onto older main or rewrite its implementation.
+The final train will merge the corrected descendant onto current canonical main.
+All earlier frozen feature and recovery acceptance remains required. Those tests
+already pass on this base; the three new parent/FIFO falsifiers fail precisely.
+
+Independent review reproduced three model errors after the prior gates passed:
+_manifest opens tracked files through a substituted parent-directory symlink;
+_mutation/_read_head follows a substituted whole-repo parent symlink; and a
+candidate .git/HEAD FIFO can block inspection because open lacks nonblocking
+protection. Synthetic interceptors prevented all outside reads/blocking and prove
+these failures. Fix them using ordinary Python descriptor-relative no-follow
+parent traversal anchored at a verified checkout directory. Validate every
+candidate-controlled path component before opening file contents, including
+repo and .git parents; preserve legitimate tracked leaf symlink metadata without
+following targets. Nonregular files must never block inspection: use safe
+nonblocking opens/type checks or reject before opening, with race safety.
+Preserve exact source/HEAD mutation rejection and safe cleanup/orphan behavior.
+Do not execute Git, hooks or filters when inspecting the handed-back tree.
+Retain _manifest(root,tracked), _mutation(root,commit,tracked,before),
+_stage(checkout,dest) and _request(repo,command,timeout) interfaces used by the
+frozen regression proofs. Add focused tests under new test file names; existing
+files in this candidate base are now immutable. No coverage suppression directives,
+new dependencies, governance edits, broad refactoring or changes to the proven
+request/receipt/lifecycle plumbing. <=250 added+deleted lines after formatting.
 
 Implement the lanectl side of approved #2889, selecting train_isolation="systemd"
 as an opt-in third mode; namespace remains default and environment remains refused
@@ -81,12 +85,15 @@ tests and hostile file/receipt/mutation tests; no live host service is required
 in the package suite. Actual host/full-repository qualification is the planner's
 next step; do not change governance/repos.toml or claim field qualification.
 Existing exact-tip and stale/dirty train proof behavior remains in force.
-Keep total added+deleted code/test lines <=700 excluding frozen acceptance.
+For this corrective revision the S/250-line bound above applies, excluding frozen acceptance.
 """
 
 [scope]
 paths = ["src/lanectl/fenced_train.py", "src/lanectl/runner.py", "src/lanectl/config.py", "src/lanectl/doctor.py", "tests/stage8/test_fenced_train*.py"]
 
 [acceptance]
-files = ["tests/stage8/test_acc_fenced_train.py", "tests/stage8/test_acc_fenced_train_recovery.py"]
-exec = ["uv run --no-sync pytest -q -p no:cacheprovider tests/stage8/test_acc_fenced_train.py tests/stage8/test_acc_fenced_train_recovery.py"]
+files = ["tests/stage8/test_acc_fenced_train.py", "tests/stage8/test_acc_fenced_train_recovery.py", "tests/stage8/test_acc_fenced_train_parents.py"]
+exec = ["uv run --no-sync pytest -q -p no:cacheprovider tests/stage8/test_acc_fenced_train.py tests/stage8/test_acc_fenced_train_recovery.py tests/stage8/test_acc_fenced_train_parents.py"]
+
+[lint]
+override = "This corrective release deliberately targets the reviewed unlanded candidate 5dbe83e as its base. Earlier feature/recovery acceptance already passes there and is retained for compatibility. New parent-symlink and FIFO tests fail for the independently reproduced unsafe opens, and combined fail-on-base remains required. No check or policy is disabled."
