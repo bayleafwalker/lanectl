@@ -1,0 +1,34 @@
+{
+  "schema": "lanectl-publication-truth-release/v1",
+  "version": "0.2.9",
+  "reviewed_implementation": "209268d04e328e56e84a9bd4b199e22687743443",
+  "implementation_model": "gpt-6.1-terra first-party worker",
+  "independent_review": "persistent first-party Sage PASS exact209268d; no remaining blocking finding",
+  "tests": {
+    "focused": "52passed7.68s,actualworktreepytestimportsprinted",
+    "full": "1038passed118.78s,explicitXDG/DBUS/PYTHONPATHsrc",
+    "old_draft_regression_failed_before_fix": true,
+    "review_found_lifecycle_and_context_validation_bugs_then_new_tests_failed_before_repairs": true,
+    "prior_1029_suite": "actualpassbutmissingnewcoverage; notproofthosepathsworked"
+  },
+  "root_independent_probes": {
+    "nonempty_lifecycle_none_and_item_id": "pass",
+    "wrong_item_revision_invalidation": "rejected",
+    "future_target": "rejected"
+  },
+  "build": {
+    "offline_wheel_and_sdist": "pass",
+    "wheel_sha256": "2048bc1bdc841bae0b6cd7fddb057ef21e52ab53dcec3f5e3c24b1c9768c754c",
+    "all_runtime_python_files_match_tested_reviewed_commit": 61,
+    "metadata_name_version": "lanectl0.2.9",
+    "lock_change": "selfversiononly0.2.8->0.2.9"
+  },
+  "known_limits": [
+    "Servedcursorreadsvalidatefullprefix, increasingnetwork/validationcostwithhistorysize.",
+    "Publicationfileupdateandreceiptappendarenonatomic; crashleavesobservation-onlytiming, notinventedguardedreceipt.",
+    "Legacypublicationtimingunattributed; affectedknownfalseeventsstillawaitexplicitinvalidationafterinstall."
+  ],
+  "real_invalidations_appended": false,
+  "runtime_installed": false,
+  "durability": "source/tag/evidence Git cross-host-replicated after canonical publication; buildfiles/raw/tmp logs session-local"
+}
