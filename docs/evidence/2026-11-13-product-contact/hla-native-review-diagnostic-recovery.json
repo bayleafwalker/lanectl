@@ -1,0 +1,55 @@
+{
+  "schema": "hla-native-review-diagnostic-recovery/v1",
+  "observed_at": "2026-11-13T20:24:43.907895+00:00",
+  "current_unit": "lanectl-hla-source-reader-review-r2-1800.service",
+  "current_main_pid_observed": 1245987,
+  "current_state_observed": "active",
+  "native_request_timeout_s": 1800,
+  "unchanged_lane_timeout_s": 2700,
+  "outer_orchestration_runtime_limit_s": 3000,
+  "frozen_acceptance_sha256": "b67ebe0894f3c33fbe18bc183064dbee6f0ef06e9fb938d9ee2a4bba880b4c8e",
+  "official_invocation_unchanged": true,
+  "native_adapter_override": false,
+  "model_verdict_or_response_fabrication": false,
+  "retention_change": "temporary-directory lifecycle only, prefix lanectl-spec-; best-effort symlink-preserving copy; normal cleanup alwaysfinally; constructor restored in dedicated process",
+  "independent_review": {
+    "first_verdict": "HOLD: copytree failure could mask actual outcome and prevent cleanup",
+    "repair": "separate diagnostic errors, always normal cleanup, markcomplete onlyaftercopy; preserve originalreturn/exception",
+    "final_verdict": "priorHOLDclosed; clears scaffolding only, not modelreview/publication"
+  },
+  "actual_lifecycle_qualification": {
+    "positive_copy_and_symlink": true,
+    "fifo_copy_failure_forced": true,
+    "original_RuntimeError_preserved": true,
+    "cleanup_completed_on_copy_failure": true,
+    "constructor_restored": true,
+    "unrelated_prefix_unchanged": true,
+    "adapter_or_verdict_mocks_used": false
+  },
+  "current_diagnostics": "/tmp/lanectl-hla-source-review-r2-1800",
+  "must_check_before_retention_claim": "retention.json complete=true",
+  "prepared_start_not_launched": {
+    "path": "/tmp/lanectl-hla-source-reader-start.py",
+    "conditions": "exactfrozenhash, actualaccept, officialvalidator empty, basechecks,2mandatoryexecs, freshlyfetchedcanonicalHLAheads; actual guardedpublication beforecommit/push/normalmax2lane"
+  },
+  "scripts": [
+    {
+      "path": "/tmp/lanectl_persistent_spec_review.py",
+      "sha256": "744888d46d39a1aae80e229d6443d7909427fa0d205c97e41430e330b3d5fc91",
+      "durability": "session-local"
+    },
+    {
+      "path": "/tmp/hla-source-reader-review-persistent.py",
+      "sha256": "f847559abd2d242b14fa846f46647ff73215be5c88c74aff972e284eab4f02c7",
+      "durability": "session-local"
+    },
+    {
+      "path": "/tmp/lanectl-hla-source-reader-start.py",
+      "sha256": "f4caddbe3446fef254f73259ab5dff2eaea6c778bc37b9039957a4a34595d43d",
+      "durability": "session-local"
+    }
+  ],
+  "implementation_admitted": false,
+  "api_or_ui_delivery_complete": false,
+  "durability": "Git evidence cross-host-replicated after canonical publication; scripts/livejob/runtime session-local"
+}
