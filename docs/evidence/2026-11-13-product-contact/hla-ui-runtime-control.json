@@ -1,0 +1,26 @@
+{
+  "source_sha": "b41e4c9ae2ff7deb58d38b824feffd2fc316bc31",
+  "node_version": "20.20.1",
+  "playwright_version": "1.59.1",
+  "browser_revision": 1217,
+  "browser_version": "147.0.7727.15",
+  "coordinator_native": {
+    "browser_launch_with_nix_libraries": "pass",
+    "web_typecheck": "pass",
+    "web_ui_test": {
+      "passed": 53,
+      "failed": 2,
+      "failure": "49/71 glyph-edge pixels in existing app/retro shell snapshots"
+    }
+  },
+  "ubuntu_control": {
+    "image": "mcr.microsoft.com/playwright:v1.59.1-noble",
+    "digest": "sha256:b0ab6f3cb99aa7803adbc14d9027ec1785fc6e433b97e134e0f8fe61683b6b53",
+    "method": "supported PW_TEST_CONNECT_WS_ENDPOINT remote browser; no source/config edits",
+    "unchanged_two_screenshot_tests": "2 passed in3.1s",
+    "full_candidate_ui_gate": "55passed in25.3s during namespace makeverify-fast"
+  },
+  "baselines_or_tolerances_changed": false,
+  "runtime_cleanup": "owned remote browser container explicitly stopped and removed after verification",
+  "documentation": "https://playwright.dev/docs/docker"
+}

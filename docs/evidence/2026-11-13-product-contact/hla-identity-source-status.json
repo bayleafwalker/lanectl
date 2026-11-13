@@ -1,0 +1,42 @@
+{
+  "source_base": "b41e4c9ae2ff7deb58d38b824feffd2fc316bc31",
+  "candidate": "55da084d48421060a738014d8121e8b380c9dc76",
+  "commits": [
+    "308f2d31f7bfbab0c25663e765148f6da8076ed0",
+    "ec9ba25debb9d8136f831b80df77384b595d3260",
+    "55da084d48421060a738014d8121e8b380c9dc76"
+  ],
+  "review": {
+    "r1": {
+      "is_error": false,
+      "permission_denials": [],
+      "total_cost_usd": 0.46657,
+      "duration_ms": 123610,
+      "exit_code": 0,
+      "source_unchanged": true,
+      "cost_basis": "native-reported API-equivalent estimate; actual subscription charge unmeasured"
+    },
+    "r2": {
+      "is_error": false,
+      "permission_denials": [],
+      "total_cost_usd": 0.4067501,
+      "duration_ms": 95706,
+      "exit_code": 0,
+      "source_unchanged": true,
+      "cost_basis": "native-reported API-equivalent estimate; actual subscription charge unmeasured"
+    }
+  },
+  "verification": {
+    "worker_targeted": "216passed; actual disposablePGintegrationpassed; guard-removal failure reported",
+    "coordinator_verify_fast": "passed585.62s,namespace,2716fast tests+adapter/contractchecks+55UIchecks",
+    "reviewed_source_hashes_after_verification": "all match",
+    "promotion_capture_probe": "worker and coordinator separately executed; warehouse/actual disposablePostgres passed",
+    "probe_sha256": "dc5419631f2b8c76cc9d796d1baaccd2443218ef1830571f8f2aa43c6324fe23"
+  },
+  "pull_request": "https://github.com/bayleafwalker/homelab-analytics/pull/82",
+  "ci": "pending; run43426373048",
+  "canonical_merge": "notyet",
+  "whole_hla1593": "active; APIs/UI/full delivery remain",
+  "host_strict_fence": "sourcequalified; authenticated apply and renewed actual qualification pending",
+  "durability": "cross-host-replicated after canonical publication"
+}

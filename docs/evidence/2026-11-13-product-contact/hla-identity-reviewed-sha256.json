@@ -1,0 +1,73 @@
+{
+  "schema": "source-sha256-list/v1",
+  "files": [
+    {
+      "sha256": "f2a65ff956df9712e97bf5dffe8ad4ea8c6c929a2512234f6e88439cb0579b86",
+      "path": "AGENTS.md"
+    },
+    {
+      "sha256": "bd53dc7f22dfa0f699eae0892dac2e8604fefce6933685749cf6462cd8770e43",
+      "path": "CLAUDE.md"
+    },
+    {
+      "sha256": "8f3eda444ef7be042f55195b6e6e8a4ff1d82827caf6fff33e0d8b78572a8eb4",
+      "path": "apps/web/frontend/generated/api.d.ts"
+    },
+    {
+      "sha256": "37fcedcc59efd867e31a24f84f7f01b7fe8c52820ca3b438fafea83ced3ab8d5",
+      "path": "apps/web/frontend/generated/openapi.json"
+    },
+    {
+      "sha256": "93f7ed08dc624ccd73d02c66f073e0197c2db1a94f220d41771bed4824cd365d",
+      "path": "apps/web/frontend/generated/publication-contracts.json"
+    },
+    {
+      "sha256": "d298650501ecc9366e4b79a4ed5f4ebfb4889e8114e2f318a2d5e8a8fc776dee",
+      "path": "apps/web/frontend/generated/publication-contracts.ts"
+    },
+    {
+      "sha256": "9e10210ad0341409343501deba5625ca7ebb48b91b527b3ef9a2a0012a29a654",
+      "path": "docs/architecture/data-platform-architecture.md"
+    },
+    {
+      "sha256": "b0e144374e5a456f180033bd97f57da98190f53d03c050b995648e5a531b7e8d",
+      "path": "migrations/duckdb/0019_subscription_charge_identity.sql"
+    },
+    {
+      "sha256": "d26dddce3d4685ef94df3f12f5f91e91a3d14fbfa279c7429d30b1b79d16b7be",
+      "path": "packages/domains/finance/manifest.py"
+    },
+    {
+      "sha256": "049185134ebd35b92f609bbf8243509fc3722b5d9af6c40b70feb261cf2e8e36",
+      "path": "packages/domains/finance/pipelines/subscription_models.py"
+    },
+    {
+      "sha256": "cebd1436ddbaf55be37e02e027d671d7fe708ed4df2bf931e58563c4c55862e0",
+      "path": "packages/domains/finance/pipelines/transformation_subscriptions.py"
+    },
+    {
+      "sha256": "cff35d36c63b5285c0d5871b10019bc493764e341aef31aff7e3d8c51a560cbc",
+      "path": "packages/domains/overview/pipelines/transformation_overview.py"
+    },
+    {
+      "sha256": "a54624a9640dd8cac573ba01790ed67dbc0656c22910025ea8be648ad03edf72",
+      "path": "packages/pipelines/transformation_service.py"
+    },
+    {
+      "sha256": "e1152ca9c9b6d6f0ef94063f3291dbefdc49c00a52ba30b6ccb200c8a5667c6b",
+      "path": "packages/storage/postgres_reporting.py"
+    },
+    {
+      "sha256": "cd43fdb76e208444bf1328b1ea9575a1bffe770ec0bfaab3dac5f238a6f22506",
+      "path": "tests/test_attention_identity.py"
+    },
+    {
+      "sha256": "dcdcb020c509d773b374e666f3f9a9808d71dcc3955bb16dc908c30f3d61a7fc",
+      "path": "tests/test_postgres_reporting_integration.py"
+    },
+    {
+      "sha256": "164ec497e72665c91e1a5c88a54bdfaab90105a92875b582c86a09389b3ee64a",
+      "path": "tests/test_reporting_publication_snapshots.py"
+    }
+  ]
+}

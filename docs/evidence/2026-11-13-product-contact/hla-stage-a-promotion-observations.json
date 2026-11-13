@@ -1,0 +1,162 @@
+{
+  "observations": [
+    {
+      "mode": "warehouse",
+      "finance_publications": [
+        "mart_monthly_cashflow",
+        "mart_monthly_cashflow_by_counterparty",
+        "rpt_current_dim_account",
+        "rpt_current_dim_counterparty",
+        "mart_spend_by_category_monthly",
+        "mart_recent_large_transactions",
+        "mart_account_balance_trend",
+        "mart_transaction_anomalies_current",
+        "mart_spend_by_weekday_hour"
+      ],
+      "refreshed": [
+        "mart_subscription_summary",
+        "mart_upcoming_fixed_costs_30d",
+        "mart_monthly_cashflow",
+        "mart_monthly_cashflow_by_counterparty",
+        "mart_spend_by_category_monthly",
+        "mart_recent_large_transactions",
+        "mart_account_balance_trend",
+        "mart_transaction_anomalies_current",
+        "mart_spend_by_weekday_hour",
+        "mart_household_overview",
+        "mart_open_attention_items",
+        "mart_recent_significant_changes",
+        "mart_current_operating_baseline",
+        "mart_household_cost_model",
+        "mart_cost_trend_12m",
+        "mart_affordability_ratios",
+        "mart_recurring_cost_baseline"
+      ],
+      "published": [],
+      "published_finance_identities_still_null": false,
+      "snapshots": [
+        {
+          "store": "warehouse",
+          "earlier_unchanged": true,
+          "earlier": {
+            "reference_month": "2026-10",
+            "captured_at": "2020-01-01T00:00:00+00:00",
+            "run_id": "old-prior",
+            "rows_json": "[{\"contract_name\": \"old-prior\"}]"
+          },
+          "active_reference_month": "2026-11",
+          "active_run_id": "new-finance-run",
+          "active_captured_at": "2026-11-13T12:33:24.193166+00:00",
+          "active_raw": {
+            "reference_month": "2026-11",
+            "captured_at": "2026-11-13T12:33:24.193166+00:00",
+            "run_id": "new-finance-run",
+            "rows_json": "[{\"amount\": \"10.0000\", \"billing_cycle\": \"weekly\", \"charge_id\": \"1bdcd68d72debb61\", \"contract_id\": \"sub\", \"contract_name\": \"Same\", \"currency\": \"EUR\", \"end_date\": null, \"monthly_equivalent\": \"43.3333\", \"provider\": \"P\", \"start_date\": \"2026-10-30\", \"status\": \"active\"}, {\"amount\": \"10.0000\", \"billing_cycle\": \"weekly\", \"charge_id\": \"791bbe718a9c6d72\", \"contract_id\": \"sub\", \"contract_name\": \"Same\", \"currency\": \"EUR\", \"end_date\": null, \"monthly_equivalent\": \"43.3333\", \"provider\": \"P\", \"start_date\": \"2026-11-06\", \"status\": \"active\"}]"
+          },
+          "active_charge_ids": [
+            "1bdcd68d72debb61",
+            "791bbe718a9c6d72"
+          ]
+        }
+      ]
+    },
+    {
+      "mode": "postgres_published",
+      "finance_publications": [
+        "mart_monthly_cashflow",
+        "mart_monthly_cashflow_by_counterparty",
+        "rpt_current_dim_account",
+        "rpt_current_dim_counterparty",
+        "mart_spend_by_category_monthly",
+        "mart_recent_large_transactions",
+        "mart_account_balance_trend",
+        "mart_transaction_anomalies_current",
+        "mart_spend_by_weekday_hour"
+      ],
+      "refreshed": [
+        "mart_subscription_summary",
+        "mart_upcoming_fixed_costs_30d",
+        "mart_monthly_cashflow",
+        "mart_monthly_cashflow_by_counterparty",
+        "mart_spend_by_category_monthly",
+        "mart_recent_large_transactions",
+        "mart_account_balance_trend",
+        "mart_transaction_anomalies_current",
+        "mart_spend_by_weekday_hour",
+        "mart_household_overview",
+        "mart_open_attention_items",
+        "mart_recent_significant_changes",
+        "mart_current_operating_baseline",
+        "mart_household_cost_model",
+        "mart_cost_trend_12m",
+        "mart_affordability_ratios",
+        "mart_recurring_cost_baseline"
+      ],
+      "published": [
+        "mart_monthly_cashflow",
+        "mart_monthly_cashflow_by_counterparty",
+        "rpt_current_dim_account",
+        "rpt_current_dim_counterparty",
+        "mart_spend_by_category_monthly",
+        "mart_recent_large_transactions",
+        "mart_account_balance_trend",
+        "mart_transaction_anomalies_current",
+        "mart_spend_by_weekday_hour",
+        "transformation_audit",
+        "mart_current_operating_baseline",
+        "mart_household_overview",
+        "mart_open_attention_items",
+        "mart_recent_significant_changes"
+      ],
+      "published_finance_identities_still_null": true,
+      "snapshots": [
+        {
+          "store": "warehouse",
+          "earlier_unchanged": true,
+          "earlier": {
+            "reference_month": "2026-10",
+            "captured_at": "2020-01-01T00:00:00+00:00",
+            "run_id": "old-prior",
+            "rows_json": "[{\"contract_name\": \"old-prior\"}]"
+          },
+          "active_reference_month": "2026-11",
+          "active_run_id": "new-finance-run",
+          "active_captured_at": "2026-11-13T12:33:29.876714+00:00",
+          "active_raw": {
+            "reference_month": "2026-11",
+            "captured_at": "2026-11-13T12:33:29.876714+00:00",
+            "run_id": "new-finance-run",
+            "rows_json": "[{\"amount\": \"10.0000\", \"billing_cycle\": \"weekly\", \"charge_id\": \"1bdcd68d72debb61\", \"contract_id\": \"sub\", \"contract_name\": \"Same\", \"currency\": \"EUR\", \"end_date\": null, \"monthly_equivalent\": \"43.3333\", \"provider\": \"P\", \"start_date\": \"2026-10-30\", \"status\": \"active\"}, {\"amount\": \"10.0000\", \"billing_cycle\": \"weekly\", \"charge_id\": \"791bbe718a9c6d72\", \"contract_id\": \"sub\", \"contract_name\": \"Same\", \"currency\": \"EUR\", \"end_date\": null, \"monthly_equivalent\": \"43.3333\", \"provider\": \"P\", \"start_date\": \"2026-11-06\", \"status\": \"active\"}]"
+          },
+          "active_charge_ids": [
+            "1bdcd68d72debb61",
+            "791bbe718a9c6d72"
+          ]
+        },
+        {
+          "store": "postgres",
+          "earlier_unchanged": true,
+          "earlier": {
+            "reference_month": "2026-10",
+            "captured_at": "2020-01-01T00:00:00+00:00",
+            "run_id": "old-prior",
+            "rows_json": "[{\"contract_name\": \"old-prior\"}]"
+          },
+          "active_reference_month": "2026-11",
+          "active_run_id": "new-finance-run",
+          "active_captured_at": "2026-11-13T12:33:29.876714+00:00",
+          "active_raw": {
+            "reference_month": "2026-11",
+            "captured_at": "2026-11-13T12:33:29.876714+00:00",
+            "run_id": "new-finance-run",
+            "rows_json": "[{\"amount\": \"10.0000\", \"billing_cycle\": \"weekly\", \"charge_id\": \"1bdcd68d72debb61\", \"contract_id\": \"sub\", \"contract_name\": \"Same\", \"currency\": \"EUR\", \"end_date\": null, \"monthly_equivalent\": \"43.3333\", \"provider\": \"P\", \"start_date\": \"2026-10-30\", \"status\": \"active\"}, {\"amount\": \"10.0000\", \"billing_cycle\": \"weekly\", \"charge_id\": \"791bbe718a9c6d72\", \"contract_id\": \"sub\", \"contract_name\": \"Same\", \"currency\": \"EUR\", \"end_date\": null, \"monthly_equivalent\": \"43.3333\", \"provider\": \"P\", \"start_date\": \"2026-11-06\", \"status\": \"active\"}]"
+          },
+          "active_charge_ids": [
+            "1bdcd68d72debb61",
+            "791bbe718a9c6d72"
+          ]
+        }
+      ]
+    }
+  ]
+}
