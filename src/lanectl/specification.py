@@ -173,15 +173,16 @@ def release_digest(path):
 def _base_lint(path, repo, lane, timeout_s):
     rel = load_release(path)
     problems = []
-    for name in rel.acceptance.files:
-        data = (path / 'files' / name).read_bytes()
+    files = {name: (path / 'files' / name).read_bytes() for name in rel.acceptance.files}
+    for name in files:
         def wrap(cmd, wt):
             sb = from_lane(lane.sandbox, (str(wt),), timeout_s + 30)
             sb = replace(sb, readonly=tuple(dict.fromkeys(
                 (*sb.readonly, str(repo.path), str(home()), str(state_dir())))))
             return sb.wrap_shell(cmd, wt)
-        code, output = run_tests_at(repo.path, rel.base_sha, {name: data}, repo.test_cmd,
-                                    repo.setup_cmd, timeout=timeout_s, wrap=wrap, tail=None)
+        code, output = run_tests_at(repo.path, rel.base_sha, files, repo.test_cmd,
+                                    repo.setup_cmd, timeout=timeout_s, wrap=wrap, tail=None,
+                                    selected_files=[name])
         kind = 'passes-on-base' if code == 0 else classify_failure(output)
         if kind != 'expected':
             problems.append(f'{kind}: {name}')

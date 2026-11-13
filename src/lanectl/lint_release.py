@@ -51,6 +51,10 @@ _CONTRACT_RAISED = re.compile(
 )
 
 # Failures raised by the test itself rather than by missing product code.
+_MISSING_TEST_MODULE = re.compile(
+    r"\bModuleNotFoundError:\s*No module named [\"']tests(?:\.[^\"']+)?[\"']"
+)
+
 _SPEC_GAP = (
     _CONTRACT_RAISED,
     re.compile(r"\bSyntaxError\b"),
@@ -87,6 +91,8 @@ def _sections(output: str) -> list[str]:
 
 
 def _classify_one(output: str) -> str:
+    if _MISSING_TEST_MODULE.search(output):
+        return "spec-gap"
     if _DID_NOT_RAISE.search(output):
         return "expected"
     if any(p.search(output) for p in _SPEC_GAP):
@@ -126,12 +132,9 @@ def _summary(output: str) -> str:
 
 
 def _acceptance_files(release, release_dir: Path) -> tuple[dict[str, bytes], list[str]]:
-    globs = _test_globs(release)
     files: dict[str, bytes] = {}
     problems: list[str] = []
     for name in release.acceptance.files:
-        if not match(name, globs):
-            continue
         path = release_dir / "files" / name
         if not path.is_file():
             problems.append(f"spec-gap: {name} :: acceptance file is missing from the release")
@@ -159,10 +162,14 @@ def lint_release(release_dir) -> list[str]:
 
     # One run per file keeps a mixed result attributable to the file that
     # caused it; classify_failure works on a single outcome.
-    for name, data in files.items():
+    globs = _test_globs(release)
+    for name in files:
+        if not match(name, globs):
+            continue
         try:
-            code, output = run_tests_at(repo.path, release.base_sha, {name: data},
-                                        repo.test_cmd, repo.setup_cmd, tail=None)
+            code, output = run_tests_at(repo.path, release.base_sha, files,
+                                        repo.test_cmd, repo.setup_cmd, tail=None,
+                                        selected_files=[name])
         except (OSError, subprocess.SubprocessError) as exc:
             problems.append(f"spec-gap: {name} :: base run failed: {exc}")
             continue

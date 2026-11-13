@@ -13,12 +13,20 @@ from pathlib import Path
 
 def run_tests_at(repo: Path, rev: str, test_files: dict[str, bytes], test_cmd: str,
                  setup_cmd: str = "", timeout: int = 900, wrap=None,
-                 tail: int | None = 2000) -> tuple[int, str]:
+                 tail: int | None = 2000, *,
+                 selected_files: list[str] | None = None) -> tuple[int, str]:
     """Check out `rev` in a throwaway worktree, drop in `test_files`, run them.
+
+    All `test_files` are materialized; `selected_files` limits execution to
+    declared paths. By default all materialized files are executed.
 
     `tail` keeps the last N characters of output; pass None for the full output
     when a caller needs to inspect every failure rather than the final one.
     """
+    if selected_files is not None and (not selected_files or
+                                       any(name not in test_files for name in selected_files)):
+        raise ValueError("selected files must be a non-empty subset of test_files")
+    execution_files = test_files if selected_files is None else selected_files
     tmp = Path(tempfile.mkdtemp(prefix="lanectl-base-"))
     wt = tmp / "wt"
     subprocess.run(["git", "-C", str(repo), "worktree", "add", "--detach", str(wt), rev],
@@ -30,7 +38,7 @@ def run_tests_at(repo: Path, rev: str, test_files: dict[str, bytes], test_cmd: s
             dst.write_bytes(data)
         if setup_cmd:
             subprocess.run(setup_cmd, shell=True, cwd=wt, capture_output=True, timeout=timeout)
-        cmd = test_cmd.replace("{files}", " ".join(shlex.quote(f) for f in test_files))
+        cmd = test_cmd.replace("{files}", " ".join(shlex.quote(f) for f in execution_files))
         if wrap:   # worker-written tests are untrusted code: run them sandboxed
             cmd = wrap(cmd, wt)
         p = subprocess.run(cmd, shell=True, cwd=wt, capture_output=True, text=True, timeout=timeout)
