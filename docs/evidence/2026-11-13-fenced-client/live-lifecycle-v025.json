@@ -1,0 +1,35 @@
+{
+  "build_train": {
+    "passed": true,
+    "checked_sha": "186ccc746821cd89ecc1d3b9c9fb4e2af3ab8fd0"
+  },
+  "recheck": {
+    "passed": true
+  },
+  "historical_land": {
+    "passed": true,
+    "checked_sha": "186ccc746821cd89ecc1d3b9c9fb4e2af3ab8fd0"
+  },
+  "host_timeout": {
+    "returncode": 124,
+    "stderr": "fenced train: train fenced-820274ba47751a81 timeout: service_result=exit-code exit_code=exited exit_status=124"
+  },
+  "keyboard_interrupt": {
+    "unit": "lanectl-train@fenced-9a8e221c98302463.service",
+    "stop_calls": 1,
+    "stop_acknowledged": true,
+    "interrupted": true,
+    "named_orphan": false
+  },
+  "injected_stop_loss": {
+    "unit": "lanectl-train@fenced-95ad999169cb8234.service",
+    "stop_calls": 1,
+    "stop_acknowledged": false,
+    "interrupted": true,
+    "named_orphan": true,
+    "manual_recovery_after_ack": true
+  },
+  "canonical_preserved": true,
+  "lanectl_release": "0.2.5",
+  "host_source": "dbf142e2636d0397c7aeb5cacad3b4b1adfe2df4"
+}

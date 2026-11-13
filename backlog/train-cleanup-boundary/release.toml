@@ -1,0 +1,40 @@
+id = "train-cleanup-boundary"
+repo = "lanectl"
+base_sha = "2271ab760b42e56cdaddb36f682b03c1c2251b9d"
+revision = 1
+title = "Prevent cleanup from deleting the canonical repository or its ancestors"
+task_class = "recovery"
+size = "S"
+data_class = "public"
+eligible_lanes = ["implement"]
+
+outcome = """
+During #2889 historical-lifecycle qualification, the integrator safely reproduced
+a destructive cleanup gap using interceptors only. _historical_checkout explicitly
+handles a recorded checkout equal to the canonical repository by reconstructing a
+scratch checkout for checks, but land later passes the recorded path to _discard.
+_discard calls git worktree remove and then unconditional shutil.rmtree even if
+the git operation failed. For a canonical path this attempts deletion of main.
+No actual canonical data was deleted: the proof intercepted Git and rmtree.
+
+Refuse cleanup targeting the canonical repository, an ancestor containing it, or
+a symlink alias resolving to either, before any destructive Git or filesystem
+operation. Preserve the normal independent attempt/train/historical scratch
+cleanup paths and their existing call sites. A conservative refusal or explicit
+error is acceptable; never recursively delete canonical data after Git refuses.
+Keep the guard deterministic and independent of worker-controlled Git config or
+hooks. Do not weaken existing commit-bound, historical, isolation or landing gates.
+
+The planner froze three safe failure-case interceptors and a positive real scratch
+cleanup case. All tests are immutable. Scope only src/lanectl/runner.py; no broad
+refactoring, dependencies, skip/coverage suppression, governance edits or policy
+changes. Keep the correction <=250 added/deleted lines, preferably much smaller.
+Run the exact frozen acceptance and retain the full-suite repository gate.
+"""
+
+[scope]
+paths = ["src/lanectl/runner.py"]
+
+[acceptance]
+files = ["tests/stage8/test_acc_train_cleanup_boundary.py"]
+exec = ["snip proxy -- uv run --no-sync pytest -q -p no:cacheprovider tests/stage8/test_acc_train_cleanup_boundary.py"]

@@ -93,3 +93,40 @@ opens those paths and sees the environment, returning failure as required. No
 secret bytes were read. Evidence and reproducible qualification harness are in
 Git; all markers/temporary homes were removed. Full Sovite parity and remaining
 repository/lifecycle qualification are running or pending, not yet claimed.
+
+## Released 0.2.5 and actual lifecycle qualification
+
+Client source landed and was tagged/installed as0.2.5 at
+`2271ab760b42e56cdaddb36f682b03c1c2251b9d`. The integrated package suite passed
+989 tests. The initial train correctly rejected a planner version-lock mismatch;
+one2-line spec-gap repair aligned uv.lock, followed by an exact-tip passing
+recheck and recorded land plan. No model-error implementation was coordinator-fixed.
+Canonical remote main and tag matched; no repository CI workflows/statuses exist.
+
+Full Sovite setup/check through the installed fence passed with exact baseline
+population:2797passed/1140skipped (55 complete pytest progress rows; no failures
+or errors), source00d29faa. Actual build/setup/check/recheck and historical land
+reconstruction passed in an isolated synthetic repository. Root-owned timeout
+returned124 with cleanup. KeyboardInterrupt issued one acknowledged stop and
+removed the checkout. Injected lost stop acknowledgement retained a named running
+orphan; explicit acknowledged manual recovery then cleaned it. Canonical data
+remained intact. See the committed lifecycle harness and raw results.
+
+Broader direct-systemd smoke runs found compatibility limits rather than passes:
+homelab-analytics raw check lacks the documented DuckDB libstdc++ loader context;
+its Makefile route also needs make on the fixed host PATH. Lanectl's full suite
+needs a nested user manager unavailable to the dedicated system account
+(58failed/931passed). No tests were skipped or weakened. Appservice passes its
+complete offline validator when its public origin URL is supplied by setup
+(563passed/2skipped/95subtests); an arbitrary source Git config is never forwarded.
+The same appservice snapshot also passes in its existing namespace mode. Its local
+qualification commit dd64b38b is older than freshly fetched canonical afec5b00;
+this result is explicitly snapshot-bound, not proof of latest canonical main.
+Homelab's existing namespace command is still running. No global systemd promotion
+or Sovite governance change has been made.
+
+Historical qualification also exposed a preexisting destructive cleanup hazard:
+_discard attempts rmtree on a canonical recorded checkout after Git refuses it.
+Safe interceptors prevented deletion. New public release train-cleanup-boundary
+freezes canonical/ancestor/alias failure cases and a real scratch positive case.
+This guard must land before closing #2889.
