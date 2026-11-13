@@ -38,3 +38,21 @@ rejected sending private source to Anthropic without specific approval.
 
 This committed evidence is cross-host-replicated Git source. Scratch logs and
 qualification harnesses in `/tmp` are session-local. Served #2889 remains active.
+
+## Revision 7 follow-up
+
+The planner interrupted R6/A5 to bound an old missing-receipt fixture and
+strengthen its stop-before-cleanup assertion. The native outcome is `failed`,
+exit 130, not completed work. A partial 31-line artifact was captured at
+`37a052c45e00679f04208b905a98b9f35cb8ef23`; its ordinary gates then passed,
+but the new 24-second queued-start control fails because its short grace still
+truncates the overall deadline (1 failed / 3 passed). The original held A4
+fails both lifecycle cases (2 failed / 2 passed); linked-worktree staging passes
+on both. Neither artifact is accepted.
+
+R7 freezes the existing lifecycle test file with a one-second deadline only
+for the forged/missing-receipt case and requires an exact-unit stop when the
+root receipt is absent. This is a planner test-specification repair; no worker
+is authorized to edit tests. A legitimately queued start may last longer than
+the short receipt grace and must use the overall deadline. Existing lane and
+provider caps remain unchanged.

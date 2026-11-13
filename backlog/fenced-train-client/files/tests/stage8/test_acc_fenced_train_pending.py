@@ -18,7 +18,7 @@ def test_inactive_without_receipt_never_finishes_a_queued_start(monkeypatch, lat
     monkeypatch.setattr(ft, "WAIT_MARGIN_S", 2.0)
     def active(tool, unit):
         polls.append(now[0])
-        return "active" if late_receipt and 2 <= now[0] < 25 else "inactive"
+        return "active" if late_receipt and 24 <= now[0] < 25 else "inactive"
     monkeypatch.setattr(ft, "_active", active)
     monkeypatch.setattr(ft.os.path, "lexists", lambda path: late_receipt and now[0] >= 25)
     observed = ft._wait_terminal("fake-systemctl", "lanectl-train@pending.service", Path("receipt"), 60 if late_receipt else 1)

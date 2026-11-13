@@ -1,7 +1,7 @@
 id = "fenced-train-client"
 repo = "lanectl"
 base_sha = "2cfa660fdce4a33303d67e9cfaeb0160c6410002"
-revision = 6
+revision = 7
 title = "Execute ownership-compatible train checks through the separate-UID service"
 task_class = "recovery"
 size = "S"
@@ -26,12 +26,26 @@ real services, sleeps, unsafe reads or hanging FIFOs.
 
 Wait for BOTH receipt existence and terminal inactive/failed state within the
 existing overall deadline. While the receipt is absent, continue observing
-liveness even if a poll says inactive. A missing receipt at the deadline must
+liveness even if a poll says inactive. A legitimately queued start may remain
+inactive longer than RECEIPT_GRACE_S; that short grace must not truncate the
+overall deadline. The frozen late-receipt case waits inactive for 24 seconds
+on a synthetic clock, then active, then terminal plus receipt at 25 seconds. A missing receipt at the deadline must
 return false so run_command takes its existing stop/terminal-proof/orphan path.
 Do not trust receipt existence without terminal state. Preserve cancellation,
 KeyboardInterrupt, failed-stop named-orphan retention, cleanup only after proven
 termination, and nonzero infrastructure failures with no fallback. Do not shorten
 existing host stop limits or change request/receipt authority.
+
+Revision 7 corrects a planner test-specification gap before implementation:
+the existing forged/missing-receipt test assumed the short receipt grace and
+otherwise would wait the 1800-second default after this fix. Its entire test file
+is now frozen too: only that case has timeout_s=1, accepts a receipt refusal or
+timeout, and additionally requires a matching stop for a missing root receipt.
+Those expectations preserve refusal/cleanup proof without a long wall-clock wait.
+The implementation worker cannot edit any tests. R6/A5 was interrupted for this planner correction; its partial source
+artifact and failed native outcome remain unaccepted. Do not treat interrupted
+work as completed verification. Its short-grace early timeout is also ruled out
+by the strengthened 24-second queued-start case. Do not copy or fetch outside this checkout.
 
 The new frozen file also exercises _stage from actual git worktree add sources,
 both branch train and detached historical checkouts. Those two tests already pass
@@ -54,8 +68,8 @@ acceptance and report actual results. Existing full-suite repo gate also applies
 paths = ["src/lanectl/fenced_train.py"]
 
 [acceptance]
-files = ["tests/stage8/test_acc_fenced_train.py", "tests/stage8/test_acc_fenced_train_recovery.py", "tests/stage8/test_acc_fenced_train_parents.py", "tests/stage8/test_acc_fenced_train_pending.py"]
-exec = ["snip proxy -- uv run --no-sync pytest -q -p no:cacheprovider tests/stage8/test_acc_fenced_train.py tests/stage8/test_acc_fenced_train_recovery.py tests/stage8/test_acc_fenced_train_parents.py tests/stage8/test_acc_fenced_train_pending.py"]
+files = ["tests/stage8/test_fenced_train.py", "tests/stage8/test_acc_fenced_train.py", "tests/stage8/test_acc_fenced_train_recovery.py", "tests/stage8/test_acc_fenced_train_parents.py", "tests/stage8/test_acc_fenced_train_pending.py"]
+exec = ["snip proxy -- uv run --no-sync pytest -q -p no:cacheprovider tests/stage8/test_fenced_train.py tests/stage8/test_acc_fenced_train.py tests/stage8/test_acc_fenced_train_recovery.py tests/stage8/test_acc_fenced_train_parents.py tests/stage8/test_acc_fenced_train_pending.py"]
 
 [lint]
-override = "This bounded correction deliberately targets unlanded A4 2cfa660. Earlier acceptance and the new linked-worktree staging tests pass there. Two new queued-start lifecycle assertions fail precisely; combined fail-on-base remains mandatory. No check or policy is disabled."
+override = "This bounded correction deliberately targets unlanded A4 2cfa660. Earlier acceptance and new linked-worktree staging tests pass there. New queued-start lifecycle assertions and strengthened stop-before-cleanup assertions fail precisely; combined fail-on-base remains mandatory. No check or policy is disabled."
