@@ -161,7 +161,11 @@ The original native author finalized that proposal with an additional warehouse
 driver-failure case (551 lines). Those exact final bytes were separately
 requalified:5fast plus3real-PostgreSQL cases pass without skips, canonical base
 reaches the missing getter, the query-observer falsifier discriminates and Ruff
-passes. Fresh independent native review and base checks are now running. No new
+passes. The first fresh native invocation returned a response rejected by the strict
+review parser: reason/trivial_pass must be nonempty strings. Its raw response
+could not be recovered; the actual validation error is preserved. A schema-only
+retry makes those types explicit and persists the native response before parsing;
+tests and outcome are unchanged. Review/base checks remain pending and no new
 implementation is admitted yet.
 
 Lanectl v0.2.8 at937b634c16c7b1b1df667041a064a11825e196be is installed and

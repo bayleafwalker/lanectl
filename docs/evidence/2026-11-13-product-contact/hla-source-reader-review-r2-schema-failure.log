@@ -1,0 +1,8 @@
+native author finalized; added warehouse IOException case independently requalified; canonical Ruff passed
+fresh independent native reviewer starting
+Traceback (most recent call last):
+  File "/tmp/hla-source-reader-finalize.py", line 67, in <module>
+    review = spec._review(review_raw)
+  File "/home/bayleaf/.local/share/uv/tools/lanectl/lib/python3.13/site-packages/lanectl/specification.py", line 197, in _review
+    raise ValueError('adversarial review must explain its reasoning and trivial-pass attack')
+ValueError: adversarial review must explain its reasoning and trivial-pass attack

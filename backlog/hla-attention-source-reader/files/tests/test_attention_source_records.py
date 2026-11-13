@@ -1,8 +1,11 @@
 from __future__ import annotations
 
-from datetime import date
-from decimal import Decimal
+import json
+import re
+from datetime import date, timedelta
+from typing import Any
 
+import duckdb
 import psycopg
 import pytest
 from pydantic import ValidationError
@@ -13,288 +16,536 @@ from apps.api.routes.report_routes import (
     TRANSACTION_ANOMALIES_ROW_MODEL,
     UPCOMING_FIXED_COSTS_ROW_MODEL,
 )
-from packages.domains.finance.pipelines.subscription_models import MART_UPCOMING_FIXED_COSTS_30D_COLUMNS
-from packages.domains.finance.pipelines.transaction_models import MART_TRANSACTION_ANOMALIES_CURRENT_COLUMNS
-from packages.domains.utilities.pipelines.utility_models import (
-    MART_CONTRACT_RENEWAL_WATCHLIST_COLUMNS,
-    MART_CONTRACT_REVIEW_CANDIDATES_COLUMNS,
-)
+from apps.api.support import to_jsonable
+from packages.domains.finance.pipelines.subscription_models import subscription_charge_id
 from packages.pipelines.reporting_service import ReportingAccessMode, ReportingService
 from packages.pipelines.transformation_service import TransformationService
 from packages.storage.duckdb_store import DuckDBStore, WarehouseBusyError
 from packages.storage.postgres_reporting import PostgresReportingStore
-from tests.postgres_test_support import running_postgres_container
+from tests.postgres_test_support import docker_is_available, running_postgres_container
 
-
-TABLES = {
-    "anomaly": ("mart_transaction_anomalies_current", MART_TRANSACTION_ANOMALIES_CURRENT_COLUMNS),
-    "contract_review": ("mart_contract_review_candidates", MART_CONTRACT_REVIEW_CANDIDATES_COLUMNS),
-    "contract_renewal": ("mart_contract_renewal_watchlist", MART_CONTRACT_RENEWAL_WATCHLIST_COLUMNS),
-    "upcoming_cost": ("mart_upcoming_fixed_costs_30d", MART_UPCOMING_FIXED_COSTS_30D_COLUMNS),
+VENDOR_COUNT = 240
+SOURCE = {
+    'anomaly': ('mart_transaction_anomalies_current', ('transaction_id',)),
+    'contract_review': ('mart_contract_review_candidates', ('contract_id', 'reason')),
+    'contract_renewal': ('mart_contract_renewal_watchlist', ('contract_id', 'renewal_date')),
+    'upcoming_cost': ('mart_upcoming_fixed_costs_30d', ('charge_id', 'expected_date')),
 }
-DAY = date(2026, 4, 10)
+REFRESH = ['mart_subscription_summary', 'mart_upcoming_fixed_costs_30d',
+           'mart_contract_price_current', 'mart_contract_review_candidates',
+           'mart_contract_renewal_watchlist', 'mart_transaction_anomalies_current',
+           'mart_open_attention_items']
+MODELS = {'anomaly': TRANSACTION_ANOMALIES_ROW_MODEL,
+          'contract_review': CONTRACT_REVIEW_CANDIDATES_ROW_MODEL,
+          'contract_renewal': CONTRACT_RENEWAL_WATCHLIST_ROW_MODEL,
+          'upcoming_cost': UPCOMING_FIXED_COSTS_ROW_MODEL}
 
 
-def rows():
-    anomaly = {"transaction_id": "target/with_under", "booking_date": DAY,
-               "counterparty_name": "", "amount": Decimal("10"), "direction": "expense",
-               "anomaly_type": "large", "anomaly_reason": "reason"}
-    review = {"contract_id": "None/utility", "provider": "", "utility_type": "electricity",
-              "reason": "price_high", "score": 3, "current_price": Decimal("1"),
-              "market_reference": None, "currency": "EUR"}
-    renewal = {"contract_id": "None/utility", "contract_name": "", "provider": "P",
-               "utility_type": "electricity", "renewal_date": DAY,
-               "days_until_renewal": 5, "current_price": Decimal("1"), "currency": "EUR",
-               "contract_duration_days": None}
-    upcoming = {"charge_id": "charge/one_x", "contract_name": "Same", "provider": "P",
-                "frequency": "monthly", "expected_amount": Decimal("10"), "currency": "EUR",
-                "expected_date": DAY, "confidence": "high"}
+def _price(
+    contract_id: str,
+    component: str,
+    unit_price: str,
+    valid_to: date,
+    today: date,
+) -> dict[str, Any]:
     return {
-        "anomaly": [{**anomaly, "transaction_id": f"first-{i:04}"} for i in range(1200)] + [anomaly],
-        "contract_review": [review, {**review, "score": 7, "current_price": Decimal("2")},
-                            {**review, "reason": "price_low"},
-                            {**review, "contract_id": "other"}],
-        "contract_renewal": [renewal, {**renewal, "current_price": Decimal("2")},
-                             {**renewal, "renewal_date": date(2026, 4, 11)},
-                             {**renewal, "contract_id": "other"}],
-        "upcoming_cost": [upcoming, {**upcoming, "charge_id": "charge/two_x"},
-                          {**upcoming, "expected_date": date(2026, 4, 11)}],
+        'contract_id': contract_id,
+        'contract_name': 'Grid Plan ' + contract_id,
+        'provider': 'NorthPower',
+        'contract_type': 'electricity',
+        'price_component': component,
+        'billing_cycle': 'monthly',
+        'unit_price': unit_price,
+        'currency': 'EUR',
+        'quantity_unit': 'kWh',
+        'valid_from': str(today - timedelta(days=400)),
+        'valid_to': str(valid_to),
     }
 
 
-KEYS = {
-    "anomaly": "anomaly_target/with_under",
-    "contract_review": "review_None/utility_price_high",
-    "contract_renewal": "renewal_None/utility_2026-04-10",
-    "upcoming_cost": "upcoming_charge/one_x_2026-04-10",
-}
+def seed(ts: TransformationService) -> dict[str, Any]:
+    today = ts.store.fetchall('SELECT CURRENT_DATE')[0][0]
+    # Seven days apart: same next weekly occurrence, same visible name/amount,
+    # but distinct canonical charge identities.
+    starts = [today - timedelta(days=14), today - timedelta(days=7)]
+    ts.load_subscriptions(
+        [
+            {
+                'contract_id': 'sub-stream',
+                'service_name': 'Streamly',
+                'provider': 'StreamCo',
+                'billing_cycle': 'weekly',
+                'amount': '12.50',
+                'currency': 'EUR',
+                'start_date': str(start),
+                'end_date': None,
+            }
+            for start in starts
+        ],
+        run_id='subscriptions',
+    )
+    d10 = today + timedelta(days=10)
+    d20 = today + timedelta(days=20)
+    # Contract ids exercise a slash and underscore prefixes of each other.
+    # Average electricity price is 1.6, so the 2 and 3 components of
+    # grid/north are above_market_average; the rest are
+    # multiple_contracts_same_type.
+    ts.load_contract_prices(
+        [
+            _price('None/utility', 'energy', '1', d10, today),
+            _price('None/utility', 'transfer', '2', d10, today),
+            _price('None/utility', 'tax', '3', d20, today),
+            _price('grid', 'energy', '1', d10, today),
+            _price('grid_north', 'energy', '1', d20, today),
+        ],
+        run_id='prices',
+    )
+    transactions = [
+        {
+            'booked_at': str(today),
+            'account_id': 'bank',
+            'counterparty_name': 'Vendor ' + str(index).zfill(3),
+            'amount': '-' + str(100 + index),
+            'currency': 'EUR',
+            'description': 'purchase',
+        }
+        for index in range(VENDOR_COUNT)
+    ]
+    transactions += [
+        {
+            'booked_at': str(today - timedelta(days=days)),
+            'account_id': 'bank',
+            'counterparty_name': 'Regular Grocer',
+            'amount': '-10',
+            'currency': 'EUR',
+            'description': 'groceries ' + str(days),
+        }
+        for days in (1, 2, 3)
+    ]
+    ts.load_transactions(transactions, run_id='transactions')
+    return {
+        'today': today,
+        'charge_ids': sorted(
+            subscription_charge_id('Streamly', 'weekly', str(start)) for start in starts
+        ),
+        'd10': str(d10),
+        'd20': str(d20),
+    }
 
 
-def reader(service):
-    # This assertion makes the canonical failure identify the missing public feature.
-    assert callable(getattr(service, "get_attention_record", None)), "missing attention source reader"
+
+def key(kind: str, row: dict[str, Any]) -> str:
+    if kind == 'anomaly':
+        return 'anomaly_' + str(row['transaction_id'])
+    if kind == 'contract_review':
+        return 'review_' + str(row['contract_id']) + '_' + str(row['reason'])
+    if kind == 'contract_renewal':
+        return 'renewal_' + str(row['contract_id']) + '_' + str(row['renewal_date'])
+    return 'upcoming_' + str(row['charge_id']) + '_' + str(row['expected_date'])
+
+
+def unknown_key(kind: str, row: dict[str, Any]) -> str:
+    value = dict(row)
+    field = {'anomaly': 'transaction_id', 'contract_review': 'contract_id',
+             'contract_renewal': 'contract_id', 'upcoming_cost': 'charge_id'}[kind]
+    value[field] = 'ffffffffffffffff'
+    return key(kind, value)
+
+
+def canonical(rows: list[dict[str, Any]]) -> list[str]:
+    return sorted(json.dumps(to_jsonable(row), sort_keys=True) for row in rows)
+
+
+def grouped(rows: list[dict[str, Any]], kind: str) -> dict[str, list[dict[str, Any]]]:
+    result: dict[str, list[dict[str, Any]]] = {}
+    for row in rows:
+        result.setdefault(key(kind, row), []).append(row)
+    return result
+
+
+def read_all(store: Any, kind: str) -> list[dict[str, Any]]:
+    return store.fetchall_dicts('SELECT * FROM ' + SOURCE[kind][0])
+
+
+def facade(service: ReportingService) -> Any:
+    assert callable(getattr(service, 'get_attention_record', None)), 'missing attention source reader'
     return service.get_attention_record
 
 
-def errors():
+def errors() -> tuple[type[Exception], type[Exception]]:
     from packages.domains.overview.pipelines.attention_records import (
-        AttentionRecordNotFoundError, AttentionRecordUnavailableError,
+        AttentionRecordNotFoundError,
+        AttentionRecordUnavailableError,
     )
     return AttentionRecordNotFoundError, AttentionRecordUnavailableError
 
 
-def make_warehouse():
-    store = DuckDBStore.memory()
-    ts = TransformationService(store)
-    data = rows()
-    for kind, (table, columns) in TABLES.items():
-        store.execute(f"DELETE FROM {table}")
-        names = [name for name, _ in columns]
-        placeholders = ", ".join("?" for _ in names)
-        for row in data[kind]:
-            store.execute(f"INSERT INTO {table} ({', '.join(names)}) VALUES ({placeholders})",
-                          [row[name] for name in names])
-    return ts
-
-
-def expected(ts, kind, key):
-    table, _ = TABLES[kind]
-    expressions = {
-        "anomaly": "'anomaly_' || transaction_id",
-        "contract_review": "'review_' || contract_id || '_' || reason",
-        "contract_renewal": "'renewal_' || contract_id || '_' || CAST(renewal_date AS VARCHAR)",
-        "upcoming_cost": "'upcoming_' || charge_id || '_' || CAST(expected_date AS VARCHAR)",
-    }
-    return ts.store.fetchall_dicts(f"SELECT * FROM {table} WHERE {expressions[kind]} = ?", [key])
-
-
-def equal_group(actual, want):
-    assert len(actual) == len(want)
-    assert sorted((repr(sorted(row.items())) for row in actual)) == sorted(
-        repr(sorted(row.items())) for row in want
-    )
-
-
 @pytest.fixture
-def warehouse():
-    ts = make_warehouse()
+def warehouse() -> Any:
+    ts = TransformationService(DuckDBStore.memory())
+    facts = seed(ts)
+    ts.refresh_publications(REFRESH)
+    charge_rows = ts.store.fetchall_dicts('SELECT charge_id FROM mart_upcoming_fixed_costs_30d')
+    assert sorted(str(row['charge_id']) for row in charge_rows) == facts['charge_ids']
     try:
         yield ts
     finally:
         ts.store.close()
 
 
-def test_exact_groups_and_source_mode(warehouse):
+def publication(ts: Any, pg: Any) -> None:
+    tables = [v[0] for v in SOURCE.values()] + ['mart_open_attention_items']
+    assert ReportingService(ts, publication_store=pg).publish_publications(tables) == tables
+
+
+def select_groups(store: Any) -> dict[str, tuple[str, list[dict[str, Any]]]]:
+    groups = {kind: grouped(read_all(store, kind), kind) for kind in SOURCE}
+    # These controls are generated by the normalized loaders and production marts.
+    assert len(groups['anomaly']) > 200
+    assert len(groups['upcoming_cost']) >= 2
+    selected = {}
+    for kind, values in groups.items():
+        if kind in ('contract_review', 'contract_renewal'):
+            selected[kind] = next((k, v) for k, v in sorted(values.items())
+                                  if 'None/utility' in k and len(v) >= 2)
+        elif kind == 'anomaly':
+            # Explicitly select after the first page in deterministic source order.
+            ordered = sorted(values)
+            assert len(ordered) > 200
+            first_page = store.fetchall_dicts('SELECT transaction_id FROM ' + SOURCE[kind][0] +
+                                              ' ORDER BY transaction_id LIMIT 200')
+            assert ordered[200].removeprefix('anomaly_') not in {row['transaction_id'] for row in first_page}
+            selected[kind] = ordered[200], values[ordered[200]]
+        else:
+            selected[kind] = sorted(values.items())[0]
+    return selected
+
+
+def observe(monkeypatch: pytest.MonkeyPatch, target: Any, *, postgres: bool) -> list[Any]:
+    """Capture every query against a source before application selection, including empty results."""
+    calls: list[Any] = []
+    methods = ('fetchall_dicts',) if postgres else ('fetchall', 'fetchall_dicts', 'execute')
+    for method in methods:
+        original = getattr(target, method)
+
+        def wrapper(sql: Any, params: Any = None, *, _original: Any = original) -> Any:
+            text = sql if isinstance(sql, str) else sql.as_string(None)
+            lowered = text.lower()
+            if any(table in lowered for table, _ in SOURCE.values()):
+                assert re.match(r'^\s*(select|with)\b', lowered), text
+                if postgres:
+                    result = _original(sql, params)
+                    if result:
+                        columns = list(result[0])
+                    else:
+                        # A separate cursor provides actual result metadata even for zero rows.
+                        with target._connect() as conn:
+                            cursor = conn.execute(sql, params or ())
+                            columns = [col.name for col in cursor.description]
+                    calls.append((lowered, list(params or []), columns, result))
+                    return result
+                cursor = target.connection.cursor()
+                try:
+                    query = cursor.execute(text, list(params or []))
+                    columns = [col[0] for col in query.description]
+                    rows = [dict(zip(columns, row)) for row in query.fetchall()]
+                finally:
+                    cursor.close()
+                calls.append((lowered, list(params or []), columns, rows))
+            return _original(sql, params)
+
+        monkeypatch.setattr(target, method, wrapper)
+    return calls
+
+
+def assert_selected(calls: list[Any], kind: str, item_id: str, *, positive: bool) -> None:
+    table, identities = SOURCE[kind]
+    source = [call for call in calls if table in call[0]]
+    assert source, calls
+    observed = []
+    for sql, params, columns, rows in source:
+        if set(identities) <= set(columns):
+            assert item_id in params and item_id not in sql, (sql, params)
+            assert 'where' in sql and ('?' in sql or '%s' in sql), sql
+            assert all(key(kind, row) == item_id for row in rows), (sql, rows)
+            observed.extend(rows)
+        else:
+            # Only a provable scalar metadata/existence probe may omit identity columns.
+            assert len(columns) == 1 and len(rows) <= 1, (sql, columns, rows)
+            assert re.match(r'^\s*select\s+(?:count\s*\(\s*\*\s*\)|exists\s*\(|1(?:\s+as\s+\w+)?\s+from\b)', sql), sql
+    assert any(item_id in params for _, params, _, _ in source), source
+    if positive:
+        assert observed, source
+
+
+def forbid_warehouse(monkeypatch: pytest.MonkeyPatch) -> list[str]:
+    calls: list[str] = []
+    for name in ('fetchall', 'fetchall_dicts', 'execute'):
+        original = getattr(DuckDBStore, name)
+
+        def wrapper(store: Any, *args: Any, _name: str = name,
+                    _original: Any = original, **kwargs: Any) -> Any:
+            calls.append(_name)
+            return _original(store, *args, **kwargs)
+
+        monkeypatch.setattr(DuckDBStore, name, wrapper)
+    return calls
+
+
+def test_generated_fixture_and_source_sql(warehouse: Any, monkeypatch: pytest.MonkeyPatch) -> None:
+    groups = select_groups(warehouse.store)
     service = ReportingService(warehouse, access_mode=ReportingAccessMode.WAREHOUSE)
-    get = reader(service)
+    before = canonical(service.get_open_attention_items())
+    assert before == canonical(warehouse.store.fetchall_dicts('SELECT * FROM mart_open_attention_items'))
+    snapshot = {kind: canonical(read_all(warehouse.store, kind)) for kind in SOURCE}
+    get = facade(service)
     not_found, _ = errors()
-    for kind, key in KEYS.items():
-        want = expected(warehouse, kind, key)
-        assert want
-        equal_group(get(kind, key), want)
-        with pytest.raises(not_found):
-            get(kind, key + "_missing")
-    assert len(get("contract_review", KEYS["contract_review"])) == 2
-    assert len(get("contract_renewal", KEYS["contract_renewal"])) == 2
-    equal_group(get("contract_review", "review_None/utility_price_low"),
-                expected(warehouse, "contract_review", "review_None/utility_price_low"))
-    equal_group(get("upcoming_cost", "upcoming_charge/two_x_2026-04-10"),
-                expected(warehouse, "upcoming_cost", "upcoming_charge/two_x_2026-04-10"))
-    assert get("anomaly", KEYS["anomaly"])[0]["transaction_id"] == "target/with_under"
+    for kind, (item_id, want) in groups.items():
+        with monkeypatch.context() as patch:
+            calls = observe(patch, warehouse.store, postgres=False)
+            assert canonical(get(kind, item_id)) == canonical(want)
+            assert_selected(calls, kind, item_id, positive=True)
+            calls.clear()
+            unknown = unknown_key(kind, want[0])
+            with pytest.raises(not_found):
+                get(kind, unknown)
+            assert_selected(calls, kind, unknown, positive=False)
+    assert canonical(service.get_open_attention_items()) == before
+    assert {kind: canonical(read_all(warehouse.store, kind)) for kind in SOURCE} == snapshot
 
 
-@pytest.mark.parametrize("kind,column,forged,model", [
-    ("anomaly", "transaction_id", "anomaly_", TRANSACTION_ANOMALIES_ROW_MODEL),
-    ("contract_review", "contract_id", "review__price_high", CONTRACT_REVIEW_CANDIDATES_ROW_MODEL),
-    ("contract_review", "reason", "review_None/utility_", CONTRACT_REVIEW_CANDIDATES_ROW_MODEL),
-    ("contract_renewal", "contract_id", "renewal__2026-04-10", CONTRACT_RENEWAL_WATCHLIST_ROW_MODEL),
-    ("upcoming_cost", "charge_id", "upcoming__2026-04-10", UPCOMING_FIXED_COSTS_ROW_MODEL),
-])
-def test_empty_identity_invalidates_only_absence(warehouse, kind, column, forged, model):
-    get = reader(ReportingService(warehouse, access_mode=ReportingAccessMode.WAREHOUSE))
-    not_found, unavailable = errors()
-    unknown = KEYS[kind] + "_absent"
-    want = expected(warehouse, kind, KEYS[kind])
-    with pytest.raises(not_found):
-        get(kind, unknown)
-    mutated = {**rows()[kind][0], column: ""}
-    model.model_validate(mutated)
-    table, columns = TABLES[kind]
-    names = [name for name, _ in columns]
-    warehouse.store.execute(f"INSERT INTO {table} ({', '.join(names)}) VALUES ({', '.join('?' for _ in names)})",
-                            [mutated[name] for name in names])
-    equal_group(get(kind, KEYS[kind]), want)
-    for key in (forged, unknown):
-        with pytest.raises(unavailable):
-            get(kind, key)
+def test_sql_observer_rejects_projection_and_tautology(warehouse: Any, monkeypatch: pytest.MonkeyPatch) -> None:
+    item_id, _ = select_groups(warehouse.store)['anomaly']
+    with monkeypatch.context() as patch:
+        calls = observe(patch, warehouse.store, postgres=False)
+        warehouse.store.fetchall_dicts('SELECT counterparty_name FROM mart_transaction_anomalies_current')
+        with pytest.raises(AssertionError):
+            assert_selected(calls, 'anomaly', item_id, positive=True)
+        calls.clear()
+        warehouse.store.fetchall_dicts('SELECT * FROM mart_transaction_anomalies_current WHERE ? = ?',
+                                       [item_id, item_id])
+        with pytest.raises(AssertionError):
+            assert_selected(calls, 'anomaly', item_id, positive=True)
 
 
-def test_null_charge_and_missing_identity_column(warehouse):
-    get = reader(ReportingService(warehouse, access_mode=ReportingAccessMode.WAREHOUSE))
+def test_published_no_store_and_prefer_fallback(warehouse: Any, monkeypatch: pytest.MonkeyPatch) -> None:
+    selected = select_groups(warehouse.store)
+    strict = facade(ReportingService(warehouse, access_mode=ReportingAccessMode.PUBLISHED))
     _, unavailable = errors()
-    table = TABLES["upcoming_cost"][0]
-    warehouse.store.execute(f"UPDATE {table} SET charge_id = NULL WHERE charge_id = ?", ["charge/two_x"])
-    equal_group(get("upcoming_cost", KEYS["upcoming_cost"]),
-                expected(warehouse, "upcoming_cost", KEYS["upcoming_cost"]))
-    for key in ("upcoming_None_2026-04-10", "upcoming_missing_2026-04-10"):
-        with pytest.raises(unavailable):
-            get("upcoming_cost", key)
-    warehouse.store.execute(f"ALTER TABLE {table} DROP COLUMN charge_id")
-    with pytest.raises(unavailable):
-        get("upcoming_cost", KEYS["upcoming_cost"])
+    with monkeypatch.context() as patch:
+        calls = forbid_warehouse(patch)
+        for kind, (item_id, _) in selected.items():
+            with pytest.raises(unavailable):
+                strict(kind, item_id)
+        assert calls == []
+    prefer = facade(ReportingService(warehouse, access_mode=ReportingAccessMode.PREFER_PUBLISHED))
+    for kind, (item_id, want) in selected.items():
+        assert canonical(prefer(kind, item_id)) == canonical(want)
 
 
-def test_published_missing_store_and_prefer_fallback(warehouse):
-    missing = ReportingService(warehouse, access_mode=ReportingAccessMode.PUBLISHED)
-    get = reader(missing)
+def test_warehouse_busy_and_programming_errors_propagate(warehouse: Any, monkeypatch: pytest.MonkeyPatch) -> None:
+    item_id, _ = select_groups(warehouse.store)['anomaly']
+    get = facade(ReportingService(warehouse, access_mode=ReportingAccessMode.WAREHOUSE))
+    for exc in (WarehouseBusyError('synthetic', 1, RuntimeError('locked')), RuntimeError('program defect')):
+        with monkeypatch.context() as patch:
+            def fail(*args: Any, **kwargs: Any) -> Any:
+                raise exc
+            for name in ('fetchall', 'fetchall_dicts', 'execute'):
+                patch.setattr(warehouse.store, name, fail)
+            with pytest.raises(type(exc)) as caught:
+                get('anomaly', item_id)
+            assert caught.value is exc
+
+
+def test_warehouse_driver_failure_is_unavailable(warehouse: Any, monkeypatch: pytest.MonkeyPatch) -> None:
+    item_id, _ = select_groups(warehouse.store)['anomaly']
+    get = facade(ReportingService(warehouse, access_mode=ReportingAccessMode.WAREHOUSE))
     _, unavailable = errors()
+    def fail(*args: Any, **kwargs: Any) -> Any:
+        raise duckdb.IOException('synthetic warehouse driver failure')
+    for name in ('fetchall', 'fetchall_dicts', 'execute'):
+        monkeypatch.setattr(warehouse.store, name, fail)
     with pytest.raises(unavailable):
-        get("anomaly", KEYS["anomaly"])
-    prefer = reader(ReportingService(warehouse, access_mode=ReportingAccessMode.PREFER_PUBLISHED))
-    equal_group(prefer("anomaly", KEYS["anomaly"]), expected(warehouse, "anomaly", KEYS["anomaly"]))
+        get('anomaly', item_id)
+
+
+def required_postgres() -> Any:
+    # The required slow selector must fail, not silently skip, when Docker is absent.
+    assert docker_is_available(), 'mandatory Postgres qualification requires Docker'
+    return running_postgres_container()
 
 
 @pytest.mark.integration
 @pytest.mark.slow
-def test_postgres_current_publication_filtering_and_identity(warehouse, monkeypatch):
-    get = reader(ReportingService(warehouse, access_mode=ReportingAccessMode.WAREHOUSE))
-    not_found, unavailable = errors()
-    with running_postgres_container() as dsn:
+def test_postgres_fixture_admission_and_cleanup(warehouse: Any) -> None:
+    with required_postgres() as dsn:
         pg = PostgresReportingStore(dsn)
-        published_rows = rows()
-        published_rows["upcoming_cost"][0]["provider"] = "Published only"
-        for kind, (table, columns) in TABLES.items():
-            pg.replace_rows(table, columns, published_rows[kind])
-        service = ReportingService(warehouse, publication_store=pg, access_mode=ReportingAccessMode.PUBLISHED)
-        get = reader(service)
-        recorded = []
-        original = pg.fetchall_dicts
-        def observe(sql, params=None):
-            result = original(sql, params)
-            recorded.append((sql, params, result))
-            return result
-        monkeypatch.setattr(pg, "fetchall_dicts", observe)
-        # The warehouse cannot supply either the record or absence evidence.
-        monkeypatch.setattr(warehouse.store, "fetchall_dicts", lambda *a, **k: pytest.fail("warehouse read"))
-        monkeypatch.setattr(warehouse.store, "execute", lambda *a, **k: pytest.fail("warehouse read"))
-        for kind, key in KEYS.items():
-            table, _ = TABLES[kind]
-            want = [r for r in published_rows[kind] if (
-                ("anomaly_" + r["transaction_id"] if kind == "anomaly" else
-                 "review_" + r["contract_id"] + "_" + r["reason"] if kind == "contract_review" else
-                 "renewal_" + r["contract_id"] + "_" + str(r["renewal_date"]) if kind == "contract_renewal" else
-                 "upcoming_" + r["charge_id"] + "_" + str(r["expected_date"])) == key)]
-            recorded.clear()
-            equal_group(get(kind, key), want)
-            fact_queries = [(sql, params, result) for sql, params, result in recorded
-                            if table in str(sql).lower() and result
-                            and set(want[0]).issubset(result[0])]
-            assert fact_queries, "must observe the source fact query"
-            for sql, params, result in fact_queries:
-                assert params and key in params
-                equal_group(result, want)
-            with pytest.raises(not_found):
-                get(kind, key + "_unknown")
-        # Public models and fresh Postgres tables both admit empty identity strings.
-        for kind, column, forged, model in [
-            ("anomaly", "transaction_id", "anomaly_", TRANSACTION_ANOMALIES_ROW_MODEL),
-            ("contract_review", "contract_id", "review__price_high", CONTRACT_REVIEW_CANDIDATES_ROW_MODEL),
-            ("contract_review", "reason", "review_None/utility_", CONTRACT_REVIEW_CANDIDATES_ROW_MODEL),
-            ("contract_renewal", "contract_id", "renewal__2026-04-10", CONTRACT_RENEWAL_WATCHLIST_ROW_MODEL),
-            ("upcoming_cost", "charge_id", "upcoming__2026-04-10", UPCOMING_FIXED_COSTS_ROW_MODEL),
-        ]:
-            table, columns = TABLES[kind]
-            with pytest.raises(not_found):
-                get(kind, forged)
-            before = get(kind, KEYS[kind])
-            mutated = {**published_rows[kind][0], column: ""}
-            model.model_validate(mutated)
-            names = [name for name, _ in columns]
-            pg.execute_statements([(f"INSERT INTO {table} ({', '.join(names)}) VALUES ({', '.join('%s' for _ in names)})",
-                                    [mutated[name] for name in names])])
-            with pytest.raises(unavailable):
-                get(kind, KEYS[kind] + "_unknown")
-            with pytest.raises(unavailable):
-                get(kind, forged)
-            equal_group(get(kind, KEYS[kind]), before)
-            pg.execute_statements([(f"DELETE FROM {table} WHERE {column} = %s", [""])])
-        pg.execute_statements([("UPDATE mart_upcoming_fixed_costs_30d SET charge_id = NULL WHERE charge_id = %s", ["charge/two_x"])])
-        with pytest.raises(unavailable):
-            get("upcoming_cost", "upcoming_None_2026-04-10")
-        assert get("upcoming_cost", KEYS["upcoming_cost"])
-        pg.execute_statements([("ALTER TABLE mart_upcoming_fixed_costs_30d DROP COLUMN charge_id", [])])
-        with pytest.raises(unavailable):
-            get("upcoming_cost", KEYS["upcoming_cost"])
+        publication(warehouse, pg)
+        groups = select_groups(pg)
+        for kind, (_, expected) in groups.items():
+            assert expected
+            MODELS[kind].model_validate(to_jsonable(expected[0]))
+        upcoming = groups['upcoming_cost'][1][0]
         with pytest.raises(ValidationError):
-            UPCOMING_FIXED_COSTS_ROW_MODEL.model_validate({**rows()["upcoming_cost"][0], "expected_date": None})
-        pg.execute_statements([("DROP TABLE mart_transaction_anomalies_current", [])])
-        with pytest.raises(unavailable):
-            get("anomaly", KEYS["anomaly"])
+            UPCOMING_FIXED_COSTS_ROW_MODEL.model_validate(to_jsonable(dict(upcoming, expected_date=None)))
+        columns = pg.fetchall_dicts(
+            "SELECT is_nullable FROM information_schema.columns WHERE table_schema = current_schema() "
+            "AND table_name = %s AND column_name = %s", ['mart_upcoming_fixed_costs_30d', 'expected_date'])
+        assert columns == [{'is_nullable': 'NO'}]
+        # Prove model and actual fresh publication store admit explicit empty text.
+        for kind, (table, identities) in SOURCE.items():
+            for column in identities:
+                if column in ('expected_date', 'renewal_date'):
+                    continue
+                original = groups[kind][1][0]
+                mutated = dict(original, **{column: ''})
+                MODELS[kind].model_validate(to_jsonable(mutated))
+                names = list(mutated)
+                pg.execute_statements([(f"INSERT INTO {table} ({', '.join(names)}) VALUES "
+                                        f"({', '.join('%s' for _ in names)})",
+                                        [mutated[name] for name in names])])
+                assert pg.fetchall_dicts(f'SELECT * FROM {table} WHERE {column} = %s', [''])
+                pg.execute_statements([(f'DELETE FROM {table} WHERE {column} = %s', [''])])
 
 
 @pytest.mark.integration
 @pytest.mark.slow
-def test_postgres_driver_failure_is_sanitized_and_other_errors_propagate(warehouse, monkeypatch):
-    reader(ReportingService(warehouse))
-    _, unavailable = errors()
-    with running_postgres_container() as dsn:
+def test_postgres_authority_sql_identity_and_unchanged_attention(
+    warehouse: Any, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    warehouse_groups = select_groups(warehouse.store)
+    with required_postgres() as dsn:
         pg = PostgresReportingStore(dsn)
+        publication(warehouse, pg)
+        # Preserve generated identities while making all four publications distinguishable.
+        fields = {'anomaly': 'counterparty_name', 'contract_review': 'provider',
+                  'contract_renewal': 'contract_name', 'upcoming_cost': 'provider'}
+        for kind, field in fields.items():
+            pg.execute_statements([(f'UPDATE {SOURCE[kind][0]} SET {field} = %s', ['published-only'])])
+        selected = select_groups(pg)
+        # Empty display text is not an invalid identity.
+        upcoming_row = selected['upcoming_cost'][1][0]
+        pg.execute_statements([('UPDATE mart_upcoming_fixed_costs_30d SET provider = %s WHERE charge_id = %s',
+                                ['', upcoming_row['charge_id']])])
+        selected = select_groups(pg)
+        for kind, (item_id, expected) in selected.items():
+            assert canonical(expected) != canonical(warehouse_groups[kind][1])
+            assert item_id == warehouse_groups[kind][0]
         service = ReportingService(warehouse, publication_store=pg, access_mode=ReportingAccessMode.PUBLISHED)
-        get = reader(service)
-        marker = "synthetic-private-driver-marker"
-        def fail_driver(**kwargs):
+        prefer = ReportingService(warehouse, publication_store=pg, access_mode=ReportingAccessMode.PREFER_PUBLISHED)
+        before = canonical(service.get_open_attention_items())
+        assert before == canonical(pg.fetchall_dicts('SELECT * FROM mart_open_attention_items'))
+        snapshot = {kind: canonical(read_all(pg, kind)) for kind in SOURCE}
+        get = facade(service)
+        prefer_get = facade(prefer)
+        not_found, unavailable = errors()
+        for kind, (item_id, expected) in selected.items():
+            with monkeypatch.context() as patch:
+                calls = observe(patch, pg, postgres=True)
+                warehouse_calls = forbid_warehouse(patch)
+                assert canonical(get(kind, item_id)) == canonical(expected)
+                assert_selected(calls, kind, item_id, positive=True)
+                calls.clear()
+                assert canonical(prefer_get(kind, item_id)) == canonical(expected)
+                assert_selected(calls, kind, item_id, positive=True)
+                calls.clear()
+                unknown = unknown_key(kind, expected[0])
+                with pytest.raises(not_found):
+                    get(kind, unknown)
+                assert_selected(calls, kind, unknown, positive=False)
+                assert warehouse_calls == []
+        assert canonical(service.get_open_attention_items()) == before
+        assert {kind: canonical(read_all(pg, kind)) for kind in SOURCE} == snapshot
+
+        for kind, (table, identities) in SOURCE.items():
+            item_id, intact = selected[kind]
+            all_groups = grouped(read_all(pg, kind), kind)
+            other_key, other_rows = next((k, v) for k, v in all_groups.items() if k != item_id)
+            original = other_rows[0]
+            for column in identities:
+                if column in ('expected_date', 'renewal_date'):
+                    continue
+                mutated = dict(original, **{column: ''})
+                MODELS[kind].model_validate(to_jsonable(mutated))
+                forged = key(kind, mutated)
+                unknown = unknown_key(kind, intact[0])
+                with pytest.raises(not_found):
+                    get(kind, unknown)
+                where = ' AND '.join(f'{name} = %s' for name in identities)
+                pg.execute_statements([(f'UPDATE {table} SET {column} = %s WHERE {where}',
+                                        ['', *(original[name] for name in identities)])])
+                with monkeypatch.context() as patch:
+                    calls = forbid_warehouse(patch)
+                    for missing in (unknown, forged, other_key):
+                        with pytest.raises(unavailable):
+                            get(kind, missing)
+                    assert canonical(get(kind, item_id)) == canonical(intact)
+                    assert calls == []
+                publication(warehouse, pg)
+                # Re-establish the published-only values for all kinds after republishing.
+                for changed_kind, field in fields.items():
+                    pg.execute_statements([(f'UPDATE {SOURCE[changed_kind][0]} SET {field} = %s', ['published-only'])])
+                pg.execute_statements([('UPDATE mart_upcoming_fixed_costs_30d SET provider = %s WHERE charge_id = %s',
+                                        ['', upcoming_row['charge_id']])])
+
+        item_id, intact = selected['upcoming_cost']
+        charges = grouped(read_all(pg, 'upcoming_cost'), 'upcoming_cost')
+        other_key, other_rows = next((k, v) for k, v in charges.items() if k != item_id)
+        unknown = unknown_key('upcoming_cost', intact[0])
+        with pytest.raises(not_found):
+            get('upcoming_cost', unknown)
+        pg.execute_statements([('UPDATE mart_upcoming_fixed_costs_30d SET charge_id = NULL WHERE charge_id = %s',
+                                [other_rows[0]['charge_id']])])
+        with monkeypatch.context() as patch:
+            calls = forbid_warehouse(patch)
+            for missing in (other_key, unknown):
+                with pytest.raises(unavailable):
+                    get('upcoming_cost', missing)
+            assert canonical(get('upcoming_cost', item_id)) == canonical(intact)
+            assert calls == []
+        pg.execute_statements([('ALTER TABLE mart_upcoming_fixed_costs_30d DROP COLUMN charge_id', [])])
+        with monkeypatch.context() as patch:
+            calls = forbid_warehouse(patch)
+            for missing in (item_id, unknown):
+                with pytest.raises(unavailable):
+                    get('upcoming_cost', missing)
+            other_kind = 'contract_review'
+            assert canonical(get(other_kind, selected[other_kind][0])) == canonical(selected[other_kind][1])
+            assert calls == []
+        pg.execute_statements([('DROP TABLE mart_transaction_anomalies_current', [])])
+        with monkeypatch.context() as patch:
+            calls = forbid_warehouse(patch)
+            for missing in (selected['anomaly'][0], unknown_key('anomaly', selected['anomaly'][1][0])):
+                with pytest.raises(unavailable):
+                    get('anomaly', missing)
+            assert calls == []
+
+
+@pytest.mark.integration
+@pytest.mark.slow
+def test_postgres_connection_failure_is_sanitized_without_fallback(
+    warehouse: Any, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    item_id, _ = select_groups(warehouse.store)['anomaly']
+    with required_postgres() as dsn:
+        pg = PostgresReportingStore(dsn)
+        publication(warehouse, pg)
+        get = facade(ReportingService(warehouse, publication_store=pg, access_mode=ReportingAccessMode.PUBLISHED))
+        _, unavailable = errors()
+        marker = 'synthetic-private-driver-marker'
+        def fail(**kwargs: Any) -> Any:
             raise psycopg.OperationalError(marker)
-        monkeypatch.setattr(pg, "_connect", fail_driver)
-        with pytest.raises(unavailable) as exc:
-            get("anomaly", KEYS["anomaly"])
-        assert marker not in str(exc.value)
-        def fail_programming(**kwargs):
-            raise RuntimeError("programming defect")
-        monkeypatch.setattr(pg, "_connect", fail_programming)
-        with pytest.raises(RuntimeError, match="programming defect"):
-            get("anomaly", KEYS["anomaly"])
-        def fail_busy(**kwargs):
-            raise WarehouseBusyError("test", 1, RuntimeError("locked"))
-        monkeypatch.setattr(pg, "_connect", fail_busy)
-        with pytest.raises(WarehouseBusyError):
-            get("anomaly", KEYS["anomaly"])
+        with monkeypatch.context() as patch:
+            calls = forbid_warehouse(patch)
+            patch.setattr(pg, '_connect', fail)
+            with pytest.raises(unavailable) as caught:
+                get('anomaly', item_id)
+            assert marker not in str(caught.value)
+            assert calls == []
+        error = RuntimeError('programming defect')
+        def fail_program(**kwargs: Any) -> Any:
+            raise error
+        monkeypatch.setattr(pg, '_connect', fail_program)
+        with pytest.raises(RuntimeError) as caught:
+            get('anomaly', item_id)
+        assert caught.value is error

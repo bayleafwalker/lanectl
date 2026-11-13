@@ -1,0 +1,21 @@
+{
+  "schema": "hla-source-reader-review-response-rejection/v1",
+  "observed_at": "2026-11-13T20:00:25.262130+00:00",
+  "release": "hla-attention-source-reader",
+  "revision": 2,
+  "frozen_sha256": "b67ebe0894f3c33fbe18bc183064dbee6f0ef06e9fb938d9ee2a4bba880b4c8e",
+  "native_reviewer": "opencode-go/deepseek-v4-pro",
+  "result": "native invocation returned; strict review parser rejected response",
+  "validation_error": "adversarial review must explain its reasoning and trivial-pass attack",
+  "required_contract": "reason and trivial_pass each nonempty string; verdict accept/revise; checks nonempty array of nonempty strings",
+  "raw_response_available": false,
+  "raw_response_recovery": "bounded exact-session/path/prompt lookup found no retained record; temporary checkout already removed",
+  "verdict_inferred": false,
+  "acceptance_weakened": false,
+  "next_job": "lanectl-hla-source-reader-review-r2-schema.service",
+  "retry_change": "explicit output field types plus persist raw actual response/usage BEFORE parsing, exact proposal/test/outcome unchanged",
+  "traceback_file": "hla-source-reader-review-r2-schema-failure.log",
+  "traceback_sha256": "83d9b61d14aa77cb336f9d401e98553116806aa3e3832220ee49689f5729b60e",
+  "publication_allowed": false,
+  "durability": "cross-host-replicated after canonical publication; live job/script/raw future result session-local"
+}
