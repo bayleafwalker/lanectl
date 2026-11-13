@@ -1,0 +1,167 @@
+{
+  "observed_at": "2026-11-13T17:13:51.609056+00:00",
+  "projects": [
+    {
+      "project": "lane-dev-qualification-9cf-4b7f2a",
+      "observations": [
+        {
+          "kind": "containers",
+          "command": [
+            "docker",
+            "ps",
+            "-aq",
+            "--filter",
+            "label=com.docker.compose.project=lane-dev-qualification-9cf-4b7f2a"
+          ],
+          "exit_code": 0,
+          "stdout": ""
+        },
+        {
+          "kind": "volumes",
+          "command": [
+            "docker",
+            "volume",
+            "ls",
+            "-q",
+            "--filter",
+            "label=com.docker.compose.project=lane-dev-qualification-9cf-4b7f2a"
+          ],
+          "exit_code": 0,
+          "stdout": ""
+        },
+        {
+          "kind": "networks",
+          "command": [
+            "docker",
+            "network",
+            "ls",
+            "-q",
+            "--filter",
+            "label=com.docker.compose.project=lane-dev-qualification-9cf-4b7f2a"
+          ],
+          "exit_code": 0,
+          "stdout": ""
+        },
+        {
+          "kind": "image_tag",
+          "command": [
+            "docker",
+            "image",
+            "inspect",
+            "homelab-analytics:lane-dev-qualification-9cf-4b7f2a"
+          ],
+          "exit_code": 1,
+          "stderr": "Error response from daemon: No such image: homelab-analytics:lane-dev-qualification-9cf-4b7f2a"
+        }
+      ]
+    },
+    {
+      "project": "lane-dev-falsifier-9cf-972c6b",
+      "observations": [
+        {
+          "kind": "containers",
+          "command": [
+            "docker",
+            "ps",
+            "-aq",
+            "--filter",
+            "label=com.docker.compose.project=lane-dev-falsifier-9cf-972c6b"
+          ],
+          "exit_code": 0,
+          "stdout": ""
+        },
+        {
+          "kind": "volumes",
+          "command": [
+            "docker",
+            "volume",
+            "ls",
+            "-q",
+            "--filter",
+            "label=com.docker.compose.project=lane-dev-falsifier-9cf-972c6b"
+          ],
+          "exit_code": 0,
+          "stdout": ""
+        },
+        {
+          "kind": "networks",
+          "command": [
+            "docker",
+            "network",
+            "ls",
+            "-q",
+            "--filter",
+            "label=com.docker.compose.project=lane-dev-falsifier-9cf-972c6b"
+          ],
+          "exit_code": 0,
+          "stdout": ""
+        },
+        {
+          "kind": "image_tag",
+          "command": [
+            "docker",
+            "image",
+            "inspect",
+            "homelab-analytics:lane-dev-falsifier-9cf-972c6b"
+          ],
+          "exit_code": 1,
+          "stderr": "Error response from daemon: No such image: homelab-analytics:lane-dev-falsifier-9cf-972c6b"
+        }
+      ]
+    },
+    {
+      "project": "lane-dev-falsifier-9cf-186ad2",
+      "observations": [
+        {
+          "kind": "containers",
+          "command": [
+            "docker",
+            "ps",
+            "-aq",
+            "--filter",
+            "label=com.docker.compose.project=lane-dev-falsifier-9cf-186ad2"
+          ],
+          "exit_code": 0,
+          "stdout": ""
+        },
+        {
+          "kind": "volumes",
+          "command": [
+            "docker",
+            "volume",
+            "ls",
+            "-q",
+            "--filter",
+            "label=com.docker.compose.project=lane-dev-falsifier-9cf-186ad2"
+          ],
+          "exit_code": 0,
+          "stdout": ""
+        },
+        {
+          "kind": "networks",
+          "command": [
+            "docker",
+            "network",
+            "ls",
+            "-q",
+            "--filter",
+            "label=com.docker.compose.project=lane-dev-falsifier-9cf-186ad2"
+          ],
+          "exit_code": 0,
+          "stdout": ""
+        },
+        {
+          "kind": "image_tag",
+          "command": [
+            "docker",
+            "image",
+            "inspect",
+            "homelab-analytics:lane-dev-falsifier-9cf-186ad2"
+          ],
+          "exit_code": 1,
+          "stderr": "Error response from daemon: No such image: homelab-analytics:lane-dev-falsifier-9cf-186ad2"
+        }
+      ]
+    }
+  ]
+}

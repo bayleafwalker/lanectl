@@ -99,6 +99,16 @@ The legacy agent-preflight fails on SPRINTCTL_URL while served-profile reads wor
 source review confirms that helper is not a dependency of required verify-fast.
 No retired database URI was injected and that separate helper was not modified.
 
+Canonical9cf's actual disposable API now binds to the helper's fresh synthetic
+PostgreSQL schema: eight unique items, all four kinds, finance/utilities and exact
+IDs matched the pre-API publication capture. The same HTTP checker failed on a
+real wrong-schema API (healthy/ready/authenticated, attention404 unavailable) and
+passed after only the API's schema override was corrected. All three owned probe
+projects and image tags were independently confirmed removed. See
+`hla-compose-binding/qualification.json`. This is baseline application binding,
+with example local authentication and no web/scheduled worker, not a candidate
+train, new record-API qualification or whole product delivery.
+
 Stage C's intention pass requires current-report labels distinct from the
 cashflow month, meaningful existing facts for every detail kind, all returned
 component rows and null-as-unknown handling. Severity3 ranks first before top8,

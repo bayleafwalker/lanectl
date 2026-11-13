@@ -1,0 +1,72 @@
+#!/usr/bin/env bash
+set -euo pipefail
+root=/tmp/hla-stack-falsify-9cf-r2
+exec >"$root/run.log" 2>&1
+cd /tmp/hla-stack-qualification-9cf/source
+export LANE_NAMESPACE=lane-dev-falsifier-9cf-186ad2
+right_schema=synthetic_attention_right9cf
+image="homelab-analytics:$LANE_NAMESPACE"
+base=(--project-name "$LANE_NAMESPACE" -f infra/examples/compose.yaml -f infra/examples/compose-smoke.override.yaml -f infra/examples/compose-lane-dev.override.yaml)
+wrong=("${base[@]}" -f "$root/wrong.override.yaml")
+right=("${base[@]}" -f "$root/right.override.yaml")
+if [ -n "$(docker ps -aq --filter "label=com.docker.compose.project=$LANE_NAMESPACE")" ] || \
+   [ -n "$(docker volume ls -q --filter "label=com.docker.compose.project=$LANE_NAMESPACE")" ] || \
+   [ -n "$(docker network ls -q --filter "label=com.docker.compose.project=$LANE_NAMESPACE")" ] || \
+   docker image inspect "$image" >/dev/null 2>&1; then
+  echo 'qualification identity already exists; refusing to use or remove it'
+  exit 1
+fi
+cleanup() {
+  rc=$?
+  set +e
+  echo "qualification_exit=$rc"
+  docker compose "${right[@]}" ps --all --format json > "$root/compose-before-cleanup.jsonl"
+  docker image inspect "$image" --format '{{.Id}}' > "$root/image-id-before-cleanup.txt"
+  docker compose "${right[@]}" down -v --remove-orphans > "$root/down.log" 2>&1
+  down_exit=$?
+  docker image rm "$image" > "$root/image-remove.log" 2>&1
+  image_exit=$?
+  docker compose "${right[@]}" ps --all --format json > "$root/compose-after-cleanup.jsonl"
+  docker volume ls -q --filter "label=com.docker.compose.project=$LANE_NAMESPACE" > "$root/volumes-after-cleanup.txt"
+  docker network ls -q --filter "label=com.docker.compose.project=$LANE_NAMESPACE" > "$root/networks-after-cleanup.txt"
+  printf 'down_exit=%s\nimage_remove_exit=%s\n' "$down_exit" "$image_exit" > "$root/cleanup-status.txt"
+  echo "cleanup: down=$down_exit image=$image_exit"
+}
+trap cleanup EXIT
+printf 'source_commit=%s\nnamespace=%s\nseeded_schema=%s\nwrong_schema=%s\n' 9cf62cb7271ed0e15e35877ab772709808470bea "$LANE_NAMESPACE" "$right_schema" synthetic_attention_wrong9cf
+docker build -q -f infra/docker/Dockerfile -t "$image" --label "lanectl.namespace=$LANE_NAMESPACE" .
+docker image inspect "$image" --format '{{.Id}}' > "$root/built-image-id.txt"
+docker compose "${right[@]}" up -d --no-build postgres minio
+for i in $(seq 1 60); do
+  if docker compose "${right[@]}" exec -T postgres pg_isready -U homelab -d homelab >/dev/null 2>&1; then break; fi
+  if [ "$i" -eq 60 ]; then echo 'postgres readiness timed out'; exit 1; fi
+  sleep 2
+done
+docker compose "${right[@]}" run --rm --no-deps -T --entrypoint python api - --root /tmp/synthetic-attention-seed --source-commit 9cf62cb7271ed0e15e35877ab772709808470bea --postgres-dsn postgresql://homelab:homelab@postgres:5432/homelab --postgres-schema "$right_schema" < /projects/dev/lanectl/contrib/qualification/hla_attention_seed.py > "$root/seed.json"
+docker compose "${right[@]}" run --rm --no-deps -T --entrypoint python api -c 'import packages.pipelines.transformation_service as m; print(m.__file__)' > "$root/image-module-path.txt"
+# Capture the complete seeded publication before either API container exists.
+docker compose "${right[@]}" exec -T postgres psql -U homelab -d homelab -At -c "SELECT COALESCE(json_agg(row_to_json(t)), '[]'::json) FROM (SELECT item_id, item_type, source_domain FROM $right_schema.mart_open_attention_items ORDER BY item_id) t" > "$root/published_rows.json"
+docker compose "${wrong[@]}" up -d --no-build api
+addr=$(docker compose "${wrong[@]}" port api 8080)
+for i in $(seq 1 60); do
+  if curl -fsS "http://$addr/health" >/dev/null 2>&1; then echo "wrong api healthy at $addr"; break; fi
+  if [ "$i" -eq 60 ]; then echo 'wrong api health timed out'; exit 1; fi
+  sleep 2
+done
+python "$root/check_wrong.py" "http://$addr"
+set +e
+python "$root/check_http.py" "http://$addr" > "$root/wrong-checker.log" 2>&1
+wrong_exit=$?
+set -e
+printf '%s\n' "$wrong_exit" > "$root/wrong-checker-exit.txt"
+if [ "$wrong_exit" -eq 0 ]; then echo 'falsifier failure: checker accepted wrong schema'; exit 1; fi
+if ! rg -q 'HTTP Error (404|500|503)|AssertionError' "$root/wrong-checker.log"; then echo 'wrong checker failed for an unrelated setup/import reason'; exit 1; fi
+# Recreate only API with the seeded reporting schema.
+docker compose "${right[@]}" up -d --no-build --no-deps --force-recreate api
+addr=$(docker compose "${right[@]}" port api 8080)
+for i in $(seq 1 60); do
+  if curl -fsS "http://$addr/health" >/dev/null 2>&1; then echo "right api healthy at $addr"; break; fi
+  if [ "$i" -eq 60 ]; then echo 'right api health timed out'; exit 1; fi
+  sleep 2
+done
+python "$root/check_http.py" "http://$addr"

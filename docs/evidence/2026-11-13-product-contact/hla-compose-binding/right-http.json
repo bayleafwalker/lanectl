@@ -1,0 +1,41 @@
+{
+  "api_base": "http://127.0.0.1:32801",
+  "ready_status": 200,
+  "login_status": 200,
+  "attention_status": 200,
+  "reference_date": "2026-11-13",
+  "counts": [
+    {
+      "item_type": "anomaly",
+      "domain": "finance",
+      "count": 1
+    },
+    {
+      "item_type": "contract_renewal",
+      "domain": "utilities",
+      "count": 3
+    },
+    {
+      "item_type": "contract_review",
+      "domain": "utilities",
+      "count": 2
+    },
+    {
+      "item_type": "upcoming_cost",
+      "domain": "finance",
+      "count": 2
+    }
+  ],
+  "item_ids": [
+    "anomaly_fc650cc527cc5f6a",
+    "renewal_synthetic-other_2026-11-23",
+    "renewal_synthetic/utility_2026-11-23",
+    "renewal_synthetic/utility_2026-12-03",
+    "review_synthetic-other_multiple_contracts_same_type",
+    "review_synthetic/utility_multiple_contracts_same_type",
+    "upcoming_9f05249f6696898f_2026-11-13",
+    "upcoming_d6518e54f1d396a6_2026-11-13"
+  ],
+  "matches_postgres_published_rows": true,
+  "matches_seed_payment_and_slash_ids": true
+}

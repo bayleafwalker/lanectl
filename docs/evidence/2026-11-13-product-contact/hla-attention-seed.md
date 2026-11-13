@@ -34,9 +34,29 @@ new disposable schema behind; its owning caller must clean it up.
 This proves fixture availability and synthetic publication/read parity. It does
 not prove source detail APIs, HTTP encoding, permission enforcement, ranking,
 individual destinations or UI behavior. It does not assert distinct records of
-every kind or exercise promotion/snapshot capture. The helper's synthetic schema
-is not yet bound to the configured Compose application's reporting schema. HLA1593
-remains active; the official full-scope API specification/review proceeds separately.
+every kind or exercise promotion/snapshot capture.
+
+The canonical9cf application binding is now measured separately in
+`hla-compose-binding/qualification.json`. A clean archived source built its own
+API image and used isolated Compose PostgreSQL/MinIO dependencies, checked-in
+example authentication and a fresh synthetic reporting schema. The helper ran
+through image Python before API startup. The real API returned eight unique
+attention IDs across all four kinds and both domains; their complete set matched
+the helper's PostgreSQL publication captured before API startup. Counts and the
+helper-emitted payment/slash IDs also matched.
+
+The actual HTTP checker was forced to fail with the API pointed at a different
+schema: health, readiness and login passed, but the existing list endpoint
+returned404 for its missing published relation and the checker exited1. Recreating
+only the API with the seeded schema restored the full check, exit0. An initial
+scratch classifier incorrectly expected500/503; that harness failure and cleanup
+are recorded separately rather than called an application defect. The coordinator
+independently verified all three owned projects' containers, volumes, networks
+and image tags were absent after cleanup.
+
+This binds the explicit synthetic schema, not the default reporting schema. It
+does not exercise OIDC/source permissions, new record endpoints, web navigation
+or the final candidate's real train/dev delivery. HLA1593 remains active.
 
 The committed helper and observations are cross-host-replicated. Their original
 /tmp warehouses, runner scripts and logs are session-local.

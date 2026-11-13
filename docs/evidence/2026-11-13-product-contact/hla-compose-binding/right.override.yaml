@@ -1,0 +1,5 @@
+# Session-only repair: API reads the helper's fresh synthetic schema.
+services:
+  api:
+    environment:
+      HOMELAB_ANALYTICS_REPORTING_SCHEMA: synthetic_attention_right9cf

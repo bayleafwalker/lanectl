@@ -1,0 +1,36 @@
+import http.cookiejar
+import json
+import sys
+import urllib.error
+import urllib.request
+from pathlib import Path
+root=Path('/tmp/hla-stack-falsify-9cf-r2')
+base=sys.argv[1]
+with urllib.request.urlopen(base+'/ready',timeout=15) as r: ready=r.status
+assert ready==200
+session=urllib.request.build_opener(urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar()))
+req=urllib.request.Request(base+'/auth/login',data=json.dumps({'username':'admin','password':'replace-me-local-admin-password'}).encode(),headers={'Content-Type':'application/json'},method='POST')
+with session.open(req,timeout=15) as r: login=r.status
+assert login==200
+try:
+    with session.open(base+'/reports/attention-items',timeout=15) as r:
+        status=r.status
+        body=r.read().decode()
+except urllib.error.HTTPError as e:
+    status=e.code
+    body=e.read().decode()
+seeded=json.loads((root/'published_rows.json').read_text())
+if status==200:
+    wrong=json.loads(body)['rows']
+    assert {r['item_id'] for r in wrong}!={r['item_id'] for r in seeded}
+    classification='valid_http_response_mismatched_rows'
+else:
+    if status == 404:
+        assert json.loads(body).get('error') == 'Published reporting relation is unavailable: mart_open_attention_items'
+    else:
+        assert status in (500,503), (status,body)
+    classification='source_unavailable_http_error'
+result={'api_base':base,'ready_status':ready,'login_status':login,'attention_status':status,
+        'attention_body':body,'classification':classification,'seeded_row_count':len(seeded)}
+(root/'wrong-http-observation.json').write_text(json.dumps(result,indent=2)+'\n')
+print(json.dumps(result,indent=2))

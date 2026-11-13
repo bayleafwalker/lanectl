@@ -1,0 +1,17 @@
+Traceback (most recent call last):
+  File "/tmp/hla-stack-falsify-9cf-r2/check_http.py", line 17, in <module>
+    with session.open(base+'/reports/attention-items',timeout=15) as response:
+         ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/nix/store/acg4s2bnkqnnmh05xfaqbg7kjk2k08jh-python3-3.14.10-env/lib/python3.14/urllib/request.py", line 493, in open
+    response = meth(req, response)
+  File "/nix/store/acg4s2bnkqnnmh05xfaqbg7kjk2k08jh-python3-3.14.10-env/lib/python3.14/urllib/request.py", line 602, in http_response
+    response = self.parent.error(
+        'http', request, response, code, msg, hdrs)
+  File "/nix/store/acg4s2bnkqnnmh05xfaqbg7kjk2k08jh-python3-3.14.10-env/lib/python3.14/urllib/request.py", line 531, in error
+    return self._call_chain(*args)
+           ~~~~~~~~~~~~~~~~^^^^^^^
+  File "/nix/store/acg4s2bnkqnnmh05xfaqbg7kjk2k08jh-python3-3.14.10-env/lib/python3.14/urllib/request.py", line 464, in _call_chain
+    result = func(*args)
+  File "/nix/store/acg4s2bnkqnnmh05xfaqbg7kjk2k08jh-python3-3.14.10-env/lib/python3.14/urllib/request.py", line 611, in http_error_default
+    raise HTTPError(req.full_url, code, msg, hdrs, fp)
+urllib.error.HTTPError: HTTP Error 404: Not Found

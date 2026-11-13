@@ -1,0 +1,34 @@
+import collections
+import http.cookiejar
+import json
+import sys
+import urllib.request
+from pathlib import Path
+root=Path('/tmp/hla-stack-falsify-9cf-r2')
+base=sys.argv[1]
+seed=json.loads((root/'seed.json').read_text())
+db=json.loads((root/'published_rows.json').read_text())
+with urllib.request.urlopen(base+'/ready',timeout=15) as response:
+    ready_status=response.status
+assert ready_status==200
+session=urllib.request.build_opener(urllib.request.HTTPCookieProcessor(http.cookiejar.CookieJar()))
+login=urllib.request.Request(base+'/auth/login',data=json.dumps({'username':'admin','password':'replace-me-local-admin-password'}).encode(),headers={'Content-Type':'application/json'},method='POST')
+with session.open(login,timeout=15) as response: login_status=response.status
+with session.open(base+'/reports/attention-items',timeout=15) as response:
+    status=response.status
+    body=json.load(response)
+rows=body['rows']
+counts=collections.Counter((r['item_type'],r['source_domain']) for r in rows)
+expected={(r['item_type'],r['domain']):r['count'] for r in seed['counts']}
+assert status==200 and counts==expected, (status,counts,expected)
+ids=[r['item_id'] for r in rows]
+assert len(set(ids))==len(ids)
+assert set(ids)=={r['item_id'] for r in db}
+assert set(seed['upcoming_item_ids'])=={r['item_id'] for r in rows if r['item_type']=='upcoming_cost'}
+assert set(seed['slash_item_ids'])=={r['item_id'] for r in rows if 'synthetic/utility' in r['item_id']}
+assert len(seed['upcoming_item_ids'])==2 and len(seed['slash_item_ids'])>=1
+result={'api_base':base,'ready_status':ready_status,'login_status':login_status,'attention_status':status,
+        'reference_date':seed['reference_date'],'counts':seed['counts'],'item_ids':sorted(ids),
+        'matches_postgres_published_rows':True,'matches_seed_payment_and_slash_ids':True}
+(root/'http-observations.json').write_text(json.dumps(result,indent=2)+'\n')
+print(json.dumps(result,indent=2))

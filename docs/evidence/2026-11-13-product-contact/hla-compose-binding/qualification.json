@@ -1,0 +1,68 @@
+{
+  "schema": "hla-canonical-compose-binding/v1",
+  "observed_at": "2026-11-13T17:13:51.613021+00:00",
+  "source_commit": "9cf62cb7271ed0e15e35877ab772709808470bea",
+  "source_kind": "clean git-archive snapshot, untracked host files excluded from image context",
+  "build_image_id": "sha256:7b109754effcc5b8846ab437c5a8f658b1362736e3d144ac90c6b7c4e5f26c88",
+  "image_module_path": "/app/packages/pipelines/transformation_service.py",
+  "canonical_archive_module": "packages/pipelines/transformation_service.py",
+  "canonical_archive_module_sha256": "a54624a9640dd8cac573ba01790ed67dbc0656c22910025ea8be648ad03edf72",
+  "seed_helper_commit": "b447048",
+  "seed_helper_sha256": "d2516b1ea87c5dd08d0c5f96dd7fcd7d31315efd61317a6aeb5e03daca06fdcb",
+  "api_reporting_mode": "PUBLISHED, apps/api/main.py postgres backend selection",
+  "project": "lane-dev-falsifier-9cf-186ad2",
+  "database_audience": "postgres:5432/homelab on this unique Compose network only; checked-in example credentials",
+  "seeded_schema": "synthetic_attention_right9cf",
+  "wrong_schema": "synthetic_attention_wrong9cf",
+  "pre_api_publication_capture": true,
+  "wrong_control": {
+    "health_status": 200,
+    "ready_status": 200,
+    "local_login_status": 200,
+    "attention_status": 404,
+    "checker_exit": 1,
+    "reason": "real HTTPError404 with exact missing published relation, not setup/import failure"
+  },
+  "repaired_control": {
+    "changed": "recreate only API with right session-local reporting schema override",
+    "health_status": 200,
+    "ready_status": 200,
+    "local_login_status": 200,
+    "attention_status": 200,
+    "checker_exit": 0,
+    "exact_full_id_set_matches_pre_api_postgres": true,
+    "item_count": 8,
+    "helper_emitted_payment_ids_match": true,
+    "helper_emitted_slash_ids_match": true,
+    "counts_match_helper": true
+  },
+  "initial_falsifier_harness_failure": {
+    "project": "lane-dev-falsifier-9cf-972c6b",
+    "exit_code": 1,
+    "cause": "scratch classifier incorrectly allowed only500/503; actual old list emitted exact missing-publication404; aborted before actual checker",
+    "source_defect": false,
+    "cleanup": "down/image exit0; root independently verified all owned resources absent"
+  },
+  "positive_baseline_run": {
+    "project": "lane-dev-qualification-9cf-4b7f2a",
+    "image_id": "sha256:da01866921de8469000709925042217d90782d4d0bb73047e12377cf619d6fc0",
+    "attention_status": 200,
+    "exact_http_id_set_equals_post_api_postgres": true,
+    "cleanup_independently_verified": true
+  },
+  "limitations": [
+    "canonical StageA scaffold only; not candidate or B record-endpoint proof",
+    "API+Postgres+required Minio only; web/scheduled worker omitted",
+    "local_single_user example authentication; not OIDC/source-permission enforcement",
+    "explicit fresh synthetic reporting schema override; not default reporting schema",
+    "not a lanectl train/deploy event or final dev delivery",
+    "not strict-host fence, production rollout or wholeWork acceptance",
+    "helper emits payment/slash IDs and counts; complete pre-API ID set independently captured from its PostgreSQL publication"
+  ],
+  "raw_run_log": {
+    "path": "/tmp/hla-stack-falsify-9cf-r2/run.log",
+    "durability": "session-local",
+    "sha256": "772f1c442db430a5398febaedf49b64ac61057ff21a20bd80b14e5a9eb58500a"
+  },
+  "durability": "cross-host-replicated after canonical publication"
+}

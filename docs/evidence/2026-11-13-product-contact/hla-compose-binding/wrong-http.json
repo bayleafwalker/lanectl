@@ -1,0 +1,9 @@
+{
+  "api_base": "http://127.0.0.1:32800",
+  "ready_status": 200,
+  "login_status": 200,
+  "attention_status": 404,
+  "attention_body": "{\"error\":\"Published reporting relation is unavailable: mart_open_attention_items\"}",
+  "classification": "source_unavailable_http_error",
+  "seeded_row_count": 8
+}

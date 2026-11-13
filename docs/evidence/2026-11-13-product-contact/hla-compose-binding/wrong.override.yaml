@@ -1,0 +1,5 @@
+# Session-only falsifier: API reads a different, initially empty schema.
+services:
+  api:
+    environment:
+      HOMELAB_ANALYTICS_REPORTING_SCHEMA: synthetic_attention_wrong9cf
