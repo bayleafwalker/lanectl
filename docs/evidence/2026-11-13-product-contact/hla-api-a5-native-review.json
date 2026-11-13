@@ -1,0 +1,114 @@
+{
+  "session_id": "a9d10b90-2752-4cb0-8748-deadde0320a2",
+  "duration_ms": 165050,
+  "duration_api_ms": 401578,
+  "is_error": false,
+  "terminal_reason": "completed",
+  "permission_denials": [],
+  "subagent_stats": {
+    "spawned": 7,
+    "requested": {
+      "background": 7,
+      "foreground": 0,
+      "unset": 0
+    },
+    "started_in_background": 7,
+    "max_depth": 1,
+    "spawned_by_subagents": 0,
+    "completed": 7,
+    "failed": 0,
+    "killed": {
+      "parent": 0,
+      "user": 0,
+      "system": 0
+    },
+    "refused": {
+      "depth_limit": 0,
+      "concurrency_limit": 0,
+      "budget": 0
+    },
+    "by_type": {
+      "general-purpose": 7
+    }
+  },
+  "modelUsage": {
+    "claude-sonnet-5-5": {
+      "inputTokens": 56,
+      "outputTokens": 28116,
+      "cacheReadInputTokens": 1347910,
+      "cacheCreationInputTokens": 218663,
+      "webSearchRequests": 0,
+      "costUSD": 1.1248855,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 6455,
+      "cacheCreationEphemeral5mInputTokens": 110553,
+      "cacheCreationEphemeral1hInputTokens": 108110,
+      "canonicalModel": "claude-sonnet-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+    },
+    "claude-haiku-5-5": {
+      "inputTokens": 38,
+      "outputTokens": 38739,
+      "cacheReadInputTokens": 583204,
+      "cacheCreationInputTokens": 190993,
+      "webSearchRequests": 0,
+      "costUSD": 0.049079464999999996,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 25782,
+      "cacheCreationEphemeral5mInputTokens": 190993,
+      "cacheCreationEphemeral1hInputTokens": 0,
+      "canonicalModel": "claude-haiku-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+    }
+  },
+  "usage": {
+    "input_tokens": 32,
+    "cache_creation_input_tokens": 108110,
+    "cache_read_input_tokens": 1101728,
+    "output_tokens": 19569,
+    "output_tokens_details": {
+      "thinking_tokens": 5726
+    },
+    "server_tool_use": {
+      "web_search_requests": 0,
+      "web_fetch_requests": 0
+    },
+    "service_tier": "standard",
+    "cache_creation": {
+      "ephemeral_1h_input_tokens": 108110,
+      "ephemeral_5m_input_tokens": 0
+    },
+    "inference_geo": "global",
+    "iterations": [
+      {
+        "input_tokens": 2,
+        "output_tokens": 3903,
+        "cache_read_input_tokens": 105982,
+        "cache_creation_input_tokens": 2128,
+        "cache_creation": {
+          "ephemeral_5m_input_tokens": 0,
+          "ephemeral_1h_input_tokens": 2128
+        },
+        "type": "message"
+      }
+    ],
+    "speed": "standard",
+    "fallback_credit": null
+  },
+  "total_cost_usd": 1.1739649650000001,
+  "source_commit": "6831e8b872cde89e8d37d0b03e04076cf5670c86",
+  "requested_model": "claude-sonnet-5-5",
+  "verdict": "HOLD",
+  "scope": "saved timeout artifact source review, not candidateapproval",
+  "architecture_check": "101passed1.28s onexactsource",
+  "findings_under_validation": [
+    "B1 missingpipelineclassification",
+    "B2 alreadyoversizedfilegrowth thresholdinterpretation/focusedextraction"
+  ],
+  "actual_sources": "sevenselectedspecialist prompts, actual7completed/no denials",
+  "pending": "fullverify-fast/train/dev/CI, nativea6running; no operatorwaiverrequested"
+}

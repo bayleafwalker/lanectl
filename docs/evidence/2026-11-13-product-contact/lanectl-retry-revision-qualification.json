@@ -1,0 +1,43 @@
+{
+  "schema": "lanectl-retry-revision-qualification/v1",
+  "source_commit": "a2217fac0807bc7f67ff059557d05abea314e181",
+  "base_commit": "c6af6473c84761e7274af44a7d9cacae8fb0b105",
+  "observed_problem": "R3 a5Flash -> a6Flash under different_model after lifetimehistoryincludedbothFlash/Pro",
+  "change": "prefer current-revision untried positive eligible models, then avoid immediately previous model when alternativeexists; single-model fallback retained",
+  "source_diff": {
+    "runner_added": 12,
+    "runner_deleted": 3,
+    "new_test_lines": 81
+  },
+  "falsifier_worker_report": {
+    "old_source_new_tests": "4 failed,2passed",
+    "focused_tests": "9passed"
+  },
+  "worker_full_suite": {
+    "result": "1021 passed in119.80s",
+    "environment": "XDG_RUNTIME_DIR=/run/user/1000; DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus; PYTHONPATH=src",
+    "attribution": "first-party worker execution; earlier missing-XDG run had26 manager failures and was superseded by measured proper-environment fullpass"
+  },
+  "root_integration_tests": {
+    "command": "PYTHONPATH=src /projects/dev/lanectl/.venv/bin/python -m pytest -q tests/stage6/test_retry_model_revision.py",
+    "result": "6 passed in0.13s",
+    "source": "exact reviewed a2217fa fast-forwarded onto main"
+  },
+  "independent_review": {
+    "reviewer": "persistent first-party Sage",
+    "verdict": "PASS",
+    "preserved": [
+      "author/data/provider eligibility",
+      "positive weight filtering",
+      "single-model fallback",
+      "legacy claims/infra history and budget accounting",
+      "steering/headroom",
+      "deterministicchoice",
+      "otherretry policies",
+      "governance/caps/grants unchanged"
+    ]
+  },
+  "release_status": "source landed; metadata/build/tag publication follows separately",
+  "installation_status": "installed0.2.7 unchanged whileouterR3/a6 live",
+  "durability": "cross-host-replicated after canonical publication"
+}
