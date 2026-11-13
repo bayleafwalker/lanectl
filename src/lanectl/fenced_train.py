@@ -101,7 +101,8 @@ def run_command(repo, checkout, command, timeout_s=1800):
                 raise FenceError(f"timed out and could not prove {unit} stopped; "
                                  f"orphan left running in {train_dir}")
             terminal = True
-            raise FenceError(f"timed out after {timeout + WAIT_MARGIN_S:.0f}s; {unit} stopped")
+            raise FenceError(f"timed out after {timeout + WAIT_MARGIN_S:.0f}s waiting for "
+                             f"terminal {unit} and its root receipt; {unit} stopped")
         terminal = True
         record = _read_receipt(train_id)
         code = receipt_returncode(record, train_id=train_id, request_sha256=digest)
@@ -215,14 +216,32 @@ def _active(sysctl: str, unit: str):
 
 
 def _wait_terminal(sysctl: str, unit: str, receipt: Path, timeout: int) -> bool:
+    """True only once the unit is terminal *and* its root receipt exists.
+
+    ``systemctl start --no-block`` can return while the start job is still
+    queued, so an early ``inactive`` reading is not terminal proof. A missing
+    receipt is likewise not proof: the job may start later. Both conditions
+    must hold together, and each poll keeps observing liveness in the absence
+    of a receipt. If the receipt grace or the overall deadline expires first,
+    return False so the caller stops the exact unit, proves terminal state and
+    only then cleans up; it never treats an unproven queue as finished.
+    """
     deadline = time.monotonic() + timeout + WAIT_MARGIN_S
+    missing_since = None
     while True:
-        if _active(sysctl, unit) in TERMINAL:
-            grace = time.monotonic() + RECEIPT_GRACE_S
-            while time.monotonic() < grace and not os.path.lexists(receipt):
-                time.sleep(POLL_S)
+        now = time.monotonic()
+        state = _active(sysctl, unit)
+        present = os.path.lexists(receipt)
+        if present and state in TERMINAL:
             return True
-        if time.monotonic() >= deadline:
+        if state in TERMINAL:
+            if missing_since is None:
+                missing_since = now
+        else:
+            missing_since = None
+        if now >= deadline:
+            return False
+        if missing_since is not None and now - missing_since >= RECEIPT_GRACE_S:
             return False
         time.sleep(POLL_S)
 
