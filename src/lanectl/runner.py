@@ -380,7 +380,72 @@ def _commit_all(wt: Path, msg: str) -> str:
     return git(wt, "rev-parse", "HEAD")
 
 
+def _contains_canonical(repo: RepoSpec, path: Path) -> bool:
+    """True when discarding *path* would reach the canonical checkout.
+
+    Historical train records are worker-influenced, so a recorded checkout can be
+    the canonical repository itself, an ancestor containing it, or a symlink alias
+    resolving to either. Resolution is pure path arithmetic: no Git config or hook
+    can change the answer.
+    """
+    # A path is relative to itself, so this also catches an exact match.
+    return Path(repo.path).resolve().is_relative_to(Path(path).resolve())
+
+
+def _managed_worktree_root(repo: RepoSpec) -> Path | None:
+    """The managed worktree root only when it is a strict subdirectory of canonical.
+
+    A ``worktree_root`` equal to or above the canonical checkout is never permission
+    to delete canonical data: only a root strictly below canonical marks a subtree
+    lanectl itself manages.
+    """
+    root = getattr(repo, "worktree_root", None)
+    if root is None:
+        return None
+    canonical = Path(repo.path).resolve()
+    root = Path(root).resolve()
+    return root if root != canonical and root.is_relative_to(canonical) else None
+
+
+def _managed_container(repo: RepoSpec, path: Path) -> bool:
+    """True when *path* is the shared managed worktree root, or an alias to it.
+
+    The worktree root holds every attempt checkout rather than one disposable
+    checkout, so it is never safe to discard or to hand to a candidate as a
+    writable historical tree. The equality holds whether the root is inside or
+    outside canonical; a root equal to or above canonical is already refused by
+    :func:`_contains_canonical`.
+    """
+    root = getattr(repo, "worktree_root", None)
+    if root is None:
+        return False
+    return Path(path).resolve() == Path(root).resolve()
+
+
+def _unmanaged_canonical(repo: RepoSpec, path: Path) -> bool:
+    """True when *path* is canonical contents lanectl does not manage.
+
+    Covers ``.git``, ``src`` and their symlink aliases: any path inside canonical
+    that is not inside the managed worktree root. Pure path arithmetic again,
+    never worker-controlled Git config.
+    """
+    canonical = Path(repo.path).resolve()
+    target = Path(path).resolve()
+    if target == canonical or not target.is_relative_to(canonical):
+        return False
+    root = _managed_worktree_root(repo)
+    return root is None or not target.is_relative_to(root)
+
+
 def _discard(repo: RepoSpec, path: Path) -> None:
+    # Refuse before any destructive Git or filesystem call: Git can leave the tree
+    # in place, and the unconditional rmtree that follows would delete canonical data.
+    if _contains_canonical(repo, path):
+        raise ValueError(f"refusing to discard {path}: it contains the canonical checkout {repo.path}")
+    if _managed_container(repo, path):
+        raise ValueError(f"refusing to discard {path}: it is the shared managed worktree root")
+    if _unmanaged_canonical(repo, path):
+        raise ValueError(f"refusing to discard {path}: unmanaged contents inside the canonical checkout {repo.path}")
     git(repo.path, "worktree", "remove", "--force", str(path), check=False)
     shutil.rmtree(path, ignore_errors=True)
     git(repo.path, "worktree", "prune", check=False)
@@ -730,8 +795,10 @@ def _train_command(repo, checkout: Path, command: str):
 
 @contextmanager
 def _historical_checkout(repo, checkout, tip):
-    """Never grant candidate checks writable access to the canonical checkout."""
-    if checkout.exists() and checkout.resolve() != Path(repo.path).resolve():
+    """Never grant candidate checks a writable tree overlapping the canonical checkout."""
+    protected = (_contains_canonical(repo, checkout) or _unmanaged_canonical(repo, checkout)
+                 or _managed_container(repo, checkout))
+    if checkout.exists() and not protected:
         yield checkout
         return
     with tempfile.TemporaryDirectory(prefix="lanectl-historical-train-") as folder:
@@ -904,10 +971,19 @@ def land(log: EventLog, train_id: str) -> str:
                        "closed": False, "ok": False, "error": str(exc)[-300:]}, item_id=rel.id)
     if requires_deploy:
         deploy.teardown(log, train_id, "landed")
-    _discard(repo, Path(d["worktree"]))
-    for aid in d["attempts"]:
-        _discard(repo, repo.worktree_root / aid)
-    return f"landed {d['attempts']} on {repo.main} at {tip[:12]}; fixes={ {k: len(v) for k, v in fixes.items()} }"
+    # The land is already committed and recorded: a refused cleanup of a protected
+    # recorded path must not fail the completed landing, and must not abandon the
+    # cleanup of other safe attempt directories.
+    refused = []
+    for target in (Path(d["worktree"]), *(repo.worktree_root / aid for aid in d["attempts"])):
+        try:
+            _discard(repo, target)
+        except (ValueError, RuntimeError):
+            refused.append(str(target))
+    result = f"landed {d['attempts']} on {repo.main} at {tip[:12]}; fixes={ {k: len(v) for k, v in fixes.items()} }"
+    if refused:
+        result += f"; cleanup refused protected paths: {', '.join(refused)}"
+    return result
 
 
 def approve(log: EventLog, attempt_id: str, note: str) -> str:
