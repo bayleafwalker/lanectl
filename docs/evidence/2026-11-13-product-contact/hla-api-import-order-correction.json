@@ -1,0 +1,18 @@
+{
+  "previous_commit": "1545992",
+  "before_sha256": "9f6cc5f96a21e568cf41b132bd6525701e25ddf2b4e89810b0729a78a94880dd",
+  "after_sha256": "d77e1d1fb685e3952a243c86d0c9924841a28d894b74d83c13e8f72b40350152",
+  "non_import_statements_identical": true,
+  "import_bindings_identical": true,
+  "change": "Ruff I001 import ordering only. All non-import statements, test functions, decorators and assertions unchanged.",
+  "independent_frozen_ruff_before": "I001 at line17; failed before any implementation",
+  "independent_frozen_ruff_after": "All checks passed!",
+  "attempt_accountability": {
+    "a1": "Actual source forbidden type-ignore model error; frozen Ruff error is separate planner fault. Functional acceptance gate passed, but no candidate acceptance.",
+    "a2": "Coordinator stopped exact native unit for verified unpassable frozen context; framework recorded infra/no changes.",
+    "a3": "Scheduled tick raced draft hold; exact native unit stopped for same verified planner defect, no changes. Standing timer was not stopped/disabled; naturally completed tick and enabled timer verified.",
+    "approval_rejection": "Automatic review rejected stopping lanectl-tick.service; accepted narrower exact-retry stops resolved the task."
+  },
+  "lint_context": "Canonical HLA cwd, actual tests/test_attention_record_api.py stdin filename, repository config discovery, no cache",
+  "outside_path_config_limit": "Explicit --config on the external backlog path classified first-party imports differently; only the canonical project context is accepted as evidence."
+}

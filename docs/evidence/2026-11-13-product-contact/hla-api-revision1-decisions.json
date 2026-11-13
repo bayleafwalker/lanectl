@@ -1,0 +1,112 @@
+[
+  {
+    "data": {
+      "attempt_id": "hla-attention-records-r5-a1",
+      "gate": "diff-policy",
+      "passed": false,
+      "violations": [
+        "forbidden-pattern: apps/api/routes/report_routes.py: /#\\s*type:\\s*ignore/"
+      ]
+    },
+    "item_id": "hla-attention-records-r5",
+    "schema": "lanectl.event/v1",
+    "ts": "2026-11-13T15:26:41Z",
+    "type": "gate.result"
+  },
+  {
+    "data": {
+      "attempt_id": "hla-attention-records-r5-a1",
+      "gate": "fail-on-base",
+      "passed": true,
+      "violations": []
+    },
+    "item_id": "hla-attention-records-r5",
+    "schema": "lanectl.event/v1",
+    "ts": "2026-11-13T15:26:41Z",
+    "type": "gate.result"
+  },
+  {
+    "data": {
+      "attempt_id": "hla-attention-records-r5-a1",
+      "gate": "acceptance-on-base",
+      "passed": true,
+      "violations": []
+    },
+    "item_id": "hla-attention-records-r5",
+    "schema": "lanectl.event/v1",
+    "ts": "2026-11-13T15:26:41Z",
+    "type": "gate.result"
+  },
+  {
+    "data": {
+      "attempt_id": "hla-attention-records-r5-a1",
+      "gate": "acceptance",
+      "passed": true,
+      "violations": []
+    },
+    "item_id": "hla-attention-records-r5",
+    "schema": "lanectl.event/v1",
+    "ts": "2026-11-13T15:26:41Z",
+    "type": "gate.result"
+  },
+  {
+    "data": {
+      "attempt_id": "hla-attention-records-r5-a1",
+      "gate": "job:ruff",
+      "passed": false,
+      "violations": [
+        "exit 1: ruff :: _oidc_provider, build_session_manager\n41 | | from packages.shared.settings import AppSettings\n42 | | from packages.storage.ingestion_config import IngestionConfigRepository\n43 | | from packages.storage.postgres_reporting import PostgresReportingStore\n44 | | from tests.oidc_test_support import MockOidcIssuer\n45 | | from tests.postgres_test_support import running_postgres_container\n   | |__________________________________________________________________^\n46 |\n47 |   REPO_ROOT = Path(__file__).resolve().parents[1]\n   |\nhelp: Organize imports\n\nFound 1 error.\n[*] 1 fixable with the `--fix` option.\n"
+      ]
+    },
+    "item_id": "hla-attention-records-r5",
+    "schema": "lanectl.event/v1",
+    "ts": "2026-11-13T15:26:41Z",
+    "type": "gate.result"
+  },
+  {
+    "data": {
+      "attempt_id": "hla-attention-records-r5-a1",
+      "by": "gates",
+      "decision": "rejected",
+      "reasons": [
+        "diff-policy: forbidden-pattern: apps/api/routes/report_routes.py: /#\\s*type:\\s*ignore/",
+        "job:ruff: exit 1: ruff :: _oidc_provider, build_session_manager\n41 | | from packages.shared.settings import AppSettings\n42 | | from packages.storage.ingestion_config import IngestionConfigRepository\n43 | | from packages.storage.postgres_reporting import PostgresReportingStore\n44 | | from tests.oidc_test_support import MockOidcIssuer\n45 | | from tests.postgres_test_support import running_postgres_container\n   | |__________________________________________________________________^\n46 |\n47 |   REPO_ROOT = Path(__file__).resolve().parents[1]\n   |\nhelp: Organize imports\n\nFound 1 error.\n[*] 1 fixable with the `--fix` option.\n"
+      ],
+      "rules_revision": "decision-rules/v3"
+    },
+    "item_id": "hla-attention-records-r5",
+    "schema": "lanectl.event/v1",
+    "ts": "2026-11-13T15:26:41Z",
+    "type": "decision.recorded"
+  },
+  {
+    "data": {
+      "attempt_id": "hla-attention-records-r5-a2",
+      "by": "gates",
+      "decision": "rejected",
+      "reasons": [
+        "infra: worker failed without changing anything"
+      ],
+      "rules_revision": "decision-rules/v3"
+    },
+    "item_id": "hla-attention-records-r5",
+    "schema": "lanectl.event/v1",
+    "ts": "2026-11-13T15:31:19Z",
+    "type": "decision.recorded"
+  },
+  {
+    "data": {
+      "attempt_id": "hla-attention-records-r5-a3",
+      "by": "gates",
+      "decision": "rejected",
+      "reasons": [
+        "infra: worker failed without changing anything"
+      ],
+      "rules_revision": "decision-rules/v3"
+    },
+    "item_id": "hla-attention-records-r5",
+    "schema": "lanectl.event/v1",
+    "ts": "2026-11-13T15:35:34Z",
+    "type": "decision.recorded"
+  }
+]

@@ -43,6 +43,16 @@ review remains a draft and blocks publication even with a lint override. A valid
 review also remains a draft until `backlog publish` succeeds. Ordinary manually
 authored releases retain their existing publication workflow.
 
+Before publication, check frozen acceptance against the target repository's
+existing static lint rules in its actual file context. A passing missing-feature
+base check does not prove that the fixture passes Ruff or another static gate.
+For HLA, run Ruff from the HLA checkout with the intended `tests/test_*.py` stdin
+filename; linting the external backlog path with `--config` can classify
+first-party imports differently. Fix planner-owned fixture formatting before
+admission. Any cleanup still needs fresh review/digest and base-failure evidence;
+implementation workers must not edit the frozen file to repair it. Keep a
+fixture defect separate from an actual implementation gate violation.
+
 Artifacts under `backlog/` become cross-host-replicated when committed and
 pushed. Temporary clones are session-local and removed after each model call.
 No specification command changes lane authority, policy or publication state.

@@ -1,0 +1,36 @@
+{
+  "attempt_id": "hla-attention-records-r5-a1",
+  "outcome": "done",
+  "exit_code": 0,
+  "seed_sha": "165e234268b4c9379b9587dfdd2cf0f1b2c43948",
+  "head_sha": "e715121610d2f49faa653f30e79e2f992270d9ff",
+  "elapsed_s": 1497.9,
+  "changes": [
+    {
+      "path": "apps/api/routes/report_routes.py",
+      "added": 49,
+      "deleted": 0
+    },
+    {
+      "path": "apps/web/frontend/generated/api.d.ts",
+      "added": 220,
+      "deleted": 0
+    },
+    {
+      "path": "apps/web/frontend/generated/openapi.json",
+      "added": 240,
+      "deleted": 0
+    },
+    {
+      "path": "packages/pipelines/reporting_attention_records.py",
+      "added": 128,
+      "deleted": 0
+    },
+    {
+      "path": "packages/pipelines/reporting_service.py",
+      "added": 25,
+      "deleted": 0
+    }
+  ],
+  "total_changed_lines": 662
+}

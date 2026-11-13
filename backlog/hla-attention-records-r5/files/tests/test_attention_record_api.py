@@ -34,13 +34,12 @@ from packages.domains.finance.pipelines.account_transaction_service import (
 from packages.domains.finance.pipelines.subscription_models import subscription_charge_id
 from packages.pipelines.reporting_service import ReportingAccessMode, ReportingService
 from packages.pipelines.transformation_service import TransformationService
-from packages.storage.duckdb_store import DuckDBStore
-from packages.storage.run_metadata import RunMetadataRepository
-
 from packages.shared.auth import build_oidc_provider, build_session_manager
 from packages.shared.settings import AppSettings
+from packages.storage.duckdb_store import DuckDBStore
 from packages.storage.ingestion_config import IngestionConfigRepository
 from packages.storage.postgres_reporting import PostgresReportingStore
+from packages.storage.run_metadata import RunMetadataRepository
 from tests.oidc_test_support import MockOidcIssuer
 from tests.postgres_test_support import running_postgres_container
 
