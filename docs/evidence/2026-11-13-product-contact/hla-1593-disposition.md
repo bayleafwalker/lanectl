@@ -1,6 +1,7 @@
 # HLA1593: full record-specific attention outcome
 
-Source: public homelab-analytics b41e4c9ae2ff7deb58d38b824feffd2fc316bc31;
+Initial planning source: public homelab-analytics b41e4c9ae2ff7deb58d38b824feffd2fc316bc31;
+current canonical source: 9cf62cb7271ed0e15e35877ab772709808470bea;
 served item homelab-analytics#1593, accepted core-household-operating-picture.md.
 Outcome remains two real domains ranked by urgency, each item with its own
 record-specific detail destination. No product delivery is claimed by this plan.
@@ -23,8 +24,11 @@ Required corrections: existing valid opaque IDs containing slash round-trip to
 their own record; unknown IDs return404. Detail APIs remain under their source
 publication segments, so attention-only permission cannot expose source detail.
 Use exact parameterized lookup before limits, never an equal-looking row. Keep
-published-or-fallback authority: old snapshots missing identity project null with
-existing snapshot.projected semantics until deliberate regeneration. Identity/key
+published-or-warehouse authority: retained snapshots missing identity keep their
+null projection. Current source publications can remain stale/NULL after a
+finance promotion repairs warehouse identities and captures history. PUBLISHED
+record reads must expose unavailable identity without warehouse fallback or a
+false absence claim. Identity/key
 compatibility is reviewed separately from additive column compatibility.
 
 Implementation stages (one integration owner): A canonical identity propagation,
@@ -34,23 +38,59 @@ detail route with real component/navigation tests; D generated contracts,
 independent review, required verify-fast, disposable complete dev qualification
 and canonical PR/CI merge. Whole Work stays incomplete until all stages pass.
 
-Stage A is delegated to a first-party Terra worker on an isolated interactive
-prerequisite branch, because migrations require review outside autonomous lane
-editing. Actual discovery required an additive existing Postgres publication-table
+Stage A landed through canonical HLA PR82 at the current source above. Its
+first-party Terra implementation used an isolated interactive prerequisite
+branch because migrations require review outside autonomous lane editing.
+Actual discovery required an additive existing Postgres publication-table
 upgrade as well as DuckDB migration: CREATE TABLE IF NOT EXISTS did not evolve
 existing columns. That necessary compatibility path is explicitly included in
 worker scope, with safe identifiers/types, incompatible-type refusal, old-row/
 snapshot preservation, atomic replacement failure and concurrency/schema tests.
-Only the existing disposable PostgreSQL test harness is authorized for runtime
-verification; no real services/credentials or production effects. No lane gate,
-policy or grant was widened. This prerequisite is not a partial Work closeout.
+That worker used the existing disposable PostgreSQL test harness; production
+services, credentials and effects remained outside its scope. No lane gate,
+policy or grant was widened. Independent review, actual disposable Postgres
+upgrade/concurrency probes, coordinator promotion replay and full verify-fast
+passed; all canonical CI passed. This prerequisite is not a partial Work closeout.
+
+Stage B's complete release `hla-attention-records-r5` is published. Its native
+Codex author and separate GoPro reviewer cover four own-source record APIs,
+opaque identity/encoding, real permission middleware, source selection before
+filtering, current publication authority and typed generated contracts. Actual
+base-failure checks passed. One unused typing comment was removed with identical
+AST/compiled-code proof and fresh independent exact-byte review before publication.
+Governed attempt `hla-attention-records-r5-a1` is live on DeepSeek Flash; no
+implementation acceptance or product delivery is claimed yet. The first two
+drafts remain held by their actual publication guards.
 
 Coordinator prerequisites measured: existing repo Node20.20.1, GNUmake4.4.1 from
 the pinned Nix store, Docker29.9.2, Compose5.7.0. Locked npm ci completed and web
-typecheck passed. Browser shared-library readiness remains under investigation.
+typecheck passed. Version-matched Ubuntu Playwright1.59.1 resolved the native
+host's glyph-rendering mismatch without baseline/tolerance changes; the stage-A
+full verification passed all55 UI checks. The owned browser container was removed.
 The legacy agent-preflight fails on SPRINTCTL_URL while served-profile reads work;
 source review confirms that helper is not a dependency of required verify-fast.
 No retired database URI was injected and that separate helper was not modified.
+
+Stage C's intention pass requires current-report labels distinct from the
+cashflow month, meaningful existing facts for every detail kind, all returned
+component rows and null-as-unknown handling. Severity3 ranks first before top8,
+ties remain stable and missing/non-numeric severity ranks last. Real navigation
+must show distinct same-kind records and preserve denied/not-found/unavailable
+states without alternate-path detail leakage. No observed-today claim, historical
+detail fallback, inferred savings, price aggregation or invented recommendations
+is authorized. Earlier type-section-only links and blanket encoded-slash404 plan
+fragments are superseded by known-key resolution and unknown-key404.
+
+| Detail kind | Existing facts to retain |
+| --- | --- |
+| Anomaly | Counterparty, booking date, amount/direction and reason |
+| Upcoming cost | Contract/provider, expected amount/currency, frequency, expected date and confidence |
+| Contract review | Provider/type, reason, current price/currency and available market reference |
+| Renewal | Contract/provider, renewal date/days remaining and current price/currency |
+
+Render only fields actually present in the public row models. Missing component
+labels or currency do not authorize invented values. Unavailable does not mean
+deleted or all-clear; a403 view must not obtain details through another path.
 
 Observation reservation495 was released and execution496 reserved without conflict;
 1593 is active. HLA1592 remains pending its distinct date-contract question. Host
