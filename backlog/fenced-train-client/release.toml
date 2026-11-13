@@ -6,6 +6,7 @@ title = "Execute ownership-compatible train checks through the separate-UID serv
 task_class = "recovery"
 size = "S"
 data_class = "public"
+eligible_lanes = ["restricted"]
 
 outcome = """
 Revision 3 is a bounded safety correction on the complete reviewed candidate
