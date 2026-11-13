@@ -1,0 +1,108 @@
+{
+  "observed_at": "2026-11-13T22:05:59.069328+00:00",
+  "installed_tag_commit": "f9267ea32e481f2a1ecf3f57b07ff0e888e1d0cf",
+  "plan": {
+    "authority": "existinglocalJSONL, installedreviewed0.2.9",
+    "release_tag_commit": "f9267ea32e481f2a1ecf3f57b07ff0e888e1d0cf",
+    "operations": [
+      {
+        "type": "release.publication.invalidated",
+        "item_id": "hla-attention-source-reader",
+        "data": {
+          "release_id": "hla-attention-source-reader",
+          "revision": 1,
+          "target_event_sha256": "5c6989ae93a6a3aa5162d6adbaf4d23812c5b6cad2ae8c2c2e47a282bc87c534",
+          "reason": "Draft-discovery record is invalid as publication evidence; guarded publication occurred later, with exact transition time unrecorded. Preserve actual native claims, outcomes and Git publication proof.",
+          "evidence_ref": "git:97f626353bbf97933c33bce17ed5e6829644b189:docs/evidence/2026-11-13-product-contact/hla-source-reader-publication-proof.json"
+        },
+        "original_ts": "2026-11-13T19:38:12Z"
+      },
+      {
+        "type": "release.publication.invalidated",
+        "item_id": "hla-attention-source-reader",
+        "data": {
+          "release_id": "hla-attention-source-reader",
+          "revision": 2,
+          "target_event_sha256": "1dfa06dd071e42cbb550c47d291497ea96cd8e51f760f8ef8bbdd025f9c58c38",
+          "reason": "Draft-discovery record is invalid as publication evidence; guarded publication occurred later, with exact transition time unrecorded. Preserve actual native claims, outcomes and Git publication proof.",
+          "evidence_ref": "git:97f626353bbf97933c33bce17ed5e6829644b189:docs/evidence/2026-11-13-product-contact/hla-source-reader-publication-proof.json"
+        },
+        "original_ts": "2026-11-13T20:08:16Z"
+      }
+    ],
+    "postcondition": "same-revision nondraft observation, operational items/attempts/routing unchanged; no known retrospective queue interval",
+    "already_applied": false
+  },
+  "new_events": [
+    {
+      "data": {
+        "evidence_ref": "git:97f626353bbf97933c33bce17ed5e6829644b189:docs/evidence/2026-11-13-product-contact/hla-source-reader-publication-proof.json",
+        "reason": "Draft-discovery record is invalid as publication evidence; guarded publication occurred later, with exact transition time unrecorded. Preserve actual native claims, outcomes and Git publication proof.",
+        "release_id": "hla-attention-source-reader",
+        "revision": 1,
+        "target_event_sha256": "5c6989ae93a6a3aa5162d6adbaf4d23812c5b6cad2ae8c2c2e47a282bc87c534"
+      },
+      "item_id": "hla-attention-source-reader",
+      "schema": "lanectl.event/v1",
+      "ts": "2026-11-13T22:05:59Z",
+      "type": "release.publication.invalidated"
+    },
+    {
+      "data": {
+        "evidence_ref": "git:97f626353bbf97933c33bce17ed5e6829644b189:docs/evidence/2026-11-13-product-contact/hla-source-reader-publication-proof.json",
+        "reason": "Draft-discovery record is invalid as publication evidence; guarded publication occurred later, with exact transition time unrecorded. Preserve actual native claims, outcomes and Git publication proof.",
+        "release_id": "hla-attention-source-reader",
+        "revision": 2,
+        "target_event_sha256": "1dfa06dd071e42cbb550c47d291497ea96cd8e51f760f8ef8bbdd025f9c58c38"
+      },
+      "item_id": "hla-attention-source-reader",
+      "schema": "lanectl.event/v1",
+      "ts": "2026-11-13T22:05:59Z",
+      "type": "release.publication.invalidated"
+    },
+    {
+      "data": {
+        "provenance": "nondraft-observation",
+        "release_id": "hla-attention-source-reader",
+        "revision": 2
+      },
+      "item_id": "hla-attention-source-reader",
+      "schema": "lanectl.event/v1",
+      "ts": "2026-11-13T22:05:59Z",
+      "type": "release.published"
+    }
+  ],
+  "original_history_prefix_unchanged": true,
+  "all_operational_projections_unchanged": true,
+  "attempts_routing_caps_outcomes_unchanged": true,
+  "source_state": "parked",
+  "queue": {
+    "seconds": null,
+    "known_seconds": null,
+    "basis": "unknown: contributing interval has a missing endpoint",
+    "intervals": [
+      {
+        "source": "lanectl.events",
+        "kind": "queued",
+        "basis": "earliest remaining publication -> first claim; unknown unless preceding guarded receipt",
+        "attempt_id": null,
+        "start": null,
+        "end": "2026-11-13T20:40:15Z",
+        "start_checkpoint": null,
+        "end_checkpoint": 2473,
+        "seconds": null
+      }
+    ]
+  },
+  "surviving_publication_provenance": "nondraft-observation",
+  "history_backup": {
+    "path": "/home/bayleaf/.local/state/lanectl/backups/lanectl-pub-history-backup-v3qpff8u/events.jsonl",
+    "directory_mode": "0700",
+    "file_mode": "0600",
+    "durability": "host-persistent local backup; not cross-host-replicated",
+    "original_session_local_copy_moved": true,
+    "moved_at": "2026-11-13T22:21:05.784331+00:00",
+    "full_history_published": false
+  },
+  "durability": "selected proof cross-host-replicated after Git publication; local lane log host-persistent"
+}

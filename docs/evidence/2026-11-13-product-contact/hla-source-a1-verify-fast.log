@@ -1,0 +1,380 @@
+.venv/bin/python -m ruff check .
+All checks passed!
+.venv/bin/python -m mypy apps packages
+Success: no issues found in 401 source files
+.venv/bin/python -m pytest -q -m "not slow"
+........................................................................ [  2%]
+........................................................................ [  5%]
+........................................................................ [  7%]
+........................................................................ [ 10%]
+................................................................................................ [ 14%]
+........................................................................ [ 16%]
+........................................................................ [ 19%]
+........................................................................ [ 22%]
+........................................................................ [ 24%]
+........................................................................ [ 27%]
+........................................................................ [ 29%]
+........................................................................ [ 32%]
+........................................................................ [ 35%]
+........................................................................ [ 37%]
+........................................................................ [ 40%]
+........................................................................ [ 43%]
+........................................................................ [ 45%]
+........................................................................ [ 48%]
+........................................................................ [ 51%]
+........................................................................ [ 53%]
+........................................................................ [ 56%]
+........................................................................ [ 59%]
+........................................................................ [ 61%]
+........................................................................ [ 64%]
+........................................................................ [ 67%]
+........................................................................ [ 69%]
+........................................................................ [ 72%]
+........................................................................ [ 74%]
+........................................................................ [ 77%]
+........................................................................ [ 80%]
+........................................................................ [ 82%]
+........................................................................ [ 85%]
+........................................................................ [ 88%]
+........................................................................ [ 90%]
+........................................................................ [ 93%]
+........................................................................ [ 96%]
+........................................................................ [ 98%]
+.................................                                        [100%]
+=============================== warnings summary ===============================
+tests/test_api_auth.py::test_api_local_single_user_break_glass_enforces_cidr_and_ttl_session_cookie
+  /tmp/hla-source-qualification-0fd/.venv/lib/python3.13/site-packages/starlette/testclient.py:445: DeprecationWarning: Setting per-request cookies=<...> is being deprecated, because the expected behaviour on cookie persistence is ambiguous. Set cookies directly on the client instance instead.
+    return super().request(
+
+tests/test_api_main.py::ApiMainTests::test_build_lazy_transformation_service_defers_duckdb_open
+tests/test_api_main.py::ApiMainTests::test_build_reporting_service_uses_published_mode_for_postgres_reporting
+  /tmp/hla-source-qualification-0fd/packages/storage/runtime.py:91: RuntimeWarning: Control-plane backend is SQLite but HOMELAB_ANALYTICS_POSTGRES_DSN is set. The control plane will NOT use Postgres unless HOMELAB_ANALYTICS_CONTROL_PLANE_DSN is also set (HOMELAB_ANALYTICS_POSTGRES_DSN is shared with reporting only). Set HOMELAB_ANALYTICS_CONTROL_PLANE_BACKEND=postgres and HOMELAB_ANALYTICS_CONTROL_PLANE_DSN to use Postgres for the control plane.
+    backend = _resolve_control_plane_backend(settings)
+
+tests/test_api_main.py::ApiMainTests::test_build_lazy_transformation_service_defers_duckdb_open
+tests/test_api_main.py::ApiMainTests::test_build_reporting_service_uses_published_mode_for_postgres_reporting
+  /tmp/hla-source-qualification-0fd/packages/storage/runtime.py:105: RuntimeWarning: Control-plane backend is SQLite but HOMELAB_ANALYTICS_POSTGRES_DSN is set. The control plane will NOT use Postgres unless HOMELAB_ANALYTICS_CONTROL_PLANE_DSN is also set (HOMELAB_ANALYTICS_POSTGRES_DSN is shared with reporting only). Set HOMELAB_ANALYTICS_CONTROL_PLANE_BACKEND=postgres and HOMELAB_ANALYTICS_CONTROL_PLANE_DSN to use Postgres for the control plane.
+    backend = _resolve_control_plane_backend(settings)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+2721 passed, 32 deselected, 5 warnings, 120 subtests passed in 554.86s (0:09:14)
+.venv/bin/python -m pytest -q tests/test_blob_store.py tests/test_run_metadata_repository.py tests/test_storage_runtime.py tests/test_sqlite_control_plane_smoke.py tests/test_sqlite_control_plane_store_contract.py tests/test_sqlite_auth_store_contract.py tests/test_migration_runner.py
+............................................................             [100%]
+60 passed in 5.96s
+.venv/bin/python -m pytest -q tests/test_requirements_contract.py tests/test_repository_contract.py
+.....................                                                    [100%]
+21 passed in 0.05s
+.venv/bin/python -m pytest -q tests/test_agent_guidance.py
+..............                                                           [100%]
+14 passed in 0.02s
+.venv/bin/python -m pytest -q tests/test_architecture_contract.py
+........................................................................ [ 71%]
+.............................                                            [100%]
+101 passed in 1.27s
+.venv/bin/python -m apps.api.contract_artifacts export-check
+Backend-owned contract exports are in sync.
+PATH=/projects/dev/homelab-analytics/.tooling/node-v20.20.1-linux-x64/bin:$PATH npm --prefix apps/web/frontend run codegen:check
+
+> codegen:check
+> node scripts/codegen.mjs --check
+
+PATH=/projects/dev/homelab-analytics/.tooling/node-v20.20.1-linux-x64/bin:$PATH npm --prefix apps/web/frontend run tokens:check
+
+> tokens:check
+> node scripts/build-ui-tokens.mjs --check
+
+PATH=/projects/dev/homelab-analytics/.tooling/node-v20.20.1-linux-x64/bin:$PATH npm --prefix apps/web/frontend run contracts:check
+
+> contracts:check
+> node scripts/check-transport-contracts.mjs
+
+Frontend transport contract check passed.
+PATH=/projects/dev/homelab-analytics/.tooling/node-v20.20.1-linux-x64/bin:$PATH npm --prefix apps/web/frontend run build
+
+> build
+> npm run tokens:build && next build
+
+
+> tokens:build
+> node scripts/build-ui-tokens.mjs
+
+  ▲ Next.js 14.2.35
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully
+   Linting and checking validity of types ...
+   Collecting page data ...
+   Generating static pages (0/84) ...
+   Generating static pages (21/84) 
+   Generating static pages (42/84) 
+   Generating static pages (63/84) 
+ ✓ Generating static pages (84/84)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                                                                           Size     First Load JS
+┌ ƒ /                                                                                 3.97 kB         100 kB
+├ ○ /_not-found                                                                       158 B          87.5 kB
+├ ƒ /api/scenarios/[[...path]]                                                        0 B                0 B
+├ ƒ /auth/callback                                                                    0 B                0 B
+├ ƒ /auth/login                                                                       0 B                0 B
+├ ƒ /auth/logout                                                                      0 B                0 B
+├ ƒ /briefing                                                                         779 B            99 kB
+├ ƒ /briefing/lineage                                                                 207 B          98.5 kB
+├ ƒ /budgets                                                                          140 B          98.1 kB
+├ ƒ /cashflow                                                                         2.4 kB         98.4 kB
+├ ƒ /console                                                                          2.43 kB        98.4 kB
+├ ƒ /control                                                                          3.69 kB        99.7 kB
+├ ƒ /control/agents                                                                   2.36 kB        98.4 kB
+├ ƒ /control/agents/proposals/[actionId]/approve                                      0 B                0 B
+├ ƒ /control/agents/proposals/[actionId]/dismiss                                      0 B                0 B
+├ ƒ /control/catalog                                                                  3.57 kB        99.6 kB
+├ ƒ /control/catalog/column-mappings                                                  0 B                0 B
+├ ƒ /control/catalog/column-mappings/[columnMappingId]/archive                        0 B                0 B
+├ ƒ /control/catalog/dataset-contracts                                                0 B                0 B
+├ ƒ /control/catalog/dataset-contracts/[datasetContractId]/archive                    0 B                0 B
+├ ƒ /control/catalog/extension-registry-sources                                       0 B                0 B
+├ ƒ /control/catalog/extension-registry-sources/[extensionRegistrySourceId]           0 B                0 B
+├ ƒ /control/catalog/extension-registry-sources/[extensionRegistrySourceId]/activate  0 B                0 B
+├ ƒ /control/catalog/extension-registry-sources/[extensionRegistrySourceId]/archive   0 B                0 B
+├ ƒ /control/catalog/extension-registry-sources/[extensionRegistrySourceId]/sync      0 B                0 B
+├ ƒ /control/catalog/preview                                                          0 B                0 B
+├ ƒ /control/catalog/publication-definitions                                          0 B                0 B
+├ ƒ /control/catalog/publication-definitions/[publicationDefinitionId]                0 B                0 B
+├ ƒ /control/catalog/publication-definitions/[publicationDefinitionId]/archive        0 B                0 B
+├ ƒ /control/catalog/source-assets                                                    0 B                0 B
+├ ƒ /control/catalog/source-assets/[sourceAssetId]                                    0 B                0 B
+├ ƒ /control/catalog/source-assets/[sourceAssetId]/archive                            0 B                0 B
+├ ƒ /control/catalog/source-assets/[sourceAssetId]/delete                             0 B                0 B
+├ ƒ /control/catalog/source-systems                                                   0 B                0 B
+├ ƒ /control/catalog/source-systems/[sourceSystemId]                                  0 B                0 B
+├ ƒ /control/catalog/transformation-packages                                          0 B                0 B
+├ ƒ /control/catalog/transformation-packages/[transformationPackageId]                0 B                0 B
+├ ƒ /control/catalog/transformation-packages/[transformationPackageId]/archive        0 B                0 B
+├ ƒ /control/confidence                                                               140 B          98.1 kB
+├ ƒ /control/execution                                                                140 B          98.1 kB
+├ ƒ /control/execution/dispatches/[dispatchId]                                        140 B          98.1 kB
+├ ƒ /control/execution/dispatches/[dispatchId]/retry                                  0 B                0 B
+├ ƒ /control/execution/execution-schedules                                            0 B                0 B
+├ ƒ /control/execution/execution-schedules/[scheduleId]                               0 B                0 B
+├ ƒ /control/execution/execution-schedules/[scheduleId]/archive                       0 B                0 B
+├ ƒ /control/execution/execution-schedules/[scheduleId]/delete                        0 B                0 B
+├ ƒ /control/execution/ingestion-definitions                                          0 B                0 B
+├ ƒ /control/execution/ingestion-definitions/[ingestionDefinitionId]                  0 B                0 B
+├ ƒ /control/execution/ingestion-definitions/[ingestionDefinitionId]/archive          0 B                0 B
+├ ƒ /control/execution/ingestion-definitions/[ingestionDefinitionId]/delete           0 B                0 B
+├ ƒ /control/execution/ingestion-definitions/[ingestionDefinitionId]/process          0 B                0 B
+├ ƒ /control/execution/schedule-dispatches                                            0 B                0 B
+├ ƒ /control/freshness                                                                139 B          98.1 kB
+├ ƒ /control/lineage                                                                  140 B          98.1 kB
+├ ƒ /control/packs                                                                    2.18 kB        98.2 kB
+├ ƒ /control/packs/[packKey]/actions                                                  0 B                0 B
+├ ƒ /control/policies                                                                 5.61 kB         102 kB
+├ ƒ /control/policies/[policyId]                                                      0 B                0 B
+├ ƒ /control/policies/[policyId]/delete                                               0 B                0 B
+├ ƒ /control/policies/[policyId]/enabled                                              0 B                0 B
+├ ƒ /control/policies/create                                                          0 B                0 B
+├ ƒ /control/policies/preview                                                         0 B                0 B
+├ ƒ /control/service-tokens                                                           0 B                0 B
+├ ƒ /control/service-tokens/[tokenId]/revoke                                          0 B                0 B
+├ ƒ /control/users                                                                    0 B                0 B
+├ ƒ /control/users/[userId]                                                           0 B                0 B
+├ ƒ /control/users/[userId]/password                                                  0 B                0 B
+├ ƒ /costs                                                                            3.68 kB        99.7 kB
+├ ƒ /first-answer                                                                     140 B          98.1 kB
+├ ○ /health                                                                           0 B                0 B
+├ ƒ /homelab                                                                          4.27 kB         100 kB
+├ ƒ /homelab/actions/proposals/[actionId]/approve                                     0 B                0 B
+├ ƒ /homelab/actions/proposals/[actionId]/dismiss                                     0 B                0 B
+├ ƒ /ingest-summary/[runId]                                                           140 B          98.1 kB
+├ ƒ /loans                                                                            3.75 kB        99.7 kB
+├ ƒ /login                                                                            158 B          87.5 kB
+├ ○ /metrics                                                                          0 B                0 B
+├ ƒ /onboarding                                                                       142 B           101 kB
+├ ƒ /operating-picture                                                                139 B          98.1 kB
+├ ○ /ready                                                                            0 B                0 B
+├ ƒ /reports                                                                          4.54 kB         101 kB
+├ ƒ /retro                                                                            211 B          96.2 kB
+├ ƒ /retro/control                                                                    2.04 kB          98 kB
+├ ƒ /retro/control/agents                                                             211 B          96.2 kB
+├ ƒ /retro/control/catalog                                                            211 B          96.2 kB
+├ ƒ /retro/control/execution                                                          211 B          96.2 kB
+├ ƒ /retro/control/execution/dispatches/[dispatchId]/retry                            0 B                0 B
+├ ƒ /retro/control/execution/schedule-dispatches                                      0 B                0 B
+├ ƒ /retro/control/policies                                                           211 B          96.2 kB
+├ ƒ /retro/money                                                                      211 B          96.2 kB
+├ ƒ /retro/operations                                                                 211 B          96.2 kB
+├ ƒ /retro/operations/actions/proposals/[actionId]/approve                            0 B                0 B
+├ ƒ /retro/operations/actions/proposals/[actionId]/dismiss                            0 B                0 B
+├ ƒ /retro/terminal                                                                   1.44 kB        97.4 kB
+├ ƒ /retro/terminal/commands                                                          0 B                0 B
+├ ƒ /retro/terminal/execute                                                           0 B                0 B
+├ ƒ /retro/utilities                                                                  211 B          96.2 kB
+├ ƒ /review                                                                           140 B          98.1 kB
+├ ƒ /review/category-override                                                         0 B                0 B
+├ ƒ /runs                                                                             140 B          98.1 kB
+├ ƒ /runs/[runId]                                                                     140 B          98.1 kB
+├ ƒ /runs/[runId]/retry                                                               0 B                0 B
+├ ƒ /scenarios                                                                        2.21 kB        98.2 kB
+├ ƒ /scenarios/[scenarioId]                                                           139 B          98.1 kB
+├ ƒ /scenarios/compare                                                                4.1 kB          100 kB
+├ ƒ /sources                                                                          140 B          98.1 kB
+├ ƒ /upload                                                                           142 B           101 kB
+├ ƒ /upload/account-transactions                                                      0 B                0 B
+├ ƒ /upload/budgets                                                                   0 B                0 B
+├ ƒ /upload/configured-csv                                                            0 B                0 B
+├ ƒ /upload/contract-prices                                                           0 B                0 B
+├ ƒ /upload/detect                                                                    0 B                0 B
+├ ƒ /upload/dry-run                                                                   0 B                0 B
+├ ƒ /upload/ha-states                                                                 0 B                0 B
+├ ƒ /upload/loan-repayments                                                           0 B                0 B
+├ ƒ /upload/subscriptions                                                             0 B                0 B
+├ ƒ /utilities                                                                        140 B          98.1 kB
+├ ƒ /utilities/battery-plan                                                           140 B          98.1 kB
+├ ƒ /utilities/battery-plan/decisions                                                 0 B                0 B
+├ ƒ /utilities/battery-plan/decisions/[decisionId]/follow-ups                         0 B                0 B
+├ ƒ /utilities/battery-plan/decisions/[decisionId]/reopen                             0 B                0 B
+├ ƒ /utilities/battery-plan/decisions/[decisionId]/stop                               0 B                0 B
+├ ƒ /utilities/battery-plan/evidence-trace                                            0 B                0 B
+├ ƒ /utilities/energy-contract                                                        140 B          98.1 kB
+├ ƒ /utilities/energy-contract/decisions                                              0 B                0 B
+├ ƒ /utilities/energy-contract/decisions/[decisionId]/follow-ups                      0 B                0 B
+├ ƒ /utilities/energy-contract/decisions/[decisionId]/reopen                          0 B                0 B
+├ ƒ /utilities/energy-contract/decisions/[decisionId]/stop                            0 B                0 B
+├ ƒ /utilities/energy-contract/evidence-trace                                         0 B                0 B
+└ ƒ /wallboard                                                                        1.57 kB        97.6 kB
++ First Load JS shared by all                                                         87.3 kB
+  ├ chunks/2117-b3c7e0d52508441e.js                                                   31.7 kB
+  ├ chunks/fd9d1056-a438de3ab625d30b.js                                               53.6 kB
+  └ other shared chunks (total)                                                       1.92 kB
+
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
+PATH=/projects/dev/homelab-analytics/.tooling/node-v20.20.1-linux-x64/bin:$PATH npm --prefix apps/web/frontend run typecheck
+
+> typecheck
+> tsc --noEmit
+
+PATH=/projects/dev/homelab-analytics/.tooling/node-v20.20.1-linux-x64/bin:$PATH npm --prefix apps/web/frontend run ui:test
+
+> ui:test
+> start-server-and-test storybook http://127.0.0.1:6006 playwright:test
+
+1: starting server using command "npm run storybook"
+and when url "[ 'http://127.0.0.1:6006' ]" is responding with HTTP status code 200
+running tests using command "npm run playwright:test"
+
+
+> storybook
+> npm run tokens:build && storybook dev -p 6006 --ci
+
+
+> tokens:build
+> node scripts/build-ui-tokens.mjs
+
+@storybook/core v8.6.18
+
+
+attention => Storybook now collects completely anonymous telemetry regarding usage.
+This information is used to shape Storybook's roadmap and prioritize features.
+You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
+https://storybook.js.org/telemetry
+
+info => Serving static files from ././public at /
+info => Starting manager..
+info => Starting preview..
+info Using tsconfig paths for react-docgen
+╭─────────────────────────────────────────────────────────────────────╮
+│                                                                     │
+│   [38;2;162;224;94mStorybook 8.6.18 for react-vite started[39m                           │
+│   218 ms for manager and 337 ms for preview                         │
+│                                                                     │
+│   Local:            http://localhost:6006/                          │
+│   On your network:  http://192.168.10.55:6006/                      │
+│                                                                     │
+│   [38;2;243;173;56mA new version (10.6.5) is available![39m                              │
+│                                                                     │
+│   Upgrade now: [38;2;162;224;94mnpx storybook@latest upgrade[39m                         │
+│                                                                     │
+│   Read full changelog:                                              │
+│   https://github.com/storybookjs/storybook/blob/main/CHANGELOG.md   │
+│                                                                     │
+╰─────────────────────────────────────────────────────────────────────╯
+
+> playwright:test
+> playwright test
+
+
+Running 55 tests using 4 workers
+
+  ✓   3 [chromium] › playwright/ui-innovation.spec.js:28:3 › cashflow sankey demo-month renders flows and stays accessible (1.6s)
+  ✓   1 [chromium] › playwright/ui-wave-3.spec.js:21:1 › explain opens from the keyboard and closes with Escape (1.6s)
+  ✓   4 [chromium] › playwright/storybook-ui.spec.js:18:1 › app shell story stays accessible and visually stable (1.7s)
+  ✓   2 [chromium] › playwright/ops-console.spec.js:22:3 › console admin stays accessible (2.0s)
+  ✓   6 [chromium] › playwright/ui-wave-3.spec.js:44:1 › explain closes on an outside click (528ms)
+  ✓   5 [chromium] › playwright/ui-innovation.spec.js:28:3 › cashflow sankey categorised-with-occasional renders flows and stays accessible (933ms)
+  ✓   7 [chromium] › playwright/storybook-ui.spec.js:27:1 › retro shell story stays accessible and visually stable (1.0s)
+  ✓   9 [chromium] › playwright/ui-wave-3.spec.js:56:1 › explain says when the lineage walk left older runs out (871ms)
+  ✓   8 [chromium] › playwright/ops-console.spec.js:22:3 › console reader stays accessible (1.2s)
+  ✓  11 [chromium] › playwright/storybook-ui.spec.js:36:1 › msw-backed story resolves mocked response (566ms)
+  ✓  10 [chromium] › playwright/ui-innovation.spec.js:28:3 › cashflow sankey focused-payee renders flows and stays accessible (858ms)
+  ✓  12 [chromium] › playwright/ui-wave-3.spec.js:65:1 › explain says nothing about truncation for a whole graph (493ms)
+  ✓  13 [chromium] › playwright/ops-console.spec.js:22:3 › console nothing-yet stays accessible (994ms)
+  ✓  15 [chromium] › playwright/ui-innovation.spec.js:28:3 › cashflow sankey overspent renders flows and stays accessible (841ms)
+  ✓  16 [chromium] › playwright/ui-wave-3.spec.js:73:3 › explain lineage-unavailable stays accessible when open (817ms)
+  ✓  14 [chromium] › playwright/storybook-ui.spec.js:42:1 › upload wizard enforces accept/retry gating before upload (1.3s)
+  ✓  17 [chromium] › playwright/ops-console.spec.js:30:3 › heat grid full stays accessible (873ms)
+  ✓  18 [chromium] › playwright/ui-innovation.spec.js:28:3 › cashflow sankey sparse renders flows and stays accessible (817ms)
+  ✓  19 [chromium] › playwright/ui-wave-3.spec.js:73:3 › explain wallboard stays accessible when open (841ms)
+  ✓  20 [chromium] › playwright/storybook-ui.spec.js:89:1 › policy template refuses submission until required inputs are supplied (894ms)
+  ✓  22 [chromium] › playwright/ui-innovation.spec.js:37:1 › cashflow sankey payees are keyboard reachable links (465ms)
+  ✓  23 [chromium] › playwright/ui-wave-3.spec.js:81:1 › explain panel stays inside a phone-width viewport (532ms)
+  ✓  21 [chromium] › playwright/ops-console.spec.js:30:3 › heat grid sparse stays accessible (878ms)
+  ✓  24 [chromium] › playwright/storybook-ui.spec.js:117:1 › operating picture v2 story shows the grouped net in the hero (474ms)
+  ✓  25 [chromium] › playwright/ui-innovation.spec.js:45:1 › cashflow sankey draws nothing when no money has been published (448ms)
+  ✓  27 [chromium] › playwright/ops-console.spec.js:30:3 › heat grid date-only stays accessible (878ms)
+  ✓  28 [chromium] › playwright/ui-innovation.spec.js:52:3 › cashflow bucket-ledger lists the buckets and stays accessible (779ms)
+  ✓  26 [chromium] › playwright/ui-wave-3.spec.js:90:1 › responsive table is a table on wide screens and slips at phone width (1.5s)
+  ✓  30 [chromium] › playwright/ui-innovation.spec.js:52:3 › cashflow bucket-ledger-overspent lists the buckets and stays accessible (755ms)
+  ✓  29 [chromium] › playwright/ops-console.spec.js:30:3 › heat grid empty stays accessible (837ms)
+  ✓  33 [chromium] › playwright/ops-console.spec.js:38:1 › console fits one 1440x900 screen without scrolling (447ms)
+  ✓  31 [chromium] › playwright/ui-wave-3.spec.js:110:1 › as-of scrubber marks the viewed month and shows gaps as inert (853ms)
+  ✓  32 [chromium] › playwright/ui-innovation.spec.js:52:3 › cashflow bucket-ledger-sparse lists the buckets and stays accessible (758ms)
+  ✓  35 [chromium] › playwright/ui-wave-3.spec.js:120:1 › sparkline month labels stay readable and never overlap at any card width (470ms)
+  ✓  34 [chromium] › playwright/ops-console.spec.js:63:1 › F1-F5 focus panels and Ctrl+K opens the shared command palette (523ms)
+  ✓  37 [chromium] › playwright/ops-console.spec.js:84:1 › console stacks at phone width without horizontal scroll (465ms)
+  ✓  36 [chromium] › playwright/ui-innovation.spec.js:60:3 › briefing mixed renders every section and stays accessible (872ms)
+  ✓  38 [chromium] › playwright/ui-innovation.spec.js:60:3 › briefing nothing-trusted-yet renders every section and stays accessible (824ms)
+  ✓  39 [chromium] › playwright/ui-innovation.spec.js:67:1 › cashflow flow list is the narrow-screen alternative (766ms)
+  ✓  40 [chromium] › playwright/ui-innovation.spec.js:74:3 › wallboard standard stays accessible (812ms)
+  ✓  41 [chromium] › playwright/ui-innovation.spec.js:74:3 › wallboard compact stays accessible (806ms)
+  ✓  42 [chromium] › playwright/ui-innovation.spec.js:74:3 › wallboard nothing-connected stays accessible (760ms)
+  ✓  43 [chromium] › playwright/ui-innovation.spec.js:81:1 › wallboard standard lays out the kiosk grid (464ms)
+  ✓  44 [chromium] › playwright/ui-innovation.spec.js:106:1 › wallboard compact mode hides the event feed and hotkey hint (449ms)
+  ✓  45 [chromium] › playwright/ui-innovation.spec.js:127:1 › wallboard refresh pauses while hidden and refreshes on return (454ms)
+  ✓  46 [chromium] › playwright/ui-innovation.spec.js:149:1 › wallboard refresh ticks without focus but not while hidden or hovered (3.3s)
+  ✓  47 [chromium] › playwright/ui-innovation.spec.js:168:3 › wallboard panel service-tile-up renders (738ms)
+  ✓  48 [chromium] › playwright/ui-innovation.spec.js:168:3 › wallboard panel devices renders (738ms)
+  ✓  49 [chromium] › playwright/ui-innovation.spec.js:168:3 › wallboard panel events renders (734ms)
+  ✓  50 [chromium] › playwright/ui-innovation.spec.js:168:3 › wallboard panel power renders (727ms)
+  ✓  51 [chromium] › playwright/ui-innovation.spec.js:168:3 › wallboard panel power-ambiguous renders (713ms)
+  ✓  52 [chromium] › playwright/ui-innovation.spec.js:175:1 › app shell rail groups the nav, marks the current page and stays accessible (794ms)
+  ✓  53 [chromium] › playwright/ui-innovation.spec.js:183:1 › app shell collapses to a menu button at phone width (456ms)
+  ✓  54 [chromium] › playwright/ui-innovation.spec.js:195:1 › state panels expose one alert and polite statuses (741ms)
+  ✓  55 [chromium] › playwright/ui-innovation.spec.js:201:1 › command palette opens with the keyboard and follows the highlighted link (942ms)
+
+  55 passed (25.3s)
+helm lint charts/homelab-analytics
+==> Linting charts/homelab-analytics
+[INFO] Chart.yaml: icon is recommended
+
+1 chart(s) linted, 0 chart(s) failed
+
+Browserslist: caniuse-lite is outdated. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+Browserslist: caniuse-lite is outdated. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme

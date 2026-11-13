@@ -1,0 +1,167 @@
+FFF                                                                      [100%]
+=================================== FAILURES ===================================
+____________ test_warehouse_real_lease_acquisition_failures[driver] ____________
+
+tmp_path = PosixPath('/tmp/pytest-of-bayleaf/pytest-14949/test_warehouse_real_lease_acqu0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7ddf9a5e0b00>
+failure_kind = 'driver'
+
+    @pytest.mark.parametrize('failure_kind', ['driver', 'busy', 'program'])
+    def test_warehouse_real_lease_acquisition_failures(
+        tmp_path: Any, monkeypatch: pytest.MonkeyPatch, failure_kind: str
+    ) -> None:
+        import packages.storage.duckdb_store as duckdb_store
+        from packages.pipelines.warehouse_session import (
+            WarehouseSessionManager,
+            WarehouseSessionTransformationService,
+            _ReadOnlyTransformationService,
+        )
+    
+        path = tmp_path / 'synthetic.duckdb'
+        store = DuckDBStore.open(str(path))
+        try:
+            ts = TransformationService(store)
+            seed(ts)
+            ts.refresh_publications(REFRESH)
+            item_id, expected = select_groups(store)['anomaly']
+        finally:
+            store.close()
+    
+        def build(leased_store: Any, read_only: bool) -> Any:
+            if read_only:
+                return _ReadOnlyTransformationService(leased_store)
+            return TransformationService(leased_store)
+    
+        manager = WarehouseSessionManager(path, build, idle_timeout_seconds=0)
+        service = ReportingService(
+            WarehouseSessionTransformationService(manager), access_mode=ReportingAccessMode.WAREHOUSE
+        )
+        try:
+>           get = facade(service)
+                  ^^^^^^^^^^^^^^^
+
+tests/test_attention_source_records.py:585: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+service = <packages.pipelines.reporting_service.ReportingService object at 0x7ddf9a3b5010>
+
+    def facade(service: ReportingService) -> Any:
+>       assert callable(getattr(service, 'get_attention_record', None)), 'missing attention source reader'
+E       AssertionError: missing attention source reader
+E       assert False
+E        +  where False = callable(None)
+E        +    where None = getattr(<packages.pipelines.reporting_service.ReportingService object at 0x7ddf9a3b5010>, 'get_attention_record', None)
+
+tests/test_attention_source_records.py:171: AssertionError
+_____________ test_warehouse_real_lease_acquisition_failures[busy] _____________
+
+tmp_path = PosixPath('/tmp/pytest-of-bayleaf/pytest-14949/test_warehouse_real_lease_acqu1')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7ddf9a5e09d0>
+failure_kind = 'busy'
+
+    @pytest.mark.parametrize('failure_kind', ['driver', 'busy', 'program'])
+    def test_warehouse_real_lease_acquisition_failures(
+        tmp_path: Any, monkeypatch: pytest.MonkeyPatch, failure_kind: str
+    ) -> None:
+        import packages.storage.duckdb_store as duckdb_store
+        from packages.pipelines.warehouse_session import (
+            WarehouseSessionManager,
+            WarehouseSessionTransformationService,
+            _ReadOnlyTransformationService,
+        )
+    
+        path = tmp_path / 'synthetic.duckdb'
+        store = DuckDBStore.open(str(path))
+        try:
+            ts = TransformationService(store)
+            seed(ts)
+            ts.refresh_publications(REFRESH)
+            item_id, expected = select_groups(store)['anomaly']
+        finally:
+            store.close()
+    
+        def build(leased_store: Any, read_only: bool) -> Any:
+            if read_only:
+                return _ReadOnlyTransformationService(leased_store)
+            return TransformationService(leased_store)
+    
+        manager = WarehouseSessionManager(path, build, idle_timeout_seconds=0)
+        service = ReportingService(
+            WarehouseSessionTransformationService(manager), access_mode=ReportingAccessMode.WAREHOUSE
+        )
+        try:
+>           get = facade(service)
+                  ^^^^^^^^^^^^^^^
+
+tests/test_attention_source_records.py:585: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+service = <packages.pipelines.reporting_service.ReportingService object at 0x7ddf9a3fe0d0>
+
+    def facade(service: ReportingService) -> Any:
+>       assert callable(getattr(service, 'get_attention_record', None)), 'missing attention source reader'
+E       AssertionError: missing attention source reader
+E       assert False
+E        +  where False = callable(None)
+E        +    where None = getattr(<packages.pipelines.reporting_service.ReportingService object at 0x7ddf9a3fe0d0>, 'get_attention_record', None)
+
+tests/test_attention_source_records.py:171: AssertionError
+___________ test_warehouse_real_lease_acquisition_failures[program] ____________
+
+tmp_path = PosixPath('/tmp/pytest-of-bayleaf/pytest-14949/test_warehouse_real_lease_acqu2')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7ddf9a395010>
+failure_kind = 'program'
+
+    @pytest.mark.parametrize('failure_kind', ['driver', 'busy', 'program'])
+    def test_warehouse_real_lease_acquisition_failures(
+        tmp_path: Any, monkeypatch: pytest.MonkeyPatch, failure_kind: str
+    ) -> None:
+        import packages.storage.duckdb_store as duckdb_store
+        from packages.pipelines.warehouse_session import (
+            WarehouseSessionManager,
+            WarehouseSessionTransformationService,
+            _ReadOnlyTransformationService,
+        )
+    
+        path = tmp_path / 'synthetic.duckdb'
+        store = DuckDBStore.open(str(path))
+        try:
+            ts = TransformationService(store)
+            seed(ts)
+            ts.refresh_publications(REFRESH)
+            item_id, expected = select_groups(store)['anomaly']
+        finally:
+            store.close()
+    
+        def build(leased_store: Any, read_only: bool) -> Any:
+            if read_only:
+                return _ReadOnlyTransformationService(leased_store)
+            return TransformationService(leased_store)
+    
+        manager = WarehouseSessionManager(path, build, idle_timeout_seconds=0)
+        service = ReportingService(
+            WarehouseSessionTransformationService(manager), access_mode=ReportingAccessMode.WAREHOUSE
+        )
+        try:
+>           get = facade(service)
+                  ^^^^^^^^^^^^^^^
+
+tests/test_attention_source_records.py:585: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+service = <packages.pipelines.reporting_service.ReportingService object at 0x7ddf9a3fee90>
+
+    def facade(service: ReportingService) -> Any:
+>       assert callable(getattr(service, 'get_attention_record', None)), 'missing attention source reader'
+E       AssertionError: missing attention source reader
+E       assert False
+E        +  where False = callable(None)
+E        +    where None = getattr(<packages.pipelines.reporting_service.ReportingService object at 0x7ddf9a3fee90>, 'get_attention_record', None)
+
+tests/test_attention_source_records.py:171: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_attention_source_records.py::test_warehouse_real_lease_acquisition_failures[driver]
+FAILED tests/test_attention_source_records.py::test_warehouse_real_lease_acquisition_failures[busy]
+FAILED tests/test_attention_source_records.py::test_warehouse_real_lease_acquisition_failures[program]
+3 failed, 8 deselected in 9.14s
+pytest exit: 1

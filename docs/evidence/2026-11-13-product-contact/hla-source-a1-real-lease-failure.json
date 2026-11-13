@@ -1,0 +1,20 @@
+{
+  "source_module": "/tmp/hla-source-review-0fd/packages/domains/overview/pipelines/attention_records.py",
+  "session_module": "/tmp/hla-source-review-0fd/packages/pipelines/warehouse_session.py",
+  "acquisition_path": "ReportingService -> run_on_warehouse -> WarehouseSessionManager.call/lease -> DuckDBStore.open -> injected connect_with_lock_retry",
+  "driver": {
+    "exception": "_duckdb.IOException",
+    "same_exception_object": true,
+    "is_unavailable": false,
+    "connect_factory_calls": 1
+  },
+  "busy": {
+    "exception": "packages.storage.duckdb_store.WarehouseBusyError",
+    "same_exception_object": true,
+    "is_unavailable": false,
+    "connect_factory_calls": 1
+  },
+  "before_after_exact": true,
+  "not_actual_outage": true,
+  "source_commit": "0fd5a2fccc35d2448dac60d764265302ce27d97b"
+}

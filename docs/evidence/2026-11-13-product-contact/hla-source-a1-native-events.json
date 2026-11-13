@@ -1,0 +1,95 @@
+[
+  {
+    "data": {
+      "attempt_id": "hla-attention-source-reader-a1",
+      "elapsed_s": 1513.0,
+      "escalation_reason": null,
+      "exit_code": 0,
+      "final_tail": "nt 1534 \u2192 1527 lines while gaining the new read. Construction, access modes and existing behavior untouched.\n\n**`docs/architecture/pipeline-ambiguity-classification.md`** \u2014 new classification section: the module is CROSS-CUTTING (overview) because cross-domain household identity composition belongs to overview, not the kernel.\n\nNo migrations, routes, generated contracts, dependencies, or test files changed; `apps/api/routes/report_routes.py` is untouched.\n\n## Verification\n\n- `pytest -q -p no:cacheprovider tests/test_attention_source_records.py` \u2192 5 passed, 3 deselected.\n- `pytest -q -p no:cacheprovider -m 'integration and slow' tests/test_attention_source_records.py` \u2192 3 passed (real disposable Postgres), 5 deselected.\n- Full non-slow suite: 2721 passed, 32 deselected.\n- `ruff check .` and `mypy apps packages` (401 files) clean.\n- Targeted regressions also green: architecture contract, mart read registry, reporting service, attention identity, transformation overview, API warehouse sessions, reporting/briefing API, household complete integration, and slow Postgres reporting integration.\n- Extra manual check: PREFER_PUBLISHED falls back to the warehouse before publication and serves the publication afterwards.\n- Change size: 271 added / 10 deleted lines (\u2248281), well under the 700 cap.\n\nThe follow-on HLA1593 delivery (record HTTP endpoints, generated contracts, ranked UI, independent review, full verify-fast, train/dev, CI/merge) remains open; no acceptance gates were bypassed.",
+      "head_sha": "0fd5a2fccc35d2448dac60d764265302ce27d97b",
+      "isolation_breach": false,
+      "main_changed": false,
+      "outcome": "done",
+      "seed_sha": "a2298fb510bc02b8403dfa44d5b33857b5e41b77"
+    },
+    "item_id": "hla-attention-source-reader",
+    "schema": "lanectl.event/v1",
+    "ts": "2026-11-13T21:05:30Z",
+    "type": "attempt.finished"
+  },
+  {
+    "data": {
+      "attempt_id": "hla-attention-source-reader-a1",
+      "gate": "diff-policy",
+      "passed": true,
+      "violations": []
+    },
+    "item_id": "hla-attention-source-reader",
+    "schema": "lanectl.event/v1",
+    "ts": "2026-11-13T21:06:19Z",
+    "type": "gate.result"
+  },
+  {
+    "data": {
+      "attempt_id": "hla-attention-source-reader-a1",
+      "gate": "fail-on-base",
+      "passed": true,
+      "violations": []
+    },
+    "item_id": "hla-attention-source-reader",
+    "schema": "lanectl.event/v1",
+    "ts": "2026-11-13T21:06:19Z",
+    "type": "gate.result"
+  },
+  {
+    "data": {
+      "attempt_id": "hla-attention-source-reader-a1",
+      "gate": "acceptance-on-base",
+      "passed": true,
+      "violations": []
+    },
+    "item_id": "hla-attention-source-reader",
+    "schema": "lanectl.event/v1",
+    "ts": "2026-11-13T21:06:19Z",
+    "type": "gate.result"
+  },
+  {
+    "data": {
+      "attempt_id": "hla-attention-source-reader-a1",
+      "gate": "acceptance",
+      "passed": true,
+      "violations": []
+    },
+    "item_id": "hla-attention-source-reader",
+    "schema": "lanectl.event/v1",
+    "ts": "2026-11-13T21:06:19Z",
+    "type": "gate.result"
+  },
+  {
+    "data": {
+      "attempt_id": "hla-attention-source-reader-a1",
+      "gate": "job:ruff",
+      "passed": true,
+      "violations": []
+    },
+    "item_id": "hla-attention-source-reader",
+    "schema": "lanectl.event/v1",
+    "ts": "2026-11-13T21:06:19Z",
+    "type": "gate.result"
+  },
+  {
+    "data": {
+      "attempt_id": "hla-attention-source-reader-a1",
+      "by": "gates",
+      "decision": "candidate",
+      "reasons": [
+        "all gates passed"
+      ],
+      "rules_revision": "decision-rules/v3"
+    },
+    "item_id": "hla-attention-source-reader",
+    "schema": "lanectl.event/v1",
+    "ts": "2026-11-13T21:06:19Z",
+    "type": "decision.recorded"
+  }
+]

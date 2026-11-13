@@ -1,0 +1,9 @@
+{
+  "observed_at": "2026-11-13T21:58:21.917673+00:00",
+  "installed_version": "0.2.9",
+  "requested_tag": "v0.2.9",
+  "actual_commit": "f9267ea32e481f2a1ecf3f57b07ff0e888e1d0cf",
+  "runtime_python_files_match_reviewed_implementation": 61,
+  "install_precondition": "nativeattempts/tick and sourceorchestratorsmeasuredinactive; no stopcommands",
+  "actual_invalidation_pending": true
+}

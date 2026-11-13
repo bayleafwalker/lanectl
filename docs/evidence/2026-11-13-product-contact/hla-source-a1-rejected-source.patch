@@ -1,0 +1,330 @@
+diff --git a/docs/architecture/pipeline-ambiguity-classification.md b/docs/architecture/pipeline-ambiguity-classification.md
+index d6c1b8e..1c71457 100755
+--- a/docs/architecture/pipeline-ambiguity-classification.md
++++ b/docs/architecture/pipeline-ambiguity-classification.md
+@@ -2,7 +2,7 @@
+ 
+ **Classification:** CROSS-CUTTING
+ **Status:** accepted
+-**Last updated:** 2026-04-22
++**Last updated:** 2026-11-13
+ 
+ This note closes WP-1e for the current seam pass by classifying the remaining
+ ambiguous files still living under `packages/pipelines/`.
+@@ -17,6 +17,12 @@ ambiguous files still living under `packages/pipelines/`.
+ | `packages/domains/finance/pipelines/transformation_assets.py` | APP (moved) | Asset-domain transform/load path. Moved in sprint #56; shim retired in sprint #57. |
+ | `packages/pipelines/contracts.py` | JUSTIFIED-MIXED | Small reusable contract-id helper still shared by multiple domain modules; kept in `packages/pipelines/` until a dedicated domain-neutral home is selected. |
+ 
++## New pipeline-layer files
++
++| File | Classification | Rationale |
++| --- | --- | --- |
++| `packages/domains/overview/pipelines/attention_records.py` | CROSS-CUTTING (overview) | Household attention identity composition reads finance and utilities marts and returns their exact source groups. Overview owns cross-domain household identity composition, so this is neither a single-domain pipeline nor a generic kernel helper; the reporting facade only mixes in the read methods. |
++
+ ## Working rule
+ 
+ The APP files above have completed their migration to `packages/domains/finance/pipelines/`
+diff --git a/packages/domains/overview/pipelines/attention_records.py b/packages/domains/overview/pipelines/attention_records.py
+new file mode 100644
+index 0000000..a25a8c9
+--- /dev/null
++++ b/packages/domains/overview/pipelines/attention_records.py
+@@ -0,0 +1,262 @@
++"""Cross-domain attention record identities and their exact source reads.
++
++The open-attention publication projects four domain marts into one list whose
++``item_id`` is a rendered string, not a source surrogate key. Those rendered
++ids are the only identity the API and UI have, so reading one item back means
++recomposing the same opaque value in the source SQL and returning the complete
++group that produced it — never splitting the id, guessing a component, or
++returning the first plausible row.
++
++Household identity composition across finance and utilities belongs to the
++overview pack: this module owns the item-id rules, the source authority rules
++and the two public failure modes, and the reporting facade stays a pass-through.
++"""
++
++from __future__ import annotations
++
++from collections.abc import Callable
++from dataclasses import dataclass
++from typing import Any
++
++import duckdb
++import psycopg
++
++from packages.domains.finance.pipelines.subscription_models import (
++    MART_UPCOMING_FIXED_COSTS_30D_TABLE,
++)
++from packages.domains.finance.pipelines.transaction_models import (
++    MART_TRANSACTION_ANOMALIES_CURRENT_TABLE,
++)
++from packages.domains.overview.pipelines.overview_models import (
++    MART_OPEN_ATTENTION_ITEMS_TABLE,
++)
++from packages.domains.utilities.pipelines.utility_models import (
++    MART_CONTRACT_RENEWAL_WATCHLIST_TABLE,
++    MART_CONTRACT_REVIEW_CANDIDATES_TABLE,
++)
++from packages.pipelines.reporting_snapshots import run_on_warehouse
++
++
++class AttentionRecordNotFoundError(LookupError):
++    """The source proves that no row carries the requested attention item id."""
++
++
++class AttentionRecordUnavailableError(RuntimeError):
++    """The source cannot establish whether the requested attention item exists.
++
++    Raised for a missing or unreadable publication relation, a missing identity
++    column, a NULL or empty identity component, and for store driver failures.
++    The public message names the kind and the reason class only; driver detail
++    stays on the chained cause.
++    """
++
++
++@dataclass(frozen=True)
++class AttentionRecordSource:
++    """One attention kind: its source mart and its opaque item-id composition."""
++
++    item_type: str
++    table: str
++    identity_columns: tuple[str, ...]
++    item_id_expression: str
++
++
++ATTENTION_RECORD_SOURCES: dict[str, AttentionRecordSource] = {
++    # The expressions mirror ``refresh_open_attention_items`` exactly, so the
++    # ids the attention list publishes are the ids these reads look up.
++    "anomaly": AttentionRecordSource(
++        item_type="anomaly",
++        table=MART_TRANSACTION_ANOMALIES_CURRENT_TABLE,
++        identity_columns=("transaction_id",),
++        item_id_expression="'anomaly_' || transaction_id",
++    ),
++    "contract_review": AttentionRecordSource(
++        item_type="contract_review",
++        table=MART_CONTRACT_REVIEW_CANDIDATES_TABLE,
++        identity_columns=("contract_id", "reason"),
++        item_id_expression="'review_' || contract_id || '_' || reason",
++    ),
++    "contract_renewal": AttentionRecordSource(
++        item_type="contract_renewal",
++        table=MART_CONTRACT_RENEWAL_WATCHLIST_TABLE,
++        identity_columns=("contract_id", "renewal_date"),
++        item_id_expression="'renewal_' || contract_id || '_' || CAST(renewal_date AS VARCHAR)",
++    ),
++    "upcoming_cost": AttentionRecordSource(
++        item_type="upcoming_cost",
++        table=MART_UPCOMING_FIXED_COSTS_30D_TABLE,
++        identity_columns=("charge_id", "expected_date"),
++        item_id_expression="'upcoming_' || charge_id || '_' || CAST(expected_date AS VARCHAR)",
++    ),
++}
++
++
++def attention_record_source(item_type: str) -> AttentionRecordSource:
++    """The source spec for one attention kind; unknown kinds cannot exist."""
++    source = ATTENTION_RECORD_SOURCES.get(item_type)
++    if source is None:
++        raise AttentionRecordNotFoundError(f"Unknown attention item type: {item_type!r}")
++    return source
++
++
++def _unavailable(source: AttentionRecordSource, reason: str) -> AttentionRecordUnavailableError:
++    return AttentionRecordUnavailableError(
++        f"Attention source unavailable for {source.item_type}: {reason}"
++    )
++
++
++def _identity_predicate(source: AttentionRecordSource) -> str:
++    """SQL predicate matching rows whose identity is NULL or empty text.
++
++    It is a scalar count over the identity columns only: an unreadable source
++    must not be mistaken for a provably absent key, and the probe never reads
++    source facts.
++    """
++    checks = []
++    for column in source.identity_columns:
++        cast = f"CAST({column} AS VARCHAR)"
++        checks.append(f"({cast} IS NULL OR {cast} = '')")
++    return " OR ".join(checks)
++
++
++def _has_unusable_identity(
++    source: AttentionRecordSource,
++    rows: list[dict[str, Any]],
++) -> bool:
++    for row in rows:
++        for column in source.identity_columns:
++            value = row.get(column)
++            if value is None or str(value) == "":
++                return True
++    return False
++
++
++def _read_exact_group(
++    source: AttentionRecordSource,
++    item_id: str,
++    *,
++    fetch: Callable[[str, list[Any]], list[dict[str, Any]]],
++    placeholder: str,
++) -> list[dict[str, Any]]:
++    """Read the complete exact group for ``item_id``, proving absence first.
++
++    The whole opaque key is composed in source SQL from the declared identity
++    columns and bound as one parameter, so pagination, ordering and equal-looking
++    component splits cannot change the answer. A row an empty identity produced
++    is never served, and an intact match is still served next to invalid rows.
++    """
++    rows = fetch(
++        f"SELECT * FROM {source.table} WHERE ({source.item_id_expression}) = {placeholder}",
++        [item_id],
++    )
++    if rows:
++        if _has_unusable_identity(source, rows):
++            raise _unavailable(source, "identity component is null or empty")
++        return rows
++    counted = fetch(
++        f"SELECT COUNT(*) AS invalid_identity_rows FROM {source.table}"
++        f" WHERE {_identity_predicate(source)}",
++        [],
++    )
++    if counted and int(counted[0]["invalid_identity_rows"]):
++        raise _unavailable(source, "identity cannot be established")
++    raise AttentionRecordNotFoundError(
++        f"Attention record {item_id!r} of type {source.item_type!r} does not exist"
++    )
++
++
++def read_warehouse_attention_record(
++    transformation_service: Any,
++    source: AttentionRecordSource,
++    item_id: str,
++) -> list[dict[str, Any]]:
++    """Read the exact group from the warehouse on one leased handle."""
++
++    def _read(store: Any) -> list[dict[str, Any]]:
++        try:
++            return _read_exact_group(
++                source, item_id, fetch=store.fetchall_dicts, placeholder="?"
++            )
++        except duckdb.Error as exc:
++            raise _unavailable(source, "warehouse query failed") from exc
++
++    return run_on_warehouse(
++        transformation_service,
++        f"attention_record.{source.item_type}",
++        _read,
++        write=False,
++    )
++
++
++def read_published_attention_record(
++    publication_store: Any,
++    source: AttentionRecordSource,
++    item_id: str,
++) -> list[dict[str, Any]]:
++    """Read the exact group from the current publication, never the warehouse."""
++    try:
++        return _read_exact_group(
++            source, item_id, fetch=publication_store.fetchall_dicts, placeholder="%s"
++        )
++    except psycopg.Error as exc:
++        raise _unavailable(source, "publication query failed") from exc
++
++
++class AttentionRecordReader:
++    """Attention reads composed into the reporting service facade.
++
++    The host supplies the access mode, the publication store, the warehouse
++    mart reader and the published-or-fallback selector. The overview pack owns
++    the identity rules because composing the four domain sources is cross-domain.
++    """
++
++    _access_mode: Any
++    _publication_store: Any
++    _transformation_service: Any
++
++    def get_open_attention_items(self) -> list[dict[str, Any]]:
++        """Current open attention items in their established order."""
++        return self._fetch_published_or_fallback(
++            MART_OPEN_ATTENTION_ITEMS_TABLE,
++            lambda: self._read_mart(MART_OPEN_ATTENTION_ITEMS_TABLE),
++            ("", []),
++            "ORDER BY severity, item_type",
++        )
++
++    def get_attention_record(self, item_type: str, item_id: str) -> list[dict[str, Any]]:
++        """Return the complete exact source group behind one attention item id.
++
++        WAREHOUSE reads the warehouse; PUBLISHED reads only the current
++        publication and raises unavailable when it is missing; PREFER_PUBLISHED
++        uses the publication when it exists and the warehouse otherwise.
++        """
++        source = attention_record_source(item_type)
++        if self._access_mode == "warehouse":
++            return read_warehouse_attention_record(
++                self._transformation_service, source, item_id
++            )
++        store = self._publication_store
++        if store is not None:
++            try:
++                published = store.table_exists(source.table)
++            except psycopg.Error as exc:
++                raise _unavailable(source, "publication unavailable") from exc
++            if published:
++                return read_published_attention_record(store, source, item_id)
++        if self._access_mode == "published":
++            raise _unavailable(source, "published relation unavailable")
++        return read_warehouse_attention_record(
++            self._transformation_service, source, item_id
++        )
++
++    def _read_mart(self, relation_name: str, **filters: Any) -> list[dict[str, Any]]:
++        raise NotImplementedError
++
++    def _fetch_published_or_fallback(
++        self,
++        relation_name: str,
++        fallback: Callable[[], list[dict[str, Any]]],
++        where_clause: tuple[str, list[Any]],
++        order_by_sql: str,
++    ) -> list[dict[str, Any]]:
++        raise NotImplementedError
+diff --git a/packages/pipelines/reporting_service.py b/packages/pipelines/reporting_service.py
+index 65b675c..613cfa7 100755
+--- a/packages/pipelines/reporting_service.py
++++ b/packages/pipelines/reporting_service.py
+@@ -48,6 +48,7 @@ from packages.domains.homelab.pipelines.homelab_models import (
+     MART_STORAGE_RISK_TABLE,
+     MART_WORKLOAD_COST_7D_TABLE,
+ )
++from packages.domains.overview.pipelines.attention_records import AttentionRecordReader
+ from packages.domains.overview.pipelines.overview_models import (
+     MART_AFFORDABILITY_RATIOS_TABLE,
+     MART_COST_TREND_12M_TABLE,
+@@ -249,7 +250,7 @@ def _dedupe(values: list[str]) -> list[str]:
+     return list(dict.fromkeys(values))
+ 
+ 
+-class ReportingService:
++class ReportingService(AttentionRecordReader):
+     def __init__(
+         self,
+         transformation_service: TransformationService,
+@@ -873,14 +874,6 @@ class ReportingService:
+             "ORDER BY roi_state, service_count DESC",
+         )
+ 
+-    def get_open_attention_items(self) -> list[dict[str, Any]]:
+-        return self._fetch_published_or_fallback(
+-            MART_OPEN_ATTENTION_ITEMS_TABLE,
+-            lambda: self._read_mart(MART_OPEN_ATTENTION_ITEMS_TABLE),
+-            ("", []),
+-            "ORDER BY severity, item_type",
+-        )
+-
+     def get_recent_significant_changes(self) -> list[dict[str, Any]]:
+         return self._fetch_published_or_fallback(
+             MART_RECENT_SIGNIFICANT_CHANGES_TABLE,

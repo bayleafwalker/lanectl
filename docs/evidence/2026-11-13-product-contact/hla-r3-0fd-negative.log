@@ -1,0 +1,77 @@
+F..                                                                      [100%]
+=================================== FAILURES ===================================
+____________ test_warehouse_real_lease_acquisition_failures[driver] ____________
+
+tmp_path = PosixPath('/tmp/pytest-of-bayleaf/pytest-14950/test_warehouse_real_lease_acqu0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x73e111ae0e90>
+failure_kind = 'driver'
+
+    @pytest.mark.parametrize('failure_kind', ['driver', 'busy', 'program'])
+    def test_warehouse_real_lease_acquisition_failures(
+        tmp_path: Any, monkeypatch: pytest.MonkeyPatch, failure_kind: str
+    ) -> None:
+        import packages.storage.duckdb_store as duckdb_store
+        from packages.pipelines.warehouse_session import (
+            WarehouseSessionManager,
+            WarehouseSessionTransformationService,
+            _ReadOnlyTransformationService,
+        )
+    
+        path = tmp_path / 'synthetic.duckdb'
+        store = DuckDBStore.open(str(path))
+        try:
+            ts = TransformationService(store)
+            seed(ts)
+            ts.refresh_publications(REFRESH)
+            item_id, expected = select_groups(store)['anomaly']
+        finally:
+            store.close()
+    
+        def build(leased_store: Any, read_only: bool) -> Any:
+            if read_only:
+                return _ReadOnlyTransformationService(leased_store)
+            return TransformationService(leased_store)
+    
+        manager = WarehouseSessionManager(path, build, idle_timeout_seconds=0)
+        service = ReportingService(
+            WarehouseSessionTransformationService(manager), access_mode=ReportingAccessMode.WAREHOUSE
+        )
+        try:
+            get = facade(service)
+            _, unavailable = errors()
+            assert canonical(get('anomaly', item_id)) == canonical(expected)
+            assert manager.mode is None
+            marker = 'synthetic-private-acquisition-marker'
+            failures = {
+                'driver': duckdb.IOException(marker),
+                'busy': WarehouseBusyError('synthetic', 1, RuntimeError('held')),
+                'program': RuntimeError(marker),
+            }
+            failure = failures[failure_kind]
+            calls = []
+    
+            def fail(*args: Any, **kwargs: Any) -> Any:
+                calls.append((args, kwargs))
+                raise failure
+    
+            caught = None
+            with monkeypatch.context() as patch:
+                patch.setattr(duckdb_store, 'connect_with_lock_retry', fail)
+                try:
+                    get('anomaly', item_id)
+                except Exception as exc:
+                    caught = exc
+            assert len(calls) == 1
+            assert manager.mode is None
+            assert canonical(get('anomaly', item_id)) == canonical(expected)
+            assert manager.mode is None
+            if failure_kind == 'driver':
+>               assert isinstance(caught, unavailable)
+E               AssertionError: assert False
+E                +  where False = isinstance(IOException('synthetic-private-acquisition-marker'), <class 'packages.domains.overview.pipelines.attention_records.AttentionRecordUnavailableError'>)
+
+tests/test_attention_source_records.py:614: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_attention_source_records.py::test_warehouse_real_lease_acquisition_failures[driver]
+1 failed, 2 passed, 8 deselected in 9.66s
+pytest exit: 1

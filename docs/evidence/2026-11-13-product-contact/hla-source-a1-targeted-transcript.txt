@@ -1,0 +1,11 @@
+Transcribed from tool output (not a separately captured raw execution log):
+make test-target TEST='tests/test_attention_source_records.py -m "not slow" -x --tb=short'
+5 passed, 3 deselected in 10.95s
+make test-target TEST='tests/test_attention_source_records.py -m slow -x --tb=short'
+3 passed, 5 deselected in 25.40s
+make test-target TEST='tests/test_architecture_contract.py tests/test_transformation_overview.py tests/test_reporting_publication_snapshots.py -x --tb=short'
+139 passed in 9.14s
+.venv/bin/ruff check packages/domains/overview/pipelines/attention_records.py packages/pipelines/reporting_service.py tests/test_attention_source_records.py
+All checks passed!
+.venv/bin/mypy packages/domains/overview/pipelines/attention_records.py packages/pipelines/reporting_service.py
+Success: no issues found in 2 source files

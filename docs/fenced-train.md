@@ -100,9 +100,9 @@ The dedicated UID is shared by trains, so sibling processes remain a residual
 boundary. Network behavior is unchanged. This backend does not establish hosted
 runner authentication or complete the delivery ladder's operational clocks.
 
-The current installed client is 0.2.8 at
-`937b634c16c7b1b1df667041a064a11825e196be`; its runner bytes match the reviewed
-retry-routing correction. See the
-[installation evidence](evidence/2026-11-13-product-contact/lanectl-v028-installed.json).
+The current installed client is 0.2.9 at
+`f9267ea32e481f2a1ecf3f57b07ff0e888e1d0cf`; its runtime bytes match the reviewed
+publication-evidence repair. See the
+[installation evidence](evidence/2026-11-13-product-contact/lanectl-v029-installed.json).
 The older host qualification above does not establish a strict-root pass for
 this client or the pending host generation.

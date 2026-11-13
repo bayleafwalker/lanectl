@@ -259,3 +259,7 @@ are historical exact-version observations. Neither this client update nor the
 merged strict-root source replaces actual-host requalification after the
 authenticated switch. The latest host observation still has RootDirectory empty
 and User=lanectl-train; no policy promotion or #2889 closeout is claimed.
+
+## Client0.2.9 and publication correction
+
+Client0.2.9 atf9267ea32e481f2a1ecf3f57b07ff0e888e1d0cf is installed after measured idle checks; all61 runtime Python files match reviewed implementation209268d. Focused52/full1038 tests passed, independent source review cleared all findings, and real append-only invalidation of two false draft-publication records preserved every operational projection. This repairs evidence semantics, not the filesystem boundary. Strict host apply and actual strict-generation qualification remain pending; no #2889 closeout or Sovite policy promotion. See ../2026-11-13-product-contact/lanectl-v029-installed.json and publication-invalidation-result.json.

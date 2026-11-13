@@ -1,0 +1,46 @@
+{
+  "schema": "hla-source-reader-a1-disposition/v1",
+  "head": "0fd5a2fccc35d2448dac60d764265302ce27d97b",
+  "seed": "a2298fb510bc02b8403dfa44d5b33857b5e41b77",
+  "native_outcome": "done",
+  "native_exit": 0,
+  "native_elapsed_s": 1513.0,
+  "all_recorded_gates_passed": true,
+  "root_integrator_state": "parkedactualcontractfailure",
+  "code_added": 271,
+  "code_deleted": 10,
+  "all4source_kinds_retained": true,
+  "independent_checks": {
+    "frozen": "5fast3actualPGpassed,no skips",
+    "targeted": "139passed9.14s",
+    "full_namespace": "2721passed32deselected120subtests;55matchedUbuntuPlaywrightpassed;615.48s",
+    "ruff_mypy": "passed401files",
+    "orderedlist": "all4modes250rowsmatch; actualreversalfalsifierfails; ownedPGcontainersremoved",
+    "targeted_output_format": "transcribedtooloutput,notrawcapture"
+  },
+  "blocker": {
+    "path": "real ReportingService -> WarehouseSessionManager.call/lease -> DuckDBStore.open -> lowerconnect_with_lock_retry fault",
+    "fault": "synthetic duckdb.IOException",
+    "actual": "rawexceptionescapes,is_unavailable=false",
+    "busy_control": "sameWarehouseBusyErrorobject",
+    "before_after_exact_record": true,
+    "actual_outage_or_HTTP_claim": false
+  },
+  "nativeSonnetreview": {
+    "ran": false,
+    "reason": "automaticapprovalreviewrejectedpayload/destinationauthorization; explicitpublicHLAquestionpending",
+    "no_verdict_inferred": true
+  },
+  "revision3": {
+    "original551_exactprefix": true,
+    "appended_lines": 68,
+    "test_sha256": "b8a2d8b9527c5f2af7b05c1ee0608f3a574a537df78c46dc8ff671633284d078",
+    "author": "gpt-6.1-terra first-party API agent",
+    "newcase_qualification": "0fddriverFAIL,busyprogramPASS;9cfmissinggetter;unaccepteda02combined8fast3PGpass",
+    "native_independent_review": "running, no publication"
+  },
+  "whole1593_complete": false,
+  "host_fence_qualified": false,
+  "source_patch_sha256": "d512a6fd9753edb20c99e77ca9871e210614dfd37e03afbd7d0bc6926dad8c19",
+  "durability": "selectedsource/evidence Git cross-host-replicated after canonical publication; fullstatebackup/sessiondrivers remain session-local"
+}
