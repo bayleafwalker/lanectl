@@ -235,10 +235,14 @@ def _stop_terminal(sysctl, unit: str) -> bool:
     if not sysctl:
         return False
     try:
-        subprocess.run([sysctl, "stop", unit], env=_tool_env(), capture_output=True,
-                       timeout=STOP_WAIT_S)
+        p = subprocess.run([sysctl, "stop", unit], env=_tool_env(), capture_output=True,
+                           timeout=STOP_WAIT_S)
     except (OSError, subprocess.TimeoutExpired):
-        pass
+        return False
+    # A queued ``start --no-block`` may still read inactive, so an inactive
+    # reading only proves cancellation once the exact stop was acknowledged.
+    if p.returncode:
+        return False
     deadline = time.monotonic() + STOP_WAIT_S
     while time.monotonic() < deadline:
         if _active(sysctl, unit) in TERMINAL:
