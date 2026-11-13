@@ -1,0 +1,24 @@
+{
+  "initial": {
+    "duration_ms": 281941,
+    "num_turns": 72,
+    "total_cost_usd": 1.6033200000000005,
+    "permission_denials": [],
+    "is_error": false,
+    "observed_models": [
+      "claude-opus-5-5"
+    ],
+    "cost_basis": "native-reported API-equivalent estimate; actual subscription charge unmeasured"
+  },
+  "refined": {
+    "duration_ms": 364504,
+    "num_turns": 40,
+    "total_cost_usd": 1.5411908,
+    "permission_denials": [],
+    "is_error": false,
+    "observed_models": [
+      "claude-opus-5-5"
+    ],
+    "cost_basis": "native-reported API-equivalent estimate; actual subscription charge unmeasured"
+  }
+}
