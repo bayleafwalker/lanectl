@@ -20,8 +20,8 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 
-from . import (adapters, capacity, decisions, deploy, evaluator, gatejobs, report,
-               sandbox as sandboxing, work)
+from . import (adapters, capacity, decisions, deploy, evaluator, fenced_train, gatejobs,
+               report, sandbox as sandboxing, work)
 from .config import RepoSpec, load_lane, load_releases, load_repos, match
 from .contracts import LaneRevision, WorkRelease
 from .events import EventLog, ItemView, project_items, state_dir
@@ -272,8 +272,8 @@ def admit(lane_name: str, log: EventLog, only: str | None = None) -> Claim | str
             reasons = readiness(rel, lane, repos)
             if _coordinated(rel.repo) and lane.sandbox.get("mode") != "systemd-run":
                 reasons.append("coordinated execution requires credential-isolating systemd sandbox")
-            if _coordinated(rel.repo) and getattr(repos.get(rel.repo), 'train_isolation', 'namespace') != 'namespace':
-                reasons.append("coordinated execution requires namespace train isolation")
+            if _coordinated(rel.repo) and getattr(repos.get(rel.repo), 'train_isolation', 'namespace') not in ('namespace', 'systemd'):
+                reasons.append("coordinated execution requires namespace train isolation or systemd train isolation")
             if _coordinated(rel.repo) and (not rel.work or not rel.work_complete
                                               or rel.work.split("#", 1)[0] != rel.repo):
                 reasons.append("coordinated releases require a complete Work outcome")
@@ -435,8 +435,8 @@ def _coordinate_execution(native):
                             f"owner {key} changed since the preview")
             if c.lane.sandbox.get("mode") != "systemd-run":
                 raise coordination.CoordinationError("coordinated execution requires credential-isolating systemd sandbox")
-            if c.repo.train_isolation != 'namespace':
-                raise coordination.CoordinationError("coordinated execution requires namespace train isolation")
+            if c.repo.train_isolation not in ('namespace', 'systemd'):
+                raise coordination.CoordinationError("coordinated execution requires namespace train isolation or systemd train isolation")
             if (not c.rel.work or not c.rel.work_complete
                     or c.rel.work.split("#", 1)[0] != c.rel.repo):
                 raise coordination.CoordinationError("coordinated releases require a complete Work outcome")
@@ -505,7 +505,10 @@ def execute(c: Claim, log: EventLog, adapter_fn=None, *, lease_guard=None,
     git(repo.path, "branch", "-D", branch, check=False)
     # A standalone clone, not a linked worktree: harnesses such as OpenCode resolve a
     # linked worktree to the main repository root and write there (2026-11-08 breach).
-    git(repo.path, "clone", "-q", "--shared", "--no-checkout", str(repo.path), str(wt))
+    # Systemd trains must stage from a self-contained source: --shared would leave
+    # object alternates that the fenced stage cannot copy without pointing outside.
+    mode = "--shared" if repo.train_isolation != 'systemd' else "--no-hardlinks"
+    git(repo.path, "clone", "-q", mode, "--no-checkout", str(repo.path), str(wt))
     git(wt, "checkout", "-q", "-b", branch, rel.base_sha)
     git(wt, "remote", "remove", "origin", check=False)   # do not advertise the main checkout
     from .config import home
@@ -699,6 +702,10 @@ def _merge_failure_reason(p: subprocess.CompletedProcess) -> str:
 def _train_command(repo, checkout: Path, command: str):
     """Apply the reviewed repository's train boundary, never silently fall back."""
     from .config import home
+    if repo.train_isolation == 'systemd':
+        # The separate-UID host service stages its own checkout; its root-owned
+        # receipt is the only result and there is no environment/namespace fallback.
+        return fenced_train.run_command(repo, checkout, command)
     if repo.train_isolation == 'environment':
         if _coordinated(repo.name):
             return subprocess.CompletedProcess(command, 1, '', 'coordinated execution requires namespace train isolation')
@@ -707,6 +714,8 @@ def _train_command(repo, checkout: Path, command: str):
                                   env=sandboxing.transport_environment(), timeout=1800)
         except (OSError, subprocess.TimeoutExpired) as exc:
             return subprocess.CompletedProcess(command, 1, '', f'train command failed: {type(exc).__name__}')
+    if repo.train_isolation != 'namespace':
+        return subprocess.CompletedProcess(command, 1, '', f'train isolation {repo.train_isolation!r} is unsupported')
     sb = sandboxing.for_train(readonly=(str(state_dir().resolve()), str(home().resolve()),
                                        str(Path(repo.path).resolve())),
                               writable=(str(checkout.resolve()),), timeout_s=1800)
