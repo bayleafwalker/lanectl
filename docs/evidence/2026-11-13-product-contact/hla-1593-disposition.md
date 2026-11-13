@@ -165,7 +165,11 @@ passes. The first fresh native invocation returned a response rejected by the st
 review parser: reason/trivial_pass must be nonempty strings. Its raw response
 could not be recovered; the actual validation error is preserved. A schema-only
 retry makes those types explicit and persists the native response before parsing;
-tests and outcome are unchanged. Review/base checks remain pending and no new
+tests and outcome are unchanged. That900-second retry then failed before
+returning a response: its actual native unit exited143 after900.110s. No verdict
+or provider outage is inferred. A same-artifact1800-second review, within the
+existing2700-second lane ceiling, will retain diagnostics while calling the
+official invocation unchanged. Review/base checks remain pending and no new
 implementation is admitted yet.
 
 Lanectl v0.2.8 at937b634c16c7b1b1df667041a064a11825e196be is installed and

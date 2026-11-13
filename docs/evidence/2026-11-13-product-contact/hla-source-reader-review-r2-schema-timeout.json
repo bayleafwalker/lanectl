@@ -1,0 +1,21 @@
+{
+  "schema": "hla-source-reader-native-review-failure/v1",
+  "observed_at": "2026-11-13T20:20:24.255293+00:00",
+  "revision": 2,
+  "native_model": "opencode-go/deepseek-v4-pro",
+  "frozen_sha256": "b67ebe0894f3c33fbe18bc183064dbee6f0ef06e9fb938d9ee2a4bba880b4c8e",
+  "configured_request_timeout_s": 900,
+  "official_invocation_result": "failed; spec._invoke raised before returning a review response",
+  "actual_native_service": "lanectl-attempt-bb1785412f2a626c4a0a8483.service",
+  "actual_service_exit_status": 143,
+  "actual_service_wall_time_s": 900.11,
+  "journal_observed": "2026-11-13 22:14:30 EET",
+  "verdict_available": false,
+  "provider_outage_inferred": false,
+  "publication_allowed": false,
+  "next_step": "same exact artifact, native request1800 <=existing lane2700; official invocation unchanged with lifecycle-only diagnostics retention",
+  "prior_native_outcome_rewritten": false,
+  "log": "hla-source-reader-review-r2-schema-timeout.log",
+  "log_sha256": "97249725d55879ee80ba36b27f282520be4ad2588d6fb6894b36073eb4e8d7ae",
+  "durability": "cross-host-replicated after canonical publication; request/runtime scratch session-local"
+}

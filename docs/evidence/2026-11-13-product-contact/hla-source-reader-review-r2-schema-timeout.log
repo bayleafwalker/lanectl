@@ -1,0 +1,11 @@
+native author finalized; added warehouse IOException case independently requalified; canonical Ruff passed
+fresh independent native reviewer starting; strict explanation-string schema explicit
+Traceback (most recent call last):
+  File "/tmp/hla-source-reader-review-schema.py", line 66, in <module>
+    review_raw, reviewer_usage = spec._invoke(repo, lane, raw['base_sha'], reviewer,
+                                 ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        review_prompt, proposal=final, timeout_s=900)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/bayleaf/.local/share/uv/tools/lanectl/lib/python3.13/site-packages/lanectl/specification.py", line 102, in _invoke
+    raise ValueError(f'spec model failed or escalated: {result.outcome}')
+ValueError: spec model failed or escalated: failed
