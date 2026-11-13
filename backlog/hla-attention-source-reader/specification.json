@@ -1,0 +1,37 @@
+{
+  "schema": "lanectl-specification/v1",
+  "release_digest": "2c8976925bef537dd873ecf2504077c9efe1534dfff941e2ae0643a718994e2e",
+  "review": {
+    "verdict": "revise",
+    "reason": "The base-failure design is right (reader() asserts the missing get_attention_record before errors() imports the exceptions module, so canonical9cf fails on the actual missing source-reader feature rather than an import/setup error), and the source-authority observation (observe() on pg.fetchall_dicts, `params and key in params`, equal_group against independently computed groups) does reject the trivial fetch-all/filter-later and split-without-full-key implementations. But the tests contain two self-inflicted correctness bugs that will also reject a correct implementation, so they are not a valid acceptance gate as written. (1) The public row models are built by build_row_model, which maps DATE->str and DECIMAL->str; `model.model_validate(mutated)` is called on dicts built from rows() that still hold Python `date` and `Decimal` objects, so pydantic raises ValidationError on booking_date/renewal_date/expected_date/amount/current_price/expected_amount \u2014 the bare `model.model_validate(mutated)` calls in test_empty_identity_invalidates_only_absence (all 5 parametrizations) and in test_postgres_current_publication_filtering_and_identity fail even though the empty-identity admission they are meant to prove actually holds. (2) Postgres NUMERIC(18,4) returns scale-4 Decimals (e.g. Decimal('10.0000')) through psycopg, while `want` is derived from rows()'s scale-0 Decimals; equal_group compares `repr(sorted(row.items()))`, so every DECIMAL column in the PG test (amount/current_price/expected_amount) mismatches and equal_group(get(kind,key), want) / equal_group(result, want) fail for a correct implementation. Both bugs are in the test file itself, not the contract, so the file must be revised before acceptance.",
+    "trivial_pass": "No trivial pass is available, and that part of the test is sound. Constant results, ignored inputs, and mocks-replacing-the-subject all fail: the expected groups are computed live from the synthetic DuckDB/Postgres data via independent full-key SQL, so a hardcoded or input-ignoring get_attention_record cannot match equal_group; and the PG test constructs the real ReportingService and monkeypatches only the stores' read surfaces, so the subject itself cannot be replaced \u2014 it must issue real pg.fetchall_dicts calls whose params contain the full key and whose result equals the wanted group. The failure mode is the opposite direction: the two bugs above (str-typed row models fed date/Decimal, and repr-based comparison of scale-4 PG Decimals against scale-0 Python Decimals) cause the tests to reject a correct implementation, not to admit a trivial one.",
+    "checks": [
+      "Blocking: row models type DATE and DECIMAL columns as `str` (build_row_model), but `model.model_validate(mutated)` is called on rows() dicts holding Python `date`/`Decimal`; pydantic raises ValidationError on booking_date/renewal_date/expected_date/amount/current_price/expected_amount, so the bare admission assertion in test_empty_identity_invalidates_only_absence (5 parametrizations) and the equivalent line in test_postgres_current_publication_filtering_and_identity fail for a correct implementation.",
+      "Blocking: Postgres NUMERIC(18,4) yields scale-4 Decimals (e.g. Decimal('10.0000')) via psycopg, while `want` is built from rows() scale-0 Decimals; equal_group compares repr, so amount/current_price/expected_amount mismatch and equal_group(get(kind,key), want) and equal_group(result, want) fail in test_postgres_current_publication_filtering_and_identity.",
+      "Correct base failure: reader() asserts callable(getattr(service,'get_attention_record',None)) before errors() imports the exceptions module, so canonical9cf fails on the missing source-reader feature, not an import/setup error, and the test file's top-level imports all resolve on canonical.",
+      "Source-authority observation is sound: observe() on pg.fetchall_dicts plus `assert params and key in params` plus equal_group rejects fetch-all/filter-later and split-without-full-key implementations; the warehouse-store fetchall_dicts/execute monkeypatch plus the 'Published only' provider divergence enforce no-warehouse-read in PUBLISHED mode.",
+      "Self-containedness holds: no import of the absent tests/test_attention_record_api.py, and the VERIFIED running_postgres_container helper is reused with integration/slow markers consistent with pytest.ini.",
+      "Gap: get_open_attention_items() unchanged-behavior (the cohesive-extraction contract) is asserted nowhere in this file, leaving the no-grow/no-regress requirement for the legacy facade unverified.",
+      "Gap: 'unreadable publication' (a query-level read failure distinct from a connection failure) is not exercised; only the `_connect`-level psycopg.OperationalError path is covered by the sanitization test."
+    ]
+  },
+  "author_model": "gpt-6.1-terra",
+  "reviewer_model": "opencode-go/deepseek-v4-pro",
+  "intent_digest": "4d54861c8b545d92810bb4b0dc8d6c99a722e8c402e528ea45585fb722aac5b7",
+  "recorded_at": "2026-11-13T19:12:40.553246+00:00",
+  "lint_problems": [
+    "adversarial review requests revision"
+  ],
+  "usage": {
+    "author": null,
+    "reviewer": {
+      "input_tokens": 119643,
+      "output_tokens": 4389,
+      "reasoning_tokens": 44554,
+      "cache_read_tokens": 1388288,
+      "cache_write_tokens": 0,
+      "cost_usd": 0.0,
+      "steps": 24
+    }
+  }
+}

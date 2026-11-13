@@ -1,0 +1,25 @@
+id = "hla-attention-source-reader"
+repo = "homelab-analytics"
+base_sha = "9cf62cb7271ed0e15e35877ab772709808470bea"
+revision = 1
+draft = true
+title = "Provide exact four-kind attention source reads without growing legacy facades"
+outcome = "Acceptance tests for exact four-kind source reads, publication authority, and identity failures."
+task_class = "architecture-prerequisite"
+size = "M"
+data_class = "public"
+eligible_lanes = ["implement"]
+
+[scope]
+paths = ["packages/pipelines/reporting_service.py", "packages/domains/overview/**", "docs/architecture/pipeline-ambiguity-classification.md", "tests/**"]
+
+[acceptance]
+files = ["tests/test_attention_source_records.py"]
+exec = ["uv run --no-sync python -m pytest -q -p no:cacheprovider tests/test_attention_source_records.py"]
+fail_on_base = true
+
+[specification]
+schema = "lanectl-specification/v1"
+author_model = "gpt-6.1-terra"
+reviewer_model = "opencode-go/deepseek-v4-pro"
+evidence = "specification.json"
