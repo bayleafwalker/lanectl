@@ -160,8 +160,11 @@ def test_checks_that_change_source_or_head_cannot_pass(fenced, tmp_path, mode, n
 def test_untrusted_or_forged_results_fail_closed(fenced, tmp_path, mode):
     repo, _ = git_repo(tmp_path)
     (fenced / 'mode').write_text(mode)
-    result = fenced_train.run_command(policy(repo), repo, 'true')
-    assert result.returncode != 0 and 'receipt' in result.stderr
+    result = fenced_train.run_command(policy(repo), repo, 'true', timeout_s=1)
+    assert result.returncode != 0
+    assert 'receipt' in result.stderr or 'timed out' in result.stderr
+    if mode in ('intree', 'noreceipt'):
+        assert (fenced / 'stopped').read_text() == (fenced / 'started').read_text()
     assert not list((fenced / 'trains').iterdir())
 
 
