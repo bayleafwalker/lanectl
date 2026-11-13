@@ -127,6 +127,9 @@ class RemoteEventLog:
         with self._mutex:
             if self._transaction:
                 event = make_event(etype, data, item_id=item_id)
+                if etype == "release.publication.invalidated":
+                    from .publication import validate_invalidation
+                    validate_invalidation(event, self._events + self._buffer)
                 self._buffer.append(json.loads(encode(event)))
                 return event
             with self.locked():

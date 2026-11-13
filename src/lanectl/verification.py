@@ -82,7 +82,7 @@ EVENT_DETAIL_FIELDS = {
     "train.torn_down": ("train_id",),
     "item.landed": ("attempt_id", "train_id", "landed_sha", "fix_commits"),
     "work.synced": ("work", "train_id", "closed", "ok", "owner_reported", "pending_owner"),
-    "release.published": ("release_id", "revision"),
+    "release.published": ("release_id", "revision", "provenance"),
 }
 
 

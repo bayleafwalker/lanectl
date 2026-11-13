@@ -171,3 +171,16 @@ def test_remote_append_and_read_snapshot_cannot_be_mutated_after_recording(clien
         snapshot[0]['data']['revision']=77
         assert log.read()[0]['data']['revision']==1
     assert log.read()[0]['data']['revision']==1
+
+
+def test_invalidation_requires_preceding_target_in_transaction(client, tmp_path):
+    from lanectl.publication import fingerprint
+    log = RemoteEventLog(client, tmp_path / 'pending.json')
+    with log.locked():
+        event = log.append('release.published', {'release_id': 'release-x', 'revision': 1}, item_id='release-x')
+        data = {'release_id': 'release-x', 'revision': 2, 'target_event_sha256': fingerprint(event),
+                'reason': 'draft', 'evidence_ref': 'invalid'}
+        with pytest.raises(ValueError, match='preceding matching'):
+            log.append('release.publication.invalidated', data, item_id='release-x')
+        assert len(log.read()) == 1
+    assert len(log.read()) == 1

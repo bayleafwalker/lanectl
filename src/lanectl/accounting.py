@@ -320,6 +320,9 @@ def _compute_phases(events, item_id, attempt_id) -> dict:
     execution total.  An attempt query never borrows another attempt's landing
     or verification interval.
     """
+    from .publication import publication_evidence
+    usable = {n for n, e in publication_evidence(events)
+              if _data(e).get("provenance") == "guarded-publish"}
     published = None
     claims: list[tuple[int, dict]] = []
     seen_claims: set = set()
@@ -333,7 +336,7 @@ def _compute_phases(events, item_id, attempt_id) -> dict:
             continue
         kind = ev.get("type")
         data = _data(ev)
-        if kind == "release.published" and published is None:
+        if kind == "release.published" and n in usable and published is None:
             published = (n, ev)
         elif kind == "item.claimed":
             aid = data.get("attempt_id")
@@ -358,9 +361,13 @@ def _compute_phases(events, item_id, attempt_id) -> dict:
     queued = []
     # Queueing is a release-level phase: the item's first claim, even when the
     # query selects one attempt.  Only landing/verification are attempt-scoped.
-    if published is not None and claims:
+    if claims:
+        contaminated = any(e.get("type") == "release.publication.invalidated"
+                           and _data(e).get("release_id") == item_id for e in events)
+        if published is None or published[0] >= claims[0][0] or contaminated:
+            published = None
         queued.append(_interval("queued", published, claims[0],
-                                basis="release.published -> item.claimed"))
+                                basis="guarded publication receipt -> item.claimed; unknown without preceding receipt"))
 
     execution = []
     waiting = []

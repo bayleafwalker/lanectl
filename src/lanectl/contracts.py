@@ -27,6 +27,7 @@ WORK_REF = re.compile(r"[a-z0-9][a-z0-9-]*#[1-9][0-9]*")
 
 EVENT_TYPES: dict[str, tuple[str, ...]] = {
     "release.published": ("release_id", "revision"),
+    "release.publication.invalidated": ("release_id", "revision", "target_event_sha256", "reason", "evidence_ref"),
     "item.claimed": ("attempt_id", "lane", "model", "worker"),
     "attempt.finished": ("attempt_id", "outcome", "exit_code", "head_sha"),
     "gate.result": ("attempt_id", "gate", "passed", "violations"),
@@ -102,6 +103,20 @@ def validate_event_parts(etype: str, data: dict, item_id: str | None) -> None:
         raise ContractError(f"{etype} missing {missing}")
     if item_id is not None:
         check_id("item_id", item_id)
+    if etype == "release.published" and "provenance" in data:
+        if data["provenance"] not in ("guarded-publish", "nondraft-observation"):
+            raise ContractError("invalid publication provenance")
+    if etype == "release.publication.invalidated":
+        check_id("release_id", data["release_id"])
+        if item_id != data["release_id"]:
+            raise ContractError("invalidation item_id must match release_id")
+        if type(data["revision"]) is not int or data["revision"] < 1:
+            raise ContractError("invalidation revision must be positive")
+        if not isinstance(data["target_event_sha256"], str) or not re.fullmatch(r"[0-9a-f]{64}", data["target_event_sha256"]):
+            raise ContractError("invalid target event sha256")
+        for key in ("reason", "evidence_ref"):
+            if not isinstance(data[key], str) or not data[key].strip():
+                raise ContractError(f"invalidation {key} must be nonempty")
     if etype == "decision.recorded" and data["decision"] not in DECISIONS:
         raise ContractError(f"bad decision {data['decision']!r}")
     if etype == "integrator.fix" and data["fix_class"] not in FIX_CLASSES:

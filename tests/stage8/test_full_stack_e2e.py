@@ -86,7 +86,7 @@ env_allow = ["PATH"]
     refused = runner.admit('implement', log)
     assert isinstance(refused, str) and 'draft' in refused
     assert not [e for e in log.read() if e['type']=='item.claimed']
-    assert backlog._publish(SimpleNamespace(id='stack-sub')) == 0
+    assert backlog._publish(SimpleNamespace(id='stack-sub'), log) == 0
 
     claim = runner.admit('implement', log)
     assert claim.model == 'scripted/model'

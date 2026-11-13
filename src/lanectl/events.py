@@ -38,6 +38,9 @@ class EventLog:
 
     def append(self, etype: str, data: dict, *, item_id: str | None = None) -> dict:
         ev = make_event(etype, data, item_id=item_id)
+        if etype == "release.publication.invalidated":
+            from .publication import validate_invalidation
+            validate_invalidation(ev, self.read())
         line = json.dumps(ev, sort_keys=True, separators=(",", ":"))
         with open(self.path, "a") as fh:
             fh.write(line + "\n")

@@ -100,12 +100,16 @@ def pick_model(rel: WorkRelease, lane: LaneRevision, view: ItemView,
 
 
 def sync_releases(log: EventLog, releases: list[WorkRelease]) -> None:
-    items = project_items(log.read())
+    from .publication import publication_evidence
+    evidence = publication_evidence(log.read())
     for rel in releases:
-        v = items.get(rel.id)
-        if v is None or v.release_revision < rel.revision:
-            log.append("release.published", {"release_id": rel.id, "revision": rel.revision},
-                       item_id=rel.id)
+        if rel.draft:
+            continue
+        if not any(e["data"]["release_id"] == rel.id and e["data"]["revision"] == rel.revision
+                   for _, e in evidence):
+            event = log.append("release.published", {"release_id": rel.id, "revision": rel.revision,
+                               "provenance": "nondraft-observation"}, item_id=rel.id)
+            evidence.append((0, event))
 
 
 def provider_for(model: str) -> str:
@@ -254,6 +258,8 @@ def admit(lane_name: str, log: EventLog, only: str | None = None) -> Claim | str
             if only and rel.id != only:
                 continue
             v = items.get(rel.id)
+            if v is None and rel.draft:
+                v = ItemView(rel.id)
             if v is None or v.state not in ("ready", "requeued"):
                 continue
             if attempts_used(v, rel.revision) >= lane.max_attempts:

@@ -76,9 +76,8 @@ def backlog_rows(releases, events: list[dict]) -> list[dict]:
     """
     items = project_items(events)
     published: dict[str, int] = {}
-    for ev in events:
-        if ev.get("type") != "release.published":
-            continue
+    from .publication import publication_evidence
+    for _, ev in publication_evidence(events):
         data = ev.get("data") or {}
         revision = int(data.get("revision", 0))
         for key in (ev.get("item_id"), data.get("release_id")):
@@ -300,7 +299,7 @@ def _lint_override(toml: Path) -> str:
     return override.strip() if isinstance(override, str) else ""
 
 
-def _publish(args) -> int:
+def _publish(args, log=None) -> int:
     rel = _find(args.id)
     if rel is None:
         print(f"unknown release {args.id}", file=sys.stderr)
@@ -335,6 +334,11 @@ def _publish(args) -> int:
             return 1
         print(f"lint override: {override}")
     toml.write_text(_drop_draft(toml.read_text()))
+    if log is None:
+        from .events import open_log
+        log = open_log()
+    log.append("release.published", {"release_id": rel.id, "revision": rel.revision,
+               "provenance": "guarded-publish"}, item_id=rel.id)
     return 0
 
 
@@ -439,7 +443,7 @@ def _cmd(args, log: EventLog) -> int:
     if args.backlog_cmd == "new":
         return _new(args)
     if args.backlog_cmd == "publish":
-        return _publish(args)
+        return _publish(args, log)
     if args.backlog_cmd == "rebase":
         return _rebase(args, log)
     rows = _filtered(backlog_rows(load_releases(), log.read()), args.states,

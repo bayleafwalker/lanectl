@@ -13,7 +13,7 @@ def ev(kind, data, minute, item="account-work"):
 
 
 def history():
-    return [ev("release.published", dict(release_id="account-work", revision=1), 0),
+    return [ev("release.published", dict(release_id="account-work", revision=1, provenance="guarded-publish"), 0),
             ev("item.claimed", dict(attempt_id="account-work-a1", lane="implement", model="model-a", worker="fake"), 2),
             ev("attempt.finished", dict(attempt_id="account-work-a1", outcome="done", exit_code=0, head_sha="abc"), 5),
             ev("item.landed", dict(attempt_id="account-work-a1", train_id="tr-19", fix_commits=[]), 8),

@@ -28,7 +28,7 @@ def usage(source, units, *, model="model-a", item="account-work",
 
 
 def lifecycle():
-    return [ev("release.published", dict(release_id="account-work", revision=1), 0),
+    return [ev("release.published", dict(release_id="account-work", revision=1, provenance="guarded-publish"), 0),
             ev("item.claimed", dict(attempt_id="a1", lane="implement", model="m", worker="w"), 2),
             ev("attempt.finished", dict(attempt_id="a1", outcome="done", exit_code=0, head_sha="a"), 5)]
 
@@ -51,7 +51,7 @@ def test_retry_waiting_is_labelled_separately_and_excluded_from_execution():
 
 
 def test_misordered_timestamps_never_yield_negative_durations():
-    events = [ev("release.published", dict(release_id="account-work", revision=1), 0),
+    events = [ev("release.published", dict(release_id="account-work", revision=1, provenance="guarded-publish"), 0),
               ev("item.claimed", dict(attempt_id="a1", lane="implement", model="m", worker="w"), 5),
               ev("attempt.finished", dict(attempt_id="a1", outcome="done", exit_code=0, head_sha="a"), 2)]
     phases = accounting_timeline(events, POLICY, item_id="account-work")["phases"]

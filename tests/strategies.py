@@ -154,6 +154,10 @@ def _data_for(etype: str) -> st.SearchStrategy[dict]:
             "release_id": ids("release"),
             "revision": st.integers(min_value=1, max_value=10),
         })
+    if etype == "release.publication.invalidated":
+        return st.fixed_dictionaries({"release_id": ids("release"), "revision": st.integers(1, 10),
+            "target_event_sha256": st.just("a" * 64), "reason": st.just("incorrect"),
+            "evidence_ref": st.just("evidence")})
     if etype == "item.claimed":
         return st.fixed_dictionaries({
             "attempt_id": ids("attempt"),
@@ -351,6 +355,8 @@ def valid_events(draw) -> dict:
     data = dict(draw(_DATA_BY_TYPE[etype]))
     data.update(draw(_extras(EVENT_TYPES[etype])))
     item_id = draw(st.one_of(st.none(), ids("item")))
+    if etype == "release.publication.invalidated":
+        item_id = data["release_id"]
     if item_id is not None:
         check_id("item_id", item_id)
     return make_event(etype, data, item_id=item_id, ts=draw(timestamps()))
