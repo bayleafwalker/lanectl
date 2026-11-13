@@ -14,6 +14,8 @@ from __future__ import annotations
 
 import json
 import math
+import shutil
+import subprocess
 import tomllib
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -116,16 +118,38 @@ def check_train_isolation(root: Path, repos: dict[str, RepoSpec]) -> list[Findin
         return [Finding(ERROR, 'train-isolation', 'cannot read coordination configuration')]
     if not coordinated:
         return []
-    unfenced = {name for name, repo in repos.items() if repo.train_isolation != 'namespace'}
+    unfenced = {name for name, repo in repos.items() if repo.train_isolation not in ('namespace', 'systemd')}
     findings = []
     unsafe = sorted(unfenced.intersection(coordinated))
     if unsafe:
         findings.append(Finding(ERROR, 'train-isolation',
-            'coordinated repos require namespace isolation: ' + ', '.join(unsafe)))
+            'coordinated repos require fenced train isolation: ' + ', '.join(unsafe)))
     if unfenced:
         findings.append(Finding(WARN, 'train-isolation',
             'environment-only trains can read same-user credential files: ' + ', '.join(sorted(unfenced))))
     return findings
+
+
+def check_train_service(repos: dict[str, RepoSpec]) -> list[Finding]:
+    """Repos opting into the separate-UID service need the fixed host unit."""
+    selected = sorted(name for name, repo in repos.items() if repo.train_isolation == 'systemd')
+    if not selected:
+        return []
+    names = ', '.join(selected)
+    missing = (f'systemd train isolation configured for {names} but the fixed '
+               'lanectl-train@.service is absent')
+    sysctl = shutil.which('systemctl')
+    if not sysctl:
+        return [Finding(ERROR, 'train-service',
+                        f'{missing} and systemctl is not on PATH; install the host fence')]
+    try:
+        p = subprocess.run([sysctl, 'cat', '--no-pager', 'lanectl-train@.service'],
+                           capture_output=True, text=True, timeout=15)
+    except (OSError, subprocess.TimeoutExpired):
+        return [Finding(ERROR, 'train-service', f'{missing}; install the host fence')]
+    if p.returncode:
+        return [Finding(ERROR, 'train-service', f'{missing}; install the host fence')]
+    return [Finding(OK, 'train-service', f'lanectl-train@.service present for {names}')]
 
 
 def check_policy(root: Path) -> list[Finding]:
@@ -271,6 +295,7 @@ def run(log: EventLog, *, root: Path | None = None,
     repos, repo_findings = check_repos(base)
     findings += repo_findings
     findings += check_train_isolation(base, repos)
+    findings += check_train_service(repos)
     events, event_findings = check_events(log)
     findings += event_findings
     findings += check_policy(base)
