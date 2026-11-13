@@ -1,0 +1,20 @@
+{
+  "provenance": "interactive integrator independent verification; native outcome remains escalated",
+  "attempt_id": "fenced-train-client-a4",
+  "head_sha": "2cfa660fdce4a33303d67e9cfaeb0160c6410002",
+  "seed_sha": "473a0a32f35e2e2fcb335ae68c8369739eac7301",
+  "changed_lines": 83,
+  "worker_added_tests": false,
+  "base_control": {
+    "exit": 1,
+    "failed": 3,
+    "passed": 7
+  },
+  "gates": {
+    "diff-policy": [],
+    "fail-on-base": [],
+    "acceptance-on-base": [],
+    "acceptance": [],
+    "job:suite": []
+  }
+}

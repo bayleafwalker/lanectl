@@ -1,0 +1,22 @@
+[
+  {
+    "kind": "other_bash",
+    "is_error": false,
+    "summary": [],
+    "approval_required": false
+  },
+  {
+    "kind": "other_bash",
+    "is_error": true,
+    "summary": [],
+    "approval_required": true
+  },
+  {
+    "kind": "frozen_acceptance",
+    "is_error": false,
+    "summary": [
+      "10 passed in 0.44s"
+    ],
+    "approval_required": false
+  }
+]

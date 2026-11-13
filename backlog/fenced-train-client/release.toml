@@ -1,123 +1,61 @@
 id = "fenced-train-client"
 repo = "lanectl"
-base_sha = "5dbe83e656e160e676457cc1d20cafe2c715edfc"
-revision = 5
+base_sha = "2cfa660fdce4a33303d67e9cfaeb0160c6410002"
+revision = 6
 title = "Execute ownership-compatible train checks through the separate-UID service"
 task_class = "recovery"
 size = "S"
 data_class = "public"
-eligible_lanes = ["restricted"]
+eligible_lanes = ["implement"]
 
 outcome = """
-Revision 5 repeats the bounded correction after the prior author could not run
-Bash under the native profile, then added a FIFO regression that hung the old
-base. That run was stopped and rejected, never accepted. The coordinator has
-repaired the native profile to allow only the exact frozen acceptance command.
-The command explicitly includes the workstation-approved snip proxy raw-output
-wrapper, proven with a real CLI Bash/tool-result trace (9 passed, no permission
-denials). Run that literal command from Acceptance, without additional wrappers
-or different arguments. The adapter does not rewrite approved commands. Read/Edit tools are available for implementation. If
-the acceptance command remains denied, stop with DISPATCH_OUTCOME: ESCALATED;
-do not report done with verification delegated back to the planner.
+Repair the independently reproduced queued-start lifecycle error in the public
+fenced client. This is a small public correction routed through the existing
+implementation lane; first-party source review remains separate. No private code,
+credentials, policy edits or increased lane caps are authorized.
 
-The repaired source c00bcbb9958b703fe359639aee5744aa433595f1 is an audit reference
-only; do not fetch it, run git show, or read outside this checkout. Implement
-the bounded descriptor fix using Read/Edit on this base. Do not copy the old
-unguarded FIFO test. No Bash commands beyond the exact declared acceptance are
-authorized by the native profile; do not try git, wc, or alternate test commands. Its descriptor
-walk and nonblocking file opens were coherent on independent source review.
-The three frozen parent/FIFO cases already contain interceptors preventing any
-outside read or blocking open. All required new tests are frozen already, including legitimate leaf-link
-metadata preservation; do not add or edit test files in this correction. Every
-negative frozen test also terminates on the defective base. Never directly open a
-FIFO through the old implementation without a guard or bounded subprocess.
+Base 2cfa660 is the complete corrected source from A4. Its descriptor-relative
+parent walking, nonblocking inspection, nonce/root receipt binding, no-copyback,
+coordinated admission and namespace/environment semantics already passed focused
+and full-suite gates. Independent review found one remaining model error: after
+systemctl start --no-block, an initial inactive reading can describe a queued
+start. _wait_terminal currently treats it as terminal after only a short receipt
+grace, allowing outer cleanup while the unit may still start or run. Root froze
+two safe synthetic-clock regressions; both fail precisely on this base, without
+real services, sleeps, unsafe reads or hanging FIFOs.
 
-This is a bounded safety correction on the complete reviewed candidate
-5dbe83e656e160e676457cc1d20cafe2c715edfc, deliberately used as base_sha so the
-existing whole feature remains unchanged and this diff fits the S/250 line cap.
-Do not rebase this corrective release onto older main or rewrite its implementation.
-The final train will merge the corrected descendant onto current canonical main.
-All earlier frozen feature and recovery acceptance remains required. Those tests
-already pass on this base; the three new parent/FIFO falsifiers fail precisely.
+Wait for BOTH receipt existence and terminal inactive/failed state within the
+existing overall deadline. While the receipt is absent, continue observing
+liveness even if a poll says inactive. A missing receipt at the deadline must
+return false so run_command takes its existing stop/terminal-proof/orphan path.
+Do not trust receipt existence without terminal state. Preserve cancellation,
+KeyboardInterrupt, failed-stop named-orphan retention, cleanup only after proven
+termination, and nonzero infrastructure failures with no fallback. Do not shorten
+existing host stop limits or change request/receipt authority.
 
-Independent review reproduced three model errors after the prior gates passed:
-_manifest opens tracked files through a substituted parent-directory symlink;
-_mutation/_read_head follows a substituted whole-repo parent symlink; and a
-candidate .git/HEAD FIFO can block inspection because open lacks nonblocking
-protection. Synthetic interceptors prevented all outside reads/blocking and prove
-these failures. Fix them using ordinary Python descriptor-relative no-follow
-parent traversal anchored at a verified checkout directory. Validate every
-candidate-controlled path component before opening file contents, including
-repo and .git parents; preserve legitimate tracked leaf symlink metadata without
-following targets. Nonregular files must never block inspection: use safe
-nonblocking opens/type checks or reject before opening, with race safety.
-Preserve exact source/HEAD mutation rejection and safe cleanup/orphan behavior.
-Do not execute Git, hooks or filters when inspecting the handed-back tree.
-Retain _manifest(root,tracked), _mutation(root,commit,tracked,before),
-_stage(checkout,dest) and _request(repo,command,timeout) interfaces used by the
-frozen regression proofs. The frozen tests cover the focused correction; all existing and frozen test
-files are immutable. No coverage suppression directives,
-new dependencies, governance edits, broad refactoring or changes to the proven
-request/receipt/lifecycle plumbing. <=250 added+deleted lines after formatting.
+The new frozen file also exercises _stage from actual git worktree add sources,
+both branch train and detached historical checkouts. Those two tests already pass
+on the base; they close the independent review's coverage gap without requiring
+any staging rewrite. All prior frozen acceptance remains required. Acceptance
+files, existing tests, governance and public host contract are immutable. Do not
+add tests: all required cases are already frozen. Scope only fenced_train.py;
+keep the correction bounded to <=250 added/deleted lines, ideally much smaller.
+No new dependencies, coverage suppression, broad refactoring or privileged helper.
 
-Implement the lanectl side of approved #2889, selecting train_isolation="systemd"
-as an opt-in third mode; namespace remains default and environment remains refused
-for coordinated work. The public host contract is files/host-contract.md in this
-release (absolute read-only source: /projects/dev/lanectl/backlog/fenced-train-client/files/host-contract.md): use its fixed root-owned system service and root-owned receipt, never
-introduce a privileged helper, new dependencies, sudo or per-request mount grants.
-
-API: lanectl.fenced_train.run_command(repo, checkout, command, timeout_s=1800)
-returns CompletedProcess with captured diagnostic output and a nonzero status on
-any launch, fence, receipt, source-mutation, timeout or cleanup failure. Wire all
-existing train setup/check/recheck/historical paths through this boundary using
-runner._train_command, preserving other modes. Coordinated runner admission and
-execution accept the two fenced modes only; doctor reports configured systemd
-service absence clearly and still warns about environment-only repositories.
-
-Use a fresh safe per-command ID and a self-contained staged Git checkout below
-/var/lib/lanectl-train/trains/<id> (no gitdir outside, alternates or hardlinks).
-Never run candidate code as the coordinator while staging or inspecting results.
-The original checkout, canonical repo, governance and coordinator state must
-remain unchanged. Stage the exact source commit; detect tracked-source or HEAD
-changes caused by checks without executing attacker-controlled Git config,
-filters, hooks or arbitrary code outside the fence. No source or .venv copyback.
-For each fresh check-stage, run the repository's configured setup inside the same
-fence before the requested command unless that command is setup itself. Do not
-reuse a virtualenv referencing /projects; correctness precedes cache reuse.
-
-Run the fixed systemctl start --no-block template (never --user), poll the exact
-instance, and wait until terminal before accepting a result or deleting its dir.
-On timeout, cancellation, KeyboardInterrupt or errors after start, stop that exact
-instance and establish terminal state before cleanup. Unknown liveness must not
-be treated as stopped; leave a named actionable orphan if stop cannot be proved.
-Missing host service, authorization refusal and all infrastructure errors fail
-closed; never call the environment/namespace runner as a fallback. Bound waits.
-Journal stdout/stderr can be read using journalctl for the unique exact instance.
-Forward no coordinator/native-provider token or credential directory, operator
-HOME, XDG homes, UV cache or arbitrary environment. Host supplies fresh HOME/tmp
-and system PATH. Native workers retain their existing separate auth behavior.
-
-Only /var/lib/lanectl-train/results/<id>.json is authoritative. Read it without
-following symlinks, require a root-owned regular file and root-owned parent that
-are not group/other-writable, and bind version, train_id and request_sha256 to
-the exact submitted bytes. Refuse candidate-controlled in-tree results entirely.
-Expose receipt_returncode(record, *, train_id, request_sha256): int, raising
-ValueError for malformed/mismatched receipts and returning 0 only for a coherent
-success (outcome succeeded/service_result success/exit_code exited/exit_status 0).
-Every other coherent outcome is nonzero. Add realistic fake-systemctl lifecycle
-tests and hostile file/receipt/mutation tests; no live host service is required
-in the package suite. Actual host/full-repository qualification is the planner's
-next step; do not change governance/repos.toml or claim field qualification.
-Existing exact-tip and stale/dirty train proof behavior remains in force.
-For this corrective revision the S/250-line bound above applies, excluding frozen acceptance.
+The public host contract remains files/host-contract.md. The root-owned systemd
+service source is reviewed and VM-qualified, but workstation installation and
+full real-repository qualification remain pending. Do not claim field proof or
+change governance repository isolation modes. Preserve every _stage, _manifest,
+_mutation and _request interface used by the frozen proofs. Run the exact frozen
+acceptance and report actual results. Existing full-suite repo gate also applies.
 """
 
 [scope]
 paths = ["src/lanectl/fenced_train.py"]
 
 [acceptance]
-files = ["tests/stage8/test_acc_fenced_train.py", "tests/stage8/test_acc_fenced_train_recovery.py", "tests/stage8/test_acc_fenced_train_parents.py"]
-exec = ["snip proxy -- uv run --no-sync pytest -q -p no:cacheprovider tests/stage8/test_acc_fenced_train.py tests/stage8/test_acc_fenced_train_recovery.py tests/stage8/test_acc_fenced_train_parents.py"]
+files = ["tests/stage8/test_acc_fenced_train.py", "tests/stage8/test_acc_fenced_train_recovery.py", "tests/stage8/test_acc_fenced_train_parents.py", "tests/stage8/test_acc_fenced_train_pending.py"]
+exec = ["snip proxy -- uv run --no-sync pytest -q -p no:cacheprovider tests/stage8/test_acc_fenced_train.py tests/stage8/test_acc_fenced_train_recovery.py tests/stage8/test_acc_fenced_train_parents.py tests/stage8/test_acc_fenced_train_pending.py"]
 
 [lint]
-override = "This corrective release deliberately targets the reviewed unlanded candidate 5dbe83e as its base. Earlier feature/recovery acceptance already passes there and is retained for compatibility. New parent-symlink and FIFO tests fail for the independently reproduced unsafe opens, and combined fail-on-base remains required. No check or policy is disabled."
+override = "This bounded correction deliberately targets unlanded A4 2cfa660. Earlier acceptance and the new linked-worktree staging tests pass there. Two new queued-start lifecycle assertions fail precisely; combined fail-on-base remains mandatory. No check or policy is disabled."
