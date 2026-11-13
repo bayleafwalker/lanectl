@@ -120,6 +120,16 @@ with patch('tests.postgres_test_support.subprocess.run',side_effect=docker_obser
             sibling=next(r for r in source_rows[1:] if fixtures.source_key(kind,r)!=key_before)
             sibling_key=fixtures.source_key(kind,sibling)
             sibling_expected=[r for r in source_rows if fixtures.source_key(kind,r)==sibling_key]
+            unknown_row=dict(original)
+            if kind=='anomaly': unknown_row['transaction_id']='0000000000000000'
+            else: unknown_row['contract_id']='qualification-unknown'
+            unknown_key=fixtures.source_key(kind,unknown_row)
+            assert all(fixtures.source_key(kind,r)!=unknown_key for r in source_rows)
+            with observe_warehouse() as before_reads:
+                unknown_before=client.get(fixtures.record_path(kind,unknown_key))
+            before_body=json_body(unknown_before)
+            before_proved=(unknown_before.status_code==404 and isinstance(before_body,dict)
+                           and set(before_body)=={'detail'} and not before_reads)
             malformed=dict(original,**{component:''}); source_rows[0]=malformed
             try:
                 model.model_validate(to_jsonable(malformed)); model_accepts=True
@@ -131,6 +141,7 @@ with patch('tests.postgres_test_support.subprocess.run',side_effect=docker_obser
             with observe_warehouse() as reads:
                 response=client.get(fixtures.record_path(kind,forged))
                 sibling_response=client.get(fixtures.record_path(kind,sibling_key))
+                unknown_after=client.get(fixtures.record_path(kind,unknown_key))
             body=json_body(response)
             detail_only=isinstance(body,dict) and set(body)=={'detail'}
             serialized=json.dumps(body,sort_keys=True)
@@ -138,13 +149,24 @@ with patch('tests.postgres_test_support.subprocess.run',side_effect=docker_obser
             no_facts=not any(value in serialized for value in sensitive)
             safe=response.status_code in (400,404,422,503) and detail_only and no_facts and not reads
             sibling_exact=resolves_exactly(sibling_response,sibling_key,sibling_expected)
+            unknown_body=json_body(unknown_after)
+            unknown_serialized=json.dumps(unknown_body,sort_keys=True)
+            unknown_detail_only=isinstance(unknown_body,dict) and set(unknown_body)=={'detail'}
+            unknown_no_facts=not any(value in unknown_serialized for value in sensitive)
+            unknown_safe=(unknown_after.status_code==503 and unknown_detail_only
+                          and unknown_no_facts and not reads)
             cases.append({'kind':kind,'component':component,'mutation':'empty string in a copied published row',
                 'public_row_model_accepts_empty':model_accepts,'publication_store_accepts_empty':store_accepts,
                 'forged_item_id':forged,'http_status':response.status_code,'response_detail_only':detail_only,
                 'response_source_fields_present':not no_facts,'warehouse_reads':reads,'intact_sibling_item_id':sibling_key,
                 'intact_sibling_http_status':sibling_response.status_code,
                 'intact_sibling_expected_group_size':len(sibling_expected),'intact_sibling_exact':sibling_exact,
-                'required_behavior':safe and sibling_exact and model_accepts and store_accepts})
+                'unknown_item_id':unknown_key,'unknown_before_http_status':unknown_before.status_code,
+                'unknown_before_detail_only':isinstance(before_body,dict) and set(before_body)=={'detail'},
+                'unknown_before_warehouse_reads':before_reads,'unknown_before_proved_absent':before_proved,
+                'unknown_after_http_status':unknown_after.status_code,'unknown_after_detail_only':unknown_detail_only,
+                'unknown_after_source_fields_present':not unknown_no_facts,'unknown_after_required_behavior':unknown_safe,
+                'required_behavior':safe and sibling_exact and model_accepts and store_accepts and before_proved and unknown_safe})
 container=next(cmd[cmd.index('--name')+1] for cmd in calls if len(cmd)>1 and cmd[1]=='run')
 removed=any(cmd[1:3]==['rm','-f'] and cmd[-1]==container for cmd in calls)
 inspection=real_run(['docker','inspect',container],capture_output=True,text=True)

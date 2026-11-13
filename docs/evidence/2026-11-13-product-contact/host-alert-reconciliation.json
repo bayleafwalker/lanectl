@@ -54,5 +54,35 @@
     "exit_code": 0,
     "output": "1 passed in0.09s",
     "execution": "escalated after sandbox refused uv cache writes"
+  },
+  "latest_recheck": {
+    "observed_at": "2026-11-13T19:41:49.040736+00:00",
+    "before": {
+      "system_failed": 0,
+      "user_failed": 1,
+      "unit": "hla-stack-falsify-9cf-972c6b.service"
+    },
+    "retained_failure": {
+      "exit_code": 1,
+      "cause": "scratch classifier allowed only500/503; actual missing-publication404; documented corrected control passed",
+      "record": "hla-compose-binding/qualification.json",
+      "cleanup_down_exit": 0,
+      "cleanup_image_remove_exit": 0
+    },
+    "action": "reset-failed only this terminal probe unit after reading log and recorded correction",
+    "after": {
+      "system_failed": 0,
+      "user_failed": 0
+    },
+    "lanectl_tick_timer": {
+      "ActiveState": "active",
+      "SubState": "waiting",
+      "UnitFileState": "enabled"
+    },
+    "strict_fence": {
+      "RootDirectory": "",
+      "User": "lanectl-train",
+      "sudo_noninteractive": "password required"
+    }
   }
 }

@@ -1,0 +1,138 @@
+[
+  {
+    "data": {
+      "attempt_id": "hla-attention-records-r5-a6",
+      "base_sha": "9cf62cb7271ed0e15e35877ab772709808470bea",
+      "branch": "lane/hla-attention-records-r5-a6",
+      "lane": "implement",
+      "lane_digest": "sha256:7bd3d1f327b84636",
+      "lane_revision": 3,
+      "model": "opencode-go/deepseek-v4.1-flash",
+      "release_revision": 3,
+      "runner_process": {
+        "boot_id": "61e4429f-8f5a-4b58-9b86-f308ad925091",
+        "host": "workstation",
+        "machine_id": "e681b85141f226386e176a1de00fcc3ab4546197d3aa937aad606d73ce133a5b",
+        "pid": 1033948,
+        "start_ticks": "3868293"
+      },
+      "worker": "opencode",
+      "worker_unit": "lanectl-attempt-1ecb2fa3ca0ca96f11270b66.service"
+    },
+    "item_id": "hla-attention-records-r5",
+    "schema": "lanectl.event/v1",
+    "ts": "2026-11-13T17:46:14Z",
+    "type": "item.claimed"
+  },
+  {
+    "data": {
+      "attempt_id": "hla-attention-records-r5-a6",
+      "elapsed_s": 2700.1,
+      "escalation_reason": null,
+      "exit_code": 124,
+      "final_tail": "I'll start by exploring the repository structure and understanding the current state.",
+      "head_sha": "61b77d4b607ef39ee516987179fe70d0dc514087",
+      "isolation_breach": false,
+      "main_changed": false,
+      "outcome": "failed",
+      "seed_sha": "cb237055730a8c47fa24aac50d17f47f86ca3ad2"
+    },
+    "item_id": "hla-attention-records-r5",
+    "schema": "lanectl.event/v1",
+    "ts": "2026-11-13T18:31:16Z",
+    "type": "attempt.finished"
+  },
+  {
+    "data": {
+      "attempt_id": "hla-attention-records-r5-a6",
+      "gate": "diff-policy",
+      "passed": true,
+      "violations": []
+    },
+    "item_id": "hla-attention-records-r5",
+    "schema": "lanectl.event/v1",
+    "ts": "2026-11-13T18:34:12Z",
+    "type": "gate.result"
+  },
+  {
+    "data": {
+      "attempt_id": "hla-attention-records-r5-a6",
+      "gate": "fail-on-base",
+      "passed": true,
+      "violations": []
+    },
+    "item_id": "hla-attention-records-r5",
+    "schema": "lanectl.event/v1",
+    "ts": "2026-11-13T18:34:12Z",
+    "type": "gate.result"
+  },
+  {
+    "data": {
+      "attempt_id": "hla-attention-records-r5-a6",
+      "gate": "acceptance-on-base",
+      "passed": true,
+      "violations": []
+    },
+    "item_id": "hla-attention-records-r5",
+    "schema": "lanectl.event/v1",
+    "ts": "2026-11-13T18:34:12Z",
+    "type": "gate.result"
+  },
+  {
+    "data": {
+      "attempt_id": "hla-attention-records-r5-a6",
+      "gate": "acceptance",
+      "passed": true,
+      "violations": []
+    },
+    "item_id": "hla-attention-records-r5",
+    "schema": "lanectl.event/v1",
+    "ts": "2026-11-13T18:34:12Z",
+    "type": "gate.result"
+  },
+  {
+    "data": {
+      "attempt_id": "hla-attention-records-r5-a6",
+      "gate": "job:ruff",
+      "passed": true,
+      "violations": []
+    },
+    "item_id": "hla-attention-records-r5",
+    "schema": "lanectl.event/v1",
+    "ts": "2026-11-13T18:34:12Z",
+    "type": "gate.result"
+  },
+  {
+    "data": {
+      "attempt_id": "hla-attention-records-r5-a6",
+      "by": "gates",
+      "decision": "rejected",
+      "reasons": [
+        "worker outcome failed"
+      ],
+      "rules_revision": "decision-rules/v3"
+    },
+    "item_id": "hla-attention-records-r5",
+    "schema": "lanectl.event/v1",
+    "ts": "2026-11-13T18:34:12Z",
+    "type": "decision.recorded"
+  },
+  {
+    "data": {
+      "attempt_id": "hla-attention-records-r5-a6",
+      "decision": "rejected",
+      "elapsed_s": 2700.1,
+      "gates_failed": [],
+      "lane_revision": 3,
+      "model": "opencode-go/deepseek-v4.1-flash",
+      "rules_revision": "decision-rules/v3",
+      "size": "M",
+      "task_class": "product-api",
+      "worker": "opencode"
+    },
+    "item_id": "hla-attention-records-r5",
+    "schema": "lanectl.event/v1",
+    "ts": "2026-11-13T18:34:12Z",
+    "type": "experiment.recorded"
+  }
+]

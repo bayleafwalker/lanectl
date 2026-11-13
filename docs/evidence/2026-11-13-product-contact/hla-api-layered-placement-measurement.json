@@ -1,0 +1,42 @@
+{
+  "schema": "hla-complete-placement-prototype/v1",
+  "source_commit": "a02efec5e6da761e8febf71b38b14894af92eda3",
+  "base_commit": "9cf62cb7271ed0e15e35877ab772709808470bea",
+  "changed_lines": 771,
+  "added": 762,
+  "deleted": 9,
+  "frozen1173_test_file_excluded": true,
+  "generated_lines": 460,
+  "new_http_regression_test_lines": 72,
+  "size_limit": 700,
+  "excess": 71,
+  "legacy_facades": {
+    "reporting_service": {
+      "base": 1534,
+      "prototype": 1527
+    },
+    "report_routes": {
+      "base": 1257,
+      "prototype": 1257
+    }
+  },
+  "all4_kinds_and_contracts_retained": true,
+  "worker_verification": [
+    "144frozenfast+architecturepasses",
+    "2newfastpasses",
+    "4realPGslowpasses",
+    "ruff/mypy/contractexportpass",
+    "4independentqualifierpasses"
+  ],
+  "source_status": "unacceptedlocalprototype, no push/canonicalmerge",
+  "layered_plan": {
+    "source_prerequisite": "all4keycatalog/reader,facadeintegration,classifications,directfacade/storetests",
+    "original_full_API_followon": "all4HTTPendpoints+generated460+HTTPerrorregressions72, thenStageC/D",
+    "wholeWork": "1593staysactive; no kind-by-kindcuts/no capwaiver/testrelabel"
+  },
+  "future_HTTP_scope_additions": [
+    "apps/api/app.py",
+    "apps/api/routes/attention_record_routes.py"
+  ],
+  "durability": "Git patch/evidence cross-host-replicated after canonical publication; localprototype/rawlogs session-local"
+}

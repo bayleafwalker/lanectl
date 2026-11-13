@@ -52,7 +52,8 @@ policy or grant was widened. Independent review, actual disposable Postgres
 upgrade/concurrency probes, coordinator promotion replay and full verify-fast
 passed; all canonical CI passed. This prerequisite is not a partial Work closeout.
 
-Stage B's complete release `hla-attention-records-r5` revision3 is published. It
+Stage B's complete release `hla-attention-records-r5` revision3 was published;
+it is now held as a draft pending the source-reader prerequisite below. It
 retains the full Codex-authored contract and separate GoPro review for four own-source record APIs,
 opaque identity/encoding, real permission middleware, source selection before
 filtering, current publication authority and typed generated contracts. Actual
@@ -113,8 +114,11 @@ Nevertheless the native process timed out at2700.1s, exit124, while broader
 verification was running. All recorded post-run gates passed, but the actual
 decision rejected it for worker outcome failed. Preserve both facts; this is
 timeout-artifact qualification, not candidate approval or delivery. The same
-bounded runner automatically admitted a6 on DeepSeek Flash at17:46UTC. Its
-source and outcome remain unmeasured while live.
+bounded runner automatically admitted a6 on DeepSeek Flash at17:46UTC. It also
+timed out at2700.1s, exit124, and was rejected for worker outcome failed. Saved
+source61b77d4b607ef39ee516987179fe70d0dc514087 has692 worker changed lines;
+it has not received complete independent source qualification or acceptance.
+The bounded runner is terminal and the release exhausted its two attempts.
 
 The a5 model also reported a nullable-date repair. Independent admission checks
 found the current public row model rejects expected_date=None and the fresh
@@ -123,6 +127,50 @@ rows. No constraint was dropped to manufacture that state, and no nullable-date
 HTTP result is claimed. Historical nonstandard tables and runtime
 WarehouseBusyError behavior remain outside that narrow execution proof. See
 adjacent a5 decisions, source patch, probe results and timeout qualification.
+
+The subsequent required native Sonnet review of exact a5 source returned HOLD.
+All seven selected specialists completed, with no permission denials. Mandatory
+findings are the unclassified transitional pipeline module and growth of already
+oversized legacy facades. A separate real-route PostgreSQL connection-failure
+injection returns500 instead of required503; ordinary missing-column probes did
+not exercise that path. The extended empty-identity probe also requires unknown
+keys to change from provable404 to unavailable503 after a malformed publication
+row; a4 fails and a5 passes all four such cases. These observations qualify
+specific saved source paths, not the failed native outcomes or whole product.
+
+A complete corrected placement prototype a02efec5e6da761e8febf71b38b14894af92eda3
+measured771 changed lines against M700, including460 generated lines and72 HTTP
+regression-test lines. It preserves all four kinds, shrinks reporting_service,
+leaves old report_routes unchanged and classifies the new domain module. It is
+an unaccepted local prototype, not landed work. The measured result justifies a
+cohesive prerequisite: first implement all four source readers and their facade,
+classification and direct-store tests; then rebase and independently re-review
+the ORIGINAL full four-route API packet, explicitly allowing apps/api/app.py and
+apps/api/routes/attention_record_routes.py. Generated contracts and HTTP error
+regressions remain in the HTTP stage. No cap waiver, test reclassification,
+kind-by-kind cut or failed-attempt approval shortcut is authorized.
+
+The new `hla-attention-source-reader` packet remains draft. Its first native
+gpt-6.1-terra proposal was independently rejected by GoPro for date/decimal
+fixture errors. A separately attributed first-party GPT-6 correction repaired
+those fixtures and strengthened query-result observation, all-kind authority,
+complete groups, error paths and identity cases. Its538-line test was actually
+qualified: canonical base reaches the missing getter after successful setup,
+and an unaccepted reference passes4fast plus3real-PostgreSQL cases without skips.
+The original native author finalized that proposal with an additional warehouse
+driver-failure case (551 lines). Those exact final bytes were separately
+requalified:5fast plus3real-PostgreSQL cases pass without skips, canonical base
+reaches the missing getter, the query-observer falsifier discriminates and Ruff
+passes. Fresh independent native review and base checks are now running. No new
+implementation is admitted yet.
+
+Lanectl v0.2.8 at937b634c16c7b1b1df667041a064a11825e196be is installed and
+byte-matched to the independently reviewed retry correction. The old selection
+algorithm reused Flash after revision-local models were exhausted; the fix
+excludes the immediate previous model when another eligible positive-weight
+model exists. Tests forced the old failure, the corrected full suite passed1021
+tests and native eligibility/caps remain unchanged. Installation waited until
+the bounded runner and recurring tick were actually inactive.
 
 Coordinator prerequisites measured: existing repo Node20.20.1, GNUmake4.4.1 from
 the pinned Nix store, Docker29.9.2, Compose5.7.0. Locked npm ci completed and web

@@ -1,0 +1,21 @@
+{
+  "schema": "hla-native-timeout-artifact/v1",
+  "base_sha": "9cf62cb7271ed0e15e35877ab772709808470bea",
+  "head_sha": "61b77d4b607ef39ee516987179fe70d0dc514087",
+  "seed_sha": "cb237055730a8c47fa24aac50d17f47f86ca3ad2",
+  "tree_sha": "ae0ea69e16fc8f4a76927cdd6938b8f28e47a87a",
+  "actual_model": "opencode-go/deepseek-v4.1-flash",
+  "native_outcome": "failed",
+  "exit_code": 124,
+  "elapsed_s": 2700.1,
+  "normal_decision": "rejected: worker outcome failed",
+  "all_recorded_postrun_gates_passed": true,
+  "production_diff_numstat": "57\t0\tapps/api/routes/report_routes.py\n220\t0\tapps/web/frontend/generated/api.d.ts\n240\t0\tapps/web/frontend/generated/openapi.json\n108\t0\tpackages/pipelines/reporting_attention_records.py\n67\t0\tpackages/pipelines/reporting_service.py\n",
+  "production_patch_sha256": "391a48a24d281a67cfb979b71500106654251e4bfb956c0f3d00ec728060e593",
+  "frozen_acceptance_excluded": true,
+  "independent_complete_source_qualification": false,
+  "candidate_approved": false,
+  "full_verify_fast_complete": false,
+  "release_status": "held draft pending genuine measured source-reader prerequisite",
+  "durability": "cross-host-replicated after canonical publication"
+}

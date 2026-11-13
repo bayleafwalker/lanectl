@@ -1,7 +1,7 @@
 {
   "schema": "hla-empty-identity-qualification/v1",
   "source_commit": "b41e2c6c6dbad1a410e4048a6aebf4e958b8498f",
-  "probe_sha256": "ae49c8b067f5992e18088dfb573d5c0062dcb6b8d5d355f34e38466a145615c3",
+  "probe_sha256": "491e408180622978dec6fff496b3d90054fb5d6e521aeafc118d6d828ad3433e",
   "probe": "contrib/qualification/hla_attention_empty_identity.py",
   "actual_negative_execution": {
     "require_fixed_exit_code": 1,
@@ -33,11 +33,21 @@
   "execution_scope": "ordinary escalated synthetic PostgreSQL/HTTP probes; not host-fence proof",
   "requirements": "apply generic no-empty-component identity rule consistently across anomaly/review/renewal/payment; literal None in nonempty opaque IDs remains valid",
   "limitations": [
-    "candidate a5 remains unmeasured while live",
     "requires compatible frozen fixture helpers",
     "DuckDBStore fetch methods traced; raw-connection reads excluded",
     "selected-string disclosure checks require source/error-path review too",
-    "publication boundary mutations, not assertion ingestion generates malformed IDs"
+    "publication boundary mutations, not assertion ingestion generates malformed IDs",
+    "a5 native process failed timeout; source-path qualification does not approve its attempt"
   ],
-  "durability": "Git files cross-host-replicated after canonical publication; rawlogs and /tmp checkouts session-local"
+  "durability": "Git files cross-host-replicated after canonical publication; rawlogs and /tmp checkouts session-local",
+  "prior_probe_sha256": "ae49c8b067f5992e18088dfb573d5c0062dcb6b8d5d355f34e38466a145615c3",
+  "prior_checker_falsifier_source_commit": "bd88706",
+  "exact_comparison_function_asts_unchanged": true,
+  "unknown_matrix_extension": {
+    "a4_source": "b41e2c6c6dbad1a410e4048a6aebf4e958b8498f",
+    "a4_result": "all4 unknown404before->404after,requirefixed1",
+    "a5_source": "6831e8b872cde89e8d37d0b03e04076cf5670c86",
+    "a5_result": "all4unknown404before->503after,requirefixed0",
+    "read_only_Sage_delta_review": "PASS; previousadmission/exactgroup/Noneguardsunchanged"
+  }
 }

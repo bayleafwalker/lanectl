@@ -1,0 +1,21 @@
+{
+  "schema": "hla-connection-probe-qualification/v1",
+  "probe": "contrib/qualification/hla_attention_connection.py",
+  "probe_sha256": "563b6121b1e206a3e2699543dc6bb75cdb3b34483403fa1c3a222cec59e5916c",
+  "source_commit": "6831e8b872cde89e8d37d0b03e04076cf5670c86",
+  "require_fixed_exit_code": 1,
+  "fault": "synthetic psycopg.OperationalError at actualPGobject._connect, not a real outage",
+  "observed_http": 500,
+  "required_http": 503,
+  "qualifying_attempts": 1,
+  "diagnostic_attempts": 1,
+  "exact_published_group_before_after": true,
+  "warehouse_reads": 0,
+  "independent_review": "Sage closed countattribution HOLD after requiring firstrequestcount separately; suitable exactcandidateuse",
+  "limits": [
+    "no rawconnection warehouse tracing",
+    "WarehouseBusyError not exercised",
+    "no actual server outage claim"
+  ],
+  "durability": "cross-host-replicated after canonical publication"
+}

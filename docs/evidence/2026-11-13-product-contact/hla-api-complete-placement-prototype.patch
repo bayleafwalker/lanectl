@@ -1,0 +1,991 @@
+diff --git a/apps/api/app.py b/apps/api/app.py
+index ec72d38..7c8f361 100755
+--- a/apps/api/app.py
++++ b/apps/api/app.py
+@@ -27,6 +27,7 @@ from apps.api.routes.agent_routes import (
+     register_agent_routes,
+ )
+ from apps.api.routes.assistant_routes import register_assistant_routes
++from apps.api.routes.attention_record_routes import register_attention_record_routes
+ from apps.api.routes.auth_routes import register_auth_routes
+ from apps.api.routes.briefing_routes import register_briefing_routes
+ from apps.api.routes.category_routes import register_category_routes
+@@ -755,6 +756,7 @@ def create_app(
+         to_jsonable=to_jsonable,
+         household_timezone=resolved_household_timezone,
+     )
++    register_attention_record_routes(app, reporting_service, to_jsonable)
+     register_assistant_routes(
+         app,
+         capability_packs=container.capability_packs,
+diff --git a/apps/api/routes/attention_record_routes.py b/apps/api/routes/attention_record_routes.py
+new file mode 100644
+index 0000000..8a03fd3
+--- /dev/null
++++ b/apps/api/routes/attention_record_routes.py
+@@ -0,0 +1,55 @@
++"""Source-authorized attention record endpoints."""
++from typing import Any, Callable
++
++from fastapi import FastAPI, HTTPException
++
++from apps.api.response_models import build_rows_response_model
++from apps.api.routes.report_routes import (
++    CONTRACT_RENEWAL_WATCHLIST_ROW_MODEL,
++    CONTRACT_REVIEW_CANDIDATES_ROW_MODEL,
++    TRANSACTION_ANOMALIES_ROW_MODEL,
++    UPCOMING_FIXED_COSTS_ROW_MODEL,
++)
++from packages.domains.overview.pipelines.attention_records import (
++    AttentionRecordNotFoundError,
++    AttentionRecordUnavailableError,
++)
++from packages.pipelines.reporting_service import ReportingService
++
++
++def register_attention_record_routes(
++    app: FastAPI, reporting: ReportingService | None, to_jsonable: Callable[[Any], Any]
++) -> None:
++    for item_type, segment, row_model in (
++        ("anomaly", "transaction-anomalies", TRANSACTION_ANOMALIES_ROW_MODEL),
++        ("contract_review", "contract-review-candidates", CONTRACT_REVIEW_CANDIDATES_ROW_MODEL),
++        ("contract_renewal", "contract-renewal-watchlist", CONTRACT_RENEWAL_WATCHLIST_ROW_MODEL),
++        ("upcoming_cost", "upcoming-fixed-costs", UPCOMING_FIXED_COSTS_ROW_MODEL),
++    ):
++        def register(kind: str, route: str, model: Any) -> None:
++            async def get_attention_record(item_id: str) -> dict[str, Any]:
++                if reporting is None:
++                    raise HTTPException(status_code=404, detail="Requires a transformation service.")
++                try:
++                    rows = reporting.get_attention_record(kind, item_id)
++                except AttentionRecordUnavailableError:
++                    raise HTTPException(
++                        status_code=503,
++                        detail="The source publication cannot prove this attention item is absent.",
++                    ) from None
++                except AttentionRecordNotFoundError:
++                    raise HTTPException(
++                        status_code=404, detail="No source record has this attention item id."
++                    ) from None
++                return {"item_id": item_id, "rows": to_jsonable(rows)}
++
++            response = build_rows_response_model(
++                ''.join(part.title() for part in route.split('-')) + 'RecordResponse',
++                model, {"item_id": (str, ...)},
++            )
++            app.get(
++                f"/reports/{route}/records/{{item_id:path}}",
++                response_model=response,
++                name=f"get_{kind}_record",
++            )(get_attention_record)
++        register(item_type, segment, row_model)
+diff --git a/apps/web/frontend/generated/api.d.ts b/apps/web/frontend/generated/api.d.ts
+index fe7d8d2..da8ceca 100755
+--- a/apps/web/frontend/generated/api.d.ts
++++ b/apps/web/frontend/generated/api.d.ts
+@@ -3237,6 +3237,23 @@ export interface paths {
+         patch?: never;
+         trace?: never;
+     };
++    "/reports/contract-renewal-watchlist/records/{item_id}": {
++        parameters: {
++            query?: never;
++            header?: never;
++            path?: never;
++            cookie?: never;
++        };
++        /** Get Contract Renewal Record */
++        get: operations["get_contract_renewal_record_reports_contract_renewal_watchlist_records__item_id__get"];
++        put?: never;
++        post?: never;
++        delete?: never;
++        options?: never;
++        head?: never;
++        patch?: never;
++        trace?: never;
++    };
+     "/reports/contract-review-candidates": {
+         parameters: {
+             query?: never;
+@@ -3254,6 +3271,23 @@ export interface paths {
+         patch?: never;
+         trace?: never;
+     };
++    "/reports/contract-review-candidates/records/{item_id}": {
++        parameters: {
++            query?: never;
++            header?: never;
++            path?: never;
++            cookie?: never;
++        };
++        /** Get Contract Review Record */
++        get: operations["get_contract_review_record_reports_contract_review_candidates_records__item_id__get"];
++        put?: never;
++        post?: never;
++        delete?: never;
++        options?: never;
++        head?: never;
++        patch?: never;
++        trace?: never;
++    };
+     "/reports/cost-trend": {
+         parameters: {
+             query?: never;
+@@ -3577,6 +3611,23 @@ export interface paths {
+         patch?: never;
+         trace?: never;
+     };
++    "/reports/transaction-anomalies/records/{item_id}": {
++        parameters: {
++            query?: never;
++            header?: never;
++            path?: never;
++            cookie?: never;
++        };
++        /** Get Anomaly Record */
++        get: operations["get_anomaly_record_reports_transaction_anomalies_records__item_id__get"];
++        put?: never;
++        post?: never;
++        delete?: never;
++        options?: never;
++        head?: never;
++        patch?: never;
++        trace?: never;
++    };
+     "/reports/upcoming-fixed-costs": {
+         parameters: {
+             query?: never;
+@@ -3594,6 +3645,23 @@ export interface paths {
+         patch?: never;
+         trace?: never;
+     };
++    "/reports/upcoming-fixed-costs/records/{item_id}": {
++        parameters: {
++            query?: never;
++            header?: never;
++            path?: never;
++            cookie?: never;
++        };
++        /** Get Upcoming Cost Record */
++        get: operations["get_upcoming_cost_record_reports_upcoming_fixed_costs_records__item_id__get"];
++        put?: never;
++        post?: never;
++        delete?: never;
++        options?: never;
++        head?: never;
++        patch?: never;
++        trace?: never;
++    };
+     "/reports/usage-vs-price": {
+         parameters: {
+             query?: never;
+@@ -4893,6 +4961,13 @@ export interface components {
+             /** Valid To */
+             valid_to?: string | null;
+         };
++        /** ContractRenewalWatchlistRecordResponse */
++        ContractRenewalWatchlistRecordResponse: {
++            /** Item Id */
++            item_id: string;
++            /** Rows */
++            rows: components["schemas"]["ContractRenewalWatchlistRow"][];
++        };
+         /** ContractRenewalWatchlistResponse */
+         ContractRenewalWatchlistResponse: {
+             /** Rows */
+@@ -4919,6 +4994,13 @@ export interface components {
+             /** Utility Type */
+             utility_type: string;
+         };
++        /** ContractReviewCandidatesRecordResponse */
++        ContractReviewCandidatesRecordResponse: {
++            /** Item Id */
++            item_id: string;
++            /** Rows */
++            rows: components["schemas"]["ContractReviewCandidatesRow"][];
++        };
+         /** ContractReviewCandidatesResponse */
+         ContractReviewCandidatesResponse: {
+             /** Rows */
+@@ -7546,6 +7628,13 @@ export interface components {
+         TerminalExecutionResponseModel: {
+             execution: components["schemas"]["TerminalExecutionModel"];
+         };
++        /** TransactionAnomaliesRecordResponse */
++        TransactionAnomaliesRecordResponse: {
++            /** Item Id */
++            item_id: string;
++            /** Rows */
++            rows: components["schemas"]["TransactionAnomaliesRow"][];
++        };
+         /** TransactionAnomaliesResponse */
+         TransactionAnomaliesResponse: {
+             /** Rows */
+@@ -7637,6 +7726,13 @@ export interface components {
+             /** Ui Descriptors */
+             ui_descriptors: components["schemas"]["UiDescriptorContractModel"][];
+         };
++        /** UpcomingFixedCostsRecordResponse */
++        UpcomingFixedCostsRecordResponse: {
++            /** Item Id */
++            item_id: string;
++            /** Rows */
++            rows: components["schemas"]["UpcomingFixedCostsRow"][];
++        };
+         /** UpcomingFixedCostsResponse */
+         UpcomingFixedCostsResponse: {
+             /** Rows */
+@@ -14296,6 +14392,37 @@ export interface operations {
+             };
+         };
+     };
++    get_contract_renewal_record_reports_contract_renewal_watchlist_records__item_id__get: {
++        parameters: {
++            query?: never;
++            header?: never;
++            path: {
++                item_id: string;
++            };
++            cookie?: never;
++        };
++        requestBody?: never;
++        responses: {
++            /** @description Successful Response */
++            200: {
++                headers: {
++                    [name: string]: unknown;
++                };
++                content: {
++                    "application/json": components["schemas"]["ContractRenewalWatchlistRecordResponse"];
++                };
++            };
++            /** @description Validation Error */
++            422: {
++                headers: {
++                    [name: string]: unknown;
++                };
++                content: {
++                    "application/json": components["schemas"]["HTTPValidationError"];
++                };
++            };
++        };
++    };
+     get_contract_review_candidates_reports_contract_review_candidates_get: {
+         parameters: {
+             query?: never;
+@@ -14316,6 +14443,37 @@ export interface operations {
+             };
+         };
+     };
++    get_contract_review_record_reports_contract_review_candidates_records__item_id__get: {
++        parameters: {
++            query?: never;
++            header?: never;
++            path: {
++                item_id: string;
++            };
++            cookie?: never;
++        };
++        requestBody?: never;
++        responses: {
++            /** @description Successful Response */
++            200: {
++                headers: {
++                    [name: string]: unknown;
++                };
++                content: {
++                    "application/json": components["schemas"]["ContractReviewCandidatesRecordResponse"];
++                };
++            };
++            /** @description Validation Error */
++            422: {
++                headers: {
++                    [name: string]: unknown;
++                };
++                content: {
++                    "application/json": components["schemas"]["HTTPValidationError"];
++                };
++            };
++        };
++    };
+     get_cost_trend_reports_cost_trend_get: {
+         parameters: {
+             query?: never;
+@@ -14842,6 +15000,37 @@ export interface operations {
+             };
+         };
+     };
++    get_anomaly_record_reports_transaction_anomalies_records__item_id__get: {
++        parameters: {
++            query?: never;
++            header?: never;
++            path: {
++                item_id: string;
++            };
++            cookie?: never;
++        };
++        requestBody?: never;
++        responses: {
++            /** @description Successful Response */
++            200: {
++                headers: {
++                    [name: string]: unknown;
++                };
++                content: {
++                    "application/json": components["schemas"]["TransactionAnomaliesRecordResponse"];
++                };
++            };
++            /** @description Validation Error */
++            422: {
++                headers: {
++                    [name: string]: unknown;
++                };
++                content: {
++                    "application/json": components["schemas"]["HTTPValidationError"];
++                };
++            };
++        };
++    };
+     get_upcoming_fixed_costs_reports_upcoming_fixed_costs_get: {
+         parameters: {
+             query?: never;
+@@ -14862,6 +15051,37 @@ export interface operations {
+             };
+         };
+     };
++    get_upcoming_cost_record_reports_upcoming_fixed_costs_records__item_id__get: {
++        parameters: {
++            query?: never;
++            header?: never;
++            path: {
++                item_id: string;
++            };
++            cookie?: never;
++        };
++        requestBody?: never;
++        responses: {
++            /** @description Successful Response */
++            200: {
++                headers: {
++                    [name: string]: unknown;
++                };
++                content: {
++                    "application/json": components["schemas"]["UpcomingFixedCostsRecordResponse"];
++                };
++            };
++            /** @description Validation Error */
++            422: {
++                headers: {
++                    [name: string]: unknown;
++                };
++                content: {
++                    "application/json": components["schemas"]["HTTPValidationError"];
++                };
++            };
++        };
++    };
+     get_usage_vs_price_reports_usage_vs_price_get: {
+         parameters: {
+             query?: {
+diff --git a/apps/web/frontend/generated/openapi.json b/apps/web/frontend/generated/openapi.json
+index a840ec3..f86538b 100755
+--- a/apps/web/frontend/generated/openapi.json
++++ b/apps/web/frontend/generated/openapi.json
+@@ -3482,6 +3482,27 @@
+         "title": "ContractPriceCurrentRow",
+         "type": "object"
+       },
++      "ContractRenewalWatchlistRecordResponse": {
++        "properties": {
++          "item_id": {
++            "title": "Item Id",
++            "type": "string"
++          },
++          "rows": {
++            "items": {
++              "$ref": "#/components/schemas/ContractRenewalWatchlistRow"
++            },
++            "title": "Rows",
++            "type": "array"
++          }
++        },
++        "required": [
++          "rows",
++          "item_id"
++        ],
++        "title": "ContractRenewalWatchlistRecordResponse",
++        "type": "object"
++      },
+       "ContractRenewalWatchlistResponse": {
+         "properties": {
+           "rows": {
+@@ -3557,6 +3578,27 @@
+         "title": "ContractRenewalWatchlistRow",
+         "type": "object"
+       },
++      "ContractReviewCandidatesRecordResponse": {
++        "properties": {
++          "item_id": {
++            "title": "Item Id",
++            "type": "string"
++          },
++          "rows": {
++            "items": {
++              "$ref": "#/components/schemas/ContractReviewCandidatesRow"
++            },
++            "title": "Rows",
++            "type": "array"
++          }
++        },
++        "required": [
++          "rows",
++          "item_id"
++        ],
++        "title": "ContractReviewCandidatesRecordResponse",
++        "type": "object"
++      },
+       "ContractReviewCandidatesResponse": {
+         "properties": {
+           "rows": {
+@@ -12124,6 +12166,27 @@
+         "title": "TerminalExecutionResponseModel",
+         "type": "object"
+       },
++      "TransactionAnomaliesRecordResponse": {
++        "properties": {
++          "item_id": {
++            "title": "Item Id",
++            "type": "string"
++          },
++          "rows": {
++            "items": {
++              "$ref": "#/components/schemas/TransactionAnomaliesRow"
++            },
++            "title": "Rows",
++            "type": "array"
++          }
++        },
++        "required": [
++          "rows",
++          "item_id"
++        ],
++        "title": "TransactionAnomaliesRecordResponse",
++        "type": "object"
++      },
+       "TransactionAnomaliesResponse": {
+         "properties": {
+           "rows": {
+@@ -12395,6 +12458,27 @@
+         "title": "UiDescriptorsResponse",
+         "type": "object"
+       },
++      "UpcomingFixedCostsRecordResponse": {
++        "properties": {
++          "item_id": {
++            "title": "Item Id",
++            "type": "string"
++          },
++          "rows": {
++            "items": {
++              "$ref": "#/components/schemas/UpcomingFixedCostsRow"
++            },
++            "title": "Rows",
++            "type": "array"
++          }
++        },
++        "required": [
++          "rows",
++          "item_id"
++        ],
++        "title": "UpcomingFixedCostsRecordResponse",
++        "type": "object"
++      },
+       "UpcomingFixedCostsResponse": {
+         "properties": {
+           "rows": {
+@@ -21612,6 +21696,45 @@
+         "summary": "Get Contract Renewal Watchlist"
+       }
+     },
++    "/reports/contract-renewal-watchlist/records/{item_id}": {
++      "get": {
++        "operationId": "get_contract_renewal_record_reports_contract_renewal_watchlist_records__item_id__get",
++        "parameters": [
++          {
++            "in": "path",
++            "name": "item_id",
++            "required": true,
++            "schema": {
++              "title": "Item Id",
++              "type": "string"
++            }
++          }
++        ],
++        "responses": {
++          "200": {
++            "content": {
++              "application/json": {
++                "schema": {
++                  "$ref": "#/components/schemas/ContractRenewalWatchlistRecordResponse"
++                }
++              }
++            },
++            "description": "Successful Response"
++          },
++          "422": {
++            "content": {
++              "application/json": {
++                "schema": {
++                  "$ref": "#/components/schemas/HTTPValidationError"
++                }
++              }
++            },
++            "description": "Validation Error"
++          }
++        },
++        "summary": "Get Contract Renewal Record"
++      }
++    },
+     "/reports/contract-review-candidates": {
+       "get": {
+         "operationId": "get_contract_review_candidates_reports_contract_review_candidates_get",
+@@ -21630,6 +21753,45 @@
+         "summary": "Get Contract Review Candidates"
+       }
+     },
++    "/reports/contract-review-candidates/records/{item_id}": {
++      "get": {
++        "operationId": "get_contract_review_record_reports_contract_review_candidates_records__item_id__get",
++        "parameters": [
++          {
++            "in": "path",
++            "name": "item_id",
++            "required": true,
++            "schema": {
++              "title": "Item Id",
++              "type": "string"
++            }
++          }
++        ],
++        "responses": {
++          "200": {
++            "content": {
++              "application/json": {
++                "schema": {
++                  "$ref": "#/components/schemas/ContractReviewCandidatesRecordResponse"
++                }
++              }
++            },
++            "description": "Successful Response"
++          },
++          "422": {
++            "content": {
++              "application/json": {
++                "schema": {
++                  "$ref": "#/components/schemas/HTTPValidationError"
++                }
++              }
++            },
++            "description": "Validation Error"
++          }
++        },
++        "summary": "Get Contract Review Record"
++      }
++    },
+     "/reports/cost-trend": {
+       "get": {
+         "operationId": "get_cost_trend_reports_cost_trend_get",
+@@ -22457,6 +22619,45 @@
+         "summary": "Get Transaction Anomalies"
+       }
+     },
++    "/reports/transaction-anomalies/records/{item_id}": {
++      "get": {
++        "operationId": "get_anomaly_record_reports_transaction_anomalies_records__item_id__get",
++        "parameters": [
++          {
++            "in": "path",
++            "name": "item_id",
++            "required": true,
++            "schema": {
++              "title": "Item Id",
++              "type": "string"
++            }
++          }
++        ],
++        "responses": {
++          "200": {
++            "content": {
++              "application/json": {
++                "schema": {
++                  "$ref": "#/components/schemas/TransactionAnomaliesRecordResponse"
++                }
++              }
++            },
++            "description": "Successful Response"
++          },
++          "422": {
++            "content": {
++              "application/json": {
++                "schema": {
++                  "$ref": "#/components/schemas/HTTPValidationError"
++                }
++              }
++            },
++            "description": "Validation Error"
++          }
++        },
++        "summary": "Get Anomaly Record"
++      }
++    },
+     "/reports/upcoming-fixed-costs": {
+       "get": {
+         "operationId": "get_upcoming_fixed_costs_reports_upcoming_fixed_costs_get",
+@@ -22475,6 +22676,45 @@
+         "summary": "Get Upcoming Fixed Costs"
+       }
+     },
++    "/reports/upcoming-fixed-costs/records/{item_id}": {
++      "get": {
++        "operationId": "get_upcoming_cost_record_reports_upcoming_fixed_costs_records__item_id__get",
++        "parameters": [
++          {
++            "in": "path",
++            "name": "item_id",
++            "required": true,
++            "schema": {
++              "title": "Item Id",
++              "type": "string"
++            }
++          }
++        ],
++        "responses": {
++          "200": {
++            "content": {
++              "application/json": {
++                "schema": {
++                  "$ref": "#/components/schemas/UpcomingFixedCostsRecordResponse"
++                }
++              }
++            },
++            "description": "Successful Response"
++          },
++          "422": {
++            "content": {
++              "application/json": {
++                "schema": {
++                  "$ref": "#/components/schemas/HTTPValidationError"
++                }
++              }
++            },
++            "description": "Validation Error"
++          }
++        },
++        "summary": "Get Upcoming Cost Record"
++      }
++    },
+     "/reports/usage-vs-price": {
+       "get": {
+         "operationId": "get_usage_vs_price_reports_usage_vs_price_get",
+diff --git a/docs/architecture/pipeline-ambiguity-classification.md b/docs/architecture/pipeline-ambiguity-classification.md
+index d6c1b8e..941de90 100755
+--- a/docs/architecture/pipeline-ambiguity-classification.md
++++ b/docs/architecture/pipeline-ambiguity-classification.md
+@@ -15,6 +15,7 @@ ambiguous files still living under `packages/pipelines/`.
+ | `packages/domains/finance/pipelines/asset_register.py` | APP (moved) | Normalizes household asset payloads. Moved in sprint #56; shim retired in sprint #57. |
+ | `packages/domains/finance/pipelines/asset_register_service.py` | APP (moved) | Service wrapper over household asset registration. Moved in sprint #56; shim retired in sprint #57. |
+ | `packages/domains/finance/pipelines/transformation_assets.py` | APP (moved) | Asset-domain transform/load path. Moved in sprint #56; shim retired in sprint #57. |
++| `packages/domains/overview/pipelines/attention_records.py` | APP (overview) | Owns cross-domain household attention key composition and reporting reads; overview may depend on sibling packs and retains source-specific identities. |
+ | `packages/pipelines/contracts.py` | JUSTIFIED-MIXED | Small reusable contract-id helper still shared by multiple domain modules; kept in `packages/pipelines/` until a dedicated domain-neutral home is selected. |
+ 
+ ## Working rule
+diff --git a/packages/domains/overview/pipelines/attention_records.py b/packages/domains/overview/pipelines/attention_records.py
+new file mode 100644
+index 0000000..bbf1371
+--- /dev/null
++++ b/packages/domains/overview/pipelines/attention_records.py
+@@ -0,0 +1,170 @@
++"""Attention item ids, their source publications, and their identity keys."""
++from __future__ import annotations
++
++from dataclasses import dataclass
++from typing import Any, Callable
++
++import duckdb
++import psycopg
++
++from packages.domains.finance.pipelines.subscription_models import (
++    MART_UPCOMING_FIXED_COSTS_30D_TABLE,
++)
++from packages.domains.finance.pipelines.transaction_models import (
++    MART_TRANSACTION_ANOMALIES_CURRENT_TABLE,
++)
++from packages.domains.overview.pipelines.overview_models import MART_OPEN_ATTENTION_ITEMS_TABLE
++from packages.domains.utilities.pipelines.utility_models import (
++    MART_CONTRACT_RENEWAL_WATCHLIST_TABLE,
++    MART_CONTRACT_REVIEW_CANDIDATES_TABLE,
++)
++from packages.pipelines.reporting_snapshots import run_on_warehouse
++
++
++@dataclass(frozen=True)
++class AttentionSourceRecord:
++    """One item type: relation, exact key expression, and identity components."""
++
++    item_type: str
++    relation_name: str
++    key_expression: str
++    identity_columns: tuple[str, ...]
++    text_identity_columns: tuple[str, ...]
++    order_by: str
++
++
++ATTENTION_SOURCE_RECORDS: tuple[AttentionSourceRecord, ...] = (
++    AttentionSourceRecord(
++        "anomaly",
++        MART_TRANSACTION_ANOMALIES_CURRENT_TABLE,
++        "'anomaly_' || transaction_id",
++        ("transaction_id",),
++        ("transaction_id",),
++        "booking_date DESC, transaction_id",
++    ),
++    AttentionSourceRecord(
++        "contract_review",
++        MART_CONTRACT_REVIEW_CANDIDATES_TABLE,
++        "'review_' || contract_id || '_' || reason",
++        ("contract_id", "reason"),
++        ("contract_id", "reason"),
++        "score DESC, contract_id",
++    ),
++    AttentionSourceRecord(
++        "contract_renewal",
++        MART_CONTRACT_RENEWAL_WATCHLIST_TABLE,
++        "'renewal_' || contract_id || '_' || CAST(renewal_date AS VARCHAR)",
++        ("contract_id", "renewal_date"),
++        ("contract_id",),
++        "renewal_date, contract_id",
++    ),
++    AttentionSourceRecord(
++        "upcoming_cost",
++        MART_UPCOMING_FIXED_COSTS_30D_TABLE,
++        "'upcoming_' || charge_id || '_' || CAST(expected_date AS VARCHAR)",
++        ("charge_id", "expected_date"),
++        ("charge_id",),
++        "expected_date, contract_name",
++    ),
++)
++
++ATTENTION_SOURCE_RECORDS_BY_TYPE: dict[str, AttentionSourceRecord] = {
++    record.item_type: record for record in ATTENTION_SOURCE_RECORDS
++}
++
++
++class AttentionRecordNotFoundError(LookupError):
++    """The id is provably absent from the source publication."""
++
++
++class AttentionRecordUnavailableError(RuntimeError):
++    """The source cannot prove absence: unpublished, unkeyed, or unreadable."""
++
++
++def attention_record_query(
++    record: AttentionSourceRecord, item_id: str, *, placeholder: str
++) -> tuple[str, list[str]]:
++    """Select the source rows whose own key rebuilds to ``item_id``."""
++    guards = " AND ".join(
++        [f"{column} IS NOT NULL" for column in record.identity_columns]
++        + [f"{column} <> ''" for column in record.text_identity_columns]
++    )
++    return (
++        f"SELECT * FROM {record.relation_name}"
++        f" WHERE {record.key_expression} = {placeholder} AND {guards}"
++        f" ORDER BY {record.order_by}"
++    ), [item_id]
++
++
++def attention_identity_probe_query(record: AttentionSourceRecord) -> tuple[str, list[str]]:
++    """Count rows whose identity component is missing or empty."""
++    missing = " OR ".join(
++        [f"{column} IS NULL" for column in record.identity_columns]
++        + [f"{column} = ''" for column in record.text_identity_columns]
++    )
++    return (
++        f"SELECT COUNT(*) AS unkeyed_rows FROM {record.relation_name} WHERE {missing}"
++    ), []
++
++
++class AttentionReportingMixin:
++    """Overview-owned attention reads on the reporting facade."""
++
++    def get_open_attention_items(self: Any) -> list[dict[str, Any]]:
++        return self._fetch_published_or_fallback(
++            MART_OPEN_ATTENTION_ITEMS_TABLE,
++            lambda: self._read_mart(MART_OPEN_ATTENTION_ITEMS_TABLE),
++            ("", []),
++            "ORDER BY severity, item_type",
++        )
++
++    def get_attention_record(self: Any, item_type: str, item_id: str) -> list[dict[str, Any]]:
++        record = ATTENTION_SOURCE_RECORDS_BY_TYPE.get(item_type)
++        if record is None:
++            raise AttentionRecordNotFoundError(item_type)
++        fetch, placeholder = self._attention_record_source(record.relation_name)
++        sql, params = attention_record_query(record, item_id, placeholder=placeholder)
++        rows = self._attention_source_read(fetch, sql, params, record.relation_name)
++        if rows:
++            return rows
++        probe_sql, probe_params = attention_identity_probe_query(record)
++        unkeyed = self._attention_source_read(fetch, probe_sql, probe_params, record.relation_name)
++        if unkeyed and int(unkeyed[0]["unkeyed_rows"]) > 0:
++            raise AttentionRecordUnavailableError(record.relation_name)
++        raise AttentionRecordNotFoundError(item_type)
++
++    def _attention_source_read(
++        self: Any,
++        fetch: Callable[[str, list[Any]], list[dict[str, Any]]],
++        sql: str,
++        params: list[Any],
++        relation_name: str,
++    ) -> list[dict[str, Any]]:
++        try:
++            return fetch(sql, params)
++        except (duckdb.Error, psycopg.Error) as exc:
++            raise AttentionRecordUnavailableError(relation_name) from exc
++
++    def _attention_record_source(
++        self: Any, relation_name: str
++    ) -> tuple[Callable[[str, list[Any]], list[dict[str, Any]]], str]:
++        def read_warehouse(sql: str, params: list[Any]) -> list[dict[str, Any]]:
++            return run_on_warehouse(
++                self._transformation_service,
++                f"attention_record.{relation_name}",
++                lambda store: store.fetchall_dicts(sql, params),
++                write=False,
++            )
++
++        if self._access_mode == "warehouse":
++            return read_warehouse, "?"
++        try:
++            if self._publication_store is not None and self._publication_store.table_exists(
++                relation_name
++            ):
++                return self._publication_store.fetchall_dicts, "%s"
++        except (duckdb.Error, psycopg.Error) as exc:
++            raise AttentionRecordUnavailableError(relation_name) from exc
++        if self._access_mode == "published":
++            raise AttentionRecordUnavailableError(relation_name)
++        return read_warehouse, "?"
+diff --git a/packages/pipelines/reporting_service.py b/packages/pipelines/reporting_service.py
+index 65b675c..5d8d0a1 100755
+--- a/packages/pipelines/reporting_service.py
++++ b/packages/pipelines/reporting_service.py
+@@ -48,6 +48,7 @@ from packages.domains.homelab.pipelines.homelab_models import (
+     MART_STORAGE_RISK_TABLE,
+     MART_WORKLOAD_COST_7D_TABLE,
+ )
++from packages.domains.overview.pipelines.attention_records import AttentionReportingMixin
+ from packages.domains.overview.pipelines.overview_models import (
+     MART_AFFORDABILITY_RATIOS_TABLE,
+     MART_COST_TREND_12M_TABLE,
+@@ -249,7 +250,7 @@ def _dedupe(values: list[str]) -> list[str]:
+     return list(dict.fromkeys(values))
+ 
+ 
+-class ReportingService:
++class ReportingService(AttentionReportingMixin):
+     def __init__(
+         self,
+         transformation_service: TransformationService,
+@@ -873,14 +874,6 @@ class ReportingService:
+             "ORDER BY roi_state, service_count DESC",
+         )
+ 
+-    def get_open_attention_items(self) -> list[dict[str, Any]]:
+-        return self._fetch_published_or_fallback(
+-            MART_OPEN_ATTENTION_ITEMS_TABLE,
+-            lambda: self._read_mart(MART_OPEN_ATTENTION_ITEMS_TABLE),
+-            ("", []),
+-            "ORDER BY severity, item_type",
+-        )
+-
+     def get_recent_significant_changes(self) -> list[dict[str, Any]]:
+         return self._fetch_published_or_fallback(
+             MART_RECENT_SIGNIFICANT_CHANGES_TABLE,
+diff --git a/tests/test_attention_record_failures.py b/tests/test_attention_record_failures.py
+new file mode 100644
+index 0000000..2527f3d
+--- /dev/null
++++ b/tests/test_attention_record_failures.py
+@@ -0,0 +1,72 @@
++from __future__ import annotations
++
++from pathlib import Path
++from unittest.mock import patch
++
++import psycopg
++import pytest
++from fastapi.testclient import TestClient
++
++from packages.pipelines.reporting_service import ReportingAccessMode, ReportingService
++from packages.pipelines.transformation_service import TransformationService
++from packages.storage.duckdb_store import DuckDBStore, WarehouseBusyError
++from packages.storage.postgres_reporting import PostgresReportingStore
++from tests.postgres_test_support import running_postgres_container
++from tests.test_attention_record_api import (
++    DuckPublicationStore,
++    make_client,
++    publish,
++    record_path,
++    refresh,
++    seed,
++    source_key,
++)
++
++
++def _seeded() -> tuple[TransformationService, str]:
++    ts = TransformationService(DuckDBStore.memory())
++    seed(ts)
++    refresh(ts)
++    row = ts.store.fetchall_dicts("SELECT * FROM mart_upcoming_fixed_costs_30d")[0]
++    return ts, record_path("upcoming_cost", source_key("upcoming_cost", row))
++
++
++@pytest.mark.integration
++@pytest.mark.slow
++def test_published_connection_failure_is_safe_and_does_not_fall_back(tmp_path: Path) -> None:
++    ts, path = _seeded()
++    with running_postgres_container() as dsn:
++        store = PostgresReportingStore(dsn)
++        publish(ts, store)
++        reporting = ReportingService(ts, publication_store=store, access_mode=ReportingAccessMode.PUBLISHED)
++        client = make_client(tmp_path, ts, reporting)
++        assert client.get(path).status_code == 200
++        with patch.object(store, "_connect", side_effect=psycopg.OperationalError("synthetic marker")):
++            response = client.get(path)
++        assert response.status_code == 503
++        assert set(response.json()) == {"detail"}
++        assert "synthetic marker" not in response.text
++        assert client.get(path).status_code == 200
++
++
++def test_warehouse_busy_keeps_canonical_retry_response(tmp_path: Path) -> None:
++    ts, path = _seeded()
++    reporting = ReportingService(ts, access_mode=ReportingAccessMode.WAREHOUSE)
++    client = make_client(tmp_path, ts, reporting)
++    busy = WarehouseBusyError("synthetic", 1, RuntimeError("held"))
++    with patch("packages.domains.overview.pipelines.attention_records.run_on_warehouse", side_effect=busy):
++        response = client.get(path)
++    assert response.status_code == 503
++    assert response.headers["Retry-After"] == "5"
++    assert response.json()["retry_after_seconds"] == 5
++
++
++def test_programming_error_is_not_reported_as_unavailable(tmp_path: Path) -> None:
++    ts, path = _seeded()
++    store = DuckPublicationStore()
++    publish(ts, store)
++    reporting = ReportingService(ts, publication_store=store, access_mode=ReportingAccessMode.PUBLISHED)
++    app = make_client(tmp_path, ts, reporting).app
++    client = TestClient(app, raise_server_exceptions=False)
++    with patch.object(store, "table_exists", side_effect=RuntimeError("synthetic bug")):
++        assert client.get(path).status_code == 500

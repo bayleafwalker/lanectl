@@ -1,0 +1,10 @@
+{
+  "installed_version": "0.2.8",
+  "source_tag_commit": "937b634c16c7b1b1df667041a064a11825e196be",
+  "requested_tag": "v0.2.8",
+  "runner_matches_reviewed_source": true,
+  "counterfactual_pre_a6_candidate_weights": {
+    "opencode-go/deepseek-v4-pro": 0.25
+  },
+  "qualification_limit": "eligible selection weights only; not a liveadmission or providerheadroom claim"
+}
