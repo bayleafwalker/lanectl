@@ -1,0 +1,61 @@
+{
+  "schema": "hla-r3-acceptance-qualification/v1",
+  "recorded_at_utc": "2026-11-13T16:44:52.684546+00:00",
+  "authorship": {
+    "extension_author": "GPT-6",
+    "specific_model_variant": "not available",
+    "original_author": "unchanged"
+  },
+  "acceptance_file": "/projects/dev/lanectl/backlog/hla-attention-records-r5/files/tests/test_attention_record_api.py",
+  "acceptance_sha256": "34da78c8cb79c5ecc6d38e740c6b2ee90433dc000e6633cb3bf853aff6bb3abb",
+  "delta": {
+    "added_lines": 96,
+    "removed_lines": 0,
+    "original_lines": 1077,
+    "new_lines": 1173
+  },
+  "candidate_commit": "b41e2c6c6dbad1a410e4048a6aebf4e958b8498f",
+  "base_commit": "9cf62cb7271ed0e15e35877ab772709808470bea",
+  "runs": [
+    {
+      "cwd": "/tmp/hla-a4-boundary-source",
+      "command": "/tmp/hla-a4-boundary-source/.venv/bin/ruff check --stdin-filename tests/test_attention_record_api.py - < /projects/dev/lanectl/backlog/hla-attention-records-r5/files/tests/test_attention_record_api.py",
+      "exit_code": 0,
+      "output": "All checks passed!"
+    },
+    {
+      "cwd": "/tmp/hla-r5-boundary-snapshot",
+      "command": "/tmp/hla-a4-boundary-source/.venv/bin/python -m pytest -q tests/test_attention_record_api.py -k 'strict_published_without_store or published_postgres_missing_identity_column or published_postgres_empty_identity'",
+      "exit_code": 0,
+      "output": "1 passed, 31 deselected in 2.97s; strict published no-store returned 503 with no DuckDBStore fetchall/fetchall_dicts calls; default pytest marker excluded slow tests"
+    },
+    {
+      "cwd": "/tmp/hla-r5-boundary-snapshot",
+      "command": "/tmp/hla-a4-boundary-source/.venv/bin/python -m pytest -q -m 'integration and slow' tests/test_attention_record_api.py -k 'published_postgres_missing_identity_column or published_postgres_empty_identity'",
+      "exit_code": 1,
+      "output": "2 failed, 30 deselected in 17.03s; dropped charge_id returned 500 instead of 503 after a positive 200; empty charge_id forged key returned 200 instead of safe detail-only status; both observed zero DuckDBStore fetchall/fetchall_dicts calls before failing"
+    },
+    {
+      "cwd": "/tmp/hla-r5-base-snapshot",
+      "command": "/tmp/hla-a4-boundary-source/.venv/bin/python -m pytest -q tests/test_attention_record_api.py -k strict_published_without_store",
+      "exit_code": 1,
+      "output": "1 failed, 31 deselected in 2.72s; canonical base returned route 404 with detail Not Found rather than 503, with zero DuckDB reads"
+    }
+  ],
+  "snapshot_provenance": "Separate git archive snapshots of the stated commits, each overlaid with the acceptance file; candidate source was not edited.",
+  "raw_logs": [],
+  "raw_log_note": "Output was captured in tool session transcript; no raw log files were written for these runs. Prior independent candidate observation is available separately at /tmp/hla-a4-boundary-observations/observations.json and is not a raw log of these tests.",
+  "postgres_cleanup": {
+    "command": "docker ps -a --filter 'name=homelab-analytics-postgres-' --format '{{.Names}}\\t{{.Status}}'",
+    "exit_code": 0,
+    "output": "",
+    "interpretation": "No containers matching the fixture-generated name prefix remained at check time; names of the two test-created containers were not captured individually. No containers were stopped by this check."
+  },
+  "capture_durability": "session-local",
+  "durability": "cross-host-replicated after canonical publication",
+  "acceptance_execution": {
+    "default_pytest_marker": "not slow",
+    "correction": "Revision3 acceptance.exec explicitly runs integration and slow cases as a second mandatory command; the default command alone deselects these tests.",
+    "required_command": "uv run --no-sync python -m pytest -q -p no:cacheprovider -m 'integration and slow' tests/test_attention_record_api.py"
+  }
+}

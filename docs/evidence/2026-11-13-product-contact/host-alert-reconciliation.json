@@ -1,0 +1,58 @@
+{
+  "schema": "lanectl-host-alert-reconciliation/v1",
+  "observed_at": "2026-11-13T16:50:06.612504+00:00",
+  "host": "workstation",
+  "current_failed_units": {
+    "system": 0,
+    "user": 0,
+    "probe": "systemctl [--user] --failed --no-pager (escalated)"
+  },
+  "reported_unit": "lanectl-ui-complete-recheck.service",
+  "current_reported_unit_state": {
+    "LoadState": "not-found",
+    "ActiveState": "inactive",
+    "note": "Collected transient unit absence is not a pass; append-only train evidence below establishes correction."
+  },
+  "train_id": "train-20261112195322",
+  "history": [
+    {
+      "at": "2026-11-12T20:03:55Z",
+      "sha": "cf0278e5a4003d755315cfae3c33ac86d7e60a32",
+      "passed": false,
+      "result": "1 failed,943 passed",
+      "failure": "tests/stage9/test_lifecycle_web.py::test_render_never_leaks_bodies_logs_credentials_or_unsafe_refs"
+    },
+    {
+      "at": "2026-11-12T20:13:00Z",
+      "sha": "d37c7b90c52e0dc27585dfc2788acc8742ae4158",
+      "passed": true,
+      "result": "944 passed in111.57s"
+    },
+    {
+      "at": "2026-11-12T20:13:22Z",
+      "sha": "d37c7b90c52e0dc27585dfc2788acc8742ae4158",
+      "result": "ui-05-claim-hold-a2 and ui-lifecycle-links-a1 item.landed events"
+    }
+  ],
+  "corrected_commit_is_current_main_ancestor": true,
+  "recurring_timer": "lanectl-tick.timer active/waiting, not disabled",
+  "strict_host_fence": {
+    "User": "lanectl-train",
+    "RootDirectory": "",
+    "source_merged_but_host_apply_pending": true,
+    "sudo_noninteractive": "password required"
+  },
+  "limitations": [
+    "Historical service exit-code alerts are not evidence of a currently failed recurring service.",
+    "Current state is an observation at the stated time, not a future health claim.",
+    "This note does not close API or whole-product work."
+  ],
+  "durability": "cross-host-replicated after canonical publication",
+  "regression_replay": {
+    "source_commit": "0155a1f",
+    "command": "uv run --no-sync pytest -q tests/stage9/test_lifecycle_web.py::test_render_never_leaks_bodies_logs_credentials_or_unsafe_refs",
+    "exit_code": 0,
+    "output": "1 passed in0.09s",
+    "execution": "escalated after sandbox refused uv cache writes"
+  }
+}

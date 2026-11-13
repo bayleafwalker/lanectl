@@ -1075,3 +1075,99 @@ def test_unknown_and_unavailable_details_do_not_disclose_stored_fields(tmp_path:
     world.store.store.execute('UPDATE mart_upcoming_fixed_costs_30d SET charge_id = NULL')
     assert_not_resolved(get_record(world.client, 'upcoming_cost', 'upcoming_unknown_2099-12-31'),
                         statuses=(503,), forbidden=secrets)
+
+
+def _observe_warehouse_reads(monkeypatch: pytest.MonkeyPatch) -> list[str]:
+    calls: list[str] = []
+    for name in ('fetchall', 'fetchall_dicts'):
+        original = getattr(DuckDBStore, name)
+
+        def recording(store: DuckDBStore, *args: Any, _original: Any = original,
+                      _name: str = name, **kwargs: Any) -> Any:
+            calls.append(_name)
+            return _original(store, *args, **kwargs)
+
+        monkeypatch.setattr(DuckDBStore, name, recording)
+    return calls
+
+
+def test_strict_published_without_store_is_unavailable_without_warehouse_reads(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    ts = TransformationService(DuckDBStore.memory())
+    facts = seed(ts)
+    refresh(ts)
+    row = ReportingService(ts, access_mode=ReportingAccessMode.WAREHOUSE).get_upcoming_fixed_costs_30d()[0]
+    item_id = source_key('upcoming_cost', row)
+    reporting = ReportingService(ts, publication_store=None, access_mode=ReportingAccessMode.PUBLISHED)
+    client = make_client(tmp_path, ts, reporting, name='strict-no-store')
+    calls = _observe_warehouse_reads(monkeypatch)
+    response = get_record(client, 'upcoming_cost', item_id)
+    assert calls == []
+    assert_not_resolved(response, statuses=(503,), forbidden=forbidden_for(facts, item_id))
+
+
+@pytest.mark.integration
+@pytest.mark.slow
+def test_published_postgres_missing_identity_column_is_unavailable(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    ts = TransformationService(DuckDBStore.memory())
+    facts = seed(ts)
+    refresh(ts)
+    with running_postgres_container() as dsn:
+        store = PostgresReportingStore(dsn)
+        publish(ts, store)
+        reporting = ReportingService(ts, publication_store=store, access_mode=ReportingAccessMode.PUBLISHED)
+        client = make_client(tmp_path, ts, reporting, name='postgres-missing-column')
+        rows = list_rows(client, 'upcoming_cost')
+        item_id = source_key('upcoming_cost', rows[0])
+        unknown = 'upcoming_ffffffffffffffff_' + str(rows[0]['expected_date'])
+        assert_resolves(client, 'upcoming_cost', item_id, [rows[0]])
+        other_id = attention_by_type(client)['contract_review'][0]
+        other_rows = get_rows(client, 'contract_review', other_id)
+        store.execute_statements([('ALTER TABLE mart_upcoming_fixed_costs_30d DROP COLUMN charge_id', [])])
+        # Surface an unexpected server exception as an HTTP response to check the public contract.
+        client = TestClient(client.app, raise_server_exceptions=False)
+        calls = _observe_warehouse_reads(monkeypatch)
+        responses = [get_record(client, 'upcoming_cost', key) for key in (item_id, unknown)]
+        assert calls == []
+        for key, response in zip((item_id, unknown), responses):
+            assert_not_resolved(response, statuses=(503,), forbidden=forbidden_for(facts, key))
+        assert_resolves(client, 'contract_review', other_id, other_rows)
+        assert calls == []
+
+
+@pytest.mark.integration
+@pytest.mark.slow
+def test_published_postgres_empty_identity_never_resolves_forged_key(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from apps.api.routes.report_routes import UPCOMING_FIXED_COSTS_ROW_MODEL
+    from apps.api.support import to_jsonable
+    from packages.domains.finance.pipelines.subscription_models import (
+        MART_UPCOMING_FIXED_COSTS_30D_COLUMNS,
+    )
+
+    ts = TransformationService(DuckDBStore.memory())
+    facts = seed(ts)
+    refresh(ts)
+    rows = ts.store.fetchall_dicts('SELECT * FROM mart_upcoming_fixed_costs_30d ORDER BY charge_id')
+    assert len(rows) >= 2
+    with running_postgres_container() as dsn:
+        store = PostgresReportingStore(dsn)
+        publish(ts, store)
+        reporting = ReportingService(ts, publication_store=store, access_mode=ReportingAccessMode.PUBLISHED)
+        client = make_client(tmp_path, ts, reporting, name='postgres-empty-id')
+        intact_id = source_key('upcoming_cost', rows[1])
+        intact_rows = get_rows(client, 'upcoming_cost', intact_id)
+        rows[0] = dict(rows[0], charge_id='')
+        UPCOMING_FIXED_COSTS_ROW_MODEL.model_validate(to_jsonable(rows[0]))
+        store.replace_rows('mart_upcoming_fixed_costs_30d', MART_UPCOMING_FIXED_COSTS_30D_COLUMNS, rows)
+        forged = 'upcoming__' + str(rows[0]['expected_date'])
+        calls = _observe_warehouse_reads(monkeypatch)
+        response = get_record(client, 'upcoming_cost', forged)
+        assert calls == []
+        assert_not_resolved(response, statuses=(400, 404, 422, 503), forbidden=forbidden_for(facts, forged))
+        assert_resolves(client, 'upcoming_cost', intact_id, intact_rows)
+        assert calls == []
