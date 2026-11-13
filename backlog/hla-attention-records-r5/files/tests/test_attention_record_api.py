@@ -283,7 +283,7 @@ def build_world(tmp_path: Path, mode: str) -> World:
         publish(ts, store)
         reporting = ReportingService(
             ts,
-            publication_store=store,  # type: ignore[arg-type]
+            publication_store=store,
             access_mode=ReportingAccessMode.PUBLISHED,
         )
     return World(make_client(tmp_path, ts, reporting, name=mode), ts, store, facts, mode)

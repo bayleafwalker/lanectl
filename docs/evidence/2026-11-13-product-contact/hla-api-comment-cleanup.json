@@ -1,0 +1,8 @@
+{
+  "previous_commit": "8db959bae02e169a046d2df4c27d9e5d65b675ff",
+  "before_sha256": "faf23bef902e219be1d9c2f2d32adf8d081f78064f7b720a6dc8c3d3fe303c03",
+  "after_sha256": "9f6cc5f96a21e568cf41b132bd6525701e25ddf2b4e89810b0729a78a94880dd",
+  "executable_ast_sha256": "8629a42ba549074e6ad26dc3309a13489e8cd9083daf25744e0bc9b836d6a543",
+  "compiled_code_equal": true,
+  "change": "Removed one unused inline type-ignore comment; all executable code identical."
+}

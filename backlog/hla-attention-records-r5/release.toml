@@ -2,7 +2,6 @@ id = "hla-attention-records-r5"
 repo = "homelab-analytics"
 base_sha = "9cf62cb7271ed0e15e35877ab772709808470bea"
 revision = 1
-draft = true
 title = "Resolve each attention item through its authorized source record API"
 outcome = "Frozen acceptance for four authorized current-record APIs; portable warehouse and DuckDB-backed published modes plus a separately selected slow disposable Postgres case. No tests were run during authoring. Actual disposable Postgres verification remains required before landing; whole-work completion is out of scope."
 task_class = "product-api"
