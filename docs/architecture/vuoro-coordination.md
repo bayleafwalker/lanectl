@@ -24,18 +24,22 @@ not require putting the token in the coordinator or candidate-check environment.
 The journal never stores it. Enroll an appropriately scoped runner using the owner's
 existing flow, and keep that credential outside worker environments. HTTPS is
 required outside loopback; redirects are refused. `lanectl coordinate example`
-checks the authenticated handshake and catalog without claiming work.
+checks protocol, environment and catalog compatibility without claiming work.
+Discovery can be public: a successful catalog response does not prove that the
+runner credential authenticated. Qualification must also observe an authorized,
+repository-scoped owner read. An `identity-required` refusal remains a blocker.
 
 ### Workstation service activation
 
 Keep coordination disabled until runner enrollment is approved and a scoped
 credential is installed outside the checkout. Coordinated train setup and checks
-require `train_isolation = "namespace"` (the repository default): a minimal
-environment and known credential paths made inaccessible. This protects direct
+require `train_isolation = "namespace"` (the repository default) or the qualified
+`"systemd"` backend. Namespace mode uses a minimal environment and makes known
+credential paths inaccessible. This protects direct
 file and environment access; it is not full
 isolation against arbitrary hostile code sharing the operator's user identity.
 The credential drop-in alone does not provide that isolation. Read the actual environment name
-from the authenticated handshake; do not infer it from the URL. Validate the
+from the observed handshake; do not infer it from the URL. Validate the
 configured repository with `lanectl coordinate` before changing its recurring
 service. The optional `contrib/systemd/lanectl-tick-coordinated.conf` adds only
 credential loading and the workstation CA bundle to the existing service. For a
@@ -74,6 +78,13 @@ coordination configured, `doctor` names every environment-only repository;
 coordinated admission and execution refuse this mode. No command silently falls
 back from a failed namespace. A different fenced backend needs separate full-suite
 qualification before this exception can be removed.
+
+The opt-in `systemd` backend in 0.2.5 uses the installed root-owned system service
+and a separate static UID. Its actual Sovite run matches the ordinary baseline,
+and direct-file/environment, timeout, cancellation and historical-recovery probes
+pass. Repository policy promotion remains separate from source release. See the
+[fenced-train guide](../fenced-train.md) for host prerequisites, measured limits
+and qualification evidence.
 
 A failed post-merge setup now fails the train rather than allowing a green check
 to hide it. Rechecks and historical qualification use the same selected boundary.
