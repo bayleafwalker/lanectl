@@ -28,7 +28,7 @@ def test_new_mode_delegates_without_namespace_or_host_shell(estate, monkeypatch)
 def test_receipts_bind_identity_request_and_actual_service_exit():
     from lanectl.fenced_train import receipt_returncode
     good = {"version": 1, "train_id": "proof-1", "request_sha256": "sha256:" + "a" * 64,
-            "outcome": "succeeded", "service_result": "success", "exit_code": "exited", "exit_status": "0"}
+            "outcome": "succeeded", "service_result": "success", "exit_code": "exited", "exit_status": "0", "handed_back": True}
     def code(record):
         return receipt_returncode(record, train_id="proof-1", request_sha256=good["request_sha256"])
     assert code(good) == 0
@@ -44,13 +44,13 @@ def test_receipts_bind_identity_request_and_actual_service_exit():
                                       ("cancelled", "signal", "15"), ("rejected", "exit-code", "1")):
         assert code(dict(good, outcome=outcome, service_result=service, exit_status=status)) != 0
     # An attacker changing just outcome cannot promote the systemd exit.
-    incoherent = dict(good, service_result="exit-code", exit_status="7")
-    try:
-        value = code(incoherent)
-    except ValueError:
-        pass
-    else:
-        assert value != 0
+    for incoherent in (dict(good, service_result="exit-code", exit_status="7"), dict(good, handed_back=False)):
+        try:
+            value = code(incoherent)
+        except ValueError:
+            pass
+        else:
+            assert value != 0
 
 
 def test_unavailable_service_cannot_execute_candidate_on_host(estate, monkeypatch, tmp_path):

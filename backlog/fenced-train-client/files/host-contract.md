@@ -41,7 +41,7 @@ of its own train directory; there are no mount, property or path arguments.
 3. Start: `systemctl start --no-block lanectl-train@<id>.service`
    (authorized by polkit for the coordinator only; no sudo).
 4. Prepare (root, before any train code): validates the id, the dir (no
-   symlink, coordinator-owned), the request, and refuses hardlinked files or
+   symlink in PID 1's host-root view, coordinator-owned), the request, and refuses hardlinked files or
    device nodes anywhere in the tree (chowning a hardlink would change the
    file outside the dir). It deletes any stale `result.json`, then chowns the
    tree to `lanectl-train` and sets the top dir to 0700. While the train runs,
@@ -55,14 +55,17 @@ of its own train directory; there are no mount, property or path arguments.
 6. Finish (root, after systemd has killed the whole control group): chowns the
    tree back to the coordinator (directories get `u+rwx` so the coordinator can
    delete them), writes `result.json` with the coordinator's credentials, and
-   clears `/run/lanectl-train/<id>`.
+   then publishes the root receipt with `handed_back = true` and clears
+   `/run/lanectl-train/<id>`. Handback errors publish a failed receipt with
+   `handed_back = false`, requiring operator recovery.
 7. The coordinator waits for the root-owned receipt and the unit to be inactive
-   (`systemctl is-active lanectl-train@<id>.service` returns non-zero), reads
+   (`systemctl show -p ActiveState --value lanectl-train@<id>.service` is exactly
+   `inactive` or `failed`), reads
    the receipt and removes the train dir when done. Failed instances are
    garbage-collected (`CollectMode=inactive-or-failed`); the root-owned receipt
    is the outcome record, not `systemctl status` or the in-tree convenience copy.
    The client must verify root ownership, regular-file type, non-writable mode,
-   matching train ID and matching `request_sha256` (SHA-256 of the exact request
+   matching train ID, `handed_back = true`, and matching `request_sha256` (SHA-256 of the exact request
    file bytes). A missing, untrusted or mismatched receipt fails the command.
    The root prepare step removes an earlier receipt before execution. Use a
    fresh ID for each command, never reinterpret an earlier result as a new run.
@@ -70,8 +73,15 @@ of its own train directory; there are no mount, property or path arguments.
 Cancel: `systemctl stop lanectl-train@<id>.service` (kills the control group,
 including processes that called `setsid`; finish still runs). Status while
 running: `systemctl show -p ActiveState,SubState,MainPID lanectl-train@<id>.service`.
-`systemctl reset-failed lanectl-train@<id>.service` is also allowed. Re-running
-an id is allowed once the previous instance is inactive.
+`systemctl reset-failed lanectl-train@<id>.service` is also allowed. Clients must
+use a fresh ID and a fresh request nonce for every command. A deliberate manual
+same-ID rerun requires confirmed terminal state and a new nonce, never old bytes.
+Nonzero `is-active` is insufficient: activating/deactivating are not terminal.
+
+Prepare and finish have explicit 600-second limits for large dependency trees.
+The same stop limit permits a signal-ignoring process up to 600 seconds before
+systemd escalates to SIGKILL. A client must allow ownership handback to finish;
+an interrupted handback may require operator recovery as described below.
 
 ### request.json (version 1)
 
@@ -81,7 +91,8 @@ an id is allowed once the previous instance is inactive.
   "argv": ["/run/current-system/sw/bin/bash", "-lc", "make check"],
   "cwd": "repo",
   "env": {"CI": "1"},
-  "timeout_sec": 3600
+  "timeout_sec": 3600,
+  "nonce": "0123456789abcdef0123456789abcdef"
 }
 ```
 
@@ -93,6 +104,9 @@ an id is allowed once the previous instance is inactive.
 - `timeout_sec`: integer `1..21600` (`maxTimeoutSec`). systemd's
   `RuntimeMaxSec` is fixed at `maxTimeoutSec + 120` as the root-enforced cap.
 - Max file size 256 KiB.
+- `nonce`: required fresh 32-character lowercase hexadecimal value; generate
+  it per submission (for example, Python `secrets.token_hex(16)`). The digest
+  covers it, preventing stale receipt reuse even when other fields match.
 
 The root prepare step writes the validated copy to
 `.lanectl-train/request.validated.json`; the run step reads only that copy.
@@ -109,6 +123,7 @@ The root prepare step writes the validated copy to
   "exit_status": "0",
   "error": null,
   "request_sha256": "sha256:SHA256_OF_EXACT_REQUEST_BYTES",
+  "handed_back": true,
   "started_at": "2026-11-11T20:00:00+00:00",
   "finished_at": "2026-11-11T20:10:00+00:00",
   "elapsed_sec": 600.123
@@ -122,19 +137,24 @@ The root prepare step writes the validated copy to
 | `succeeded` | command exited 0 |
 | `failed` | command exited non-zero (see `exit_status`) or died otherwise |
 | `timeout` | `timeout_sec` elapsed (launcher exit 124 after the deadline) or the systemd hard cap fired |
-| `cancelled` | stopped by `systemctl stop` |
+| `cancelled` | supervisor killed; this includes an operator stop and train-originated signals |
 | `rejected` | prepare refused the train; `error` says why; no train code ran |
 
 `service_result`, `exit_code` and `exit_status` are systemd's
 `$SERVICE_RESULT`, `$EXIT_CODE`, `$EXIT_STATUS` for the unit. A result is not
 an integrity claim against the train itself (train code chooses its own exit
-status). Only the separate root-owned receipt is authoritative for timeout,
-cancellation and rejection. Candidate code can forge or symlink its in-tree
+status). The separate root-owned receipt records systemd's observed exit and
+prepare rejection. Timeout/cancel labels do not prove the termination initiator:
+the per-request supervisor shares the train UID and can be signalled by train
+code. Only systemd's global `RuntimeMaxSec` cap is independently root-enforced;
+the coordinator also bounds its wait and stops the exact unit.
+Candidate code can forge or symlink its in-tree
 copy; clients must not use that copy to decide success. Root publishes its
 receipt even if the hostile control directory prevents the convenience copy.
 
 If the train dir is missing or is not a coordinator-owned directory at start,
-no result can be written; the unit fails and the reason is in the journal.
+no in-tree result can be written; the root receipt records rejection without a
+successful handback and the unit fails. The reason is also in the journal.
 lanectl must treat a failed start or a missing result after the unit is
 inactive as a failed train and must never fall back to `environment`
 isolation.
@@ -143,12 +163,17 @@ isolation.
 
 - Read-write: only `/var/lib/lanectl-train/trains/<id>` (bind), plus a private
   `/tmp` and `/var/tmp`.
+- Root-only writes: `/var/lib/lanectl-train/results` is separately bound for
+  the privileged post-step. Its root ownership and mode 0755 deny train and
+  coordinator writes; they can read the receipt metadata. It contains no
+  request bodies, environment or command output.
 - Read-only: the rest of the host tree (`ProtectSystem=strict`), including
   `/nix`, `/etc` (CA bundle, `resolv.conf`), `/run/current-system`, and the
   nix-daemon socket (`/nix/var/nix/daemon-socket`).
 - Hidden: `/home`, `/root`, `/run/user` (`ProtectHome=yes`); all of `/var/lib`
   (tmpfs, so sops-nix's age key, `/var/lib/cryptsetup-keys`, docker,
-  NetworkManager, other trains); `/projects`, `/projects-snapshots`, `/media`,
+  NetworkManager, other trains; except the own train and root receipt binds);
+  `/projects`, `/projects-snapshots`, `/media`,
   `/mnt`, `/games`, `/srv`, `/boot`, `/var/spool`, `/var/db`, `/run/secrets*`,
   `/run/secrets-for-users*`, `/run/lanectl-train`, `/run/docker.sock`,
   `/run/libvirt`, `/run/nordvpn`, SSH host keys.
@@ -180,7 +205,7 @@ bayleaf, no sudo:
 ```bash
 d=/var/lib/lanectl-train/trains/smoke
 mkdir -p $d/.lanectl-train
-printf '%s' '{"version":1,"argv":["sh","-c","id -u; test ! -r /home/bayleaf/.ssh; touch ok"],"timeout_sec":60}' > $d/.lanectl-train/request.json
+printf '%s' '{"version":1,"argv":["sh","-c","id -u; test ! -r /home/bayleaf/.ssh; touch ok"],"timeout_sec":60,"nonce":"0123456789abcdef0123456789abcdef"}' > $d/.lanectl-train/request.json
 systemctl start --no-block lanectl-train@smoke.service
 sleep 3; cat /var/lib/lanectl-train/results/smoke.json   # outcome "succeeded"
 journalctl -u lanectl-train@smoke.service -o cat | tail
@@ -223,14 +248,18 @@ if finish did not run, its dir may still be owned by uid 1120: fix with
   `lanectl-train`. The nix-daemon is reachable: a train can build and fetch
   into the shared store, as today.
 - `/tmp` is private per unit, but trains share the host kernel, the
-  `lanectl-train` UID (no cross-train isolation beyond hidden spool dirs; two
-  concurrent trains could signal each other's processes) and the nix store.
+  `lanectl-train` UID and the nix store. There is no cross-train isolation:
+  concurrent trains can signal each other, and same-UID `/proc` paths can expose
+  a running sibling's tree despite the hidden direct spool paths.
 - The coordinator is trusted: it can rename its own train dirs during prepare.
   The launcher uses fd-relative, no-follow operations, so this cannot direct
   root's chown outside the train dir, but it relies on `fs.protected_hardlinks`
   (systemd default 1) and on the hardlink refusal.
 - Per-train `HOME` means no reusable build caches across trains until a cache
   policy is designed.
+- Memory, process count and disk quotas remain unchanged and unbounded. Treat
+  handed-back files as hostile input: never execute their Git config, filters or
+  hooks as the coordinator, and never follow candidate symlinks while inspecting.
 - Not yet qualified on the real host: the Sovite suite parity and the lanectl
   negative-probe harness (design doc tests 1-5) remain the gate. The VM test
   `nix build .#lanectl-train-fence-vm-test` covers the fence mechanics only.

@@ -1,13 +1,37 @@
 id = "fenced-train-client"
 repo = "lanectl"
-base_sha = "05bc814a9bf522a58ee967efab23fadc68482e4e"
-revision = 1
+base_sha = "e6aa0afb513787e7b1fbbdad182a0f4f22190948"
+revision = 2
 title = "Execute ownership-compatible train checks through the separate-UID service"
 task_class = "recovery"
 size = "M"
 data_class = "public"
 
 outcome = """
+Revision 2: preserve and repair the existing complete implementation from
+artifact b646f969e2ab85f7e679ad25472e0b4590445c31 (git show that commit's
+src/lanectl/fenced_train.py, config.py, doctor.py, runner.py and new test file).
+It was rejected for a forbidden coverage-suppression directive. Remove it;
+do not copy suppression/skip directives into any source or tests. Reuse the
+reviewed staging and isolation architecture rather than rewriting it.
+The host contract was tightened after independent review: every request must
+carry a fresh secrets.token_hex(16) nonce, and its digest covers those bytes.
+A success receipt must include handed_back=true; require that field and reject
+missing/false completion before returning success. The host stop/handback limit
+is now 600s per phase, so allow bounded observation through that window without
+mistaking deactivation for terminal state. Preserve honest failure on unknowns.
+Interrupted uncertain starts already attempt stop, but currently re-raise a
+bare KeyboardInterrupt without identifying the still-live unit. When stop is
+unproved, preserve the directory and identify the exact orphan unit and path in
+the raised interruption message. Surface cleanup failures during interruption,
+too. The new frozen recovery test reproduces the missing actionable orphan.
+Keep _stage(checkout,dest) and _request(repo,command,timeout) signatures for the
+focused recovery falsifiers. A non-interruption lost-start-ack case already
+passes; preserve it. These changes include a planner host-contract correction
+and a model recovery-message error, alongside the correctly caught forbidden
+directive. Fit within the existing 700-line cap by trimming your own comments
+or redundant tests if needed, never weakening frozen acceptance or old tests.
+
 Implement the lanectl side of approved #2889, selecting train_isolation="systemd"
 as an opt-in third mode; namespace remains default and environment remains refused
 for coordinated work. The public host contract is files/host-contract.md in this
@@ -64,5 +88,5 @@ Keep total added+deleted code/test lines <=700 excluding frozen acceptance.
 paths = ["src/lanectl/fenced_train.py", "src/lanectl/runner.py", "src/lanectl/config.py", "src/lanectl/doctor.py", "tests/stage8/test_fenced_train*.py"]
 
 [acceptance]
-files = ["tests/stage8/test_acc_fenced_train.py"]
-exec = ["uv run --no-sync pytest -q -p no:cacheprovider tests/stage8/test_acc_fenced_train.py"]
+files = ["tests/stage8/test_acc_fenced_train.py", "tests/stage8/test_acc_fenced_train_recovery.py"]
+exec = ["uv run --no-sync pytest -q -p no:cacheprovider tests/stage8/test_acc_fenced_train.py tests/stage8/test_acc_fenced_train_recovery.py"]
