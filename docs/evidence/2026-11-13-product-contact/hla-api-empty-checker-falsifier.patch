@@ -1,0 +1,27 @@
+--- a/contrib/qualification/hla_attention_empty_identity.py
++++ b/contrib/qualification/hla_attention_empty_identity.py
+@@ -103,6 +103,15 @@
+             key=fixtures.source_key(kind,candidates[0])
+             with observe_warehouse() as reads:
+                 response=client.get(fixtures.record_path(kind,key))
++            if kind=='contract_renewal':
++                real_response=response
++                class DropOneRealRow:
++                    status_code=real_response.status_code
++                    def json(self):
++                        body=real_response.json()
++                        assert len(body['rows']) >= 2
++                        return {**body, 'rows': body['rows'][:-1]}
++                response=DropOneRealRow()
+             grouped=[r for r in candidates if fixtures.source_key(kind,r)==key]
+             match=resolves_exactly(response,key,grouped) and not reads
+             controls.append({'kind':kind,'opaque_contract_id':opaque,'item_id':key,'http_status':response.status_code,'expected_group_size':len(grouped),'matched_own_rows':bool(match),'warehouse_reads':reads})
+@@ -150,7 +159,7 @@
+ inspection=real_run(['docker','inspect',container],capture_output=True,text=True)
+ assert removed and inspection.returncode!=0
+ fixed=all(c['required_behavior'] for c in cases) and all(c['matched_own_rows'] for c in controls)
+-result={'source_commit':head,'source_root':str(source),'service_module':report_module.__file__,
++result={'checker_falsifier':'real HTTP renewal response wrapped and one returned component removed', 'source_commit':head,'source_root':str(source),'service_module':report_module.__file__,
+         'fixture_module':fixtures.__file__,'reference_date':str(today),'cases':cases,'literal_none_controls':controls,
+         'all_required_behaviors':fixed,'require_fixed':a.require_fixed,'owned_container':container,
+         'fixture_rm_f_seen':removed,'container_absent_after_cleanup':True,

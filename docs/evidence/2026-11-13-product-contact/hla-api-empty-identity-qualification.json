@@ -1,0 +1,43 @@
+{
+  "schema": "hla-empty-identity-qualification/v1",
+  "source_commit": "b41e2c6c6dbad1a410e4048a6aebf4e958b8498f",
+  "probe_sha256": "ae49c8b067f5992e18088dfb573d5c0062dcb6b8d5d355f34e38466a145615c3",
+  "probe": "contrib/qualification/hla_attention_empty_identity.py",
+  "actual_negative_execution": {
+    "require_fixed_exit_code": 1,
+    "all4_empty_component_rows_returned200": true,
+    "all_public_models_and_store_admit_mutations": true,
+    "all_intact_sibling_exact_groups": true,
+    "both_literal_None_exact_groups": true,
+    "owned_container_removed_and_absent": true
+  },
+  "checker_falsifier": {
+    "kind": "delegate actual HTTP then wrap one renewal response dropping1of2 component rows",
+    "expected_group_size": 2,
+    "http_status": 200,
+    "matched_own_rows": false,
+    "application_source_changed": false,
+    "owned_container_removed_and_absent": true
+  },
+  "wrong_expected_commit_guard": {
+    "exit_code": 2,
+    "before_output_creation_or_container": true,
+    "raw_log": "/tmp/hla-empty-components-wrong-commit.log"
+  },
+  "independent_review": {
+    "reviewer": "persistent first-party Sage",
+    "first_verdict": "hold: sibling status-only and literal-None contract-id-only comparisons could accept wrong groups",
+    "repair": "exact requested ID and full normalized row multiset; admission flags mandatory; real-response missing-component falsifier",
+    "second_verdict": "prior findings closed; suitable for exact terminal candidate reuse"
+  },
+  "execution_scope": "ordinary escalated synthetic PostgreSQL/HTTP probes; not host-fence proof",
+  "requirements": "apply generic no-empty-component identity rule consistently across anomaly/review/renewal/payment; literal None in nonempty opaque IDs remains valid",
+  "limitations": [
+    "candidate a5 remains unmeasured while live",
+    "requires compatible frozen fixture helpers",
+    "DuckDBStore fetch methods traced; raw-connection reads excluded",
+    "selected-string disclosure checks require source/error-path review too",
+    "publication boundary mutations, not assertion ingestion generates malformed IDs"
+  ],
+  "durability": "Git files cross-host-replicated after canonical publication; rawlogs and /tmp checkouts session-local"
+}

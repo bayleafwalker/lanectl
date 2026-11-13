@@ -90,6 +90,20 @@ cases mandatory through a second acceptance command because repository defaults
 exclude slow tests. No model source is edited by the integrator. Keep the four-kind
 API scope together unless a measured correct implementation exceeds700 lines.
 
+The generic no-empty-identity rule also applies to anomaly transaction_id, review
+contract_id/reason and renewal contract_id. Their NOT NULL text types still admit
+empty strings in the real public models and publication store. Additional exact
+a4 probes confirmed all four forged keys return200, while intact sibling groups
+and legitimate nonempty `opaqueNone/utility` review/renewal groups resolve exactly.
+This is rejected-source evidence, not a claim about active a5. The reusable
+`contrib/qualification/hla_attention_empty_identity.py` must also run against the
+exact completed candidate. Its initial positive-control assertions were held by
+independent review and repaired to compare whole IDs and complete row multisets;
+a wrapper removing one row from a real two-component HTTP result makes the exact
+checker fail. Both admission flags are required. See adjacent empty-identity
+qualification/observations. These mutations do not assert ingestion creates empty
+IDs, and do not authorize a global ban on literal None in opaque IDs.
+
 Coordinator prerequisites measured: existing repo Node20.20.1, GNUmake4.4.1 from
 the pinned Nix store, Docker29.9.2, Compose5.7.0. Locked npm ci completed and web
 typecheck passed. Version-matched Ubuntu Playwright1.59.1 resolved the native
