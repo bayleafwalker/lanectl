@@ -87,6 +87,18 @@ def check_id(name: str, value: str) -> str:
     return value
 
 
+def parse_evidence_ref(ref):
+    """Parse a committed evidence reference without accessing Git."""
+    match = re.fullmatch(r"git:([0-9a-f]{40}):(.+)", ref) if isinstance(ref, str) else None
+    if not match:
+        raise ContractError("evidence_ref must be git:<full commit>:<relative path>")
+    commit, path = match.groups()
+    if (path.startswith("/") or any(ord(ch) < 32 or ord(ch) == 127 for ch in path)
+            or any(part in ("", ".", "..") for part in path.split("/"))):
+        raise ContractError("evidence_ref path must be a safe relative path")
+    return commit, path
+
+
 def make_event(etype: str, data: dict, *, item_id: str | None = None, ts: str | None = None) -> dict:
     validate_event_parts(etype, data, item_id)
     return {"schema": CONTRACT_VERSION, "ts": ts or utcnow(), "type": etype,
@@ -114,9 +126,9 @@ def validate_event_parts(etype: str, data: dict, item_id: str | None) -> None:
             raise ContractError("invalidation revision must be positive")
         if not isinstance(data["target_event_sha256"], str) or not re.fullmatch(r"[0-9a-f]{64}", data["target_event_sha256"]):
             raise ContractError("invalid target event sha256")
-        for key in ("reason", "evidence_ref"):
-            if not isinstance(data[key], str) or not data[key].strip():
-                raise ContractError(f"invalidation {key} must be nonempty")
+        if not isinstance(data["reason"], str) or not data["reason"].strip():
+            raise ContractError("invalidation reason must be nonempty")
+        parse_evidence_ref(data["evidence_ref"])
     if etype == "decision.recorded" and data["decision"] not in DECISIONS:
         raise ContractError(f"bad decision {data['decision']!r}")
     if etype == "integrator.fix" and data["fix_class"] not in FIX_CLASSES:

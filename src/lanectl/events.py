@@ -60,11 +60,12 @@ class EventLog:
                     continue
                 try:
                     event = validate_event(json.loads(line))
-                    if n > after:
-                        out.append(event)
+                    out.append((n, event))
                 except Exception as exc:  # a torn tail line must not hide the rest
                     raise ValueError(f"{self.path}:{n}: {exc}") from exc
-        return out
+        from .publication import publication_evidence
+        publication_evidence([event for _, event in out])
+        return [event for n, event in out if n > after]
 
 
 @dataclass

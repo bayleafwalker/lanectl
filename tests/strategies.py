@@ -157,7 +157,7 @@ def _data_for(etype: str) -> st.SearchStrategy[dict]:
     if etype == "release.publication.invalidated":
         return st.fixed_dictionaries({"release_id": ids("release"), "revision": st.integers(1, 10),
             "target_event_sha256": st.just("a" * 64), "reason": st.just("incorrect"),
-            "evidence_ref": st.just("evidence")})
+            "evidence_ref": st.just("git:" + "a" * 40 + ":proof")})
     if etype == "item.claimed":
         return st.fixed_dictionaries({
             "attempt_id": ids("attempt"),

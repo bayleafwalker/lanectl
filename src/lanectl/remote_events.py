@@ -80,7 +80,7 @@ class RemoteEventLog:
     def _read_remote(self, *, after=0):
         if type(after) is not int or after < 0:
             raise CoordinationError('lane stream cursor must be a nonnegative integer')
-        events, cursor, revision = [], after, None
+        events, cursor, revision = [], 0, None
         while True:
             args = {'stream': self.stream, 'after': cursor, 'limit': 256}
             if revision is not None:
@@ -88,6 +88,8 @@ class RemoteEventLog:
             page = self.client.invoke(self.client.envelope('lane.stream.read-v1', args, None))
             if revision is None:
                 revision = page['revision']
+                if after > revision:
+                    raise CoordinationError('lane stream cursor exceeds snapshot revision')
             batch, next_cursor = page['events'], page['next_after']
             if page['revision'] != revision or next_cursor != cursor + len(batch):
                 raise CoordinationError('lane stream snapshot/cursor mismatch')
@@ -96,7 +98,9 @@ class RemoteEventLog:
             if not page['has_more']:
                 if cursor != revision:
                     raise CoordinationError('lane stream snapshot is incomplete')
-                return events, revision
+                from .publication import publication_evidence
+                publication_evidence(events)
+                return events[after:], revision
             if not batch:
                 raise CoordinationError('lane stream pagination did not advance')
 
@@ -149,6 +153,8 @@ class RemoteEventLog:
     def import_history(self, events, *, source_check=None):
         """Preserve validated historical bytes during an explicit, quiesced cutover."""
         frozen = [validate_event(json.loads(encode(event))) for event in events]
+        from .publication import publication_evidence
+        publication_evidence(frozen)
         while True:
             if source_check:
                 source_check()

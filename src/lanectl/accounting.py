@@ -321,8 +321,7 @@ def _compute_phases(events, item_id, attempt_id) -> dict:
     or verification interval.
     """
     from .publication import publication_evidence
-    usable = {n for n, e in publication_evidence(events)
-              if _data(e).get("provenance") == "guarded-publish"}
+    usable = {n for n, e in publication_evidence(events)}
     published = None
     claims: list[tuple[int, dict]] = []
     seen_claims: set = set()
@@ -362,12 +361,11 @@ def _compute_phases(events, item_id, attempt_id) -> dict:
     # Queueing is a release-level phase: the item's first claim, even when the
     # query selects one attempt.  Only landing/verification are attempt-scoped.
     if claims:
-        contaminated = any(e.get("type") == "release.publication.invalidated"
-                           and _data(e).get("release_id") == item_id for e in events)
-        if published is None or published[0] >= claims[0][0] or contaminated:
+        if (published is None or published[0] >= claims[0][0]
+                or _data(published[1]).get("provenance") != "guarded-publish"):
             published = None
         queued.append(_interval("queued", published, claims[0],
-                                basis="guarded publication receipt -> item.claimed; unknown without preceding receipt"))
+                                basis="earliest remaining publication -> first claim; unknown unless preceding guarded receipt"))
 
     execution = []
     waiting = []

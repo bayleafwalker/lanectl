@@ -53,8 +53,8 @@ def local_facts(events, *, item_id=None, attempt_id=None, run_id=None):
     """
     numbered = list(enumerate(events or (), 1))
     from .publication import publication_evidence
-    releases = [(n, e) for n, e in publication_evidence(events or ())
-                and (item_id is None or e.get("item_id") == item_id or e.get("data", {}).get("release_id") == item_id)]
+    releases = [(n, e) for n, e in publication_evidence([event for _, event in numbered])
+                if (item_id is None or e.get("item_id") == item_id or e.get("data", {}).get("release_id") == item_id)]
     attempts = [(n, e) for n, e in numbered if e.get("data", {}).get("attempt_id") == attempt_id]
     # With no supplied attempt, select records for the requested item.  A row
     # builder supplies an attempt id, preventing unrelated attempts from joining.

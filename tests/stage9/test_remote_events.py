@@ -179,8 +179,49 @@ def test_invalidation_requires_preceding_target_in_transaction(client, tmp_path)
     with log.locked():
         event = log.append('release.published', {'release_id': 'release-x', 'revision': 1}, item_id='release-x')
         data = {'release_id': 'release-x', 'revision': 2, 'target_event_sha256': fingerprint(event),
-                'reason': 'draft', 'evidence_ref': 'invalid'}
+                'reason': 'draft', 'evidence_ref': 'git:' + 'a' * 40 + ':proof'}
         with pytest.raises(ValueError, match='preceding matching'):
             log.append('release.publication.invalidated', data, item_id='release-x')
         assert len(log.read()) == 1
     assert len(log.read()) == 1
+
+
+def test_invalid_history_is_rejected_on_served_read_and_import(client, tmp_path):
+    from lanectl.contracts import make_event
+    from lanectl.publication import fingerprint
+    event = make_event('release.published', {'release_id': 'release-x', 'revision': 1}, item_id='release-x')
+    invalid = make_event('release.publication.invalidated', {'release_id': 'release-x', 'revision': 2,
+        'target_event_sha256': fingerprint(event), 'reason': 'wrong revision', 'evidence_ref': 'git:' + 'a' * 40 + ':proof'}, item_id='release-x')
+    log = RemoteEventLog(client, tmp_path / 'pending.json')
+    with pytest.raises(ValueError, match='preceding matching'):
+        log.import_history([event, invalid])
+    assert log.read() == []
+    client.store.append('ws', 'repo-a', 'control', 'p', 'test-invalid', 0, [event, invalid])
+    with pytest.raises(ValueError, match='preceding matching'):
+        log.read(after=1)
+
+
+def test_served_read_rejects_cursor_beyond_snapshot(client, tmp_path):
+    log = RemoteEventLog(client, tmp_path / 'pending.json')
+    publish(log)
+    with pytest.raises(CoordinationError, match='cursor'):
+        log.read(after=2)
+
+
+def test_import_crosses_page_for_preceding_target_and_rejects_late_invalid_before_write(client, tmp_path):
+    from lanectl.contracts import make_event
+    from lanectl.publication import fingerprint
+    from lanectl.publication import publication_evidence
+    events = [make_event('release.published', {'release_id': f'release-{n}', 'revision': 1}, item_id=f'release-{n}') for n in range(257)]
+    first = events[0]
+    data = {'release_id': 'release-0', 'revision': 1, 'target_event_sha256': fingerprint(first),
+            'reason': 'draft', 'evidence_ref': 'git:' + 'a' * 40 + ':proof'}
+    invalidation = make_event('release.publication.invalidated', data, item_id='release-0')
+    log = RemoteEventLog(client, tmp_path / 'pending.json')
+    wrong = make_event('release.publication.invalidated', {**data, 'revision': 2}, item_id='release-0')
+    with pytest.raises(ValueError, match='preceding matching'):
+        log.import_history(events + [wrong])
+    assert log.read() == []
+    assert log.import_history(events + [invalidation]) == 258
+    assert log.read(after=257) == [invalidation]
+    assert all(event != first for _, event in publication_evidence(log.read()))

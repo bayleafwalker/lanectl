@@ -5,8 +5,9 @@
 draft flag; its timestamp is the completion receipt. `nondraft-observation`
 means reconciliation found a nondrafted release, without establishing when it
 was published. Older records without provenance remain legacy-unattributed.
-Only a preceding guarded receipt can establish queue duration; invalidated or
-otherwise uncertain history leaves that duration unknown.
+Queue duration uses the earliest remaining publication and the first claim.
+It is known only if that publication is a guarded receipt preceding the claim;
+legacy and observation-only starting evidence leave the duration unknown.
 
 An incorrect record can be corrected by appending
 `release.publication.invalidated`, naming its release and revision, the SHA-256
