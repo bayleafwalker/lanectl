@@ -1,0 +1,45 @@
+{
+  "schema": "hla-timeout-artifact-qualification/v1",
+  "source_commit": "6831e8b872cde89e8d37d0b03e04076cf5670c86",
+  "source_tree": "2fb3877fe9e8cfe5658d7ff7a8c0200c41b7e928",
+  "base_commit": "9cf62cb7271ed0e15e35877ab772709808470bea",
+  "seed_commit": "3a76aa14c3c362f957b9cebede471adfb5b3e21e",
+  "frozen_acceptance_sha256": "34da78c8cb79c5ecc6d38e740c6b2ee90433dc000e6633cb3bf853aff6bb3abb",
+  "worker_lines": 684,
+  "generated_lines": 460,
+  "native_outcome": {
+    "outcome": "failed",
+    "exit_code": 124,
+    "elapsed_s": 2700.1,
+    "decision": "rejected",
+    "reason": "worker outcome failed"
+  },
+  "postrun_gates": "all recorded gates passed, including revision3 mandatory slow command",
+  "runtime_probes": {
+    "boundary3case_exit": 0,
+    "all_empty_components_exit": 0,
+    "exact_siblings_and_literal_None_groups": true,
+    "owned_containers_removed_and_inspected_absent": true
+  },
+  "nullable_date_admission": {
+    "public_row_model_accepts_None": false,
+    "fresh_postgres_column_nullable": false,
+    "production_replace_None": "NotNullViolation with old rows preserved",
+    "http_null_date_scenarios_exercised": false,
+    "limit": "No constraints dropped to manufacture unsupported input; no claim about historical nonstandard nullable tables."
+  },
+  "source_review": {
+    "reviewer": "persistent first-party Sage",
+    "verdict": "no remaining blocker in narrow source audit",
+    "scope": "all-kind identity predicates, source authority, targeted DB error conversion, M700",
+    "limits": [
+      "not native Sonnet implementation review",
+      "table_exists discovery/connection failure not uniformly converted",
+      "WarehouseBusyError source inheritance inspected, runtime not independently tested"
+    ]
+  },
+  "current_attempt": "a6 automatically admitted on opencode-go/deepseek-v4.1-flash; actual routing observed, not inferred Pro",
+  "acceptance": "not candidate approval, not final train/dev/CI delivery",
+  "patch_sha256": "012f9aa6409654a7aa0a59a98e0f2aee5a63cd1a4d0495edb577a9a22cdca897",
+  "durability": "Git evidence cross-host-replicated after canonical publication; /tmp source/logs session-local"
+}

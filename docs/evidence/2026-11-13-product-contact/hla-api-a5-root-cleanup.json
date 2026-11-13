@@ -1,0 +1,20 @@
+{
+  "observed_at": "2026-11-13T17:54:27.750743+00:00",
+  "probes": [
+    {
+      "container": "homelab-analytics-postgres-f93e082a",
+      "exit_code": 1,
+      "stderr": "error: no such object: homelab-analytics-postgres-f93e082a"
+    },
+    {
+      "container": "homelab-analytics-postgres-92db30f2",
+      "exit_code": 1,
+      "stderr": "error: no such object: homelab-analytics-postgres-92db30f2"
+    },
+    {
+      "container": "homelab-analytics-postgres-6ac16a98",
+      "exit_code": 1,
+      "stderr": "error: no such object: homelab-analytics-postgres-6ac16a98"
+    }
+  ]
+}

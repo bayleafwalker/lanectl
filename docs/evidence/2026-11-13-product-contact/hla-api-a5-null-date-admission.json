@@ -1,0 +1,24 @@
+{
+  "reference_date": "2026-11-13",
+  "source_module": "/tmp/hla-a5-timeout-source/packages/pipelines/reporting_service.py",
+  "public_row_model": {
+    "accepts_null": false,
+    "exception": "pydantic_core._pydantic_core.ValidationError"
+  },
+  "published_postgres_column": [
+    {
+      "is_nullable": "NO",
+      "data_type": "date"
+    }
+  ],
+  "postgres_replace": {
+    "accepts_null": false,
+    "exception": "psycopg.errors.NotNullViolation"
+  },
+  "prior_rows_preserved_after_rejection": true,
+  "http_scenarios": null,
+  "not_exercised_reason": "NULL date not admitted by both public model and fresh published table; no constraint was altered",
+  "owned_container": "homelab-analytics-postgres-6ac16a98",
+  "fixture_rm_f_seen": true,
+  "container_absent_after_cleanup": true
+}

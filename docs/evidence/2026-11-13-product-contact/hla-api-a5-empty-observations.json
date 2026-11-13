@@ -1,0 +1,108 @@
+{
+  "source_commit": "6831e8b872cde89e8d37d0b03e04076cf5670c86",
+  "source_root": "/tmp/hla-a5-timeout-source",
+  "service_module": "/tmp/hla-a5-timeout-source/packages/pipelines/reporting_service.py",
+  "fixture_module": "/tmp/hla-a5-timeout-source/tests/test_attention_record_api.py",
+  "reference_date": "2026-11-13",
+  "cases": [
+    {
+      "kind": "anomaly",
+      "component": "transaction_id",
+      "mutation": "empty string in a copied published row",
+      "public_row_model_accepts_empty": true,
+      "publication_store_accepts_empty": true,
+      "forged_item_id": "anomaly_",
+      "http_status": 503,
+      "response_detail_only": true,
+      "response_source_fields_present": false,
+      "warehouse_reads": [],
+      "intact_sibling_item_id": "anomaly_1df09e367934903a",
+      "intact_sibling_http_status": 200,
+      "intact_sibling_expected_group_size": 1,
+      "intact_sibling_exact": true,
+      "required_behavior": true
+    },
+    {
+      "kind": "contract_review",
+      "component": "contract_id",
+      "mutation": "empty string in a copied published row",
+      "public_row_model_accepts_empty": true,
+      "publication_store_accepts_empty": true,
+      "forged_item_id": "review__above_market_average",
+      "http_status": 503,
+      "response_detail_only": true,
+      "response_source_fields_present": false,
+      "warehouse_reads": [],
+      "intact_sibling_item_id": "review_grid_multiple_contracts_same_type",
+      "intact_sibling_http_status": 200,
+      "intact_sibling_expected_group_size": 1,
+      "intact_sibling_exact": true,
+      "required_behavior": true
+    },
+    {
+      "kind": "contract_review",
+      "component": "reason",
+      "mutation": "empty string in a copied published row",
+      "public_row_model_accepts_empty": true,
+      "publication_store_accepts_empty": true,
+      "forged_item_id": "review_grid/north_",
+      "http_status": 503,
+      "response_detail_only": true,
+      "response_source_fields_present": false,
+      "warehouse_reads": [],
+      "intact_sibling_item_id": "review_grid_multiple_contracts_same_type",
+      "intact_sibling_http_status": 200,
+      "intact_sibling_expected_group_size": 1,
+      "intact_sibling_exact": true,
+      "required_behavior": true
+    },
+    {
+      "kind": "contract_renewal",
+      "component": "contract_id",
+      "mutation": "empty string in a copied published row",
+      "public_row_model_accepts_empty": true,
+      "publication_store_accepts_empty": true,
+      "forged_item_id": "renewal__2026-11-23",
+      "http_status": 503,
+      "response_detail_only": true,
+      "response_source_fields_present": false,
+      "warehouse_reads": [],
+      "intact_sibling_item_id": "renewal_grid/north_2026-11-23",
+      "intact_sibling_http_status": 200,
+      "intact_sibling_expected_group_size": 2,
+      "intact_sibling_exact": true,
+      "required_behavior": true
+    }
+  ],
+  "literal_none_controls": [
+    {
+      "kind": "contract_review",
+      "opaque_contract_id": "opaqueNone/utility",
+      "item_id": "review_opaqueNone/utility_multiple_contracts_same_type",
+      "http_status": 200,
+      "expected_group_size": 2,
+      "matched_own_rows": true,
+      "warehouse_reads": []
+    },
+    {
+      "kind": "contract_renewal",
+      "opaque_contract_id": "opaqueNone/utility",
+      "item_id": "renewal_opaqueNone/utility_2026-11-23",
+      "http_status": 200,
+      "expected_group_size": 2,
+      "matched_own_rows": true,
+      "warehouse_reads": []
+    }
+  ],
+  "all_required_behaviors": true,
+  "require_fixed": true,
+  "owned_container": "homelab-analytics-postgres-92db30f2",
+  "fixture_rm_f_seen": true,
+  "container_absent_after_cleanup": true,
+  "limitations": [
+    "requires compatible frozen attention test fixture helpers",
+    "explicit mutations of published rows; no claim ingestion generates empty IDs",
+    "warehouse reads traced through DuckDBStore fetchall/fetchall_dicts, not raw connection execution",
+    "no general format restrictions or prohibition on literal None"
+  ]
+}

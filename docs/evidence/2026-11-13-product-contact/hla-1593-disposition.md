@@ -104,6 +104,26 @@ checker fail. Both admission flags are required. See adjacent empty-identity
 qualification/observations. These mutations do not assert ingestion creates empty
 IDs, and do not authorize a global ban on literal None in opaque IDs.
 
+Saved a5 source6831e8b872cde89e8d37d0b03e04076cf5670c86 now passes both
+independent real-PostgreSQL probe suites: strict/missing-column/empty-charge
+boundaries, every textual identity component, exact intact sibling groups and
+complete literal-None control groups. Its684 worker lines include460 generated
+lines; the narrow source review found no remaining blocker in those paths.
+Nevertheless the native process timed out at2700.1s, exit124, while broader
+verification was running. All recorded post-run gates passed, but the actual
+decision rejected it for worker outcome failed. Preserve both facts; this is
+timeout-artifact qualification, not candidate approval or delivery. The same
+bounded runner automatically admitted a6 on DeepSeek Flash at17:46UTC. Its
+source and outcome remain unmeasured while live.
+
+The a5 model also reported a nullable-date repair. Independent admission checks
+found the current public row model rejects expected_date=None and the fresh
+published PostgreSQL column is NOT NULL; replacement fails and retains the old
+rows. No constraint was dropped to manufacture that state, and no nullable-date
+HTTP result is claimed. Historical nonstandard tables and runtime
+WarehouseBusyError behavior remain outside that narrow execution proof. See
+adjacent a5 decisions, source patch, probe results and timeout qualification.
+
 Coordinator prerequisites measured: existing repo Node20.20.1, GNUmake4.4.1 from
 the pinned Nix store, Docker29.9.2, Compose5.7.0. Locked npm ci completed and web
 typecheck passed. Version-matched Ubuntu Playwright1.59.1 resolved the native

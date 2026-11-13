@@ -1,0 +1,46 @@
+{
+  "source_commit": "6831e8b872cde89e8d37d0b03e04076cf5670c86",
+  "source_root": "/tmp/hla-a5-timeout-source",
+  "service_module": "/tmp/hla-a5-timeout-source/packages/pipelines/reporting_service.py",
+  "fixture_module": "/tmp/hla-a5-timeout-source/tests/test_attention_record_api.py",
+  "reference_date": "2026-11-13",
+  "case1_strict_no_store": {
+    "http_status": 503,
+    "warehouse_reads": [],
+    "route_item_id": "upcoming_43f67c62c7604000_2026-11-13",
+    "matched_rows": 0,
+    "required_behavior": true
+  },
+  "case2_published_missing_charge_column": {
+    "known_before_column_removal_status": 200,
+    "known_after_status": 503,
+    "known_exception": null,
+    "unknown_item_id": "upcoming_ffffffffffffffff_2026-11-13",
+    "unknown_after_status": 503,
+    "unknown_exception": null,
+    "warehouse_reads": [],
+    "required_behavior": true
+  },
+  "case3_empty_identity": {
+    "public_row_model_accepts_empty": true,
+    "publication_store_accepts_empty": true,
+    "forged_item_id": "upcoming__2026-11-13",
+    "http_status": 503,
+    "response_charge_ids": [],
+    "response_detail_only": true,
+    "warehouse_reads": [],
+    "required_behavior": true,
+    "input_provenance": "explicit boundary mutation of a loader-generated row; no claim source ingestion generates empty IDs"
+  },
+  "all_required_behaviors": true,
+  "require_fixed": true,
+  "owned_container": "homelab-analytics-postgres-f93e082a",
+  "fixture_rm_f_seen": true,
+  "container_absent_after_cleanup": true,
+  "limitations": [
+    "requires compatible frozen attention test fixture helpers",
+    "only these three scenarios are checked",
+    "warehouse reads tracked through DuckDBStore fetchall/fetchall_dicts",
+    "no inference about literal None in opaque contract IDs"
+  ]
+}

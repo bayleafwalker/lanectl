@@ -53,6 +53,18 @@ admission. Any cleanup still needs fresh review/digest and base-failure evidence
 implementation workers must not edit the frozen file to repair it. Keep a
 fixture defect separate from an actual implementation gate violation.
 
+State who owns each verification stage in the intent. A bounded native worker
+must complete its declared acceptance and changed-code checks; the integration
+owner still completes independent review, the full repository verification,
+train/deployment checks and canonical CI before landing. Assign those later
+checks explicitly rather than implicitly fitting the whole delivery path into
+the implementation timeout. HLA a5 reached its45-minute limit while broader
+verification was running: all post-run gates and independent boundary probes
+passed, but its actual native outcome remained failed and the normal decision
+rejected it. Preserve that distinction; green source checks do not rewrite a
+timed-out worker into a completed run. This is a planning lesson, not a timeout,
+gate or authority change.
+
 Artifacts under `backlog/` become cross-host-replicated when committed and
 pushed. Temporary clones are session-local and removed after each model call.
 No specification command changes lane authority, policy or publication state.

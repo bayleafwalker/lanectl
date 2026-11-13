@@ -1,0 +1,113 @@
+[
+  {
+    "data": {
+      "attempt_id": "hla-attention-records-r5-a5",
+      "elapsed_s": 2700.1,
+      "escalation_reason": null,
+      "exit_code": 124,
+      "final_tail": "The independent review surfaced a real gap (NULL date identities were reported as 404 instead of 503) and an error-masking issue. Both are now fixed and re-verified:\n\n- Known ID with NULL `expected_date`: **503**\n- Plausible unknown ID alongside it: **503**\n- Intact sibling: **200**\n- `WarehouseBusyError` again escapes to the app's canonical 503 handler.\n- Portable acceptance: **29 passed**; Postgres integration/slow: **3 passed**.\n- Diff remains within budget at **684** lines including generated contracts.\n\nThe full non-browser `verify-fast` targets are running now; I'll report the final result when it completes.",
+      "head_sha": "6831e8b872cde89e8d37d0b03e04076cf5670c86",
+      "isolation_breach": false,
+      "main_changed": false,
+      "outcome": "failed",
+      "seed_sha": "3a76aa14c3c362f957b9cebede471adfb5b3e21e"
+    },
+    "item_id": "hla-attention-records-r5",
+    "schema": "lanectl.event/v1",
+    "ts": "2026-11-13T17:43:26Z",
+    "type": "attempt.finished"
+  },
+  {
+    "data": {
+      "attempt_id": "hla-attention-records-r5-a5",
+      "gate": "diff-policy",
+      "passed": true,
+      "violations": []
+    },
+    "item_id": "hla-attention-records-r5",
+    "schema": "lanectl.event/v1",
+    "ts": "2026-11-13T17:46:13Z",
+    "type": "gate.result"
+  },
+  {
+    "data": {
+      "attempt_id": "hla-attention-records-r5-a5",
+      "gate": "fail-on-base",
+      "passed": true,
+      "violations": []
+    },
+    "item_id": "hla-attention-records-r5",
+    "schema": "lanectl.event/v1",
+    "ts": "2026-11-13T17:46:13Z",
+    "type": "gate.result"
+  },
+  {
+    "data": {
+      "attempt_id": "hla-attention-records-r5-a5",
+      "gate": "acceptance-on-base",
+      "passed": true,
+      "violations": []
+    },
+    "item_id": "hla-attention-records-r5",
+    "schema": "lanectl.event/v1",
+    "ts": "2026-11-13T17:46:13Z",
+    "type": "gate.result"
+  },
+  {
+    "data": {
+      "attempt_id": "hla-attention-records-r5-a5",
+      "gate": "acceptance",
+      "passed": true,
+      "violations": []
+    },
+    "item_id": "hla-attention-records-r5",
+    "schema": "lanectl.event/v1",
+    "ts": "2026-11-13T17:46:13Z",
+    "type": "gate.result"
+  },
+  {
+    "data": {
+      "attempt_id": "hla-attention-records-r5-a5",
+      "gate": "job:ruff",
+      "passed": true,
+      "violations": []
+    },
+    "item_id": "hla-attention-records-r5",
+    "schema": "lanectl.event/v1",
+    "ts": "2026-11-13T17:46:13Z",
+    "type": "gate.result"
+  },
+  {
+    "data": {
+      "attempt_id": "hla-attention-records-r5-a5",
+      "by": "gates",
+      "decision": "rejected",
+      "reasons": [
+        "worker outcome failed"
+      ],
+      "rules_revision": "decision-rules/v3"
+    },
+    "item_id": "hla-attention-records-r5",
+    "schema": "lanectl.event/v1",
+    "ts": "2026-11-13T17:46:13Z",
+    "type": "decision.recorded"
+  },
+  {
+    "data": {
+      "attempt_id": "hla-attention-records-r5-a5",
+      "decision": "rejected",
+      "elapsed_s": 2700.1,
+      "gates_failed": [],
+      "lane_revision": 3,
+      "model": "opencode-go/deepseek-v4.1-flash",
+      "rules_revision": "decision-rules/v3",
+      "size": "M",
+      "task_class": "product-api",
+      "worker": "opencode"
+    },
+    "item_id": "hla-attention-records-r5",
+    "schema": "lanectl.event/v1",
+    "ts": "2026-11-13T17:46:13Z",
+    "type": "experiment.recorded"
+  }
+]
