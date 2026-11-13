@@ -1,5 +1,6 @@
 """A headless worker can execute its exact planner-declared falsifier."""
 from dataclasses import replace
+import json
 
 import pytest
 
@@ -35,3 +36,31 @@ def test_real_runner_forwards_only_frozen_acceptance_commands(estate, monkeypatc
     monkeypatch.setattr(runner, "run_gates", lambda *a, **k: {"synthetic": []})
     runner.execute(claim, log)
     assert seen[0]["verification_commands"] == claim.rel.acceptance.exec
+
+
+@pytest.mark.parametrize("has_snip", [False, True])
+@pytest.mark.parametrize("prefix", ["", "snip proxy -- "])
+def test_native_launch_preserves_the_exact_declared_command(tmp_path, monkeypatch, has_snip, prefix):
+    monkeypatch.setattr(claude.shutil, "which", lambda name, **kw: "/trusted/"+name if name=="claude" or has_snip else None)
+    seen = []
+    def child(cmd, *args, **kwargs):
+        seen.append(cmd)
+        return json.dumps({"result":"synthetic completed verification","is_error":False}), "", 0, False
+    monkeypatch.setattr(claude, "_run_child", child)
+    check = prefix + "uv run --no-sync pytest -q tests/proof.py"
+    result = claude.run_claude(model="claude-sonnet-5-5",worktree=tmp_path,prompt="bounded task",
+        status_file=tmp_path/"status.json",timeout_s=30,external=False,
+        env={"PATH":"/trusted"},verification_commands=(check,))
+    assert result.outcome == "done"
+    cmd = seen[0]
+    assert cmd[cmd.index("--allowedTools")+1] == "Bash("+check+")"
+    assert check in cmd[-1] and "verbatim" in cmd[-1]
+    assert "Bash" not in cmd and "Bash(*)" not in cmd
+
+
+def test_native_permission_denials_cannot_report_a_completed_attempt():
+    parsed = claude.parse_result(json.dumps({"result":"done", "is_error":False,
+        "permission_denials":[{"tool_name":"Bash","tool_input":{"command":"private-command-sentinel"}}]}))
+    assert parsed.outcome == "escalated" and "permission" in parsed.escalation_reason
+    assert "private-command-sentinel" not in parsed.escalation_reason
+    assert claude.parse_result(json.dumps({"result":"done","permission_denials":[]})).outcome == "done"

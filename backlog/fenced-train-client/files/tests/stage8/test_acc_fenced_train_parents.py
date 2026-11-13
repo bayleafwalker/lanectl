@@ -74,3 +74,14 @@ def test_a_candidate_head_fifo_cannot_block_coordinator_inspection(tmp_path, mon
     except (ft.FenceError, OSError):
         pass
     assert blocking_attempts == []
+
+
+def test_legitimate_leaf_link_metadata_remains_inspectable(tmp_path):
+    from lanectl import fenced_train as ft
+    root = tmp_path / "repo"
+    (root / ".git").mkdir(parents=True)
+    (root / ".git/HEAD").write_text("a" * 40 + "\n")
+    (root / "leaf").symlink_to("missing-external-target")
+    before = ft._manifest(root, ["leaf"])
+    assert before == {"leaf": ("link", "missing-external-target")}
+    assert ft._mutation(root, "a" * 40, ["leaf"], before) == ""

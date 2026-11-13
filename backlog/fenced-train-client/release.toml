@@ -1,7 +1,7 @@
 id = "fenced-train-client"
 repo = "lanectl"
 base_sha = "5dbe83e656e160e676457cc1d20cafe2c715edfc"
-revision = 4
+revision = 5
 title = "Execute ownership-compatible train checks through the separate-UID service"
 task_class = "recovery"
 size = "S"
@@ -9,21 +9,27 @@ data_class = "public"
 eligible_lanes = ["restricted"]
 
 outcome = """
-Revision 4 repeats the bounded correction after the prior author could not run
+Revision 5 repeats the bounded correction after the prior author could not run
 Bash under the native profile, then added a FIFO regression that hung the old
 base. That run was stopped and rejected, never accepted. The coordinator has
 repaired the native profile to allow only the exact frozen acceptance command.
-Run that literal command from the Acceptance section, without extra shell tools
-or different arguments. Read/Edit tools are available for implementation. If
+The command explicitly includes the workstation-approved snip proxy raw-output
+wrapper, proven with a real CLI Bash/tool-result trace (9 passed, no permission
+denials). Run that literal command from Acceptance, without additional wrappers
+or different arguments. The adapter does not rewrite approved commands. Read/Edit tools are available for implementation. If
 the acceptance command remains denied, stop with DISPATCH_OUTCOME: ESCALATED;
 do not report done with verification delegated back to the planner.
 
-The repaired source in c00bcbb9958b703fe359639aee5744aa433595f1 can be reused
-as a reference, but do not copy its unsafe unguarded FIFO test. Its descriptor
+The repaired source c00bcbb9958b703fe359639aee5744aa433595f1 is an audit reference
+only; do not fetch it, run git show, or read outside this checkout. Implement
+the bounded descriptor fix using Read/Edit on this base. Do not copy the old
+unguarded FIFO test. No Bash commands beyond the exact declared acceptance are
+authorized by the native profile; do not try git, wc, or alternate test commands. Its descriptor
 walk and nonblocking file opens were coherent on independent source review.
 The three frozen parent/FIFO cases already contain interceptors preventing any
-outside read or blocking open. Additional tests are optional: if added, every
-negative test must also terminate on the defective base. Never directly open a
+outside read or blocking open. All required new tests are frozen already, including legitimate leaf-link
+metadata preservation; do not add or edit test files in this correction. Every
+negative frozen test also terminates on the defective base. Never directly open a
 FIFO through the old implementation without a guard or bounded subprocess.
 
 This is a bounded safety correction on the complete reviewed candidate
@@ -49,8 +55,8 @@ Preserve exact source/HEAD mutation rejection and safe cleanup/orphan behavior.
 Do not execute Git, hooks or filters when inspecting the handed-back tree.
 Retain _manifest(root,tracked), _mutation(root,commit,tracked,before),
 _stage(checkout,dest) and _request(repo,command,timeout) interfaces used by the
-frozen regression proofs. Add focused tests under new test file names; existing
-files in this candidate base are now immutable. No coverage suppression directives,
+frozen regression proofs. The frozen tests cover the focused correction; all existing and frozen test
+files are immutable. No coverage suppression directives,
 new dependencies, governance edits, broad refactoring or changes to the proven
 request/receipt/lifecycle plumbing. <=250 added+deleted lines after formatting.
 
@@ -107,11 +113,11 @@ For this corrective revision the S/250-line bound above applies, excluding froze
 """
 
 [scope]
-paths = ["src/lanectl/fenced_train.py", "src/lanectl/runner.py", "src/lanectl/config.py", "src/lanectl/doctor.py", "tests/stage8/test_fenced_train*.py"]
+paths = ["src/lanectl/fenced_train.py"]
 
 [acceptance]
 files = ["tests/stage8/test_acc_fenced_train.py", "tests/stage8/test_acc_fenced_train_recovery.py", "tests/stage8/test_acc_fenced_train_parents.py"]
-exec = ["uv run --no-sync pytest -q -p no:cacheprovider tests/stage8/test_acc_fenced_train.py tests/stage8/test_acc_fenced_train_recovery.py tests/stage8/test_acc_fenced_train_parents.py"]
+exec = ["snip proxy -- uv run --no-sync pytest -q -p no:cacheprovider tests/stage8/test_acc_fenced_train.py tests/stage8/test_acc_fenced_train_recovery.py tests/stage8/test_acc_fenced_train_parents.py"]
 
 [lint]
 override = "This corrective release deliberately targets the reviewed unlanded candidate 5dbe83e as its base. Earlier feature/recovery acceptance already passes there and is retained for compatibility. New parent-symlink and FIFO tests fail for the independently reproduced unsafe opens, and combined fail-on-base remains required. No check or policy is disabled."

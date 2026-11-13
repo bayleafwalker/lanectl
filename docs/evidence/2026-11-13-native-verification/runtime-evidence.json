@@ -1,0 +1,54 @@
+{
+  "schema": "lanectl-native-verification/v1",
+  "source_sha256": {
+    "src/lanectl/adapters_claude.py": "fcb0bf66d914a9233e97bc84b4c515047c994bbf5440b524a8c41882dfec1fd0",
+    "src/lanectl/runner.py": "1933808fb120a3fb8ad4c09e8da120a1396d93ee941cb768ea010f2cedb8f9c7",
+    "tests/stage8/test_claude_verification_commands.py": "9f8d54ef3c262ca33851a4724766ebc316e1bded006ee5a8ef93199ccc9739c3"
+  },
+  "unwrapped_control": {
+    "exit_code": 0,
+    "observed_bash": [
+      {
+        "command": "uv run --no-sync pytest -q -p no:cacheprovider tests/stage8/test_acc_fenced_train.py tests/stage8/test_acc_fenced_train_recovery.py tests/stage8/test_acc_fenced_train_parents.py",
+        "is_error": true,
+        "output": "This command requires approval"
+      }
+    ],
+    "final": {
+      "is_error": false,
+      "subtype": "success",
+      "permission_denials": [
+        {
+          "tool_name": "Bash",
+          "tool_use_id": "toolu_01BY1Ck8yph2JKWYhVfJnEDR",
+          "tool_input": {
+            "command": "uv run --no-sync \"/nix/store/jffhdcphm9d7zn18paf7kyn5m2gj1q50-snip-0.24.1/bin/snip\" run -- pytest -q -p no:cacheprovider tests/stage8/test_acc_fenced_train.py tests/stage8/test_acc_fenced_train_recovery.py tests/stage8/test_acc_fenced_train_parents.py"
+          }
+        }
+      ],
+      "num_turns": 2
+    }
+  },
+  "explicit_raw_proxy": {
+    "exit_code": 0,
+    "observed_bash": [
+      {
+        "command": "snip proxy -- uv run --no-sync pytest -q -p no:cacheprovider tests/stage8/test_acc_fenced_train.py tests/stage8/test_acc_fenced_train_recovery.py tests/stage8/test_acc_fenced_train_parents.py",
+        "is_error": false,
+        "output": ".........                                                                [100%]\n9 passed in 0.43s"
+      }
+    ],
+    "final": {
+      "is_error": false,
+      "subtype": "success",
+      "permission_denials": [],
+      "num_turns": 2
+    }
+  },
+  "full_suite": {
+    "passed": 958,
+    "elapsed_s": 109.68
+  },
+  "scope": "profile and real CLI permission qualification; not host-fence or hosted-work qualification",
+  "durability": "Git records cross-host-replicated after canonical push; raw logs under /tmp session-local"
+}

@@ -44,26 +44,27 @@ def _result(outcome: str, exit_code: int, final_tail: str,
     return AdapterResult(outcome, exit_code, final_tail, escalation_reason, usage)
 
 
-def build_command(model: str, prompt: str, *, verification_commands=()) -> list[str]:
-    """Build the headless Claude Code command line."""
-    command = [
-        "claude",
-        "-p",
-        "--model",
-        model,
-        "--output-format",
-        "json",
-        "--permission-mode",
-        "acceptEdits",
-    ]
+def _verification_commands(commands):
+    """Only literal, single-command rules can preserve the frozen authority."""
+    verification_commands = commands
     if isinstance(verification_commands, (str, bytes)):
         raise ValueError("verification commands must be a sequence")
-    rules = []
+    try:
+        verification_commands = tuple(verification_commands)
+    except TypeError:
+        raise ValueError("verification commands must be a sequence") from None
     for check in verification_commands:
         if (not isinstance(check, str) or not check.strip()
                 or any(char in check for char in "*\r\n\0,&|;")):
             raise ValueError("verification command cannot be represented as an exact permission rule")
-        rules.append(f"Bash({check})")
+    return verification_commands
+
+
+def build_command(model: str, prompt: str, *, verification_commands=()) -> list[str]:
+    """Build headless argv with exact rules, never unrestricted Bash."""
+    command = ["claude", "-p", "--model", model, "--output-format", "json",
+               "--permission-mode", "acceptEdits"]
+    rules = [f"Bash({check})" for check in _verification_commands(verification_commands)]
     if rules:
         command += ["--allowedTools", *rules, "--"]
     return command + [prompt]
@@ -157,6 +158,8 @@ def parse_result(stdout: str) -> AdapterResult:
     text = obj.get("result")
     text = text if isinstance(text, str) else ""
     escalated, reason = _escalation(text)
+    if obj.get("permission_denials") and not escalated:
+        escalated, reason = True, "native permission denial prevented autonomous verification"
     if escalated:
         outcome = "escalated"
     elif obj.get("is_error"):
@@ -263,7 +266,12 @@ def run_claude(*, model: str, worktree: Path, prompt: str, status_file: Path,
         return result
 
     try:
-        cmd = build_command(model, prompt, verification_commands=verification_commands)
+        checks = _verification_commands(verification_commands)
+        if checks:
+            prompt += ("\n\n# Native verification\nRun these declared checks verbatim; "
+                       "no additional Bash commands are authorized by this profile:\n"
+                       + "\n".join("- " + check for check in checks))
+        cmd = build_command(model, prompt, verification_commands=checks)
         cmd[0] = exe
         kwargs = {"cancel_event": cancel_event} if cancel_event is not None else {}
         if stop_callback is not None:
