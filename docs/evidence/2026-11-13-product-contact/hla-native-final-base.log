@@ -1,0 +1,56 @@
+F.F                                                                      [100%]
+=================================== FAILURES ===================================
+____________________ test_generated_fixture_and_source_sql _____________________
+
+warehouse = <packages.pipelines.transformation_service.TransformationService object at 0x7107e08fc980>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7107e09c7ce0>
+
+    def test_generated_fixture_and_source_sql(warehouse: Any, monkeypatch: pytest.MonkeyPatch) -> None:
+        groups = select_groups(warehouse.store)
+        service = ReportingService(warehouse, access_mode=ReportingAccessMode.WAREHOUSE)
+        before = canonical(service.get_open_attention_items())
+        assert before == canonical(warehouse.store.fetchall_dicts('SELECT * FROM mart_open_attention_items'))
+        snapshot = {kind: canonical(read_all(warehouse.store, kind)) for kind in SOURCE}
+>       get = facade(service)
+              ^^^^^^^^^^^^^^^
+
+tests/test_attention_source_records.py:301: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+service = <packages.pipelines.reporting_service.ReportingService object at 0x7107e08fe120>
+
+    def facade(service: ReportingService) -> Any:
+>       assert callable(getattr(service, 'get_attention_record', None)), 'missing attention source reader'
+E       AssertionError: missing attention source reader
+E       assert False
+E        +  where False = callable(None)
+E        +    where None = getattr(<packages.pipelines.reporting_service.ReportingService object at 0x7107e08fe120>, 'get_attention_record', None)
+
+tests/test_attention_source_records.py:171: AssertionError
+_________________ test_warehouse_driver_failure_is_unavailable _________________
+
+warehouse = <packages.pipelines.transformation_service.TransformationService object at 0x7107e0996e90>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7107e070a580>
+
+    def test_warehouse_driver_failure_is_unavailable(warehouse: Any, monkeypatch: pytest.MonkeyPatch) -> None:
+        item_id, _ = select_groups(warehouse.store)['anomaly']
+>       get = facade(ReportingService(warehouse, access_mode=ReportingAccessMode.WAREHOUSE))
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_attention_source_records.py:362: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+service = <packages.pipelines.reporting_service.ReportingService object at 0x7107e0997110>
+
+    def facade(service: ReportingService) -> Any:
+>       assert callable(getattr(service, 'get_attention_record', None)), 'missing attention source reader'
+E       AssertionError: missing attention source reader
+E       assert False
+E        +  where False = callable(None)
+E        +    where None = getattr(<packages.pipelines.reporting_service.ReportingService object at 0x7107e0997110>, 'get_attention_record', None)
+
+tests/test_attention_source_records.py:171: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_attention_source_records.py::test_generated_fixture_and_source_sql
+FAILED tests/test_attention_source_records.py::test_warehouse_driver_failure_is_unavailable
+2 failed, 1 passed, 5 deselected in 6.68s

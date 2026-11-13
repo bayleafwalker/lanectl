@@ -1,0 +1,10 @@
+Traceback (most recent call last):
+  File "/tmp/hla-source-list-parity.py", line 182, in <module>
+    main()
+    ~~~~^^
+  File "/tmp/hla-source-list-parity.py", line 136, in main
+    source(args.base_repo, args.base_sha)
+    ~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/hla-source-list-parity.py", line 39, in source
+    raise ValueError(f'{repo}: HEAD {actual} does not match {expected}')
+ValueError: /tmp/hla-list-parity-base-repo: HEAD 9cf62cb7271ed0e15e35877ab772709808470bea does not match 0000000000000000000000000000000000000000

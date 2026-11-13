@@ -1,0 +1,67 @@
+{
+  "schema": "hla-attention-list-parity-qualification/v1",
+  "observed_at": "2026-11-13T19:52:45.175392+00:00",
+  "probe": "contrib/qualification/hla_attention_list_parity.py",
+  "probe_sha256": "69c7b8e94bf5ee07d2cc5b8cceb46f28aac75deaa615619343d442619504d652",
+  "base_sha": "9cf62cb7271ed0e15e35877ab772709808470bea",
+  "reference_sha": "a02efec5e6da761e8febf71b38b14894af92eda3",
+  "reference_status": "unaccepted prototype; no implementation approval",
+  "fixture_sha256": "b67ebe0894f3c33fbe18bc183064dbee6f0ef06e9fb938d9ee2a4bba880b4c8e",
+  "actual_final_positive": {
+    "exit_code": 0,
+    "rows_per_mode": 250,
+    "modes": [
+      "WAREHOUSE",
+      "PUBLISHED",
+      "PREFER_PUBLISHED with publication",
+      "PREFER_PUBLISHED fallback"
+    ],
+    "ordered_match": true,
+    "current_python_child_default_exercised": true,
+    "owned_containers_removed": true
+  },
+  "missing_fixture_guard": {
+    "exit_code": 2,
+    "before_git_or_container_work": true
+  },
+  "prior_falsifiers": {
+    "probe_sha256": "f871289558595f3a3ffa33a1780d7ac5da30df7faf30a57ba2cfd6388809a8e3",
+    "delta": "only require explicit fixture and default child Python to sys.executable; comparison/falsifier logic unchanged",
+    "actual_order_reversal": {
+      "exit_code": 1,
+      "mismatch_all4_modes": true,
+      "same_multisets": true,
+      "owned_containers_removed": true
+    },
+    "wrong_full_base_sha": {
+      "exit_code": 1,
+      "before_fixture_execution": true
+    }
+  },
+  "independent_review": "persistent Sage PASS subject to defaults fix; requested exact defaults implemented and positive/parser guards rerun",
+  "limitations": [
+    "Partial SQL ORDER BY permits tie-order differences between independent Postgres publications; investigate mismatch before declaring regression.",
+    "Identical warehouse/published data does not prove authority selection; separate authority tests remain required.",
+    "Immutability comparison covers attention relation, not every source table/history.",
+    "No HTTP, permission, StageC, strict-host or full-product proof."
+  ],
+  "raw_logs": [
+    {
+      "file": "hla-source-list-parity-default-python.log",
+      "sha256": "4bee35711d911381e9afcd8c1745c8d4d65c8213adb6290da813d2036f7cd556"
+    },
+    {
+      "file": "hla-source-list-parity-no-fixture.log",
+      "sha256": "c9049e99b7650fe64095c84de962463fa20efd61d76045b58b65ed17375bc6aa"
+    },
+    {
+      "file": "hla-source-list-parity-reversed.log",
+      "sha256": "543c807ab815a54af8a58b091de41a113e7ddfaea52da9201e9818a9525efc6e"
+    },
+    {
+      "file": "hla-source-list-parity-bad-sha.log",
+      "sha256": "94b22d39eaa7df566cda80a2473cfdd9365923b03285b40e5c65424b53508877"
+    }
+  ],
+  "durability": "Git source/evidence cross-host-replicated after canonical publication; scratch checkouts session-local"
+}

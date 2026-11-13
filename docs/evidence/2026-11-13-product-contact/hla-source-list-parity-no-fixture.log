@@ -1,0 +1,7 @@
+usage: hla-source-list-parity.py [-h] [--base-repo BASE_REPO]
+                                 [--base-sha BASE_SHA]
+                                 [--candidate-repo CANDIDATE_REPO]
+                                 [--candidate-sha CANDIDATE_SHA]
+                                 --fixture FIXTURE [--python PYTHON]
+                                 [--reverse-candidate]
+hla-source-list-parity.py: error: the following arguments are required: --fixture

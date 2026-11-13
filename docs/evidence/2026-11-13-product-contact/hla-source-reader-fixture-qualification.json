@@ -1,0 +1,55 @@
+{
+  "schema": "hla-source-reader-fixture-qualification/v1",
+  "observed_at": "2026-11-13T19:45:57.922235+00:00",
+  "canonical_base": "9cf62cb7271ed0e15e35877ab772709808470bea",
+  "native_author": "gpt-6.1-terra",
+  "planner_correction_author": {
+    "identity": "GPT-6",
+    "variant": null,
+    "task": "/root/acceptance_base_context"
+  },
+  "final_proposal_sha256": "84190fd5a99368b07e6f0c48ddd3e581c4d5fa79f776cb33f4936c8ef9073dca",
+  "frozen_test_sha256": "b67ebe0894f3c33fbe18bc183064dbee6f0ef06e9fb938d9ee2a4bba880b4c8e",
+  "frozen_lines": 551,
+  "native_finalization_delta": "added duckdb import and actual IOException unavailable regression; executable AST changed",
+  "canonical_negative": {
+    "selected_result": "2failed1passed5deselected6.68s",
+    "feature_failure": "missing attention source reader after successful seed and ID normalization",
+    "passing_check": "SQL observation projection/tautology falsifier"
+  },
+  "positive_reference": {
+    "source": "a02efec5e6da761e8febf71b38b14894af92eda3",
+    "status": "unaccepted measurement prototype snapshot, no source edits beyond frozen test overlay",
+    "fast": "5passed3deselected10.65s",
+    "explicit_real_postgres": "3passed5deselected25.38s",
+    "skipped": 0
+  },
+  "canonical_context_ruff": "passed",
+  "qualification_is_implementation_approval": false,
+  "native_review": "pending; no inferred accept",
+  "native_author_usage": "unavailable: real author invocation completed but scaffold stopped before persisting return",
+  "sensitivity_verification": {
+    "github_repo": "bayleafwalker/homelab-analytics",
+    "private": false,
+    "visibility": "public",
+    "exact_base_published": true,
+    "method": "actual GitHub repository and commit API metadata",
+    "reason": "automatic approval review initially rejected launch for unestablished sensitivity; retry accepted after direct public visibility proof"
+  },
+  "raw_logs": [
+    {
+      "file": "hla-native-final-base.log",
+      "sha256": "3862414306b73665ae6d1b67ee5799d921738f0b4d76ee6e89eb6f62c3b1e035"
+    },
+    {
+      "file": "hla-native-final-fast.log",
+      "sha256": "a6f1dfbae800be00996353236d1bde208f1572bbfdaf70445ac14b46ff1e73ad"
+    },
+    {
+      "file": "hla-native-final-postgres.log",
+      "sha256": "1d63eb3bf151b1defec2f001ad6e25a27ac7725dcd23caa5aea08e942d8d5032"
+    }
+  ],
+  "independent_product_intent_review": "persistent Sage PASS on source-only scope and complete later full API/UI outcome; ordered list parity remains an integration check",
+  "durability": "Git evidence cross-host-replicated after canonical publication; raw /tmp logs session-local"
+}
