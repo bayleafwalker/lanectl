@@ -362,37 +362,69 @@ def _stage(checkout, dest: Path):
         shutil.rmtree(home, ignore_errors=True)
 
 
+_DIR = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW | os.O_CLOEXEC
+_FILE = os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK | os.O_CLOEXEC
+
+
+def _parent(root, parts) -> int:
+    """Descriptor of parts[:-1] under root, walked without following any link."""
+    fd = os.open(root, _DIR)
+    try:
+        for name in parts[:-1]:
+            nxt = os.open(name, _DIR, dir_fd=fd)
+            os.close(fd)
+            fd = nxt
+        return fd
+    except BaseException:
+        os.close(fd)
+        raise
+
+
 def _manifest(root: Path, tracked) -> dict:
     out = {}
     for rel in tracked:
-        path = root.joinpath(*PurePosixPath(rel).parts)
+        parts = PurePosixPath(rel).parts
         try:
-            st = os.lstat(path)
-        except OSError:
-            out[rel] = ("missing",)
+            pfd = _parent(root, parts)
+        except OSError as exc:
+            out[rel] = ("unreadable", type(exc).__name__)
             continue
-        if stat.S_ISLNK(st.st_mode):
-            out[rel] = ("link", os.readlink(path))
-        elif stat.S_ISREG(st.st_mode):
-            try:
-                fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_CLOEXEC)
-                digest = hashlib.sha256()
-                with os.fdopen(fd, "rb") as handle:
-                    for chunk in iter(lambda: handle.read(1 << 20), b""):
-                        digest.update(chunk)
-                out[rel] = ("file", st.st_mode & 0o111, digest.hexdigest())
-            except OSError as exc:
-                out[rel] = ("unreadable", type(exc).__name__)
-        else:
-            out[rel] = ("other", stat.S_IFMT(st.st_mode))
+        try:
+            out[rel] = _leaf(pfd, parts[-1])
+        finally:
+            os.close(pfd)
     return out
 
 
-def _read_head(gitdot: Path, commit: str) -> bool:
+def _leaf(pfd: int, name: str):
     try:
-        if not stat.S_ISDIR(os.lstat(gitdot).st_mode):
-            return False
-        fd = os.open(gitdot / "HEAD", os.O_RDONLY | os.O_NOFOLLOW | os.O_CLOEXEC)
+        st = os.lstat(name, dir_fd=pfd)
+    except OSError:
+        return ("missing",)
+    try:
+        if stat.S_ISLNK(st.st_mode):
+            return ("link", os.readlink(name, dir_fd=pfd))
+        if not stat.S_ISREG(st.st_mode):
+            return ("other", stat.S_IFMT(st.st_mode))
+        with os.fdopen(os.open(name, _FILE, dir_fd=pfd), "rb") as handle:
+            fst = os.fstat(handle.fileno())
+            if not stat.S_ISREG(fst.st_mode):
+                return ("other", stat.S_IFMT(fst.st_mode))
+            digest = hashlib.sha256()
+            for chunk in iter(lambda: handle.read(1 << 20), b""):
+                digest.update(chunk)
+        return ("file", st.st_mode & 0o111, digest.hexdigest())
+    except OSError as exc:
+        return ("unreadable", type(exc).__name__)
+
+
+def _read_head(root: Path, commit: str) -> bool:
+    try:
+        pfd = _parent(root, (".git", "HEAD"))
+        try:
+            fd = os.open("HEAD", _FILE, dir_fd=pfd)
+        finally:
+            os.close(pfd)
     except OSError:
         return False
     try:
@@ -404,7 +436,7 @@ def _read_head(gitdot: Path, commit: str) -> bool:
 
 
 def _mutation(root: Path, commit: str, tracked, before: dict) -> str:
-    if not _read_head(root / ".git", commit):
+    if not _read_head(root, commit):
         return "HEAD changed"
     after = _manifest(root, tracked)
     changed = sorted(rel for rel in before if before[rel] != after.get(rel))
