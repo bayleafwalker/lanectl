@@ -1,0 +1,78 @@
+{
+  "schema": "qualification-observation/v1",
+  "intended_version": "0.2.7",
+  "checked_integration_commit": "28d97c9739f9b61011219ce2955f0c80e8d893f0",
+  "reviewed_worker_commit": "c37949a35644b572ed52adee15665198822af072",
+  "independent_review": "First-party Sage reviewed full diff; held missing test-owned symbols; cleared repaired B1 with no further blocker. No protected source was forwarded to an external model.",
+  "source_files": [
+    {
+      "sha256": "9e535149c3042d9dd361e0f1c195c900c815910ebe234a66ecc6b20cfe647942",
+      "path": "src/lanectl/gates/failonbase.py"
+    },
+    {
+      "sha256": "0762d4335a2e2b4013a6ccc2e2303c68ee425f09595da2ef7b1358b409788d44",
+      "path": "src/lanectl/lint_release.py"
+    },
+    {
+      "sha256": "92ce60d9b29ca35a6a8e178b2a35bda79ad41ffbed53c207ca94ec702c9e7957",
+      "path": "src/lanectl/specification.py"
+    },
+    {
+      "sha256": "0c0df9708802305f05a285a0b513d70e924023f5aeaeb36f78b00b46c625bc74",
+      "path": "tests/stage1/test_frozen_context.py"
+    }
+  ],
+  "full_suite": {
+    "command": "env XDG_RUNTIME_DIR=/run/user/1000 DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus uv run --locked pytest -q",
+    "exit_code": 0,
+    "summary": "1015 passed in119.50s",
+    "raw_output": "lanectl-frozen-context-full-suite.log"
+  },
+  "coordinator_before": [
+    {
+      "case": "auth_in_isolation",
+      "exit_code": 2,
+      "classifier": "expected",
+      "missing_new_fixture_module": true,
+      "log": "/tmp/lanectl-hla-held-base-auth_in_isolation.log"
+    },
+    {
+      "case": "complete_packet",
+      "exit_code": 1,
+      "classifier": "expected",
+      "missing_new_fixture_module": false,
+      "log": "/tmp/lanectl-hla-held-base-complete_packet.log"
+    }
+  ],
+  "coordinator_after": [
+    {
+      "case": "missing_context",
+      "exit_code": 2,
+      "classifier": "spec-gap",
+      "selected_files": [
+        "tests/test_attention_record_api_auth.py"
+      ],
+      "materialized_files": [
+        "tests/test_attention_record_api_auth.py"
+      ],
+      "log": "/tmp/lanectl-hla-fixed-base-missing_context.log"
+    },
+    {
+      "case": "complete_context",
+      "exit_code": 1,
+      "classifier": "expected",
+      "selected_files": [
+        "tests/test_attention_record_api_auth.py"
+      ],
+      "materialized_files": [
+        "tests/test_attention_record_api.py",
+        "tests/test_attention_record_api_auth.py",
+        "tests/test_attention_record_api_postgres_integration.py"
+      ],
+      "log": "/tmp/lanectl-hla-fixed-base-complete_context.log"
+    }
+  ],
+  "release_metadata": "Only project version0.2.6->0.2.7 changed in pyproject.toml/uv.lock after the full check; offline lock resolution and built distribution metadata0.2.7 verified. Reviewed implementation/test bytes unchanged.",
+  "coverage_limit": "This fixes acceptance materialization and failure classification. It does not implement HLA record APIs, close1593, qualify the new host fence, or establish ladder evidence clocks.",
+  "durability": "Committed source and observations are cross-host-replicated. Original /tmp test warehouses and detailed baseline logs are session-local."
+}
