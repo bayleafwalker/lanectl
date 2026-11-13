@@ -60,10 +60,19 @@ def candidate_weights(rel: WorkRelease, lane: LaneRevision, view: ItemView,
     """Eligible weights the dispatch hash can choose from (retry filter applied)."""
     from . import specification
     weights = specification.implementation_models(rel, eligible_models(rel, lane, repo))
-    if lane.retry == "different_model":
-        untried = {m: w for m, w in weights.items() if m not in view.models_tried}
-        weights = untried or weights
     weights = {m: w for m, w in weights.items() if w > 0}
+    if lane.retry == "different_model":
+        # Legacy claims without a revision remain retry history, as before.
+        current = [a for a in view.attempts
+                   if a.get("release_revision", rel.revision) == rel.revision]
+        tried = {a["model"] for a in current}
+        untried = {m: w for m, w in weights.items() if m not in tried}
+        if untried:
+            weights = untried
+        elif view.attempts:
+            latest = view.attempts[-1]["model"]
+            alternatives = {m: w for m, w in weights.items() if m != latest}
+            weights = alternatives or weights
     if events is not None:
         from . import learning, steering
         try:
