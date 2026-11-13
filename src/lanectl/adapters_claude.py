@@ -44,9 +44,9 @@ def _result(outcome: str, exit_code: int, final_tail: str,
     return AdapterResult(outcome, exit_code, final_tail, escalation_reason, usage)
 
 
-def build_command(model: str, prompt: str) -> list[str]:
+def build_command(model: str, prompt: str, *, verification_commands=()) -> list[str]:
     """Build the headless Claude Code command line."""
-    return [
+    command = [
         "claude",
         "-p",
         "--model",
@@ -55,8 +55,18 @@ def build_command(model: str, prompt: str) -> list[str]:
         "json",
         "--permission-mode",
         "acceptEdits",
-        prompt,
     ]
+    if isinstance(verification_commands, (str, bytes)):
+        raise ValueError("verification commands must be a sequence")
+    rules = []
+    for check in verification_commands:
+        if (not isinstance(check, str) or not check.strip()
+                or any(char in check for char in "*\r\n\0,&|;")):
+            raise ValueError("verification command cannot be represented as an exact permission rule")
+        rules.append(f"Bash({check})")
+    if rules:
+        command += ["--allowedTools", *rules, "--"]
+    return command + [prompt]
 
 
 def _result_object(stdout: str) -> dict | None:
@@ -226,7 +236,8 @@ def _run_child(cmd: list[str], worktree: Path, timeout_s: float,
 
 
 def run_claude(*, model: str, worktree: Path, prompt: str, status_file: Path,
-               timeout_s: float, external: bool, env: dict | None = None, cancel_event=None, stop_callback=None) -> AdapterResult:
+               timeout_s: float, external: bool, env: dict | None = None, cancel_event=None, stop_callback=None,
+               verification_commands=()) -> AdapterResult:
     """Run Claude Code headless and return a normalised result.
 
     A timeout is recorded as ``failed`` with exit code 124.  The status file is
@@ -251,14 +262,14 @@ def run_claude(*, model: str, worktree: Path, prompt: str, status_file: Path,
             started_at=started_at, ended_at=_now()))
         return result
 
-    cmd = build_command(model, prompt)
-    cmd[0] = exe
     try:
+        cmd = build_command(model, prompt, verification_commands=verification_commands)
+        cmd[0] = exe
         kwargs = {"cancel_event": cancel_event} if cancel_event is not None else {}
         if stop_callback is not None:
             kwargs["stop_callback"] = stop_callback
         stdout, stderr, exit_code, timed_out = _run_child(cmd, worktree, timeout_s, env, **kwargs)
-    except OSError as exc:
+    except (OSError, ValueError) as exc:
         result = _result("failed", 1, f"claude launch failed: {exc}", None)
         _write_status(status_file, _record(
             result.outcome, result.exit_code, result.final_tail, None, None,

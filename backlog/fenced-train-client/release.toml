@@ -1,7 +1,7 @@
 id = "fenced-train-client"
 repo = "lanectl"
 base_sha = "5dbe83e656e160e676457cc1d20cafe2c715edfc"
-revision = 3
+revision = 4
 title = "Execute ownership-compatible train checks through the separate-UID service"
 task_class = "recovery"
 size = "S"
@@ -9,7 +9,24 @@ data_class = "public"
 eligible_lanes = ["restricted"]
 
 outcome = """
-Revision 3 is a bounded safety correction on the complete reviewed candidate
+Revision 4 repeats the bounded correction after the prior author could not run
+Bash under the native profile, then added a FIFO regression that hung the old
+base. That run was stopped and rejected, never accepted. The coordinator has
+repaired the native profile to allow only the exact frozen acceptance command.
+Run that literal command from the Acceptance section, without extra shell tools
+or different arguments. Read/Edit tools are available for implementation. If
+the acceptance command remains denied, stop with DISPATCH_OUTCOME: ESCALATED;
+do not report done with verification delegated back to the planner.
+
+The repaired source in c00bcbb9958b703fe359639aee5744aa433595f1 can be reused
+as a reference, but do not copy its unsafe unguarded FIFO test. Its descriptor
+walk and nonblocking file opens were coherent on independent source review.
+The three frozen parent/FIFO cases already contain interceptors preventing any
+outside read or blocking open. Additional tests are optional: if added, every
+negative test must also terminate on the defective base. Never directly open a
+FIFO through the old implementation without a guard or bounded subprocess.
+
+This is a bounded safety correction on the complete reviewed candidate
 5dbe83e656e160e676457cc1d20cafe2c715edfc, deliberately used as base_sha so the
 existing whole feature remains unchanged and this diff fits the S/250 line cap.
 Do not rebase this corrective release onto older main or rewrite its implementation.

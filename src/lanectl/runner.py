@@ -545,6 +545,7 @@ def execute(c: Claim, log: EventLog, adapter_fn=None, *, lease_guard=None,
                  external=c.model in lane.external_models, env=env,
                  **({"cancel_event": cancel_event} if cancel_event is not None and adapter_fn is None else {}),
                  **({"stop_callback": sb.cancel} if adapter_fn is None and c.worker in ("opencode", "codex", "claude") else {}),
+                 **({"verification_commands": rel.acceptance.exec} if adapter_fn is None and c.worker == "claude" else {}),
                  **({"sandbox": sb} if c.worker == "local" else {}))
     except Exception as exc:  # adapter crash is an attempt outcome, not a runner crash
         res = adapters.AdapterResult("failed", 1, f"adapter error: {exc}", None)
