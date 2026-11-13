@@ -74,7 +74,10 @@ def test_completed_historical_land_survives_refused_canonical_cleanup(estate, mo
     built = [e["data"] for e in log.read() if e["type"] == "train.built"][-1]
     log.append("train.built", dict(built, worktree=str(canonical)))
     monkeypatch.setattr(runner, "_train_command", lambda *args: subprocess.CompletedProcess([], 0, "synthetic checked", ""))
+    attempt = runner.load_repos()["target"].worktree_root / "cleanup-history-a1"
+    attempt.mkdir(parents=True)
     result = runner.land(log, "tt")
     assert result.startswith("landed"), result
     assert canonical.is_dir() and _head(canonical) == base
     assert any(e["type"] == "item.landed" for e in log.read())
+    assert not attempt.exists(), "refused canonical cleanup must not abandon safe attempt cleanup"
