@@ -1,0 +1,25 @@
+id = "hla-attention-records-r4"
+repo = "homelab-analytics"
+base_sha = "9cf62cb7271ed0e15e35877ab772709808470bea"
+revision = 1
+draft = true
+title = "Resolve each attention item through its authorized source record API"
+outcome = "Deliver the current record-read API prerequisite for homelab-analytics #1593 at base 9cf62cb7271ed0e15e35877ab772709808470bea; this stage does not complete the work or include frontend layout, migrations, policy or grant changes. Under each existing source report segment expose GET /records/{item_id} using the entire opaque attention item_id, including encoded slashes, and return exactly item_id and rows using the existing public row model and visibility rules. Keep source-publication middleware authorization. Exact parameterized source selection precedes any pagination or limit; do not split identifiers, fetch all then filter, match equal-looking charges, use landing data, or substitute warehouse data for a current publication. Valid intact published identities resolve even when an unrelated identity is NULL; affected or unknown keys whose absence cannot be proved return 503, while provably unknown keys return 404. Failures have only detail and must not leak source data. Regenerate OpenAPI and TypeScript contracts. The single frozen file exercises real warehouse and DuckDB-backed published reporting composition, actual HTTP encoding and permission-bound OIDC middleware. Its function-marked slow case exercises the real disposable Postgres store; run it explicitly before landing and do not count an unavailable or skipped container as a pass. Also require targeted and architecture tests, make verify-fast, independent review, and canonical PR/CI. No acceptance tests were run during specification. If the complete stage exceeds the implement lane's 700-line M budget, measure and report the need for aligned decomposition rather than omit generated artifacts or weaken gates."
+task_class = "product-api"
+size = "M"
+data_class = "public"
+eligible_lanes = ["implement"]
+
+[scope]
+paths = ["packages/pipelines/reporting_service.py", "packages/pipelines/reporting_*record*.py", "packages/domains/overview/**", "apps/api/routes/report*.py", "apps/web/frontend/generated/**", "tests/**", "docs/**"]
+
+[acceptance]
+files = ["tests/test_attention_record_api.py"]
+exec = ["uv run --no-sync python -m pytest -q -p no:cacheprovider tests/test_attention_record_api.py"]
+fail_on_base = true
+
+[specification]
+schema = "lanectl-specification/v1"
+author_model = "gpt-6.1-terra"
+reviewer_model = "opencode-go/deepseek-v4-pro"
+evidence = "specification.json"

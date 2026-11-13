@@ -1,0 +1,11 @@
+{
+  "installed_version": "0.2.7",
+  "source_commit": "fc2a41da6be93d6fe5c9398b507842851670556d",
+  "tag": "v0.2.7",
+  "hla-attention-records": [
+    "specification: release or acceptance changed; regenerate/re-review specification"
+  ],
+  "hla-attention-records-r4": [
+    "specification: adversarial review requests revision"
+  ]
+}

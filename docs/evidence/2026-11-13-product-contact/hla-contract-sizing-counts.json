@@ -1,0 +1,28 @@
+{
+  "one": {
+    "openapi.json": {
+      "added": 60,
+      "deleted": 0,
+      "total": 60
+    },
+    "api.d.ts": {
+      "added": 55,
+      "deleted": 0,
+      "total": 55
+    },
+    "total": 115
+  },
+  "four": {
+    "openapi.json": {
+      "added": 240,
+      "deleted": 0,
+      "total": 240
+    },
+    "api.d.ts": {
+      "added": 220,
+      "deleted": 0,
+      "total": 220
+    },
+    "total": 460
+  }
+}

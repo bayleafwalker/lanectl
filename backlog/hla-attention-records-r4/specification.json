@@ -1,0 +1,36 @@
+{
+  "schema": "lanectl-specification/v1",
+  "release_digest": "4721965bf8dd54ac590e2291c0b97d0a46bd85dbb9e3a936f63555c1a783c4f2",
+  "review": {
+    "verdict": "revise",
+    "reason": "The single frozen file correctly merges the prior auth/PG cases and resolves fixes 1, 3, 4 and 5, and the base-failure guarantee is intact: every non-slow test fails on 9cf62cb at a positive record read (404 from the absent route \u2014 the single-segment /reports/{extension_key} catch-all cannot match the multi-segment record path) or at the missing OpenAPI paths, and all imports resolve (build_oidc_provider/build_session_manager re-exported from packages.shared.auth; MockOidcIssuer; subscription_charge_id; psycopg is a runtime dependency so tests.postgres_test_support imports; IngestionConfigRepository/RunMetadataRepository/PostgresReportingStore exist; generated openapi.json/api.d.ts exist; the slow PG test is deselected by addopts='-m not slow'). Success shape is pinned to exactly {item_id, rows} and failure shape to exactly {detail}, the OpenAPI test resolves $refs to item_id:string + rows:array-of-the-correct-row-model, and partial-NULL now pins intact==200 while only the NULLed/unknown keys are 503. The blocking defect is fix 2, which is only partially delivered: test_lookup_binds_complete_key_at_source_before_limit asserts the item_id appears in params and that the SQL has a WHERE with '=' and a placeholder, but it does not assert the WHERE actually selects on the source row's reconstructed identity. A fetch-all-then-Python-filter implementation that binds the key to itself as a tautology (SELECT * FROM <relation> WHERE %s = %s, params [item_id, item_id]) satisfies every one of those assertions while still returning every row and filtering in Python \u2014 exactly the fetch-all-then-filter that the intent says must not satisfy this contract. The assertion must be tightened (require the WHERE to reference source identity columns via the reconstruction expression, or reject duplicate/self item_id bindings).",
+    "trivial_pass": "The three named attacks fail. Constant/hardcoded results cannot match, because assert_resolves compares canon(rows) against expectations derived from the existing list endpoints (not literals) and requires every returned row's source_key == item_id; the 240 anomaly keys plus review/renewal/upcoming and the dynamic dates/charge_ids make hardcoding infeasible. Ignored-input / first-row / equal-looking-row shortcuts are defeated by test_equal_looking_upcoming_charges_resolve_to_distinct_rows (two charges with identical visible name/date/amount but distinct charge_id) and by the prefix-and-slash contract ids (grid, grid_north, grid/north) in test_component_rows_belong_only_to_the_same_canonical_identity. Mocking the subject is impossible: the test constructs the real ReportingService directly and the only substitution point (publication_store) is test-owned and executes the reporting layer's real parameterized SQL, returning no canned rows. Split-identifier shortcuts (binding only transaction_id/charge_id instead of the whole key) fail the 'item_id in params' requirement. The one residual attack that DOES pass is a tautological parameterization: SELECT * FROM <relation> WHERE %s = %s with params [item_id, item_id] binds the whole opaque key, contains a WHERE with '=' and a '%s'/'?' placeholder, and keeps 'limit' after 'where', so it satisfies every assertion in test_lookup_binds_complete_key_at_source_before_limit while still fetching all rows and filtering in Python. This is the fetch-all-then-filter that fix 2 explicitly forbids, and it is the reason for revise.",
+    "checks": [
+      "BLOCKING (fix 2 incomplete): test_lookup_binds_complete_key_at_source_before_limit's checks ('item_id in params', 'where' present, '=' present, placeholder present, no limit before where) are all satisfied by a tautology SELECT * FROM <relation> WHERE %s = %s with params [item_id, item_id], which returns every row and filters in Python; therefore 'fetch-all-then-Python-filter does not satisfy this contract' is not enforced. Strengthen the assertion to require that the bound query's WHERE references source identity columns through the reconstruction expression (e.g. 'anomaly_' || transaction_id = %s), or reject duplicate/self bindings (item_id bound exactly once and the left-hand side of '=' is not a bare placeholder).",
+      "SECONDARY (dead assertion): the 'identity-NULL existence probe' loop \u2014 every source query that does not bind item_id must contain 'is null' plus count(/select 1/exists \u2014 never actually executes, because the parameterized test only reads intact keys that resolve 200 and never issue a probe. The 503/404 NULL-identity distinction is verified behaviorally in test_stale_null_published_identities_are_unavailable_not_absent and test_partially_null_identity_cannot_prove_absence, but the probe's SQL shape is not enforced.",
+      "MINOR (no-leak token set incomplete): assert_not_resolved's forbidden set (SOURCE_NAMES + other charge_ids) omits contract ids ('grid','grid_north','grid/north'), reasons, dates and amounts, so a failure 'detail' string echoing a contract id would pass; set(body)=={'detail'} already blocks rows/extra-field leakage but not echo-in-detail.",
+      "AFFIRMED (base-failure correct): all non-slow tests fail on 9cf62cb at a positive record read (404) or the missing OpenAPI path, never at collection/import/fixture; imports resolve; generated openapi.json and api.d.ts exist; the function-marked slow Postgres test is deselected by addopts and the unavailable/skipped container is not claimed as a pass.",
+      "AFFIRMED (seed counts): 240 first-occurrence anomalies (each 'Vendor NNN' is a distinct counterparty with |amount|>=50 and tx_count=1; 'Regular Grocer' has stddev 0), 4 review (grid/north above_market_average {2,3}; grid/north, grid, grid_north multiple_contracts_same_type {1}), 4 renewal (grid/north d10 {1,2}, grid/north d20 {3}, grid d10, grid_north d20), 2 upcoming (same weekly occurrence, distinct charge_id) \u2014 consistent with refresh_open_attention_items and the review/renewal CASE ordering (avg 1.6, threshold *1.1).",
+      "AFFIRMED (auth): permission strings reports.read.publication.<segment> and reports.read.publication.attention-items match _reports_read_permission's publication_read_permission(first_segment); the OIDC permission-bound bearer (groups=(), hla_permissions claim, reader groups configured) resolves to a READER principal with permission_bound=True, so source-permission 200, attention-only 403 (exact '<perm> permission required.'), and no/invalid bearer 401 all match the real middleware with no auth-policy edits."
+    ]
+  },
+  "author_model": "gpt-6.1-terra",
+  "reviewer_model": "opencode-go/deepseek-v4-pro",
+  "intent_digest": "3566437091374dde35fdfb372a1e6953f3aca40ec26a259c66069d07d3bfa12f",
+  "recorded_at": "2026-11-13T14:26:54.088420+00:00",
+  "lint_problems": [
+    "adversarial review requests revision"
+  ],
+  "usage": {
+    "author": null,
+    "reviewer": {
+      "input_tokens": 222472,
+      "output_tokens": 8328,
+      "reasoning_tokens": 62809,
+      "cache_read_tokens": 5066752,
+      "cache_write_tokens": 0,
+      "cost_usd": 0.0,
+      "steps": 47
+    }
+  }
+}

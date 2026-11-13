@@ -1,0 +1,19 @@
+{
+  "schema": "qualification-observation/v1",
+  "source": "9cf62cb7271ed0e15e35877ab772709808470bea",
+  "evidence_kind": "worker-measured minimum generated-contract sizing prototype",
+  "node": "20.20.1",
+  "openapi_typescript_locked_and_installed": "7.13.0",
+  "generator": "actual repository scripts/codegen.mjs with identical publication-contracts.json and existing locked node_modules",
+  "method": "Same in-memory real application/settings export, baseline versus one or four typed wrappers using existing public row models; actual codegen; git diff --no-index --numstat per generated artifact. No repository or deployment mutation.",
+  "one_route_changed_lines": 115,
+  "four_route_changed_lines": 460,
+  "scope_limit": "Prototype uses minimal routes, no implementation/auth/error additions, and shortened route paths. This is a lower bound, not the final diff or proof the complete stage fits700. Frozen acceptance is in the seed, outside the worker diff; UI follows separately. Preserve required codegen and the actual formatted M700 gate.",
+  "commands": [
+    "source /projects/dev/homelab-analytics/tools/project-env.sh",
+    "PYTHONPATH=/projects/dev/homelab-analytics /projects/dev/homelab-analytics/.venv/bin/python /tmp/hla-contract-sizing-9cf/prototype.py",
+    "For baseline/one/four: copy canonical scripts/codegen.mjs and publication-contracts.json into /tmp case, symlink canonical node_modules, execute with pinned Node20.20.1",
+    "git diff --no-index --numstat -- baseline/generated/<artifact> case/generated/<artifact>"
+  ],
+  "durability": "Committed counts/prototype/observation cross-host-replicated; full generated case outputs under /tmp are session-local."
+}
