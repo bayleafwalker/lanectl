@@ -1,0 +1,121 @@
+{
+  "source": "actual native attempt and adapter usage events; no credential values",
+  "events": [
+    {
+      "data": {
+        "attempt_id": "fenced-train-client-a4",
+        "elapsed_s": 39.1,
+        "escalation_reason": "native permission denial prevented autonomous verification",
+        "exit_code": 0,
+        "final_tail": "I replaced the file-opening code in `src/lanectl/fenced_train.py` so a candidate can't redirect or block inspection of the handed-back tree. The exact frozen acceptance command passed: 10 passed in 0.44s. I could not run any other check, such as the line-count cap, because only the acceptance command is authorized. The diff is roughly 40 lines changed, well under 250, but I didn't measure it.\n\n- **`_open_parent`:** a new helper opens the checkout root and then each parent directory with no-follow, directory-only, descriptor-relative opens. A symlinked parent, including a symlinked whole-repo root or `.git`, fails before any file content is opened.\n- **`_manifest`:** now goes through a per-file helper, `_entry`, which uses that walk. It reads file metadata without following links, so a tracked leaf symlink is recorded by its target string only. Files are opened nonblocking and no-follow, and checked as regular files after opening. A parent that is a symlink is recorded as `(\"unreadable\", \u2026)`, so the manifest no longer matches the original.\n- **`_read_head`:** does the same walk through `.git` and opens `HEAD` nonblocking and no-follow, so a FIFO there can't hang it. It returns false for anything that isn't a regular file with the expected content.\n\n`_manifest(root, tracked)`, `_mutation` and `_stage` keep their signatures, and no test files were touched.\n\nDISPATCH_OUTCOME: DONE",
+        "head_sha": "2cfa660fdce4a33303d67e9cfaeb0160c6410002",
+        "isolation_breach": false,
+        "main_changed": false,
+        "outcome": "escalated",
+        "seed_sha": "473a0a32f35e2e2fcb335ae68c8369739eac7301"
+      },
+      "item_id": "fenced-train-client",
+      "schema": "lanectl.event/v1",
+      "ts": "2026-11-13T08:32:03Z",
+      "type": "attempt.finished"
+    },
+    {
+      "data": {
+        "attempt_id": "fenced-train-client-a7",
+        "elapsed_s": 186.9,
+        "escalation_reason": null,
+        "exit_code": 0,
+        "final_tail": "The fix is complete and verified.\n\n## Summary\n\nThe cancellation gap was in `_stop_terminal` in `src/lanectl/fenced_train.py`: it issued `systemctl stop` but swallowed its result (nonzero exit, `TimeoutExpired`, or `OSError`) and then accepted an `inactive` reading as proof of cancellation \u2014 even though an inactive unit can still hold a queued start.\n\n**Change** (7 insertions, 3 deletions, well under the 250-line limit):\n\n- Capture the `systemctl stop` result.\n- Return `False` immediately on `OSError`/`TimeoutExpired` (previously `pass`, then poll).\n- Return `False` immediately on a nonzero exit code (previously ignored).\n- Only after an acknowledged stop (exit 0) retain the existing bounded terminal-observation loop.\n\nThis means refused/unavailable/timed-out stops now conservatively return `False`, so existing `run_command` callers keep and name the orphan rather than deleting the directory. No repeated stop side effects, no fallback execution, no reduced stop limits, and no new privileges. No-such-unit and acknowledged-stop behaviors are preserved.\n\n**Verification:**\n- Frozen acceptance (`test_fenced_train.py` + the five `test_acc_*` files): **31 passed**\n- Full suite: **975 passed**\n\nOnly `src/lanectl/fenced_train.py` was modified; no tests or governance files were touched.",
+        "head_sha": "c83fe800fcf7d1adb4adfa4d3b72c958ddca7e35",
+        "isolation_breach": false,
+        "main_changed": false,
+        "outcome": "done",
+        "seed_sha": "977f612e6253987a7ee4ea41cac60437f1c6a3b7"
+      },
+      "item_id": "fenced-train-client",
+      "schema": "lanectl.event/v1",
+      "ts": "2026-11-13T09:16:35Z",
+      "type": "attempt.finished"
+    },
+    {
+      "data": {
+        "attempt_id": "fenced-train-client-a4",
+        "model": "claude-sonnet-5-5",
+        "provider": "anthropic",
+        "source": "adapter",
+        "units": {
+          "cache_read_tokens": 165237,
+          "cache_write_tokens": 27759,
+          "cost_usd": 0.1755437,
+          "input_tokens": 12,
+          "output_tokens": 4796,
+          "turns": 7
+        }
+      },
+      "item_id": "fenced-train-client",
+      "schema": "lanectl.event/v1",
+      "ts": "2026-11-13T08:32:03Z",
+      "type": "usage.recorded"
+    },
+    {
+      "data": {
+        "attempt_id": "fenced-train-client-a7",
+        "model": "opencode-go/deepseek-v4-pro",
+        "provider": "opencode",
+        "source": "adapter",
+        "units": {
+          "cache_read_tokens": 171008,
+          "cache_write_tokens": 0,
+          "cost_usd": 0.0,
+          "input_tokens": 28131,
+          "output_tokens": 1506,
+          "reasoning_tokens": 2983,
+          "steps": 8
+        }
+      },
+      "item_id": "fenced-train-client",
+      "schema": "lanectl.event/v1",
+      "ts": "2026-11-13T09:16:35Z",
+      "type": "usage.recorded"
+    },
+    {
+      "data": {
+        "attempt_id": "train-cleanup-boundary-a3",
+        "elapsed_s": 253.7,
+        "escalation_reason": null,
+        "exit_code": 0,
+        "final_tail": "l` treated the root itself as \"managed\" (cleanable), and when outside canonical it fell through `_contains_canonical` entirely. Either way `_discard` and `_historical_checkout` treated `target == worktree_root` (or an alias to it) as a disposable checkout, allowing deletion of all sibling attempts or exposing them writable during historical rechecks.\n\n**Fix** (all in `src/lanectl/runner.py`, 19 insertions / 1 deletion):\n\n1. Added `_managed_container(repo, path)` \u2014 pure equality check `Path(path).resolve() == Path(worktree_root).resolve()`, so it catches both the direct root and any symlink alias, and applies whether the container is inside or outside canonical.\n2. `_discard` now refuses (before any Git/rmtree call) when the target is the shared container.\n3. `_historical_checkout` now treats the shared container as protected, reconstructing the recheck in scratch instead of yielding it writable.\n\n**Preserved behavior:** root equal to/above canonical is still refused via `_contains_canonical`; individual managed descendants remain cleanable and usable for historical checks; outside paths aren't blanket-treated as canonical; all prior canonical guards (`.git`/`src`/aliases) and the post-land refused-cleanup-keeps-cleaning semantics are untouched.\n\n**Verification:**\n- Acceptance gate (3 frozen files): **19 passed**\n- Full suite: **1008 passed** in ~2 minutes\n\nNo test files touched, no new dependencies, no coverage suppression, no governance/policy/cap changes, no weakened gates.",
+        "head_sha": "dc70775a93b007f7a1e8b144322c6cb0d6e2ce43",
+        "isolation_breach": false,
+        "main_changed": false,
+        "outcome": "done",
+        "seed_sha": "67be80a6285349be1a3916f72405a5261047a3a9"
+      },
+      "item_id": "train-cleanup-boundary",
+      "schema": "lanectl.event/v1",
+      "ts": "2026-11-13T10:10:07Z",
+      "type": "attempt.finished"
+    },
+    {
+      "data": {
+        "attempt_id": "train-cleanup-boundary-a3",
+        "model": "opencode-go/deepseek-v4-pro",
+        "provider": "opencode",
+        "source": "adapter",
+        "units": {
+          "cache_read_tokens": 486912,
+          "cache_write_tokens": 0,
+          "cost_usd": 0.0,
+          "input_tokens": 47844,
+          "output_tokens": 2344,
+          "reasoning_tokens": 8207,
+          "steps": 13
+        }
+      },
+      "item_id": "train-cleanup-boundary",
+      "schema": "lanectl.event/v1",
+      "ts": "2026-11-13T10:10:07Z",
+      "type": "usage.recorded"
+    }
+  ]
+}

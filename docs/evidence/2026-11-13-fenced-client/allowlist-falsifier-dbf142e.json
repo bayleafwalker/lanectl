@@ -1,0 +1,224 @@
+{
+  "repo": "sovite",
+  "outside_control_exit": 1,
+  "outside_control": {
+    "checkout_writable": true,
+    "cleanup_errors": [],
+    "create_denied": [
+      {
+        "path": "/nix/.lanectl-ro-fda11c5b0d915a19",
+        "write": "EACCES"
+      },
+      {
+        "path": "/etc/.lanectl-ro-fda11c5b0d915a19",
+        "write": "EACCES"
+      },
+      {
+        "path": "/var/lib/lanectl-train/results/probe-fda11c5b0d915a19.json",
+        "write": "EACCES"
+      }
+    ],
+    "denied": [
+      {
+        "path": "/home/bayleaf/.cache/lanectl-boundary-home-rp_vlev8/.config/vuoro/credentials/runner",
+        "read": "OPENED",
+        "write": "OPENED"
+      },
+      {
+        "path": "/home/bayleaf/.cache/lanectl-boundary-home-rp_vlev8/.config/forgejo/token",
+        "read": "OPENED",
+        "write": "OPENED"
+      },
+      {
+        "path": "/home/bayleaf/.cache/lanectl-boundary-home-rp_vlev8/.local/share/forgejo-cli/keys.json",
+        "read": "OPENED",
+        "write": "OPENED"
+      },
+      {
+        "path": "/home/bayleaf/.cache/lanectl-boundary-home-rp_vlev8/.local/share/opencode/auth.json",
+        "read": "OPENED",
+        "write": "OPENED"
+      },
+      {
+        "path": "/home/bayleaf/.cache/lanectl-boundary-home-rp_vlev8/.claude/.credentials.json",
+        "read": "OPENED",
+        "write": "OPENED"
+      },
+      {
+        "path": "/home/bayleaf/.cache/lanectl-boundary-home-rp_vlev8/.codex/auth.json",
+        "read": "OPENED",
+        "write": "OPENED"
+      },
+      {
+        "path": "/home/bayleaf/.cache/lanectl-boundary-home-rp_vlev8/.ssh/key",
+        "read": "OPENED",
+        "write": "OPENED"
+      },
+      {
+        "path": "/home/bayleaf/.cache/lanectl-boundary-home-rp_vlev8/.local/state/lanectl/synthetic-state",
+        "read": "OPENED",
+        "write": "OPENED"
+      },
+      {
+        "path": "/run/user/1000/lanectl-boundary-runtime-k_bbzdrm/synthetic-credential",
+        "read": "OPENED",
+        "write": "OPENED"
+      },
+      {
+        "path": "/var/lib/lanectl-train/trains/probe-sibling-6x3qgs49/synthetic-checkout",
+        "read": "OPENED",
+        "write": "OPENED"
+      },
+      {
+        "path": "/projects/dev/sovite/pyproject.toml",
+        "read": "OPENED",
+        "write": "OPENED"
+      },
+      {
+        "path": "/projects/dev/lanectl/governance/repos.toml",
+        "read": "OPENED",
+        "write": "OPENED"
+      },
+      {
+        "path": "/home/bayleaf/.local/state/lanectl/events.jsonl",
+        "read": "OPENED",
+        "write": "OPENED"
+      }
+    ],
+    "home": "/home/bayleaf",
+    "nix_uid": 0,
+    "ok": false,
+    "public_unbound_canary": {
+      "path": "/etc/issue",
+      "read": "OPENED"
+    },
+    "readonly": [
+      {
+        "path": "/nix/store/acg4s2bnkqnnmh05xfaqbg7kjk2k08jh-python3-3.14.10-env/bin/python3.14",
+        "read": "OPENED",
+        "write": "EACCES"
+      },
+      {
+        "path": "/etc/hosts",
+        "read": "OPENED",
+        "write": "EACCES"
+      }
+    ],
+    "root_uid": 0,
+    "secret_env_names": [
+      "FJ_TOKEN",
+      "LANECTL_TEST_API_KEY",
+      "CREDENTIALS_DIRECTORY"
+    ],
+    "uid": 1000
+  },
+  "inside_exit": 1,
+  "inside": {
+    "checkout_writable": true,
+    "cleanup_errors": [],
+    "create_denied": [
+      {
+        "path": "/nix/.lanectl-ro-fda11c5b0d915a19",
+        "write": "EROFS"
+      },
+      {
+        "path": "/etc/.lanectl-ro-fda11c5b0d915a19",
+        "write": "EROFS"
+      },
+      {
+        "path": "/var/lib/lanectl-train/results/probe-fda11c5b0d915a19.json",
+        "write": "EACCES"
+      }
+    ],
+    "denied": [
+      {
+        "path": "/home/bayleaf/.cache/lanectl-boundary-home-rp_vlev8/.config/vuoro/credentials/runner",
+        "read": "EACCES",
+        "write": "EACCES"
+      },
+      {
+        "path": "/home/bayleaf/.cache/lanectl-boundary-home-rp_vlev8/.config/forgejo/token",
+        "read": "EACCES",
+        "write": "EACCES"
+      },
+      {
+        "path": "/home/bayleaf/.cache/lanectl-boundary-home-rp_vlev8/.local/share/forgejo-cli/keys.json",
+        "read": "EACCES",
+        "write": "EACCES"
+      },
+      {
+        "path": "/home/bayleaf/.cache/lanectl-boundary-home-rp_vlev8/.local/share/opencode/auth.json",
+        "read": "EACCES",
+        "write": "EACCES"
+      },
+      {
+        "path": "/home/bayleaf/.cache/lanectl-boundary-home-rp_vlev8/.claude/.credentials.json",
+        "read": "EACCES",
+        "write": "EACCES"
+      },
+      {
+        "path": "/home/bayleaf/.cache/lanectl-boundary-home-rp_vlev8/.codex/auth.json",
+        "read": "EACCES",
+        "write": "EACCES"
+      },
+      {
+        "path": "/home/bayleaf/.cache/lanectl-boundary-home-rp_vlev8/.ssh/key",
+        "read": "EACCES",
+        "write": "EACCES"
+      },
+      {
+        "path": "/home/bayleaf/.cache/lanectl-boundary-home-rp_vlev8/.local/state/lanectl/synthetic-state",
+        "read": "EACCES",
+        "write": "EACCES"
+      },
+      {
+        "path": "/run/user/1000/lanectl-boundary-runtime-k_bbzdrm/synthetic-credential",
+        "read": "EACCES",
+        "write": "EACCES"
+      },
+      {
+        "path": "/var/lib/lanectl-train/trains/probe-sibling-6x3qgs49/synthetic-checkout",
+        "read": "ENOENT",
+        "write": "ENOENT"
+      },
+      {
+        "path": "/projects/dev/sovite/pyproject.toml",
+        "read": "EACCES",
+        "write": "EACCES"
+      },
+      {
+        "path": "/projects/dev/lanectl/governance/repos.toml",
+        "read": "EACCES",
+        "write": "EACCES"
+      },
+      {
+        "path": "/home/bayleaf/.local/state/lanectl/events.jsonl",
+        "read": "EACCES",
+        "write": "EACCES"
+      }
+    ],
+    "home": "/var/lib/lanectl-train/trains/fenced-0fc4b63c4981d9d3/.lanectl-train/home",
+    "nix_uid": 0,
+    "ok": false,
+    "public_unbound_canary": {
+      "path": "/etc/issue",
+      "read": "OPENED"
+    },
+    "readonly": [
+      {
+        "path": "/nix/store/acg4s2bnkqnnmh05xfaqbg7kjk2k08jh-python3-3.14.10-env/bin/python3.14",
+        "read": "OPENED",
+        "write": "EACCES"
+      },
+      {
+        "path": "/etc/hosts",
+        "read": "OPENED",
+        "write": "EACCES"
+      }
+    ],
+    "root_uid": 0,
+    "secret_env_names": [],
+    "uid": 1120
+  },
+  "template_configuration_snapshot": "RootDirectory=\nUser=lanectl-train\n"
+}

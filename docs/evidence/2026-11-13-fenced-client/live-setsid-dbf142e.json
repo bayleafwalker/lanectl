@@ -1,0 +1,18 @@
+{
+  "unit": "lanectl-train@fenced-a7ded2e8251e85b6.service",
+  "pid": 771649,
+  "birth": "1797392",
+  "before": {
+    "state": "S",
+    "start_ticks": "1797392"
+  },
+  "positive_live_control": true,
+  "stop_acknowledged": true,
+  "interrupted": true,
+  "child_gone": true,
+  "terminal": true,
+  "checkout_removed": true,
+  "cancellation_elapsed_s": 0.109,
+  "child_natural_lifetime_s": 3600,
+  "command_timeout_s": 180
+}

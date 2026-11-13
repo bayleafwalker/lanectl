@@ -181,3 +181,58 @@ main snapshot bound to freshly observed origin/main. Its new coherence guard
 correctly refuses detached snapshots without the branch fact; no fake CI variables
 were supplied and no guard was weakened. This canonical-snapshot proof does not
 claim that arbitrary future train proposals have their separate CI context.
+
+## Released cleanup, live cancellation and strict-root correction
+
+Released and installed 0.2.6 at65935f6ee3baec46f1d5ed040195e980e97afe78
+includes cleanup R3. Its exact-tip namespace train passed1008 tests and landed
+without coordinator implementation repairs. The released lifecycle rerun now
+records the canonical checkout as a historical attempt and proves it survives;
+build, recheck, historical land, timeout124 and acknowledged/lost-ack cancellation
+all pass (live-lifecycle-v026-canonical.json). Actual service cancellation also
+observed a live setsid child with PID/start-time binding before stop, then proved
+it gone, the unit terminal and checkout removed (live-setsid-dbf142e.json).
+
+Native Claude and Go attempt/usage events are committed in native-auth-events.json.
+They demonstrate authenticated native model work; an escalated optional inspection
+does not negate the successful authenticated model response. Candidate probes
+continue to deny synthetic provider-file path classes without reading secrets.
+
+The expanded actual-host boundary probe includes real /run/user/1000, a sibling
+spool tree, state/governance/canonical opens, read-only runtime inputs and receipt
+creation denial. Its outside control opens every denied row and sees three fake
+secret names. Inside dbf142e, those rows are denied and secrets stripped, but the
+public undeclared /etc/issue canary remains readable: the whole probe correctly
+fails. This is an explicit missing allow-list finding, not a qualified result
+(allowlist-falsifier-dbf142e.json). The strict RootDirectory correction passed
+its actual NixOS VM and workstation build; review/integration/apply and renewed
+actual-host qualification are pending. Sovite remains environment-only.
+
+Sovite's raw run uses pytest -q in addition to repository quiet configuration,
+which suppresses the ordinary final count line. The retained raw output has55
+complete progress rows and exit0; counts were derived from2797dots/1140s rather
+than invented as an emitted summary. Requalification will preserve this distinction.
+
+Existing public repository commands are being repeated on installed0.2.6. Private
+vuoro-cloud has not been executed in this qualification: its configured namespace
+command boundary is unchanged, but the shared cleanup path has not been live
+exercised there. This is an explicit coverage limitation, not a claimed regression
+pass. Private owner investigation approval remains pending.
+
+The corrected live setsid fixture sleeps3600s, records cancellation elapsed and
+requires completion under60s (before its independent180s command timeout). The
+rerun passed in0.109s; earlier120s-fixture observations are superseded. Boundary
+creation probes now record successful open independently of unlink cleanup, so
+a cleanup error cannot be misclassified as denied creation. Read-only review
+identified these harness gaps and cleared the corrected source before recording
+these results. Its template snapshot is labelled configuration, not the executed
+instance. The corrected old-host run still fails on the undeclared public canary.
+
+Released0.2.6 full namespace regression passed1008 tests in121.64s with the
+user-bus environment supplied. An initial direct invocation omitted both bus
+variables and failed58 manager-dependent tests (950passed); this was executor
+setup failure, not a product change, and no tests were weakened. Appservice's
+configured namespace validator atafec5b00 passed again with installed0.2.6:
+563passed/2skipped/95subtests plus all offline validators.
+
+HLA configured namespace rerun on installed0.2.6 also passed atb41e4c9a: 2711 passed, 1 skipped, 28 deselected, 5 warnings, 120 subtests passed in 549.09s (0:09:09). Raw output is in homelab-v026-namespace.json.

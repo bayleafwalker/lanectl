@@ -1,7 +1,10 @@
 # 2889 — Fenced train backend for ownership-guarded repositories
 
-Status: design qualification (2026-11-11).  This document deliberately does
-not implement a backend or change `train_isolation`.
+Status: implementation and qualification in progress (2026-11-13). Client source
+is released as 0.2.6; the dedicated host account and first service generation are
+installed. The stricter filesystem allow-list correction remains under review
+and must be applied and requalified before Sovite's policy changes. This document
+records the approved design; current evidence is linked from `docs/fenced-train.md`.
 
 ## Problem and security boundary
 
