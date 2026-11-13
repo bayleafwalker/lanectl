@@ -64,15 +64,26 @@ had a separate planner-owned Ruff import-order defect. Revision2 corrects that
 defect with identical assertions/import bindings, actual repository-context lint,
 fresh independent review and new base-failure evidence. The affected retries
 were stopped by their exact units and recorded as unchanged infra outcomes; the
-standing timer remains enabled. Current attempt `hla-attention-records-r5-a4`
-runs on DeepSeek Flash. No implementation acceptance or product delivery is
-claimed. The first two drafts remain held by their actual publication guards.
+standing timer remains enabled. Attempt `hla-attention-records-r5-a4` on DeepSeek Flash reached candidate after
+all frozen gates and Ruff passed (678 worker lines), then the integrator parked
+it after exact-source boundary failures. No implementation acceptance or product
+delivery is claimed. The first two drafts remain held by their actual publication guards.
 
-Read-only pre-audit of rejected a1 found a strict-published/no-store fallback
-path; the missing-column and empty-component cases also need narrow qualification.
-See the adjacent semantic pre-audit and rejected production patch. Recheck the
-completed new candidate rather than treating a1's functional pass as full authority
-proof or assuming the new source shares its behavior.
+Read-only pre-audit and real disposable PostgreSQL probes on exact a4 commit
+b41e2c6c6dbad1a410e4048a6aebf4e958b8498f confirmed the no-store strict-published
+case is repaired:503 and no warehouse calls. Two semantic blockers remain:
+an existing publication table missing charge_id produces500 for both known and
+plausible unknown IDs; a row with empty charge_id admits a forged upcoming__date
+key as200. The real public row model and publication store accept that explicit
+boundary mutation; this does not assert ingestion produces it. Literal None in
+an otherwise legitimate opaque contract ID is not globally invalid. Both cases
+made no observed DuckDBStore fetchall/fetchall_dicts calls. The reusable probe
+exited1 with --require-fixed; its owned disposable container was removed and its
+absence verified. See adjacent a4 observations/decisions/rejected production patch.
+These are ordinary escalated synthetic probes, not host-fence proof. The release
+is parked while additive planner coverage is prepared; no model source is edited
+by the integrator. Keep the four-kind API scope together unless a measured
+correct implementation exceeds the existing700-line cap.
 
 Coordinator prerequisites measured: existing repo Node20.20.1, GNUmake4.4.1 from
 the pinned Nix store, Docker29.9.2, Compose5.7.0. Locked npm ci completed and web

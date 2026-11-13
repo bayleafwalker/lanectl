@@ -1,0 +1,154 @@
+[
+  {
+    "data": {
+      "attempt_id": "hla-attention-records-r5-a4",
+      "base_sha": "9cf62cb7271ed0e15e35877ab772709808470bea",
+      "branch": "lane/hla-attention-records-r5-a4",
+      "lane": "implement",
+      "lane_digest": "sha256:7bd3d1f327b84636",
+      "lane_revision": 3,
+      "model": "opencode-go/deepseek-v4.1-flash",
+      "release_revision": 2,
+      "runner_process": {
+        "boot_id": "61e4429f-8f5a-4b58-9b86-f308ad925091",
+        "host": "workstation",
+        "machine_id": "e681b85141f226386e176a1de00fcc3ab4546197d3aa937aad606d73ce133a5b",
+        "pid": 959655,
+        "start_ticks": "3507764"
+      },
+      "worker": "opencode",
+      "worker_unit": "lanectl-attempt-c60aa22364d854f06a79c675.service"
+    },
+    "item_id": "hla-attention-records-r5",
+    "schema": "lanectl.event/v1",
+    "ts": "2026-11-13T15:58:19Z",
+    "type": "item.claimed"
+  },
+  {
+    "data": {
+      "attempt_id": "hla-attention-records-r5-a4",
+      "gate": "diff-policy",
+      "passed": true,
+      "violations": []
+    },
+    "item_id": "hla-attention-records-r5",
+    "schema": "lanectl.event/v1",
+    "ts": "2026-11-13T16:37:29Z",
+    "type": "gate.result"
+  },
+  {
+    "data": {
+      "attempt_id": "hla-attention-records-r5-a4",
+      "gate": "fail-on-base",
+      "passed": true,
+      "violations": []
+    },
+    "item_id": "hla-attention-records-r5",
+    "schema": "lanectl.event/v1",
+    "ts": "2026-11-13T16:37:29Z",
+    "type": "gate.result"
+  },
+  {
+    "data": {
+      "attempt_id": "hla-attention-records-r5-a4",
+      "gate": "acceptance-on-base",
+      "passed": true,
+      "violations": []
+    },
+    "item_id": "hla-attention-records-r5",
+    "schema": "lanectl.event/v1",
+    "ts": "2026-11-13T16:37:29Z",
+    "type": "gate.result"
+  },
+  {
+    "data": {
+      "attempt_id": "hla-attention-records-r5-a4",
+      "gate": "acceptance",
+      "passed": true,
+      "violations": []
+    },
+    "item_id": "hla-attention-records-r5",
+    "schema": "lanectl.event/v1",
+    "ts": "2026-11-13T16:37:29Z",
+    "type": "gate.result"
+  },
+  {
+    "data": {
+      "attempt_id": "hla-attention-records-r5-a4",
+      "gate": "job:ruff",
+      "passed": true,
+      "violations": []
+    },
+    "item_id": "hla-attention-records-r5",
+    "schema": "lanectl.event/v1",
+    "ts": "2026-11-13T16:37:29Z",
+    "type": "gate.result"
+  },
+  {
+    "data": {
+      "attempt_id": "hla-attention-records-r5-a4",
+      "by": "gates",
+      "decision": "candidate",
+      "reasons": [
+        "all gates passed"
+      ],
+      "rules_revision": "decision-rules/v3"
+    },
+    "item_id": "hla-attention-records-r5",
+    "schema": "lanectl.event/v1",
+    "ts": "2026-11-13T16:37:29Z",
+    "type": "decision.recorded"
+  },
+  {
+    "data": {
+      "attempt_id": "hla-attention-records-r5-a4",
+      "evaluator": "rules",
+      "features": {
+        "changed_lines": 678,
+        "changed_lines_ratio": 0.9685714285714285,
+        "files_touched": 5,
+        "new_test_files": 0
+      },
+      "reasons": [],
+      "rules_revision": "evaluator/v2",
+      "verdict": "accept"
+    },
+    "item_id": "hla-attention-records-r5",
+    "schema": "lanectl.event/v1",
+    "ts": "2026-11-13T16:37:29Z",
+    "type": "evaluation.recorded"
+  },
+  {
+    "data": {
+      "attempt_id": "hla-attention-records-r5-a4",
+      "decision": "candidate",
+      "elapsed_s": 2204.0,
+      "gates_failed": [],
+      "lane_revision": 3,
+      "model": "opencode-go/deepseek-v4.1-flash",
+      "rules_revision": "decision-rules/v3",
+      "size": "M",
+      "task_class": "product-api",
+      "worker": "opencode"
+    },
+    "item_id": "hla-attention-records-r5",
+    "schema": "lanectl.event/v1",
+    "ts": "2026-11-13T16:37:29Z",
+    "type": "experiment.recorded"
+  },
+  {
+    "data": {
+      "attempt_id": "hla-attention-records-r5-a4",
+      "by": "integrator",
+      "decision": "parked",
+      "reasons": [
+        "model-error: exact b41e2c6 boundary probe failed: existing published charge_id-less table returns 500 (known and unknown keys) rather than safe503; empty published charge_id admits forged upcoming__date HTTP200. No warehouse reads observed. PUBLISHED no-store is fixed. Park while planner strengthens missing coverage; no source repair or approval."
+      ],
+      "rules_revision": "integrator"
+    },
+    "item_id": "hla-attention-records-r5",
+    "schema": "lanectl.event/v1",
+    "ts": "2026-11-13T16:39:59Z",
+    "type": "decision.recorded"
+  }
+]

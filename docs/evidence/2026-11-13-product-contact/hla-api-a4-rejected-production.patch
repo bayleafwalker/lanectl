@@ -1,0 +1,274 @@
+diff --git a/apps/api/routes/report_routes.py b/apps/api/routes/report_routes.py
+index 05b371b..1bf204d 100755
+--- a/apps/api/routes/report_routes.py
++++ b/apps/api/routes/report_routes.py
+@@ -34,6 +34,10 @@ from packages.pipelines.household_reporting import (
+     CURRENT_DIMENSION_RELATIONS,
+     PUBLICATION_RELATIONS,
+ )
++from packages.pipelines.reporting_attention_records import (
++    AttentionRecordNotFoundError,
++    AttentionRecordUnavailableError,
++)
+ from packages.pipelines.reporting_service import ReportingService
+ from packages.pipelines.reporting_snapshots import (
+     is_reference_month,
+@@ -335,6 +339,20 @@ CONTRACT_RENEWAL_WATCHLIST_RESPONSE_MODEL = build_rows_response_model(
+     "ContractRenewalWatchlistResponse",
+     CONTRACT_RENEWAL_WATCHLIST_ROW_MODEL,
+ )
++# One attention item id -> the source rows that id names. ``rows`` is the same
++# public row model the source publication itself serves.
++ATTENTION_RECORD_ROW_MODELS: dict[str, Any] = {
++    "transaction-anomalies": TRANSACTION_ANOMALIES_ROW_MODEL,
++    "upcoming-fixed-costs": UPCOMING_FIXED_COSTS_ROW_MODEL,
++    "contract-review-candidates": CONTRACT_REVIEW_CANDIDATES_ROW_MODEL,
++    "contract-renewal-watchlist": CONTRACT_RENEWAL_WATCHLIST_ROW_MODEL,
++}
++ATTENTION_RECORD_RESPONSE_MODELS: dict[str, Any] = {
++    segment: build_rows_response_model(
++        f"{_pascal_case(segment)}RecordResponse", row_model, {"item_id": (str, ...)}
++    )
++    for segment, row_model in ATTENTION_RECORD_ROW_MODELS.items()
++}
+ BUDGET_VARIANCE_RESPONSE_MODEL = build_rows_response_model(
+     "BudgetVarianceResponse",
+     BUDGET_VARIANCE_ROW_MODEL,
+@@ -909,6 +927,47 @@ def register_report_routes(
+             raise HTTPException(status_code=404, detail="Requires a transformation service.")
+         return {"rows": to_jsonable(resolved_reporting_service.get_contract_renewal_watchlist())}
+ 
++    # ------------------------------------------------------------------
++    # Attention item -> the source record that owns it. The item id is an
++    # opaque path parameter: it may itself contain a slash, and it is only
++    # ever resolved the way its source publication built it.
++    # ------------------------------------------------------------------
++
++    def _source_record(item_type: str, item_id: str) -> dict[str, Any]:
++        if resolved_reporting_service is None:
++            raise HTTPException(status_code=404, detail="Requires a transformation service.")
++        try:
++            rows = resolved_reporting_service.get_attention_record(item_type, item_id)
++        except AttentionRecordUnavailableError:
++            raise HTTPException(
++                status_code=503,
++                detail="The source publication cannot prove this attention item is absent.",
++            ) from None
++        except AttentionRecordNotFoundError:
++            raise HTTPException(
++                status_code=404,
++                detail="No source record has this attention item id.",
++            ) from None
++        return {"item_id": item_id, "rows": to_jsonable(rows)}
++
++    def _register_record_route(item_type: str, segment: str) -> None:
++        async def get_record(item_id: str) -> dict[str, Any]:
++            return _source_record(item_type, item_id)
++
++        app.get(
++            f"/reports/{segment}/records/{{item_id:path}}",
++            response_model=ATTENTION_RECORD_RESPONSE_MODELS[segment],
++            name=f"get_{item_type}_record",
++        )(get_record)
++
++    for _item_type, _segment in (
++        ("anomaly", "transaction-anomalies"),
++        ("contract_review", "contract-review-candidates"),
++        ("contract_renewal", "contract-renewal-watchlist"),
++        ("upcoming_cost", "upcoming-fixed-costs"),
++    ):
++        _register_record_route(_item_type, _segment)
++
+     # ------------------------------------------------------------------
+     # Budget: dedicated endpoints
+     # ------------------------------------------------------------------
+diff --git a/packages/pipelines/reporting_attention_records.py b/packages/pipelines/reporting_attention_records.py
+new file mode 100644
+index 0000000..be5474b
+--- /dev/null
++++ b/packages/pipelines/reporting_attention_records.py
+@@ -0,0 +1,103 @@
++"""Attention item ids and the source publications that own them.
++
++An attention id is opaque: the overview layer builds it from a source row's
++own identity columns (``review_<contract_id>_<reason>``, and so on), so it can
++contain slashes and underscores and can cover several source rows. Resolution
++binds the whole id against that same expression at the source relation.
++"""
++from __future__ import annotations
++
++from dataclasses import dataclass
++
++from packages.domains.finance.pipelines.subscription_models import (
++    MART_UPCOMING_FIXED_COSTS_30D_TABLE,
++)
++from packages.domains.finance.pipelines.transaction_models import (
++    MART_TRANSACTION_ANOMALIES_CURRENT_TABLE,
++)
++from packages.domains.utilities.pipelines.utility_models import (
++    MART_CONTRACT_RENEWAL_WATCHLIST_TABLE,
++    MART_CONTRACT_REVIEW_CANDIDATES_TABLE,
++)
++
++
++@dataclass(frozen=True)
++class AttentionSourceRecord:
++    """One item type: source relation, key expression, nullable identities.
++
++    A NULL in ``nullable_identity_columns`` makes the key unprovable: while
++    such a row exists, a missing id cannot be reported as absent.
++    """
++
++    item_type: str
++    relation_name: str
++    key_expression: str
++    nullable_identity_columns: tuple[str, ...] = ()
++    order_by: str = ""
++
++
++ATTENTION_SOURCE_RECORDS: tuple[AttentionSourceRecord, ...] = (
++    AttentionSourceRecord(
++        "anomaly",
++        MART_TRANSACTION_ANOMALIES_CURRENT_TABLE,
++        "'anomaly_' || transaction_id",
++        order_by="booking_date DESC, transaction_id",
++    ),
++    AttentionSourceRecord(
++        "contract_review",
++        MART_CONTRACT_REVIEW_CANDIDATES_TABLE,
++        "'review_' || contract_id || '_' || reason",
++        order_by="score DESC, contract_id",
++    ),
++    AttentionSourceRecord(
++        "contract_renewal",
++        MART_CONTRACT_RENEWAL_WATCHLIST_TABLE,
++        "'renewal_' || contract_id || '_' || CAST(renewal_date AS VARCHAR)",
++        order_by="renewal_date, contract_id",
++    ),
++    AttentionSourceRecord(
++        "upcoming_cost",
++        MART_UPCOMING_FIXED_COSTS_30D_TABLE,
++        "'upcoming_' || charge_id || '_' || CAST(expected_date AS VARCHAR)",
++        nullable_identity_columns=("charge_id",),
++        order_by="expected_date, contract_name",
++    ),
++)
++
++ATTENTION_SOURCE_RECORDS_BY_TYPE: dict[str, AttentionSourceRecord] = {
++    record.item_type: record for record in ATTENTION_SOURCE_RECORDS
++}
++
++
++class AttentionRecordNotFoundError(LookupError):
++    """The id is provably absent from the source publication."""
++
++
++class AttentionRecordUnavailableError(RuntimeError):
++    """The source cannot prove absence: unpublished, or unkeyed rows exist."""
++
++
++def attention_record_query(
++    record: AttentionSourceRecord, item_id: str, *, placeholder: str
++) -> tuple[str, list[str]]:
++    """Select the source rows whose own key rebuilds to ``item_id``."""
++    return (
++        f"SELECT * FROM {record.relation_name}"
++        f" WHERE {record.key_expression} = {placeholder}"
++        f" ORDER BY {record.order_by}"
++    ), [item_id]
++
++
++def attention_identity_probe_query(
++    record: AttentionSourceRecord,
++) -> tuple[str, list[str]] | None:
++    """Count rows whose identity is NULL, when the key can be null."""
++    if not record.nullable_identity_columns:
++        return None
++    missing_identity = " OR ".join(
++        f"{column} IS NULL" for column in record.nullable_identity_columns
++    )
++    return (
++        f"SELECT COUNT(*) AS unkeyed_rows FROM {record.relation_name}"
++        f" WHERE {missing_identity}"
++    ), []
+diff --git a/packages/pipelines/reporting_service.py b/packages/pipelines/reporting_service.py
+index 65b675c..7957d7b 100755
+--- a/packages/pipelines/reporting_service.py
++++ b/packages/pipelines/reporting_service.py
+@@ -84,6 +84,13 @@ from packages.pipelines.mart_read_registry import (
+     read_warehouse_mart,
+ )
+ from packages.pipelines.promotion import PromotionResult
++from packages.pipelines.reporting_attention_records import (
++    ATTENTION_SOURCE_RECORDS_BY_TYPE,
++    AttentionRecordNotFoundError,
++    AttentionRecordUnavailableError,
++    attention_identity_probe_query,
++    attention_record_query,
++)
+ from packages.pipelines.reporting_snapshots import (
+     DEFAULT_SNAPSHOT_RETENTION_MONTHS,
+     SNAPSHOT_PUBLICATIONS,
+@@ -92,6 +99,7 @@ from packages.pipelines.reporting_snapshots import (
+     is_reference_month,
+     read_warehouse_snapshot,
+     record_warehouse_snapshot,
++    run_on_warehouse,
+     warehouse_reference_month,
+     warehouse_snapshot_months,
+ )
+@@ -881,6 +889,54 @@ class ReportingService:
+             "ORDER BY severity, item_type",
+         )
+ 
++    def get_attention_record(self, item_type: str, item_id: str) -> list[dict[str, Any]]:
++        """Resolve one opaque attention id to the source rows it names.
++
++        The whole id is bound, at the source, against the relation's own key
++        expression, so ids carrying separators or slashes are never split and
++        a partial or equal-looking id selects nothing. ``PUBLISHED`` reads only
++        the source publication; a missing one, or one whose identity columns
++        can be NULL, cannot prove absence and raises unavailable.
++        """
++        record = ATTENTION_SOURCE_RECORDS_BY_TYPE.get(item_type)
++        if record is None:
++            raise AttentionRecordNotFoundError(item_type)
++        fetch, placeholder = self._attention_record_source(record.relation_name)
++        sql, params = attention_record_query(record, item_id, placeholder=placeholder)
++        rows = fetch(sql, params)
++        if rows:
++            return rows
++        probe = attention_identity_probe_query(record)
++        if probe is not None:
++            probe_sql, probe_params = probe
++            unkeyed = fetch(probe_sql, probe_params)
++            if unkeyed and int(unkeyed[0]["unkeyed_rows"]) > 0:
++                raise AttentionRecordUnavailableError(record.relation_name)
++        raise AttentionRecordNotFoundError(item_type)
++
++    def _attention_record_source(
++        self,
++        relation_name: str,
++    ) -> tuple[Callable[[str, list[Any]], list[dict[str, Any]]], str]:
++        """Reader and parameter marker that own source rows for ``relation_name``."""
++
++        def read_warehouse(sql: str, params: list[Any]) -> list[dict[str, Any]]:
++            return run_on_warehouse(
++                self._transformation_service,
++                f"attention_record.{relation_name}",
++                lambda store: store.fetchall_dicts(sql, params),
++                write=False,
++            )
++
++        if self._access_mode != ReportingAccessMode.WAREHOUSE:
++            if self._publication_store is not None and self._publication_store.table_exists(
++                relation_name
++            ):
++                return self._publication_store.fetchall_dicts, "%s"
++            if self._access_mode == ReportingAccessMode.PUBLISHED:
++                raise AttentionRecordUnavailableError(relation_name)
++        return read_warehouse, "?"
++
+     def get_recent_significant_changes(self) -> list[dict[str, Any]]:
+         return self._fetch_published_or_fallback(
+             MART_RECENT_SIGNIFICANT_CHANGES_TABLE,
