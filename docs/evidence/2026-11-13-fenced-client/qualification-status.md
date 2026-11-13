@@ -165,3 +165,19 @@ proof. An initial probe without the CA could not observe authentication and was
 repeated with that input restored. No owner mutation, credential substitution or
 private-source transmission occurred. Private owner investigation approval is
 still pending; catalog advertises no enrollment-management operation.
+
+## Final cleanup candidate and current appservice proof
+
+R3 source dc70775a93b007f7a1e8b144322c6cb0d6e2ce43 passed native gates
+and independent review; final runner bytes match the immutable review snapshot.
+Its declared managed container and aliases are protected in both layouts, while
+individual managed descendants remain supported. The strengthened historical
+positive proves safe-attempt cleanup continues after canonical refusal. Source
+integration/exact-tip train remains required.
+
+Current appservice afec5b00 passes the complete offline validator in both its
+existing namespace and systemd with public origin setup, using a standalone
+main snapshot bound to freshly observed origin/main. Its new coherence guard
+correctly refuses detached snapshots without the branch fact; no fake CI variables
+were supplied and no guard was weakened. This canonical-snapshot proof does not
+claim that arbitrary future train proposals have their separate CI context.
