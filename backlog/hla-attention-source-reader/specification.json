@@ -1,89 +1,68 @@
 {
   "schema": "lanectl-specification/v1",
-  "release_digest": "032bc72e5254fa050998d4b2142454d708cf32cd9932a5f6bf034f4778ebc624",
+  "release_digest": "2c089d93c989d59d4ffbae79b769ff3ad90eddb9ee57a7aeb927d76e33246f87",
   "review": {
     "verdict": "accept",
-    "reason": "The correction is technically sound and resolves both prior rejection grounds. Model admission now routes through to_jsonable (Decimal->str via str(), date->isoformat) so the row models, which type DECIMAL/DATE as str, validate real rows and reject expected_date=None rather than tripping on raw Decimal/date values; whole-group equality uses json.dumps(sort_keys=True) over to_jsonable instead of repr, giving stable scale-preserving canonicalization that is consistent across DuckDB and psycopg. I independently verified fixture/API compatibility against canonical9cf62cb: every import resolves (ReportingService/ReportingAccessMode, TransformationService.memory(), load_subscriptions/load_contract_prices/load_transactions with those exact signatures, refresh_publications, DuckDBStore.memory/connection.cursor/fetchall/fetchall_dicts/execute, WarehouseBusyError(path,attempts,cause), PostgresReportingStore._connect/fetchall_dicts/execute_statements/table_exists, tests.postgres_test_support.docker_is_available/running_postgres_container, apps.api.support.to_jsonable), the four row models exist with the exact identities (transaction_id; contract_id+reason; contract_id+renewal_date; charge_id+expected_date), and charge_id is nullable VARCHAR while expected_date/renewal_date are DATE NOT NULL. The fixture math checks out: 240 single-counterparty vendor transactions each trigger first_occurrence (>200 groups), the 201st sorted anomaly key is provably outside the LIMIT 200 first page, None/utility with two above_market_average price rows yields a 2-row review group and a 2-row renewal group, and the two weekly sub-stream charges produce distinct charge_ids. The observer is a strong whole-key-binding oracle: assert item_id in params and item_id not in sql plus a required WHERE clause rejects fetch-all/filter-later, page-before-filter, first-row, and component-split implementations; all(key(kind,row)==item_id) rejects partial-component groups; the scalar-probe branch is limited to len(columns)==1, len(rows)<=1, count(*)/exists/1 and cannot fetch source facts. Authority is enforced by forbid_warehouse (PUBLISHED must not touch DuckDB) and the WAREHOUSE/PUBLISHED/PREFER_PUBLISHED tripartite tests. Failure classification is precise: driver IOException and psycopg.OperationalError (marker sanitized) become unavailable while WarehouseBusyError and RuntimeError propagate unchanged, and empty/NULL identity plus missing column/table/relation produce unavailable while a provably absent whole key produces not-found. On canonical, every feature-exercising test fails at facade()'s 'missing attention source reader' assertion before the errors() import, so failures signal the real missing feature, not fixture noise; test_postgres_fixture_admission_and_cleanup is deliberately fixture-only and passing on canonical is correct. No defects found that would justify revision.",
-    "trivial_pass": "A fetch-all-then-filter-later implementation cannot pass: the SQL observer rejects any source query lacking a WHERE clause (assert 'where' in sql) or lacking the whole key bound as a parameter (assert item_id in params and item_id not in sql), and the falsifier test_sql_observer_rejects_projection_and_tautology explicitly demonstrates that a projection-only SELECT and a tautological WHERE ? = ? both trip assert_selected. Page-before-filter is separately defeated by the fixture selecting the 201st anomaly key (ordered[200]), which a LIMIT 200 prefix then Python-filter would miss, failing canonical(get(...)) equality. A component-splitting or guessed/equal-looking implementation cannot satisfy item_id in params while still matching, since the observer requires the complete opaque key string (including the literal 'None/utility' slash and 'grid'/'grid_north' prefix collision) bound whole. NULL/empty identity fabrication cannot pass because after invalidation the getter must raise AttentionRecordUnavailableError (not return a forged 'anomaly_' group) and unknown_key must transition from not-found to unavailable, enforced by forbid_warehouse-observed raises.",
+    "reason": "Revision3 keeps the previously-accepted 551-line frozen regression as an exact unchanged prefix and appends a 68-line real-lease acquisition regression plus the matching acquisition paragraph. I independently traced fixture compatibility against canonical9cf source rather than trusting the supplied observations: the 240 unique 'Vendor NNN' counterparts each exceed the 50-unit first_occurrence threshold, producing >200 distinct anomaly groups; the two weekly Streamly subscriptions 7 days apart share the same computed expected_date but yield two distinct subscription_charge_id charge_ids (>=2 upcoming groups); and the electricity price seed yields review_None/utility_above_market_average and renewal_None/utility_<d10> each with >=2 component rows. The new acquisition test injects at connect_with_lock_retry inside the real WarehouseSessionManager open path (not the leased callback), asserts exactly one factory call, manager.mode is None on both sides, valid exact reads before and after, and manager.stop() cleanup; it distinguishes duckdb.IOException -> AttentionRecordUnavailableError with the synthetic marker stripped from str() from WarehouseBusyError and RuntimeError which must retain identical object identity (caught is failure). Canonical9cf lacks both the get_attention_record symbol and the attention_records module, and every feature test calls facade() before errors(), so canonical fails on the missing-getter assert before the absent exception-module import. No defects found warranting revision.",
+    "trivial_pass": "A fetch-all-then-filter-later getter (SELECT * with no WHERE plus Python-side key matching, optionally LIMIT-paged) is the canonical cheap pass and fails in three independent ways. The SQL observer's assert_selected requires a WHERE clause with the complete item_id bound as a parameter and absent from the SQL text, so a bare SELECT * (no WHERE, no param) is rejected. It also requires every returned row to recompute to the exact item_id, so a tautology 'WHERE ? = ?' (returns all rows with mismatched keys) or a projection 'SELECT counterparty_name' (identity columns omitted) is rejected, and test_sql_observer_rejects_projection_and_tautology proves those two rejections fire. Finally the out-of-first-page anomaly (ordered[200], verified absent from ORDER BY transaction_id LIMIT 200) makes a first-page-only fetch return the wrong group, and a scalar COUNT/EXISTS-only getter fails the positive 'assert observed' requirement because it never returns source fact rows.",
     "checks": [
-      "Whole-key SQL binding with WHERE before limit/pagination or Python selection is enforced: observer requires item_id in params, item_id not in sql, and 'where' in sql with ?/%s placeholders.",
-      "Projected-source-facts matching is established, not a substring or tautology: all(key(kind,row)==item_id) over returned rows, with the projection/tautology falsifier rejecting SELECT <non-identity> and WHERE ? = ?.",
-      "Fetch-all/filter-later, page-before-filter, and first-row match are discriminated: no-WHERE queries fail the observer and the 201st-sorted anomaly is proven outside the LIMIT 200 first page.",
-      "Partial component groups are rejected: multi-component review (contract_id+reason) and renewal (contract_id+renewal_date) controls each have 2 rows, and any single-component filter would violate all(key==item_id).",
-      "Opaque identities are exercised: None/utility slash and literal 'None' text with 2-row groups, grid vs grid_north underscore-prefix collision, and distinct canonical charge_ids for equal-looking weekly subscriptions.",
-      "Source authority is correct: PUBLISHED reads only the publication (forbid_warehouse asserts zero DuckDB reads), WAREHOUSE reads the warehouse, PREFER_PUBLISHED falls back when no store; no-warehouse-read is asserted in every unavailable path.",
-      "Failure classification is precise: provable absence raises AttentionRecordNotFoundError, while NULL/empty identity, missing relation/column/table, and driver failure raise AttentionRecordUnavailableError; the canonical-looking unknown is not-found before invalidation and unavailable after.",
-      "Driver failures are classified without masking: duckdb.IOException becomes unavailable, psycopg.OperationalError becomes sanitized unavailable with no warehouse substitution, and WarehouseBusyError/RuntimeError propagate unchanged.",
-      "NULL/empty identity never fabricates a successful ID: charge_id, transaction_id, contract_id, and reason are each emptied in the actual Postgres store and assert forged keys never resolve while intact siblings still resolve exactly.",
-      "NOT NULL constraints are respected: expected_date=None is rejected by the row model and the fresh PG table is verified is_nullable='NO'; legacy charge_id NULL and DROP COLUMN charge_id are measured compatibility unavailable cases, not relaxed constraints.",
-      "Existing get_open_attention_items() behavior and no mutation are covered: before/after canonical snapshots of both the attention list and all four source tables are asserted equal.",
-      "Real PG cases cannot pass by skip: required_postgres() asserts docker_is_available() so the mandatory integration-and-slow cases fail, not skip, when Docker is absent; pytest.ini's not-slow default is acknowledged as the reason the explicit slow selector is mandatory.",
-      "Tests fail on canonical for the right reason: every feature-exercising test hits facade()'s 'missing attention source reader' assertion before errors()' import of the absent attention_records module, so no setup/import failure masquerades as the expected feature failure."
+      "Fixture compatibility independently traced in canonical source: 240 unique counterparts exceed the 50 first_occurrence threshold and produce >200 anomaly groups; two weekly subscriptions 7 days apart share expected_date=today but produce 2 distinct charge_ids; the electricity seed yields review_None/utility_above_market_average and renewal_None/utility_<d10> each with 2 component rows.",
+      "Canonical9cf contains no get_attention_record symbol and no packages/domains/overview/pipelines/attention_records.py; every feature test calls facade() before errors(), so canonical fails on the missing getter (AssertionError 'missing attention source reader') before the absent exception-module import, never a spurious ModuleNotFoundError.",
+      "The SQL observer is anti-vacuous: test_sql_observer_rejects_projection_and_tautology confirms assert_selected rejects a projection (identity column omitted) and a tautology (WHERE ?=? returning all rows with mismatched keys).",
+      "The acquisition regression exercises the real WarehouseSessionManager open path over an owned synthetic DuckDB file by injecting at connect_with_lock_retry; it asserts exactly one qualifying factory call, manager.mode is None before and after, valid exact reads on both sides, and manager.stop() cleanup.",
+      "Error distinctions are safe: duckdb.IOException becomes AttentionRecordUnavailableError with the synthetic marker absent from str(); WarehouseBusyError and RuntimeError propagate with identical object identity (caught is failure), rejecting any over-broad except Exception conversion.",
+      "Source authority holds: PUBLISHED with no publication store raises unavailable and never touches the warehouse (forbid_warehouse returns []); PREFER_PUBLISHED falls back to the warehouse; published-only display mutations make PG groups differ from warehouse while keys remain identical.",
+      "Identity and error correctness covered: empty textual identity mutations (charge_id, transaction_id, contract_id, reason) are admitted by the row models and Postgres store; the forged key never resolves; a canonical-looking unknown is not-found before invalidation then unavailable after; intact siblings remain exact; charge_id NULL and DROP COLUMN and DROP TABLE all yield unavailable.",
+      "No mutation and no annotation escapes: get_open_attention_items and all four source marts are byte-identical before and after reads; the file contains no skip/xfail/noqa/type-ignore; slow tests fail (not skip) when Docker is absent via the required_postgres assert.",
+      "Complete groups and both required selectors: all four kinds (anomaly/contract_review/contract_renewal/upcoming_cost) are exercised with whole-group equality, wrong/excluded IDs, true source SQL filtering, and no-warehouse-read observation; both the ordinary (not-slow) and explicit integration-and-slow selectors remain mandatory."
     ]
   },
   "author_model": "gpt-6.1-terra",
   "reviewer_model": "opencode-go/deepseek-v4-pro",
-  "intent_digest": "4d54861c8b545d92810bb4b0dc8d6c99a722e8c402e528ea45585fb722aac5b7",
-  "recorded_at": "2026-11-13T20:35:22.370888+00:00",
+  "intent_digest": "14cbd1f5e9563d91a392cad3168ccb8edbc94da9807c395beec402b5235708dd",
+  "recorded_at": "2026-11-13T22:25:23.395536+00:00",
   "lint_problems": [],
   "usage": {
     "author": null,
     "reviewer": {
-      "input_tokens": 161961,
-      "output_tokens": 7947,
-      "reasoning_tokens": 44034,
-      "cache_read_tokens": 3270400,
+      "input_tokens": 181476,
+      "output_tokens": 6528,
+      "reasoning_tokens": 48275,
+      "cache_read_tokens": 2972672,
       "cache_write_tokens": 0,
       "cost_usd": 0.0,
-      "steps": 51
+      "steps": 38
     }
-  },
-  "prior_native_draft_commit": "6c72d44",
-  "persistent_review": {
-    "root": "/tmp/lanectl-hla-source-review-r2-1800",
-    "actual_registered_adapter_unchanged": true,
-    "timeout_s": 1800,
-    "lane_timeout_s": 2700,
-    "prior_schema_retry": "nativefailed; service exit143 after900.110s, no response captured"
-  },
-  "prior_schema_failure": {
-    "log": "/tmp/lanectl-hla-source-reader-review-r2.log",
-    "error": "adversarial review must explain its reasoning and trivial-pass attack",
-    "raw_response_recovered": false,
-    "retry_changes": "explicit required explanation string types; exact artifact unchanged"
-  },
-  "planner_correction": {
-    "author_identity": "GPT-6",
-    "variant": null,
-    "task": "/root/acceptance_base_context",
-    "proposal_sha256": "6e4144e42de9be5eea72d75bd347f3c6aa8f4f7fe6763cf7a2b6f2f5fd573590",
-    "native_author_finalized": true,
-    "test_ast_unchanged_by_finalization": false,
-    "native_delta": "duckdb import and real IOException unavailable regression",
-    "final_proposal_sha256": "84190fd5a99368b07e6f0c48ddd3e581c4d5fa79f776cb33f4936c8ef9073dca",
-    "author_usage_unavailable": "real invocation completed; scaffold stopped before persisting usage return",
-    "canonical_missing_getter_failure": true,
-    "positive_reference_fast": "5passed3deselected10.65s",
-    "positive_reference_real_postgres": "3passed5deselected25.38s,no skips",
-    "final_frozen_sha256": "b67ebe0894f3c33fbe18bc183064dbee6f0ef06e9fb938d9ee2a4bba880b4c8e",
-    "qualification_is_implementation_approval": false
   },
   "mandatory_acceptance_commands": [
     "uv run --no-sync python -m pytest -q -p no:cacheprovider tests/test_attention_source_records.py",
     "uv run --no-sync python -m pytest -q -p no:cacheprovider -m 'integration and slow' tests/test_attention_source_records.py"
   ],
-  "prior_review": {
-    "verdict": "revise",
-    "reason": "The base-failure design is right (reader() asserts the missing get_attention_record before errors() imports the exceptions module, so canonical9cf fails on the actual missing source-reader feature rather than an import/setup error), and the source-authority observation (observe() on pg.fetchall_dicts, `params and key in params`, equal_group against independently computed groups) does reject the trivial fetch-all/filter-later and split-without-full-key implementations. But the tests contain two self-inflicted correctness bugs that will also reject a correct implementation, so they are not a valid acceptance gate as written. (1) The public row models are built by build_row_model, which maps DATE->str and DECIMAL->str; `model.model_validate(mutated)` is called on dicts built from rows() that still hold Python `date` and `Decimal` objects, so pydantic raises ValidationError on booking_date/renewal_date/expected_date/amount/current_price/expected_amount \u2014 the bare `model.model_validate(mutated)` calls in test_empty_identity_invalidates_only_absence (all 5 parametrizations) and in test_postgres_current_publication_filtering_and_identity fail even though the empty-identity admission they are meant to prove actually holds. (2) Postgres NUMERIC(18,4) returns scale-4 Decimals (e.g. Decimal('10.0000')) through psycopg, while `want` is derived from rows()'s scale-0 Decimals; equal_group compares `repr(sorted(row.items()))`, so every DECIMAL column in the PG test (amount/current_price/expected_amount) mismatches and equal_group(get(kind,key), want) / equal_group(result, want) fail for a correct implementation. Both bugs are in the test file itself, not the contract, so the file must be revised before acceptance.",
-    "trivial_pass": "No trivial pass is available, and that part of the test is sound. Constant results, ignored inputs, and mocks-replacing-the-subject all fail: the expected groups are computed live from the synthetic DuckDB/Postgres data via independent full-key SQL, so a hardcoded or input-ignoring get_attention_record cannot match equal_group; and the PG test constructs the real ReportingService and monkeypatches only the stores' read surfaces, so the subject itself cannot be replaced \u2014 it must issue real pg.fetchall_dicts calls whose params contain the full key and whose result equals the wanted group. The failure mode is the opposite direction: the two bugs above (str-typed row models fed date/Decimal, and repr-based comparison of scale-4 PG Decimals against scale-0 Python Decimals) cause the tests to reject a correct implementation, not to admit a trivial one.",
-    "checks": [
-      "Blocking: row models type DATE and DECIMAL columns as `str` (build_row_model), but `model.model_validate(mutated)` is called on rows() dicts holding Python `date`/`Decimal`; pydantic raises ValidationError on booking_date/renewal_date/expected_date/amount/current_price/expected_amount, so the bare admission assertion in test_empty_identity_invalidates_only_absence (5 parametrizations) and the equivalent line in test_postgres_current_publication_filtering_and_identity fail for a correct implementation.",
-      "Blocking: Postgres NUMERIC(18,4) yields scale-4 Decimals (e.g. Decimal('10.0000')) via psycopg, while `want` is built from rows() scale-0 Decimals; equal_group compares repr, so amount/current_price/expected_amount mismatch and equal_group(get(kind,key), want) and equal_group(result, want) fail in test_postgres_current_publication_filtering_and_identity.",
-      "Correct base failure: reader() asserts callable(getattr(service,'get_attention_record',None)) before errors() imports the exceptions module, so canonical9cf fails on the missing source-reader feature, not an import/setup error, and the test file's top-level imports all resolve on canonical.",
-      "Source-authority observation is sound: observe() on pg.fetchall_dicts plus `assert params and key in params` plus equal_group rejects fetch-all/filter-later and split-without-full-key implementations; the warehouse-store fetchall_dicts/execute monkeypatch plus the 'Published only' provider divergence enforce no-warehouse-read in PUBLISHED mode.",
-      "Self-containedness holds: no import of the absent tests/test_attention_record_api.py, and the VERIFIED running_postgres_container helper is reused with integration/slow markers consistent with pytest.ini.",
-      "Gap: get_open_attention_items() unchanged-behavior (the cohesive-extraction contract) is asserted nowhere in this file, leaving the no-grow/no-regress requirement for the legacy facade unverified.",
-      "Gap: 'unreadable publication' (a query-level read failure distinct from a connection failure) is not exercised; only the `_connect`-level psycopg.OperationalError path is covered by the sanitization test."
-    ]
-  }
+  "prior_exact551_review_commit": "e12feae2b9e19d0e5fe665192816797b5c8ace04",
+  "planner_augmentation": {
+    "model": "gpt-6.1-terra",
+    "harness": "first-party API agent",
+    "task": "/root/source_lease_acceptance",
+    "original_native_author_finalized_lines": 551,
+    "original_prefix_sha256": "b67ebe0894f3c33fbe18bc183064dbee6f0ef06e9fb938d9ee2a4bba880b4c8e",
+    "first_party_appended_lines": 68,
+    "full_sha256": "b8a2d8b9527c5f2af7b05c1ee0608f3a574a537df78c46dc8ff671633284d078",
+    "proposal_sha256": "b836eeb53c0a2ddbc5d379f73e160d0211e00065bec1d76511910eb906dafc72",
+    "qualification": {
+      "candidate0fd": "driverfails/rawIOException;BusyProgram2pass",
+      "canonical9cf": "3missinggetterfailures",
+      "unaccepted_reference_combined": "8fast+3realPGpass,no skips"
+    },
+    "reference_is_accepted_implementation": false,
+    "API_author_usage_uninstrumented": true
+  },
+  "prior_candidate": {
+    "head": "0fd5a2fccc35d2448dac60d764265302ce27d97b",
+    "native_outcome": "done",
+    "native_exit": 0,
+    "all_original_gates_passed": true,
+    "integrator_disposition": "parkedactualacquisitioncontractfailure"
+  },
+  "diagnostics_root": "/tmp/lanectl-hla-source-r3-review",
+  "invocation": "official specification._invoke unchanged"
 }
