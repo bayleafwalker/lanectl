@@ -52,8 +52,8 @@ policy or grant was widened. Independent review, actual disposable Postgres
 upgrade/concurrency probes, coordinator promotion replay and full verify-fast
 passed; all canonical CI passed. This prerequisite is not a partial Work closeout.
 
-Stage B's complete release `hla-attention-records-r5` revision2 is published. Its native
-Codex author and separate GoPro reviewer cover four own-source record APIs,
+Stage B's complete release `hla-attention-records-r5` revision3 is published. It
+retains the full Codex-authored contract and separate GoPro review for four own-source record APIs,
 opaque identity/encoding, real permission middleware, source selection before
 filtering, current publication authority and typed generated contracts. Actual
 base-failure checks passed. One unused typing comment was removed with identical
@@ -80,10 +80,15 @@ an otherwise legitimate opaque contract ID is not globally invalid. Both cases
 made no observed DuckDBStore fetchall/fetchall_dicts calls. The reusable probe
 exited1 with --require-fixed; its owned disposable container was removed and its
 absence verified. See adjacent a4 observations/decisions/rejected production patch.
-These are ordinary escalated synthetic probes, not host-fence proof. The release
-is parked while additive planner coverage is prepared; no model source is edited
-by the integrator. Keep the four-kind API scope together unless a measured
-correct implementation exceeds the existing700-line cap.
+These are ordinary escalated synthetic probes, not host-fence proof. Revision3
+adds96 lines of first-party GPT-6 planner coverage with the original artifact as
+an unchanged prefix. Actual candidate tests pass no-store but fail both measured
+Postgres defects; canonical base fails the new no-store assertion with route404.
+The native GoPro reviewer accepted the exact extension and expanded outcome;
+actual base-failure validation passed. The packet also makes real slow Postgres
+cases mandatory through a second acceptance command because repository defaults
+exclude slow tests. No model source is edited by the integrator. Keep the four-kind
+API scope together unless a measured correct implementation exceeds700 lines.
 
 Coordinator prerequisites measured: existing repo Node20.20.1, GNUmake4.4.1 from
 the pinned Nix store, Docker29.9.2, Compose5.7.0. Locked npm ci completed and web

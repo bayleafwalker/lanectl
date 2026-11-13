@@ -1,44 +1,41 @@
 {
   "schema": "lanectl-specification/v1",
-  "release_digest": "bf7a787c30bb09d847acdd58a4f7e93c9f99b98b1213610c345ea80974892ecd",
+  "release_digest": "9816b5757653776c47abc9ff8a4a82a9420266f0575d86bfc06a148055bdcc6a",
   "review": {
     "verdict": "accept",
-    "reason": "Independently verified the revision2 delta is exactly Ruff I001 import ordering and nothing else. The unified diff of the prior accepted source (git 1545992:backlog/hla-attention-records-r5/files/tests/test_attention_record_api.py, sha256 9f6cc5f96a21e568cf41b132bd6525701e25ddf2b4e89810b0729a78a94880dd) against the current proposal's embedded test (sha256 d77e1d1fb685e3952a243c86d0c9924841a28d894b74d83c13e8f72b40350152) is five changed lines: three deleted (from packages.storage.duckdb_store import DuckDBStore; from packages.storage.run_metadata import RunMetadataRepository; one blank line) and two added (the same two storage imports repositioned after packages.shared.settings and after packages.storage.postgres_reporting respectively). Import bindings are identical as a multiset (26 module/name/asname tuples), and all 57 non-import top-level statements, all 17 test functions, decorators and assertions are byte-identical via ast.dump. Unlike the prior comment cleanup, compiled module bytecode is NOT identical (marshal.dumps of compile() differs because import execution order changed); this is correctly not claimed identical here. Canonical Ruff 0.15.8 (the uv.lock pin) run from the HLA repo cwd with --stdin-filename tests/test_attention_record_api.py --no-cache reports I001 at line 17 for the before and 'All checks passed!' (exit 0) for the after, and ruff check --fix reproduces the after file byte-for-byte. The expanded outcome restates the complete four-kind contract (transaction-anomalies, contract-review-candidates, contract-renewal-watchlist, upcoming-fixed-costs), names verified-real trusted tool paths and unchanged required gates, and neither narrows the four kinds nor adds grants, production effects or waivers; it explicitly forbids suppressions and separately flags the still-unfixed production-source type-ignore as needing a real repair (not waived). No unexpected behavioral change, weakened assertion, or unsupported outcome was found.",
-    "trivial_pass": "No attack is possible on this delta. Reordering first-party imports cannot create a trivial pass: the set of bound names is unchanged (multiset-equal import bindings, verified) and every non-import statement \u2014 including the anti-trivial-pass instrumentation _observe_source_queries/_assert_observed_selection, which replays the real SQL on the raw DuckDB cursor and requires full opaque item_id parameter binding, WHERE before LIMIT, identity-column selection, and source_key==item_id on real returned rows \u2014 is byte-identical per AST. No test function, decorator, marker, or assertion changed; no skip/xfail/skipif/importorskip and no type-ignore/noqa were introduced in either version. The prior review's anti-trivial-pass property is therefore preserved untouched, so canned rows, mock injection, ignored input, tautology, fetch-all-then-filter, and key-splitting all remain blocked. Import reordering cannot weaken any guard; it only makes the frozen artifact pass I001.",
+    "reason": "Revision3 is purely additive over the independently accepted revision2 artifact. I verified that the accepted test (git 0155a1f:backlog/hla-attention-records-r5/files/tests/test_attention_record_api.py, sha256 d77e1d1fb685e3952a243c86d0c9924841a28d894b74d83c13e8f72b40350152) is a byte-for-byte PREFIX of the proposal's embedded test (sha256 34da78c8cb79c5ecc6d38e740c6b2ee90433dc000e6633cb3bf853aff6bb3abb): the unified diff adds exactly 96 lines (one helper `_observe_warehouse_reads` and three test functions) with zero deletions or modifications, so no existing executable statement or assertion is weakened. The three additions precisely encode the three measured publication boundaries: (1) `test_strict_published_without_store_is_unavailable_without_warehouse_reads` asserts strict PUBLISHED/no-store refuses 503 while `_observe_warehouse_reads` (patching DuckDBStore.fetchall/fetchall_dicts, the exact methods `run_on_warehouse` delegates to) records zero warehouse reads; (2) `test_published_postgres_missing_identity_column_is_unavailable` asserts a positive 200 before `ALTER TABLE ... DROP COLUMN charge_id`, then safe 503 for both the known `item_id` and a plausible unknown key with `raise_server_exceptions=False` surfacing the would-be 500 as a response, `calls == []` blocking any warehouse fallback, and an unrelated contract_review row still resolving; (3) `test_published_postgres_empty_identity_never_resolves_forged_key` proves the production row model admits an empty charge_id via `UPCOMING_FIXED_COSTS_ROW_MODEL.model_validate(to_jsonable(rows[0]))` and the production store admits it via `store.replace_rows(..., MART_UPCOMING_FIXED_COSTS_30D_COLUMNS, ...)`, refuses the forged `upcoming__<date>` key with detail-only 400/404/422/503 (not 200), and confirms the unrelated intact row still resolves. Source authority is real: `UPCOMING_FIXED_COSTS_ROW_MODEL` (report_routes.py:149), `to_jsonable` (apps/api/support.py:455), and `MART_UPCOMING_FIXED_COSTS_30D_COLUMNS` (subscription_models.py:117, the exact columns used by PUBLICATION_RELATIONS) all exist and are imported from production modules. Cleanup is sound (uuid-named disposable Postgres with `docker rm -f` in a context manager; `tmp_path`/`monkeypatch` auto-clean). The outcome restates the complete four-kind contract and the a4 rejection (missing column 500, empty identity 200) without narrowing scope or adding grants. No fixture error, weakened assertion, or tautological check found.",
+    "trivial_pass": "No attack yields a trivial pass. Each new assertion discriminates correct from incorrect behavior and cannot be satisfied by a blanket response: test 1 would still require 503 with zero DuckDB reads (a warehouse-fallback implementation returns 200 and populates `calls`); test 2 requires a positive 200 before the drop and an intact contract_review resolution afterward, so a blanket-503 implementation fails the positive assertions, while the `statuses=(503,)` check fails any uncaught 500; test 3 requires both the forged-key refusal AND the intact-row resolution, so the fix cannot simply reject all upcoming reads. `_observe_warehouse_reads` is non-vacuous: it patches the exact DuckDB methods that the warehouse read path (`run_on_warehouse` -> `fn(service.store)` -> `store.fetchall_dicts`) exercises, so `assert calls == []` would catch a fallback-to-warehouse fix. The `model_validate`/`replace_rows` proofs additionally forbid the fix from solving the empty-identity bug by tightening the row model or store (a policy bypass), and the unchanged `malformed` list (`upcoming_None_<due>` -> 400/404/422) continues to refuse None only in the charge_id position via SQL binding, not a global `'None' in item_id` ban.",
     "checks": [
-      "SHA-256 matches task metadata: before=9f6cc5f96a21e568cf41b132bd6525701e25ddf2b4e89810b0729a78a94880dd (git 1545992 blob), after=d77e1d1fb685e3952a243c86d0c9924841a28d894b74d83c13e8f72b40350152 (proposal.json embedded test).",
-      "Unified diff is exactly 5 changed lines (3 deleted, 2 added), all first-party packages.storage.* imports plus one blank-line removal; no other line differs.",
-      "Import bindings are multiset-identical: 26 (module, name, asname) tuples equal in both versions; only the textual order of packages.shared.*/packages.storage.* changed.",
-      "All 57 non-import top-level statements, all 17 test functions, decorators and assertions are byte-identical via ast.dump comparison (include_attributes=False).",
-      "Compiled module bytecode correctly NOT claimed identical: marshal.dumps of compile() differs because import order changed (co_consts/bytecode differ); this distinguishes the delta from the prior comment-cleanup review.",
-      "No skip/xfail/skipif/importorskip/pytest.skip marker present in either version; no 'type: ignore' or 'noqa' comments in either version.",
-      "Canonical Ruff 0.15.8 (uv.lock pin) from HLA repo cwd with --stdin-filename tests/test_attention_record_api.py --no-cache: before emits I001 at line 17 'Import block is un-sorted or un-formatted'; after emits 'All checks passed!' (exit 0).",
-      "ruff check --fix on the before reproduces the after byte-for-byte (diff empty), proving the correction is exactly the canonical I001 fix.",
-      "Outcome lists all four kinds (transaction-anomalies, contract-review-candidates, contract-renewal-watchlist, upcoming-fixed-costs) \u2014 not narrowed.",
-      "Outcome adds no grant/production effect/waiver: 'No auth-policy, grant, migration or frontend change'; slow Postgres, verify-fast, independent review, train/dev deployment and CI/merge 'remain required'; production-source type-ignore explicitly still needs a real repair; 'do not edit frozen acceptance' is a constraint, not a waiver.",
-      "Trusted tool paths verified real: /projects/dev/homelab-analytics/.tooling/node-v20.20.1-linux-x64/bin/node -> v20.20.1; /nix/store/71c91xjkcj07khl9imgmgji5wzrxwy65-gnumake-4.4.1/bin/make -> GNU Make 4.4.1.",
-      "Frozen fixture still enforces source filtering via real returned rows, opaque whole-key binding, publication authority/null states, safe {detail}-only failure shapes, real OIDC permissions, generated OpenAPI/TypeScript contracts, and the @slow/@integration disposable Postgres case \u2014 all preserved because the non-import AST is unchanged.",
-      "No generated test was executed; only .lanectl-spec/response.json was written. No repository, proposal, or prior artifact was modified."
+      "SHA-256 identity: accepted rev2 = d77e1d1fb685e3952a243c86d0c9924841a28d894b74d83c13e8f72b40350152 (git 0155a1f blob); proposal rev3 = 34da78c8cb79c5ecc6d38e740c6b2ee90433dc000e6633cb3bf853aff6bb3abb.",
+      "Additive-only delta verified byte-for-byte: rev2 is a prefix of rev3 (cmp equal on the shared 1077-line prefix); unified diff is +96/-0 (one helper + three test functions), no existing line modified.",
+      "Test count 17 -> 20; the three new names are unique and do not collide with any existing test; module compiles (python3 -m py_compile) and contains no skip/xfail/skipif/importorskip/type-ignore/noqa.",
+      "test_strict_published_without_store_is_unavailable_without_warehouse_reads: publication_store=None + PUBLISHED; asserts status 503 and `calls == []` after patching DuckDBStore.fetchall/fetchall_dicts (the exact methods run_on_warehouse -> fn(store).fetchall_dicts delegates to).",
+      "test_published_postgres_missing_identity_column_is_unavailable: positive `assert_resolves` (200) before `ALTER TABLE mart_upcoming_fixed_costs_30d DROP COLUMN charge_id`; `raise_server_exceptions=False` turns the would-be 500 into an observed response; asserts 503 for known item_id and plausible unknown `upcoming_ffffffffffffffff_<date>` with detail-only body and no warehouse reads; unrelated contract_review resolves; @integration @slow.",
+      "test_published_postgres_empty_identity_never_resolves_forged_key: `UPCOMING_FIXED_COSTS_ROW_MODEL.model_validate(to_jsonable(rows[0]))` proves the production model admits charge_id=''; `store.replace_rows(..., MART_UPCOMING_FIXED_COSTS_30D_COLUMNS, ...)` proves the store admits it; forged `upcoming__<date>` refused with detail-only 400/404/422/503 and `calls == []`; intact row still resolves; @integration @slow.",
+      "Actual source authority: imports resolve to production symbols \u2014 UPCOMING_FIXED_COSTS_ROW_MODEL (apps/api/routes/report_routes.py:149), to_jsonable (apps/api/support.py:455), MART_UPCOMING_FIXED_COSTS_30D_COLUMNS (packages/domains/finance/pipelines/subscription_models.py:117); the columns list is identical to PUBLICATION_RELATIONS[MART_UPCOMING_FIXED_COSTS_30D_TABLE].columns and charge_id is `VARCHAR` (nullable -> str | None), so empty string is genuinely admissible.",
+      "Exception-to-HTTP assertion is real: the missing-column psycopg error under raise_server_exceptions=False surfaces as 500, so `statuses=(503,)` fails on the a4 bug (500) and passes only when the source maps the fault to a safe 503.",
+      "Cleanup: running_postgres_container spins a uuid-named disposable postgres:16-alpine container and removes it via `docker rm -f` in finally; tmp_path and monkeypatch are auto-undone.",
+      "Outcome restates all four kinds (transaction-anomalies, contract-review-candidates, contract-renewal-watchlist, upcoming-fixed-costs), the opaque slash-carrying item_id, exact-key binding before limit/filter, permissions, PUBLISHED no-fallback, missing/stale 503 vs unknown 404, no key fabrication from NULL/empty, the empty-charge_id refusal set, literal-None-not-globally-invalid, detail-only failures, regenerated OpenAPI/TypeScript, and unchanged required gates (slow Postgres, verify-fast, independent review, train/dev deploy, CI/merge); it adds no grant/migration/frontend/auth change and no suppressions."
     ]
   },
   "author_model": "gpt-6.1-terra",
   "reviewer_model": "opencode-go/deepseek-v4-pro",
   "intent_digest": "689a2bcc876c6cdddebde0f4397e54b40896407b8ffd7d2cb54739d6b59cfcb3",
-  "recorded_at": "2026-11-13T15:52:16.066152+00:00",
+  "recorded_at": "2026-11-13T16:56:00.924748+00:00",
   "lint_problems": [],
   "usage": {
     "author": null,
     "reviewer": {
-      "input_tokens": 79438,
-      "output_tokens": 7746,
-      "reasoning_tokens": 16802,
-      "cache_read_tokens": 1392128,
+      "input_tokens": 135986,
+      "output_tokens": 7173,
+      "reasoning_tokens": 44347,
+      "cache_read_tokens": 3047424,
       "cache_write_tokens": 0,
       "cost_usd": 0.0,
-      "steps": 33
+      "steps": 45
     }
   },
-  "prior_independent_review_commit": "1545992",
+  "prior_independent_review_commit": "0155a1f",
   "review_prompt_sha256": "5eb7628498fef49177cd805715d83421860684bfda82204d76eb7bc5af3d4f2b",
   "planner_import_cleanup": {
     "previous_commit": "1545992",
@@ -78,5 +75,14 @@
     "executable_ast_sha256": "8629a42ba549074e6ad26dc3309a13489e8cd9083daf25744e0bc9b836d6a543",
     "compiled_code_equal": true,
     "change": "Removed one unused inline type-ignore comment; all executable code identical."
+  },
+  "planner_boundary_extension": {
+    "kind": "additive-first-party-planner-correction",
+    "author_model": "GPT-6",
+    "prior_sha256": "d77e1d1fb685e3952a243c86d0c9924841a28d894b74d83c13e8f72b40350152",
+    "current_sha256": "34da78c8cb79c5ecc6d38e740c6b2ee90433dc000e6633cb3bf853aff6bb3abb",
+    "prior_top_level_nodes_unchanged": true,
+    "added_top_level_nodes": 4,
+    "rejected_candidate": "b41e2c6c6dbad1a410e4048a6aebf4e958b8498f"
   }
 }
