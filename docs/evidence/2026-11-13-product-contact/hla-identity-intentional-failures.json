@@ -1,0 +1,23 @@
+{
+  "schema": "qualification-observation/v1",
+  "evidence_kind": "worker-reported tool-session observations",
+  "raw_log_retained": false,
+  "provenance": "Follow-up from the stage-A implementation worker; these two failing runs were not independently repeated by the coordinator.",
+  "observations": [
+    {
+      "case": "B1 finance refresh before the repair",
+      "command": "make test-target TEST='tests/test_attention_identity.py::test_finance_package_rebuilds_populated_prechange_marts -x --tb=short'",
+      "source_state": "Prior candidate with the amended local regression; before the B1 repair.",
+      "reported_error": "ValueError: Refresh subscription summary and upcoming fixed costs before attention items",
+      "reported_location": "transformation_overview.py:285"
+    },
+    {
+      "case": "Postgres upgrade branch removed temporarily",
+      "command": "make test-target TEST='tests/test_postgres_reporting_integration.py::test_existing_subscription_publication_upgrades_on_republication -m integration -x --tb=short'",
+      "source_state": "The upgrade branch was temporarily removed for the mutation control, then restored before final verification.",
+      "reported_error": "Failed: publisher finished before the held lock was released",
+      "reported_summary": "1 failed in 6.77s"
+    }
+  ],
+  "limits": "This record preserves the worker's report and exact commands. It is not a saved raw transcript or an additional coordinator runtime pass. Final reviewed-source and coordinator verification evidence are recorded separately."
+}
