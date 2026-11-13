@@ -1,0 +1,52 @@
+{
+  "schema": "lanectl.guarded-publication-live-qualification/v1",
+  "installed_version": "0.2.9",
+  "canonical_packet_commit": "8edb0910660ba07a734f4996671a3800fa3b05f4",
+  "review_outcome": "done",
+  "review_exit": 0,
+  "review_verdict": "accept",
+  "revision": 3,
+  "frozen_sha256": "b8a2d8b9527c5f2af7b05c1ee0608f3a574a537df78c46dc8ff671633284d078",
+  "publication_events": [
+    {
+      "data": {
+        "provenance": "guarded-publish",
+        "release_id": "hla-attention-source-reader",
+        "revision": 3
+      },
+      "item_id": "hla-attention-source-reader",
+      "schema": "lanectl.event/v1",
+      "ts": "2026-11-13T22:30:00Z",
+      "type": "release.published"
+    }
+  ],
+  "claim_events": [
+    {
+      "data": {
+        "attempt_id": "hla-attention-source-reader-a2",
+        "base_sha": "9cf62cb7271ed0e15e35877ab772709808470bea",
+        "branch": "lane/hla-attention-source-reader-a2",
+        "lane": "implement",
+        "lane_digest": "sha256:7bd3d1f327b84636",
+        "lane_revision": 3,
+        "model": "opencode-go/deepseek-v4.1-flash",
+        "release_revision": 3,
+        "runner_process": {
+          "boot_id": "61e4429f-8f5a-4b58-9b86-f308ad925091",
+          "host": "workstation",
+          "machine_id": "e681b85141f226386e176a1de00fcc3ab4546197d3aa937aad606d73ce133a5b",
+          "pid": 1411968,
+          "start_ticks": "5858062"
+        },
+        "worker": "opencode",
+        "worker_unit": "lanectl-attempt-dfc06e17d4b7161fdad51b2b.service"
+      },
+      "item_id": "hla-attention-source-reader",
+      "schema": "lanectl.event/v1",
+      "ts": "2026-11-13T22:30:02Z",
+      "type": "item.claimed"
+    }
+  ],
+  "state": "claimed",
+  "scope": "actual guarded publication receipt and normal admission; candidate and delivery remain unqualified"
+}
