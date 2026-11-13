@@ -1,0 +1,22 @@
+{
+  "source_commit": "dbf142e2636d0397c7aeb5cacad3b4b1adfe2df4",
+  "generation": "/nix/store/xc11b8dbidazhi6nvpdg9hng9lbna50b-nixos-system-workstation-26.11.20261111.d4f25a3",
+  "account": {
+    "uid": 1120,
+    "gid": 1120,
+    "shell": "nologin"
+  },
+  "spool": {
+    "mode": "0700",
+    "owner_uid": 1000
+  },
+  "receipts": {
+    "mode": "0755",
+    "owner_uid": 0
+  },
+  "unit": {
+    "load_state": "loaded",
+    "user": "lanectl-train"
+  },
+  "qualification": "prerequisites observed; actual backend qualification pending"
+}

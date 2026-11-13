@@ -1,7 +1,7 @@
 id = "fenced-train-client"
 repo = "lanectl"
-base_sha = "2cfa660fdce4a33303d67e9cfaeb0160c6410002"
-revision = 7
+base_sha = "49f0c4bd72816e885d5e119fe194c8f190bb62d4"
+revision = 8
 title = "Execute ownership-compatible train checks through the separate-UID service"
 task_class = "recovery"
 size = "S"
@@ -9,67 +9,51 @@ data_class = "public"
 eligible_lanes = ["implement"]
 
 outcome = """
-Repair the independently reproduced queued-start lifecycle error in the public
-fenced client. This is a small public correction routed through the existing
-implementation lane; first-party source review remains separate. No private code,
-credentials, policy edits or increased lane caps are authorized.
+Repair the final independently reproduced cancellation gap in the public fenced
+client. Base A6 already passed frozen and full-suite gates and matches its
+independently reviewed source snapshot exactly. Its queued-start wait requires
+both terminal state and receipt until the full deadline. Linked train/historical
+worktree staging, source inspection, receipt authority and no-fallback behavior
+are already covered. Do not rewrite those parts.
 
-Base 2cfa660 is the complete corrected source from A4. Its descriptor-relative
-parent walking, nonblocking inspection, nonce/root receipt binding, no-copyback,
-coordinated admission and namespace/environment semantics already passed focused
-and full-suite gates. Independent review found one remaining model error: after
-systemctl start --no-block, an initial inactive reading can describe a queued
-start. _wait_terminal currently treats it as terminal after only a short receipt
-grace, allowing outer cleanup while the unit may still start or run. Root froze
-two safe synthetic-clock regressions; both fail precisely on this base, without
-real services, sleeps, unsafe reads or hanging FIFOs.
+The integrator forced the independent review's stop advisory into its failure
+case: _stop_terminal ignores a nonzero systemctl stop result, TimeoutExpired or
+OSError, then accepts an inactive reading. An inactive unit may still have a
+queued start, so without a successful stop acknowledgement the queue cancellation
+is not proven. Returning true lets outer code remove the directory despite that
+uncertainty. The frozen synthetic tests reproduce all three failed-stop forms
+safely; the acknowledged-stop positive control already passes on this base.
 
-Wait for BOTH receipt existence and terminal inactive/failed state within the
-existing overall deadline. While the receipt is absent, continue observing
-liveness even if a poll says inactive. A legitimately queued start may remain
-inactive longer than RECEIPT_GRACE_S; that short grace must not truncate the
-overall deadline. The frozen late-receipt case waits inactive for 24 seconds
-on a synthetic clock, then active, then terminal plus receipt at 25 seconds. A missing receipt at the deadline must
-return false so run_command takes its existing stop/terminal-proof/orphan path.
-Do not trust receipt existence without terminal state. Preserve cancellation,
-KeyboardInterrupt, failed-stop named-orphan retention, cleanup only after proven
-termination, and nonzero infrastructure failures with no fallback. Do not shorten
-existing host stop limits or change request/receipt authority.
+Require successful completion of the exact systemctl stop command before treating
+terminal state as proof of cancellation. A refused, unavailable or timed-out stop
+must return false conservatively, so existing run_command callers retain and name
+the orphan rather than clean it up. After acknowledged stop, retain existing
+bounded terminal observation. Do not add repeated stop side effects, fallback
+execution, reduced stop limits or new privileges. It is acceptable to retain an
+orphan unnecessarily when cancellation cannot be proved. Preserve current no-such-
+unit behavior conservatively; do not infer stop acknowledgement from inactive.
 
-Revision 7 corrects a planner test-specification gap before implementation:
-the existing forged/missing-receipt test assumed the short receipt grace and
-otherwise would wait the 1800-second default after this fix. Its entire test file
-is now frozen too: only that case has timeout_s=1, accepts a receipt refusal or
-timeout, and additionally requires a matching stop for a missing root receipt.
-Those expectations preserve refusal/cleanup proof without a long wall-clock wait.
-The implementation worker cannot edit any tests. R6/A5 was interrupted for this planner correction; its partial source
-artifact and failed native outcome remain unaccepted. Do not treat interrupted
-work as completed verification. Its short-grace early timeout is also ruled out
-by the strengthened 24-second queued-start case. Do not copy or fetch outside this checkout.
+This is a tiny bounded public correction routed through the existing implement
+lane. All acceptance and existing tests are immutable; do not add or edit tests.
+Scope only src/lanectl/fenced_train.py, <=250 added/deleted lines (expected much
+smaller). No new dependencies, coverage suppression, broad refactoring, governance
+edits or policy/cap changes. Preserve all existing helper interfaces and failure
+reporting. Run the exact frozen acceptance. The ordinary full-suite gate applies.
+The prior frozen lifecycle file uses a one-second timeout in missing-receipt cases
+and requires exact-unit stop before cleanup; do not weaken it.
 
-The new frozen file also exercises _stage from actual git worktree add sources,
-both branch train and detached historical checkouts. Those two tests already pass
-on the base; they close the independent review's coverage gap without requiring
-any staging rewrite. All prior frozen acceptance remains required. Acceptance
-files, existing tests, governance and public host contract are immutable. Do not
-add tests: all required cases are already frozen. Scope only fenced_train.py;
-keep the correction bounded to <=250 added/deleted lines, ideally much smaller.
-No new dependencies, coverage suppression, broad refactoring or privileged helper.
-
-The public host contract remains files/host-contract.md. The root-owned systemd
-service source is reviewed and VM-qualified, but workstation installation and
-full real-repository qualification remain pending. Do not claim field proof or
-change governance repository isolation modes. Preserve every _stage, _manifest,
-_mutation and _request interface used by the frozen proofs. Run the exact frozen
-acceptance and report actual results. Existing full-suite repo gate also applies.
+The root-owned host service source is merged, independently reviewed and VM-
+qualified, but authenticated workstation installation and full real-repository
+qualification remain pending. No live-host, deployment or product-clock claim.
+Native workers keep their auth; candidate train code must never receive it.
 """
 
 [scope]
 paths = ["src/lanectl/fenced_train.py"]
 
 [acceptance]
-files = ["tests/stage8/test_fenced_train.py", "tests/stage8/test_acc_fenced_train.py", "tests/stage8/test_acc_fenced_train_recovery.py", "tests/stage8/test_acc_fenced_train_parents.py", "tests/stage8/test_acc_fenced_train_pending.py"]
-exec = ["snip proxy -- uv run --no-sync pytest -q -p no:cacheprovider tests/stage8/test_fenced_train.py tests/stage8/test_acc_fenced_train.py tests/stage8/test_acc_fenced_train_recovery.py tests/stage8/test_acc_fenced_train_parents.py tests/stage8/test_acc_fenced_train_pending.py"]
+files = ["tests/stage8/test_fenced_train.py", "tests/stage8/test_acc_fenced_train.py", "tests/stage8/test_acc_fenced_train_recovery.py", "tests/stage8/test_acc_fenced_train_parents.py", "tests/stage8/test_acc_fenced_train_pending.py", "tests/stage8/test_acc_fenced_train_stop.py"]
+exec = ["snip proxy -- uv run --no-sync pytest -q -p no:cacheprovider tests/stage8/test_fenced_train.py tests/stage8/test_acc_fenced_train.py tests/stage8/test_acc_fenced_train_recovery.py tests/stage8/test_acc_fenced_train_parents.py tests/stage8/test_acc_fenced_train_pending.py tests/stage8/test_acc_fenced_train_stop.py"]
 
 [lint]
-override = "This bounded correction deliberately targets unlanded A4 2cfa660. Earlier acceptance and new linked-worktree staging tests pass there. New queued-start lifecycle assertions and strengthened stop-before-cleanup assertions fail precisely; combined fail-on-base remains mandatory. No check or policy is disabled."
+override = "This bounded correction targets unlanded A6. Prior frozen acceptance already passes there and is retained. Three new failed-stop assertions fail precisely; acknowledged-stop control passes. Combined fail-on-base remains mandatory; no gate or policy is disabled."

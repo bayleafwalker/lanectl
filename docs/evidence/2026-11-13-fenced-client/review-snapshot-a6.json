@@ -1,0 +1,5 @@
+{
+  "review_checkout": "/projects/dev/_wt/lanectl-a6-review",
+  "module_sha256": "72c29206434caf755a165e6f3e87252f95c8cde0005e8fe2515ad92c986a332f",
+  "provenance": "immutable read-only review copy of active worker source; approval requires exact final artifact content match"
+}

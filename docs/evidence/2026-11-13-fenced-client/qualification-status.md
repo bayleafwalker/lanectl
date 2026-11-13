@@ -56,3 +56,22 @@ root receipt is absent. This is a planner test-specification repair; no worker
 is authorized to edit tests. A legitimately queued start may last longer than
 the short receipt grace and must use the overall deadline. Existing lane and
 provider caps remain unchanged.
+
+## Installed host and final cancellation correction
+
+The operator applied committed host source dbf142e. Independent probes now observe
+UID/GID1120 nologin, coordinator0700 spool, root0755 receipt directory, loaded
+lanectl-train template, and the expected system generation (host-installed.json).
+Both system and user managers report zero failed units. Earlier notification noise
+came from four temporary failed qualification probes and their recovery messages;
+the recurring lanectl tick is healthy. Future temporary units use automatic
+collection with results retained in artifacts/events.
+
+R7/A6 source 49f0c4b matches the independent PASS snapshot exactly and all lane
+gates passed (native worker reported27 acceptance/971 suite tests). However, the
+integrator forced the review's failed-stop advisory into its failure case and
+held landing: refused, timed-out and unavailable stops all returned terminal=True
+from a bare inactive reading. The synthetic root control is3failed/1passed.
+A queued start is not proven cancelled without a successful stop acknowledgement.
+R8 freezes those cases and routes the tiny correction through the existing public
+implementation lane. A6 remains requeued, not landed. No gate waiver or cap change.
