@@ -1,0 +1,41 @@
+{
+  "schema": "lanectl-specification/v1",
+  "release_digest": "7eef7c94f29edb2ec10d61428a899e827e7db4064fb9ee5c3669c370d909dcca",
+  "review": {
+    "verdict": "accept",
+    "reason": "The frozen acceptance file is self-contained, uses real loaders/transforms, the real ReportingService over real DuckDBStore/PostgresReportingStore, the real FastAPI router via TestClient, and real OIDC permission-bound auth (MockOidcIssuer + AppSettings.from_env + build_oidc_provider/build_session_manager). Every import and constructor signature referenced resolves on the canonical base (verified: build_oidc_provider/build_session_manager shim, MockOidcIssuer, running_postgres_container, RunMetadataRepository, IngestionConfigRepository, AccountTransactionService, subscription_charge_id, load_subscriptions/load_contract_prices/load_transactions). The source_key()/item_id encodings exactly match the item_id strings built in transformation_overview.py (anomaly_/review_/renewal_/upcoming_ prefixes and underscore/slash separators), and the four source segments, row-model names, and the attention-items segment match report_routes.py/response_models.py. The remaining 'tautology' blocking property is closed: _observe_source_queries replays each source-relation query on the RAW DuckDB connection cursor (not the possibly-mocked method) and _assert_observed_selection asserts the full opaque item_id is bound as a parameter (not inlined, not split), a WHERE with %s/? appears before any LIMIT, the identity columns are selected, and every actually-returned row's source_key equals the requested item_id \u2014 so 'WHERE %s=%s [item_id,item_id]', fetch-all-then-filter, and returning the first/equal-looking row all fail. The record route is absent on base (9cf62c...), so every test fails with 404/route-missing (missing-record behavior), never a collection/import/fixture error; no test passes vacuously on base. No new grants or auth-policy edits are required because the path-based policy derives reports.read.publication.<first_segment> for the /reports/<segment>/records/{item_id} path, which the auth tests assert. The Postgres case skips cleanly when Docker is absent rather than claiming a pass. Minor, non-blocking gaps: api.d.ts is only checked by string containment (not structural type equality), and no assertion positively forbids landing-table reads (a scope constraint rather than an acceptance property). Neither undermines the outcome assertions.",
+    "trivial_pass": "Attacks attempted and why each fails: (1) Constant/hardcoded rows \u2014 HTTP tests compare against expected_records() derived from the real list endpoints and real store facts (CURRENT_DATE-derived d10/d20, deterministic charge ids), so canned rows cannot match; the instrumentation tests additionally require an observed source query, which a hardcoded route never emits (assert source fails). (2) Mocking/replacing the subject \u2014 the tests construct TransformationService(DuckDBStore.memory()), ReportingService, and create_app themselves from real classes; there is no injection seam for a mock, and the instrumentation replays SQL on database.connection.cursor() directly, so even a tampered store.fetchall_dicts returning canned rows would still be exposed by the raw replay. (3) Ignored input / returning another record \u2014 body['item_id'] == item_id and all(source_key(row) == item_id) plus item_id in params (full opaque key) reject cross-record and split-key answers. (4) Tautology WHERE %s=%s [item_id,item_id] or fetch-all-then-limit \u2014 the replay executes the actual SQL against real data, so any query returning the whole relation fails all(source_key(row) == item_id); the 'limit not before where' and 'where with ?/%s' checks block subquery-limit and no-WHERE variants. (5) Underscore/slash splitting \u2014 item_id must appear verbatim in params and must not appear in the SQL text. No trivial path passes.",
+    "checks": [
+      "All imports/symbols resolve on base: build_oidc_provider/build_session_manager (shared.auth shim), MockOidcIssuer, running_postgres_container, RunMetadataRepository, IngestionConfigRepository, AccountTransactionService, subscription_charge_id, load_subscriptions/load_contract_prices/load_transactions.",
+      "source_key()/item_id encodings match transformation_overview.py item_id construction for all four kinds (anomaly_/review_/renewal_/upcoming_ with underscore and slash separators).",
+      "Source segments (transaction-anomalies, contract-review-candidates, contract-renewal-watchlist, upcoming-fixed-costs) and row-model names match report_routes.py and response_models.py; mart columns (reason, renewal_date, charge_id, expected_date, transaction_id) are real.",
+      "Seed expectations (240 anomalies, 4 review, 4 renewal, 2 upcoming) and component/equal-looking identities are consistent with the existing transformation logic, so no fixture inventing.",
+      "Permission strings (reports.read.publication.attention-items and .<segment>) and the 'X permission required.' 403 detail match permission_registry/middleware_authorization; path-based policy covers the new /reports/<segment>/records/{item_id} route with no new grant.",
+      "Instrumentation (_observe_source_queries + _assert_observed_selection) replays the actual SQL on the raw DuckDB cursor and requires full-key parameter binding, WHERE before LIMIT, identity-column selection, and source_key==item_id on real returned rows \u2014 closing tautology, fetch-all-then-filter, and mock/canned-row attacks.",
+      "Record route absent on base: every test fails with 404/route-missing (missing-record behavior), not collection/import/fixture errors; no test passes vacuously.",
+      "Encoded-slash round-trip through the real router is exercised via quote(item_id, safe='') for review/renewal ids containing '/'.",
+      "Published-authority boundaries (no warehouse fallback), stale-NULL 503 vs provable-unknown 404, partial-NULL 503, and unpublished-relation 503 are each asserted through real HTTP responses.",
+      "No source-data leakage in failures asserted via whole-field forbidden tokens (source names, contract ids, charge ids, dates), not a numeric substring blacklist; failure bodies are {detail}-only while legitimate 422/validation echoes client input.",
+      "OpenAPI.json regeneration is enforced (generated path must equal live path with item_id/rows schema); api.d.ts is checked by path containment.",
+      "Disposable Postgres case is a separate @slow/@integration target that skips (pytest.skip) when Docker is unavailable, never claiming a skipped case passed.",
+      "Time is deterministic: today read from the same authoritative store (SELECT CURRENT_DATE), d10/d20 derived, expectations derived from the same store facts."
+    ]
+  },
+  "author_model": "gpt-6.1-terra",
+  "reviewer_model": "opencode-go/deepseek-v4-pro",
+  "intent_digest": "689a2bcc876c6cdddebde0f4397e54b40896407b8ffd7d2cb54739d6b59cfcb3",
+  "recorded_at": "2026-11-13T14:44:58.501323+00:00",
+  "lint_problems": [],
+  "usage": {
+    "author": null,
+    "reviewer": {
+      "input_tokens": 172798,
+      "output_tokens": 6539,
+      "reasoning_tokens": 34000,
+      "cache_read_tokens": 3377152,
+      "cache_write_tokens": 0,
+      "cost_usd": 0.0,
+      "steps": 36
+    }
+  }
+}

@@ -1,0 +1,25 @@
+id = "hla-attention-records-r5"
+repo = "homelab-analytics"
+base_sha = "9cf62cb7271ed0e15e35877ab772709808470bea"
+revision = 1
+draft = true
+title = "Resolve each attention item through its authorized source record API"
+outcome = "Frozen acceptance for four authorized current-record APIs; portable warehouse and DuckDB-backed published modes plus a separately selected slow disposable Postgres case. No tests were run during authoring. Actual disposable Postgres verification remains required before landing; whole-work completion is out of scope."
+task_class = "product-api"
+size = "M"
+data_class = "public"
+eligible_lanes = ["implement"]
+
+[scope]
+paths = ["packages/pipelines/reporting_service.py", "packages/pipelines/reporting_*record*.py", "packages/domains/overview/**", "apps/api/routes/report*.py", "apps/web/frontend/generated/**", "tests/**", "docs/**"]
+
+[acceptance]
+files = ["tests/test_attention_record_api.py"]
+exec = ["uv run --no-sync python -m pytest -q -p no:cacheprovider tests/test_attention_record_api.py"]
+fail_on_base = true
+
+[specification]
+schema = "lanectl-specification/v1"
+author_model = "gpt-6.1-terra"
+reviewer_model = "opencode-go/deepseek-v4-pro"
+evidence = "specification.json"
