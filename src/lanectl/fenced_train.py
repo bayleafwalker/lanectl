@@ -23,6 +23,8 @@ UNIT = "lanectl-train@{}.service"
 SHELL = "/run/current-system/sw/bin/bash"
 TRUSTED_UID = 0
 MAX_TIMEOUT_S, REQUEST_MAX = 21600, 256 * 1024
+# RECEIPT_GRACE_S is kept for the frozen proofs only; a queued start may stay
+# inactive longer, so it no longer truncates the receipt/terminal deadline.
 POLL_S, WAIT_MARGIN_S, RECEIPT_GRACE_S, STOP_WAIT_S = 0.25, 180.0, 20.0, 600.0
 TOOL_TIMEOUT_S, GIT_TIMEOUT_S = 30, 120
 TERMINAL = ("inactive", "failed")
@@ -215,12 +217,14 @@ def _active(sysctl: str, unit: str):
 
 
 def _wait_terminal(sysctl: str, unit: str, receipt: Path, timeout: int) -> bool:
+    """True only once the unit is terminal *and* its root receipt exists."""
     deadline = time.monotonic() + timeout + WAIT_MARGIN_S
     while True:
-        if _active(sysctl, unit) in TERMINAL:
-            grace = time.monotonic() + RECEIPT_GRACE_S
-            while time.monotonic() < grace and not os.path.lexists(receipt):
-                time.sleep(POLL_S)
+        # A queued ``start --no-block`` may still read inactive, so an inactive
+        # poll only completes the wait together with the root receipt; until
+        # then keep observing liveness rather than shortening the deadline.
+        state = _active(sysctl, unit)
+        if state in TERMINAL and os.path.lexists(receipt):
             return True
         if time.monotonic() >= deadline:
             return False
