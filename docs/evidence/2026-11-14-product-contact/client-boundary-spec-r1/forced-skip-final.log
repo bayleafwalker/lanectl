@@ -1,0 +1,5 @@
+ssssssss                                                                 [100%]boundary acceptance incomplete: 
+
+=========================== short test summary info ============================
+SKIPPED [8] tests/test_attention_record_boundary_acceptance.py: qualification forced skip
+8 skipped in 0.02s

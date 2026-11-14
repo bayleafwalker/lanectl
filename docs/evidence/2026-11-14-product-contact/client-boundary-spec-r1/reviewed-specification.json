@@ -1,0 +1,72 @@
+{
+  "schema": "lanectl-specification/v1",
+  "release_digest": "ea8e4998c0db0ade41a3468059bd6f2f0e9e6c7043728ef40b4d0a147cf85995",
+  "review": {
+    "verdict": "accept",
+    "reason": "The frozen acceptance genuinely exercises the declared contract rather than scanning source strings or pinning exact answers. It compiles the actual candidate apps/web/frontend/lib/attention-key.ts with the project tsc and executes the emitted JS against an independent Python base64 oracle (test_10), and it runs tsc --noEmit on a temp copy importing the real @/lib/attention-record and @/lib/attention-key with @ts-expect-error markers that, when removed, must fail compilation with a real TS diagnostic (TS2339/TS2322), not a missing-tool error (test_20). The Lab fixture copies the real frontend (apps/web/frontend), symlinks node_modules, and boots next dev with a test-only route that calls the real getAttentionRecord over the real backendRequest/backend.ts transport, with a stateful ThreadingHTTPServer producer that logs method, raw once-encoded path, and cookie; dynamic mutation of producer state must change observed output, so canned rows cannot pass (test_30). Status handling is verified through the real Next redirect (303/307/308 + Location /login), not a JSON representation, and 403/404/503/Retry-After/500/connection-failure are classified with SECRET/item_id leak checks (test_40). Malformed-success fail-closed cases cover wrong ID, extra envelope/row keys, wrong generated scalar type, non-object rows and malformed JSON (test_50). A meta-test (test_60) proves the exact_hit/equality/redirect/no-fetch assertions actually fail when given wrong data, closing the vacuous-pass hole. test_70 boots the real b2 API under uvicorn with ReportingService in PUBLISHED mode over a DuckDB publication store, establishes a real signed local session, and compares candidate-parsed record rows against independently listed publication facts (list endpoint vs record endpoint) including slash IDs, multirow and NULLed market_reference. I verified the referenced helpers exist at b2 (backend.ts 1517 lines with backendRequest at 335-346, createBackendFetch 249-270 with cache no-store/redirect manual, buildOperationPath 307-320 encodeURIComponent; tests/test_attention_record_api.py DuckPublicationStore/seed/refresh/publish/attention_by_type/expected_records; tests/test_api_auth.py _build_client; ReportingService.get_attention_record + PUBLISHED path; generated TransactionAnomaliesRow/UpcomingFixedCostsRow/ContractReviewCandidatesRow/ContractRenewalWatchlistRow with the exact field sets the fixtures assume). No setup/collection masking, no skips, strict 8-name JUnit validation, bounded owned Docker fallback with ownership-verified cleanup. Minor non-blocking observations: backend.ts-unchanged is a scope/CI gate not directly asserted by the test, and ensure_tools pins v20.x (tighter than '20+'), neither of which permits a wrong implementation to pass.",
+    "trivial_pass": "Strongest concrete attack: ship a getAttentionRecord that returns a fabricated/primed envelope (e.g. echoes the requested route key into a synthetic item_id, or returns a canned rows array) and a codec that silently replaces bytes or uses padded/noncanonical base64url, without reading the backend. This is rejected: test_30 mutates the producer's served records mid-test and asserts the observed rows change to match the new bytes, and its exact_hit oracle requires exactly one GET to the once-encoded literal /reports/<segment>/records/<id> path with the forwarded cookie, so a canned or list-fallback response cannot satisfy it; test_50 explicitly feeds a wrong-id envelope and asserts it fails closed (500 thrown, no ID substitution) rather than silently succeeding empty or substituted; test_70 cross-checks candidate-parsed rows against the independently listed publication rows under real signed auth, so fabricated facts or coercion cannot match; and test_10 requires exact equality with Python's base64.urlsafe_b64encode oracle plus TypeError on empty/non-string/unpaired surrogate, rejecting lossy or noncanonical encoding. The no-fetch control is also non-vacuous: test_00 fault-injects a direct producer hit to prove the hits logger is live before test_30 asserts zero hits for invalid kind/key.",
+    "checks": [
+      "Actual candidate codec is compiled from apps/web/frontend/lib/attention-key.ts with the project tsc and executed under Node, and its encode output is compared byte-for-byte against an independent Python base64.urlsafe_b64encode oracle, not a copied answer.",
+      "Codec decode rejects the full invalid set (padding, noncanonical tail bits via 'YR', impossible length 'a', bad alphabet 'bad+', invalid UTF-8 '_w'/'wK8'/'7aCA', empty, non-string) and encode throws TypeError for empty/non-string/unpaired surrogate; browser build is exercised via Playwright 1.59.1 against the same source and cross-compared to the Node result.",
+      "Test-only Next app copies the real frontend source and imports the real getAttentionRecord from @/lib/attention-record over the real backend.ts backendRequest; the preflight hits /reports/attention-items through backendRequest to prove transport is live.",
+      "Producer is a stateful ThreadingHTTPServer logging method, raw path, cookie and every hit; dynamic mutation of served records must change the observed result (test_30), defeating canned/primed responses.",
+      "exact_hit oracle asserts exactly one GET to the once-encoded literal path (slash -> %2F, percent -> %25, Unicode intact) with cookie forwarded; test_60 falsifiers reject a second request, wrong segment, double-encoded %252F, truncated path, and missing cookie.",
+      "Static tsc --noEmit compiles a probe importing @/lib/attention-record and @/lib/attention-key; literal-kind narrowing, distributive/mapped union default, and switch(kind) narrowing are checked, and @ts-expect-error markers (anomaly has no market_reference; anomaly rows are not review rows) each fail with a real TS error code when removed, not a missing-tool error.",
+      "401 is verified as a real Next redirect (303/307/308 with Location /login) surfacing through isRedirectError, not a JSON representation; 403->denied, 404->not_found, 503->unavailable are classified before reading error bodies.",
+      "Retry-After is asserted only for valid nonnegative integer delta ('12') and valid HTTP-date, with 'not-a-date', '-1' and None forced to null; 500 and connection failure both throw sanitized errors with SECRET and item_id absent from the response.",
+      "Malformed-success fail-closed covers malformed JSON, scalar/null/array envelope, missing/extra envelope keys, mismatched item_id, non-array rows, non-object/array/string rows, unexpected row field, and wrong scalar for amount/expected_amount/score/days_until_renewal; none leak facts or fall back to empty/ID substitution.",
+      "Valid empty rows, null/missing known fields, and decimal strings (e.g. -12.3456, 9.8765) are passed through exactly, preserving order, duplicate multiplicity and precision without coercion.",
+      "test_70 runs the real b2 API under uvicorn with ReportingService(access_mode=PUBLISHED) over DuckPublicationStore, establishes a signed local session via /auth/login, and compares candidate-parsed record rows against independently listed publication facts (list vs record endpoints), including slash IDs, multirow groups and a NULLed market_reference.",
+      "Referenced fixtures/helpers verified present at b2: tests/test_attention_record_api.py (DuckPublicationStore/seed/refresh/publish/attention_by_type/expected_records), tests/test_api_auth.py _build_client, ReportingService.get_attention_record, DuckDBStore.memory, generated four row schemas with the exact field sets used.",
+      "No collection-time Docker/network/credential/tool checks (all such checks live inside tests and hard-fail rather than skip); main() enforces strict 8-named JUnit with skipped=0, failures=0, errors=0 and no skip/failure/error elements.",
+      "Browser run prefers provided WS or native Chromium; the owned Docker fallback is bounded to a pinned sha256 image with a unique owner label, cidfile, and ownership-verified docker rm cleanup, and Lab/stop() verify SIGTERM/SIGKILL process-group cleanup rather than asserting cleanup without checking.",
+      "Invalid kind/key returns invalid with zero producer hits (test_30), and the zero-fetch control is proven non-vacuous by test_00 fault-injecting a direct hit that must make the empty-hits assertion fail."
+    ]
+  },
+  "author_model": "gpt-6.1-terra",
+  "reviewer_model": "opencode-go/deepseek-v4-pro",
+  "intent_digest": "c2619d6cad1a51e8e6058cb8811019295d02f2eab25644b59dfa50dfeef550cd",
+  "recorded_at": "2026-11-14T16:23:03.008901+00:00",
+  "lint_problems": [],
+  "usage": {
+    "author": null,
+    "reviewer": {
+      "input_tokens": 94933,
+      "output_tokens": 6100,
+      "reasoning_tokens": 39074,
+      "cache_read_tokens": 1544192,
+      "cache_write_tokens": 0,
+      "cost_usd": 0.18607252999999996,
+      "steps": 31
+    }
+  },
+  "mandatory_acceptance_commands": [
+    "uv run --no-sync python tests/test_attention_record_boundary_acceptance.py"
+  ],
+  "prior_specification_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "author_provenance": {
+    "requested_model": "gpt-6.1-terra",
+    "kind": "first-party acceptance author",
+    "task": "/root/source_r3_qualification",
+    "exact_runtime_variant_independently_attested": false,
+    "native_author_invocation_claimed": false,
+    "proposal_sha256": "175f079231d9ce57a76e8107e0f6988b33e662c5ade350df95ae9aa7e4b73b05",
+    "main_input_sha256": "ac2a3eebf2e28490c89c436608ef56f7cb6f33e589bdb6c3c3496775b5aa8472"
+  },
+  "frozen_contracts": [
+    {
+      "path": "intent.md",
+      "digest": "fb195a7c65517da1c0b4781759f1f89fb636f759e90b7befca55f788e9cb1f85"
+    },
+    {
+      "path": "baseline.tokens.json",
+      "digest": "ce1a7d8a48cf483519994f5d37872b49fe8472950bc6ef89a4451970c4f9c862"
+    },
+    {
+      "path": "ui-contract.yaml",
+      "digest": "603153cffbf78388d003a30387d4a2db63a3e4289da0e18a96fa934bc6392ee1"
+    }
+  ],
+  "diagnostics_root": "/tmp/lanectl-hla-client-boundary-spec-r1-review",
+  "invocation": "official specification._invoke unchanged"
+}

@@ -1,0 +1,15 @@
+stdout:
+
+stderr:
+Traceback (most recent call last):
+  File "<string>", line 29, in <module>
+    a.browser_codec(Path(d),{}, {})
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^
+  File "/tmp/hla-attention-client-boundary-spec/base/tests/test_attention_record_boundary_acceptance.py", line 326, in browser_codec
+    launch = subprocess.run(['docker', 'run', '-d', '--cidfile', str(cidfile), '--name', name,
+                             '--label', 'hla-boundary.owner=' + owner, '--network', 'host', '--ipc=host', '-v', str(PINNED_MODULES) + ':/opt/node_modules:ro',
+                             IMAGE, 'node', '/opt/node_modules/playwright/cli.js', 'run-server',
+                             '--host', '127.0.0.1', '--port', str(browser_port)], capture_output=True, text=True, timeout=45)
+  File "<string>", line 22, in run
+    raise RuntimeError('injected failure after launch with missing cidfile')
+RuntimeError: injected failure after launch with missing cidfile

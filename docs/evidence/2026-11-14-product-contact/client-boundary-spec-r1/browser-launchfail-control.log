@@ -1,0 +1,2 @@
+{"cid": "382ef319f815cfc952e15361400775ffcb621594e09928c1fb96bd9ad02d240c", "control_birth": "3651805", "control_pgid": 1318558, "control_pid": 1318558, "label": "hla-boundary.owner=ca809f5930b84922a83040c96419e281", "live_inspect": "382ef319f815cfc952e15361400775ffcb621594e09928c1fb96bd9ad02d240c ca809f5930b84922a83040c96419e281", "name": "hla-boundary-accept-ca809f5930b8", "next_birth": "3652177", "next_pid": 1318705}
+Injected launch failure preserved; exact CID and name absent from Docker inventory; recorded Next group absent

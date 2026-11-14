@@ -1,0 +1,56 @@
+{
+  "kind": "hla-attention-client-boundary/v1",
+  "status": "selected-design-not-yet-frozen-or-implemented",
+  "canonical_base": "b2d0fe393ac0971e906cce275e91f45e94422593",
+  "a2": {
+    "unaccepted_head": "57c2b0fdbcfaa5a5ed0d969774d798bf023f18b1",
+    "seed": "785d3ed31dfe39a36f02be0a28bd7751c0a67a52",
+    "exit": 124,
+    "seconds": 2700.1,
+    "formatted_worker_lines_including_triplet": 728,
+    "r1_attempts_exhausted": true
+  },
+  "exports": {
+    "apps/web/frontend/lib/attention-key.ts": [
+      "ATTENTION_RECORD_KINDS",
+      "AttentionRecordKind",
+      "isAttentionRecordKind",
+      "encodeAttentionKey",
+      "decodeAttentionKey"
+    ],
+    "apps/web/frontend/lib/attention-record.ts": [
+      "AttentionPublicRows",
+      "AttentionSafeRow",
+      "AttentionRecordResult",
+      "getAttentionRecord"
+    ]
+  },
+  "record_input": "allowlisted kind plus canonical encoded UTF-8 whole route key; invalid never fetches",
+  "success": "exact envelope and item ID; array of all public typed row objects, preserving order, duplicates, nulls, missing fields and decimal strings",
+  "statuses": {
+    "401": "Next login redirect",
+    "403": "denied",
+    "404": "not_found",
+    "503": "unavailable plus safe Retry-After metadata",
+    "500": "sanitized throw",
+    "invalid_input": "invalid and no fetch",
+    "malformed_success": "sanitized protocol throw"
+  },
+  "style_triplet_lines_worker_first": 84,
+  "acceptance": "Independent first-party author freezes self-contained test using real candidate authenticated client in temporary Next, controlled HTTP status/negative controls and separate real local canonical API positive; no skips, no setup failures and no full UI prerequisite.",
+  "next": "On prerequisite canonical land, new-base independent full-UI spec/acceptance review and fresh native lane with all four kinds and complete final delivery proof.",
+  "constraints": [
+    "Keep backend.ts entirely unchanged",
+    "No old routes or grants",
+    "No tracker registration",
+    "M700 includes contracts and all worker regression/docs/generated lines",
+    "No R1 third attempt",
+    "No private owner investigation"
+  ],
+  "allowed_paths": [
+    "apps/web/frontend/lib/attention-*.ts",
+    "tests/**",
+    "docs/**",
+    "apps/web/frontend/ui-contracts/attention-current-report/{intent.md,baseline.tokens.json,ui-contract.yaml}"
+  ]
+}
