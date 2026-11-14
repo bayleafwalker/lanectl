@@ -1,0 +1,16 @@
+{
+  "schema": "hla-volume-absence/v1",
+  "project": "lane-dev-train-20261114064740",
+  "train_id": "train-20261114064740",
+  "sha": "713402007fd31fd5537f45945af557a7393682f8",
+  "source_path": "/projects/dev/_wt/lanes/train-20261114064740",
+  "volume": "lane-dev-train-20261114064740_homelab_analytics_postgres",
+  "docker_server_id": "a0a80c07-1db2-4654-9913-f1147ea305ca",
+  "command": "docker volume ls --format {{.Name}}",
+  "exit_code": 0,
+  "observed_at": "2026-11-14T07:12:44.024128Z",
+  "target_volume_present_in_successful_inventory": false,
+  "inventory_count": 498,
+  "original_full_inventory_proof_sha256": "e5f09fb8abd9a822a9ba57b23a54ffd7c9ed4951b636a68a85578571ef93cdf0",
+  "note": "Public excerpt excludes unrelated Docker volume names. Full observed inventory retained session-locally at the original proof path; current runtime guards consumed the full original."
+}

@@ -1,0 +1,10 @@
+============================= test session starts ==============================
+platform linux -- Python 3.13.16, pytest-9.0.2, pluggy-1.6.0
+rootdir: /tmp/hla-source-r3-a3-qualification
+configfile: pytest.ini
+plugins: anyio-4.13.0, cov-7.1.0
+collected 11 items / 3 deselected / 8 selected
+
+tests/test_attention_source_records.py ........                          [100%]
+
+======================= 8 passed, 3 deselected in 19.66s =======================

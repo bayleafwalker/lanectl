@@ -1,0 +1,62 @@
+{
+  "schema": "hla.source-prerequisite-qualified-candidate/v1",
+  "candidate": "78bf4f4ca15fe2fbe7086d1018f5533930cb8af4",
+  "canonical_base": "9cf62cb7271ed0e15e35877ab772709808470bea",
+  "seed": "0dfdf13e0fb818fcc9e927578fb18d165dd9128f",
+  "frozen_lines": 619,
+  "frozen_sha256": "b8a2d8b9527c5f2af7b05c1ee0608f3a574a537df78c46dc8ff671633284d078",
+  "native": {
+    "model": "opencode-go/deepseek-v4-pro",
+    "outcome": "done",
+    "exit": 0,
+    "elapsed_s": 1762.4,
+    "all_five_gates_passed": true
+  },
+  "worker_diff": {
+    "files": 3,
+    "added": 180,
+    "deleted": 7,
+    "budget": 700
+  },
+  "independent_qualification": {
+    "fast": 8,
+    "real_postgres": 3,
+    "acceptance_skips": 0,
+    "targeted": 139,
+    "ordered_parity": "250 rows, 4 modes",
+    "reversal_falsifier": "all 4 mismatched as intended; containers absent",
+    "acquisition": "sanitized unavailable for driver; same Busy/program exception; exact valid before/after",
+    "verify_fast_exit": 0,
+    "verify_fast_s": 646.6,
+    "fast_suite_passed": 2724,
+    "fast_suite_deselected": 32,
+    "subtests_passed": 120,
+    "playwright_passed": 55,
+    "browser": "matched Ubuntu Playwright1.59.1, unchanged baselines",
+    "browser_cleanup": "remove0 inspect1 absenttrue"
+  },
+  "manual_review": {
+    "method": "existing repository manual fallback with architecture contract, all seven selected concerns and product-intention pass",
+    "provider_launch": false,
+    "blockers": 0,
+    "advisories": 0,
+    "architecture_passed": 101,
+    "watchlist": "existing facade size; separate PG lookup/probe statements may observe concurrent publication states, no demonstrated static-source contract failure"
+  },
+  "initial_qualification_attempt": "Sandboxed targeted run interrupted after128 tests; not counted. Actual unsandboxed rerun139 passed. No candidate source edits.",
+  "delivery_state": {
+    "train": "train-20261114064740",
+    "tip": "713402007fd31fd5537f45945af557a7393682f8",
+    "check": "passed: 2724 fast, 32 deselected, 120 subtests, 560.21s",
+    "source_landed": false,
+    "whole_work_complete": false,
+    "dev": "normal declared deployment passed at checked tip; real-image/default-schema source smoke passed after isolated harness Path repair and fresh runtime",
+    "local_landed": true,
+    "canonical_pull_request": "https://github.com/bayleafwalker/homelab-analytics/pull/83",
+    "canonical_pr_head": "713402007fd31fd5537f45945af557a7393682f8",
+    "canonical_ci": "pending",
+    "owned_dev_teardown": "Normal landed teardown passed; independent Docker/project containers, network, image tags and PostgreSQL volume absent; train worktree removed."
+  },
+  "remaining": "Local checked landing and canonical source PR CI/merge; then all four HTTP APIs/generated contracts, ranked individual UI and full delivery. Source-only not whole Work.",
+  "durability": "cross-host-replicated after canonical Git publication; original /tmp artifacts session-local"
+}

@@ -1,0 +1,14 @@
+{
+  "original_stderr": "not captured by previous wrapper",
+  "cause_class": "harness defect",
+  "reconstruction": "inside_publish.py passes a str to IngestionConfigRepository, whose constructor accesses database_path.parent; same-image copied-control probe reproduced AttributeError before initialization",
+  "preceding_checks": "helper imported with seven publications, warehouse opened read-only and query succeeded, PostgreSQL audience correct and reporting object count zero",
+  "repair_probe": "Path argument with copies of synthetic control and DuckDB databases initialized TransformationService and read two first-publication rows",
+  "scratch_container_paths": [
+    "/tmp/hla-readonly-diagnosis-hx2g7rb0/control.db",
+    "/tmp/hla-path-repair-check-pwqoln09/control.db",
+    "/tmp/hla-path-repair-check-pwqoln09/warehouse.duckdb"
+  ],
+  "original_marker": "preserved",
+  "publisher_replayed": false
+}

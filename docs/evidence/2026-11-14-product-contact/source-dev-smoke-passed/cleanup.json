@@ -1,0 +1,19 @@
+{
+  "containers": {
+    "query_exit": 0,
+    "remaining": []
+  },
+  "networks": {
+    "query_exit": 0,
+    "remaining": []
+  },
+  "images": {
+    "query_exit": 0,
+    "remaining": []
+  },
+  "postgres_volume": {
+    "inspect_exit": 1,
+    "absence_reason": "Error response from daemon: get lane-dev-train-20261114064740_homelab_analytics_postgres: no such volume"
+  },
+  "train_worktree_exists": false
+}

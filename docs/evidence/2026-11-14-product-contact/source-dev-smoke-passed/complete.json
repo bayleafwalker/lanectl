@@ -1,0 +1,52 @@
+{
+  "result": "pass",
+  "context": {
+    "preflight": "pass",
+    "project": "lane-dev-train-20261114064740",
+    "sha": "713402007fd31fd5537f45945af557a7393682f8",
+    "api_id": "63ff0ccdd0938ee5efb22c9c9f17f628651c60620d56b4fe210c1ad73c5627db",
+    "pg_id": "a3b4d026659e183a0cc110a4ac4ced40027c0e74bb179a9605bb7f5d3ba7e890",
+    "api_image": "sha256:23acbc4a5f935a863e49ca1f9a3d87e78acce72adf5db1093786b57371687315",
+    "network_id": "20464ab23d69c634ce3b68721ff0fbaaf0f83f0c80a502bbf2cc293944eea6cd",
+    "volume": "lane-dev-train-20261114064740_homelab_analytics_postgres",
+    "reporting_objects": [
+      [
+        "mart_contract_price_current",
+        "r"
+      ],
+      [
+        "mart_contract_renewal_watchlist",
+        "r"
+      ],
+      [
+        "mart_contract_review_candidates",
+        "r"
+      ],
+      [
+        "mart_open_attention_items",
+        "r"
+      ],
+      [
+        "mart_subscription_summary",
+        "r"
+      ],
+      [
+        "mart_transaction_anomalies_current",
+        "r"
+      ],
+      [
+        "mart_upcoming_fixed_costs_30d",
+        "r"
+      ]
+    ],
+    "postgres_ip": "172.20.0.2",
+    "volume_proof": {
+      "absence_observed_at": "2026-11-14T07:12:44.024128Z",
+      "volume_created_at": "2026-11-14T09:12:51+02:00",
+      "deploy_recorded_at": "2026-11-14T07:13:06Z"
+    }
+  },
+  "staging": "/tmp/hla-source-harness-ab689fdcc8e04a1e947b6d4b1a0c9e06",
+  "synthetic_root": "/tmp/hla-source-qualification-ab689fdcc8e04a1e947b6d4b1a0c9e06",
+  "assumption": "no concurrent operator writes"
+}

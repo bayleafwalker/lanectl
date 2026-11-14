@@ -1,0 +1,13 @@
+============================= test session starts ==============================
+platform linux -- Python 3.13.16, pytest-9.0.2, pluggy-1.6.0
+rootdir: /tmp/hla-source-r3-a3-qualification
+configfile: pytest.ini
+plugins: anyio-4.13.0, cov-7.1.0
+collected 139 items
+
+tests/test_architecture_contract.py .................................... [ 25%]
+.................................................................        [ 72%]
+tests/test_transformation_overview.py ................                   [ 84%]
+tests/test_reporting_publication_snapshots.py ......................     [100%]
+
+============================= 139 passed in 9.90s ==============================

@@ -244,3 +244,51 @@ Revision3 preserves the original551 lines as an exact prefix plus68 first-party 
 Publication truth was separately repaired and released as0.2.9 atf9267ea32e481f2a1ecf3f57b07ff0e888e1d0cf. Actual runtime bytes match reviewed209268d, all1038 tests passed, and root appended the two peer-reviewed exact invalidations plus a fresh same-R2 nondraft observation. Raw history prefix and every operational projection, native outcome, routing and cap event were unchanged; queue time is unknown. Actual R3 draft discovery emitted zero events. The real R3 guarded publisher then emitted exactly one guarded-publish receipt before its claim; see publication-live-r3-qualification.json. This completes the bounded publication repair, separately from HLA delivery, and does not establish the ladder operational clocks.
 
 All four HTTP APIs/generated contracts, meaningful ranked individual UI, complete train/dev/CI delivery, strict host apply/qualification and hosted runner identity remain open. Served HLA1593/496 retains the complete delivery scope; lanectl2899/497 is the separate completed publication repair. Current host observation still shows olddbf142 with empty RootDirectory. Both encrypted workstation names are aliases; the committed deployment helper --host workstation remains correct. GitOps drift checks report real unapplied desired configuration on workstation, devbox and infra; no remote deployment readiness is inferred.
+
+
+## 2026-11-14: source R3 qualified and submitted for canonical CI
+
+Native Pro attempt a3 genuinely completed done/exit0 at
+`78bf4f4ca15fe2fbe7086d1018f5533930cb8af4`, with all five gates passing.
+The independent619-line acceptance passed8 fast and3 real PostgreSQL cases;
+acquisition controls, ordered-list parity and its reversal falsifier passed.
+The139 targeted checks and unchanged namespace `make verify-fast` also passed:
+2,724 fast tests,120 subtests and55 matched Ubuntu Playwright checks. The
+browser was removed. The existing repository fallback permitted manual review
+across all seven specialist concerns plus the architecture contract and product
+intention; it found no blockers or advisories. This was workspace review, not
+an Anthropic invocation.
+
+Checked train `train-20261114064740` passed at
+`713402007fd31fd5537f45945af557a7393682f8`. Its normal example deployment was
+healthy. A guarded synthetic smoke used the actual built image and default
+reporting schema: all seven publications, all four complete source groups and
+eight authenticated attention IDs matched independent PostgreSQL reads.
+Wrong-image and nonempty-schema falsifiers failed as intended without changing
+rows. An initial harness string-versus-Path bug is preserved separately; the
+repaired harness used a fresh volume and container, without replaying its
+single-attempt publisher. Normal local landing and owned teardown completed,
+and independent inspection confirmed the resources absent.
+
+Canonical [PR83](https://github.com/bayleafwalker/homelab-analytics/pull/83)
+contains that exact checked train. Its CI is still pending; local landing is
+not canonical completion. Detailed raw evidence and the reproducible harness
+are in `../2026-11-14-product-contact/`. Full HLA1593 remains active: all four
+HTTP record endpoints and generated contracts, meaningful ranked individual UI,
+and their complete verification/dev/canonical delivery remain open.
+
+The API-only planning preview over source7134 preserved the original1,173-line
+frozen file and passed29 fast plus3 real PostgreSQL cases. Its missing-route
+control and unfiltered-query falsifier failed for the intended reasons. The
+complete unaccepted API overlay measured589 worker additions, including460
+generated lines and72 regression lines, below M700. One prototype regression
+patches a removed internal helper and fails before HTTP; a separate real Busy
+probe returned canonical503 with Retry-After5 and exact200 before/after. This
+is a worker-test compatibility issue to address in the new native API stage,
+not permission to edit frozen assertions or adopt the prototype as approved.
+
+Host#2889 is separately complete: the operator applied the strict generation,
+actual-host tests and matching Sovite baseline passed, independent review
+approved its scoped policy promotion, and canonical lanectl `ac4c4dd` selects
+systemd for Sovite. That does not establish hosted runner authorization or the
+ladder's product-count or week-long operational exits.

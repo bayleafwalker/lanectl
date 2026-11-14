@@ -1,0 +1,17 @@
+# HLA SOURCE train qualification
+
+This session-local harness targets only a fresh, root-identified lane-dev train. It assumes no concurrent operator writes for the duration of the controlled smoke. It checks the latest passing `train.built` and unexpired `train.deployed` receipt, exact train SHA/worktree, Docker IDs and Compose labels, all tracked `apps/` and `packages/` Python hashes in the image, the example Postgres audience and default reporting schema, project/network membership, no worker/scheduler and current database clients. DNS from the API container must resolve `postgres` only to the inspected Postgres container, whose alias must be unique. Every unexpected local or loopback database client is rejected: `pg_isready` is transient and has no distinguishable trusted session identity, so the guard does not whitelist it. The caller supplies measured resource identities and a predeploy volume absence proof bound to Docker server, train, source, project, and volume. The guard compares the observation time with the inspected volume creation time and the receipt timestamp. Lanectl timestamps have second precision; the upper bound is the next second. Docker nanoseconds are conservatively parsed to microseconds. The image hash comparison does not claim whole-OS supply-chain attestation.
+
+Copy `context.example.json` to a fresh private `/tmp` file and fill every field from root's measured actual runtime, with full container and network IDs. The event log must be the actual lanectl JSONL, not an invented receipt. `network_members` and `project_containers` are the exact full IDs from inspection. The `no_concurrent_operator_writes` assertion must reflect verified facts. Before any Compose deployment, generate the proof using `record_absence.py` with `--project`, `--train-id`, `--sha`, `--source-path`, `--volume`, and `--output`; see `--help`. The probe refuses an existing volume and requires a successful complete Docker volume listing. Do not execute before the train passes and deploy succeeds.
+
+```
+python /tmp/hla-source-qualification/orchestrate.py preflight /tmp/actual-context.json
+python /tmp/hla-source-qualification/orchestrate.py falsify-image /tmp/actual-context.json
+python /tmp/hla-source-qualification/orchestrate.py run /tmp/actual-context.json
+```
+
+The first two modes are runtime read-only; falsification proves the wrong image is rejected with the schema snapshot unchanged. `run` repeats both, creates a per-API-container host marker, seeds public synthetic data in a fresh container `/tmp` directory, rechecks preflight, then publishes exactly once. It snapshots PostgreSQL before HTTP, proves a repeated preflight refuses the now-nonempty schema without data changes, verifies all seven relations and complete source groups against independent parameter-bound SQL with a fail-closed warehouse, and compares authenticated HTTP item IDs. It leaves JSON evidence in the printed `/tmp/hla-source-attempt-*` directory. The source-record HTTP endpoints do not yet exist and are not claimed.
+
+On any failure after the attempt marker is created, preserve evidence and the runtime; publication can be partial and must never be retried blindly. The harness does not clean up. Cleanup belongs to the controlling session and must target only the exact receipt-owned train resources. `/tmp` evidence is session-local.
+
+Dry tests: `cd /tmp/hla-source-qualification && python -m unittest -v test_guard test_orchestrate`. Real runtime falsifiers occur only once exact root context is supplied.

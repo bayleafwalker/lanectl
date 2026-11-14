@@ -1,0 +1,26 @@
+{
+  "source_module": "/tmp/hla-source-r3-a3-qualification/packages/domains/overview/pipelines/attention_records.py",
+  "session_module": "/tmp/hla-source-r3-a3-qualification/packages/pipelines/warehouse_session.py",
+  "acquisition_path": "ReportingService -> run_on_warehouse -> WarehouseSessionManager.call/lease -> DuckDBStore.open -> injected connect_with_lock_retry",
+  "driver": {
+    "exception": "packages.domains.overview.pipelines.attention_records.AttentionRecordUnavailableError",
+    "same_exception_object": false,
+    "is_unavailable": true,
+    "connect_factory_calls": 1
+  },
+  "busy": {
+    "exception": "packages.storage.duckdb_store.WarehouseBusyError",
+    "same_exception_object": true,
+    "is_unavailable": false,
+    "connect_factory_calls": 1
+  },
+  "program": {
+    "exception": "builtins.ValueError",
+    "same_exception_object": true,
+    "is_unavailable": false,
+    "connect_factory_calls": 1
+  },
+  "before_after_exact": true,
+  "not_actual_outage": true,
+  "source_commit": "78bf4f4ca15fe2fbe7086d1018f5533930cb8af4"
+}

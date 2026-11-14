@@ -1,0 +1,129 @@
+{
+  "relations": {
+    "mart_subscription_summary": 2,
+    "mart_upcoming_fixed_costs_30d": 2,
+    "mart_contract_price_current": 4,
+    "mart_contract_review_candidates": 4,
+    "mart_contract_renewal_watchlist": 4,
+    "mart_transaction_anomalies_current": 1,
+    "mart_open_attention_items": 8
+  },
+  "source_groups": [
+    {
+      "type": "contract_renewal",
+      "id": "renewal_synthetic-other_2026-11-24",
+      "rows": 1
+    },
+    {
+      "type": "contract_renewal",
+      "id": "renewal_synthetic/utility_2026-11-24",
+      "rows": 2
+    },
+    {
+      "type": "anomaly",
+      "id": "anomaly_53a3891827f29dd2",
+      "rows": 1
+    },
+    {
+      "type": "contract_renewal",
+      "id": "renewal_synthetic/utility_2026-12-04",
+      "rows": 1
+    },
+    {
+      "type": "contract_review",
+      "id": "review_synthetic-other_multiple_contracts_same_type",
+      "rows": 1
+    },
+    {
+      "type": "contract_review",
+      "id": "review_synthetic/utility_multiple_contracts_same_type",
+      "rows": 3
+    },
+    {
+      "type": "upcoming_cost",
+      "id": "upcoming_f87283a0777b2be6_2026-11-14",
+      "rows": 1
+    },
+    {
+      "type": "upcoming_cost",
+      "id": "upcoming_997291bb96ee624b_2026-11-14",
+      "rows": 1
+    }
+  ],
+  "snapshot_items": [
+    {
+      "item_id": "renewal_synthetic-other_2026-11-24",
+      "item_type": "contract_renewal",
+      "title": "Upcoming renewal: Demo Power",
+      "detail": "Renews in 10 days on 2026-11-24",
+      "severity": 3,
+      "source_domain": "utilities"
+    },
+    {
+      "item_id": "renewal_synthetic/utility_2026-11-24",
+      "item_type": "contract_renewal",
+      "title": "Upcoming renewal: Demo Power",
+      "detail": "Renews in 10 days on 2026-11-24",
+      "severity": 3,
+      "source_domain": "utilities"
+    },
+    {
+      "item_id": "anomaly_53a3891827f29dd2",
+      "item_type": "anomaly",
+      "title": "Unusual transaction: New Vendor",
+      "detail": "first_occurrence \u2014 First transaction with this counterparty",
+      "severity": 2,
+      "source_domain": "finance"
+    },
+    {
+      "item_id": "renewal_synthetic/utility_2026-12-04",
+      "item_type": "contract_renewal",
+      "title": "Upcoming renewal: Demo Power",
+      "detail": "Renews in 20 days on 2026-12-04",
+      "severity": 2,
+      "source_domain": "utilities"
+    },
+    {
+      "item_id": "review_synthetic-other_multiple_contracts_same_type",
+      "item_type": "contract_review",
+      "title": "Review contract: Demo Power",
+      "detail": "multiple_contracts_same_type",
+      "severity": 1,
+      "source_domain": "utilities"
+    },
+    {
+      "item_id": "review_synthetic/utility_multiple_contracts_same_type",
+      "item_type": "contract_review",
+      "title": "Review contract: Demo Power",
+      "detail": "multiple_contracts_same_type",
+      "severity": 1,
+      "source_domain": "utilities"
+    },
+    {
+      "item_id": "upcoming_f87283a0777b2be6_2026-11-14",
+      "item_type": "upcoming_cost",
+      "title": "Upcoming payment: Synthetic Same",
+      "detail": "weekly charge of 10.0000 EUR on 2026-11-14",
+      "severity": 1,
+      "source_domain": "finance"
+    },
+    {
+      "item_id": "upcoming_997291bb96ee624b_2026-11-14",
+      "item_type": "upcoming_cost",
+      "title": "Upcoming payment: Synthetic Same",
+      "detail": "weekly charge of 10.0000 EUR on 2026-11-14",
+      "severity": 1,
+      "source_domain": "finance"
+    }
+  ],
+  "http_ids": [
+    "anomaly_53a3891827f29dd2",
+    "renewal_synthetic-other_2026-11-24",
+    "renewal_synthetic/utility_2026-11-24",
+    "renewal_synthetic/utility_2026-12-04",
+    "review_synthetic-other_multiple_contracts_same_type",
+    "review_synthetic/utility_multiple_contracts_same_type",
+    "upcoming_997291bb96ee624b_2026-11-14",
+    "upcoming_f87283a0777b2be6_2026-11-14"
+  ]
+}
