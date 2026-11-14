@@ -1,0 +1,674 @@
+diff --git a/apps/web/frontend/lib/attention-key.ts b/apps/web/frontend/lib/attention-key.ts
+new file mode 100644
+index 0000000..b1ddf61
+--- /dev/null
++++ b/apps/web/frontend/lib/attention-key.ts
+@@ -0,0 +1,122 @@
++const BASE64URL_ALPHABET =
++  "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
++
++const BASE64URL_VALUES = new Map<string, number>(
++  Array.from(BASE64URL_ALPHABET, (character, index) => [character, index])
++);
++
++export const ATTENTION_RECORD_KINDS = [
++  "anomaly",
++  "upcoming_cost",
++  "contract_review",
++  "contract_renewal"
++] as const;
++
++export type AttentionRecordKind = (typeof ATTENTION_RECORD_KINDS)[number];
++
++export function isAttentionRecordKind(
++  value: unknown
++): value is AttentionRecordKind {
++  return (ATTENTION_RECORD_KINDS as readonly unknown[]).includes(value);
++}
++
++function hasUnpairedSurrogate(value: string): boolean {
++  for (let index = 0; index < value.length; index += 1) {
++    const code = value.charCodeAt(index);
++    if (code >= 0xd800 && code <= 0xdbff) {
++      const next = value.charCodeAt(index + 1);
++      if (!(next >= 0xdc00 && next <= 0xdfff)) {
++        return true;
++      }
++      index += 1;
++    } else if (code >= 0xdc00 && code <= 0xdfff) {
++      return true;
++    }
++  }
++  return false;
++}
++
++function encodeBase64Url(bytes: Uint8Array): string {
++  let output = "";
++  for (let index = 0; index < bytes.length; index += 3) {
++    const first = bytes[index] ?? 0;
++    const second = bytes[index + 1] ?? 0;
++    const third = bytes[index + 2] ?? 0;
++    const chunk = (first << 16) | (second << 8) | third;
++    output += BASE64URL_ALPHABET[(chunk >> 18) & 63];
++    output += BASE64URL_ALPHABET[(chunk >> 12) & 63];
++    if (index + 1 < bytes.length) {
++      output += BASE64URL_ALPHABET[(chunk >> 6) & 63];
++    }
++    if (index + 2 < bytes.length) {
++      output += BASE64URL_ALPHABET[chunk & 63];
++    }
++  }
++  return output;
++}
++
++function decodeBase64Url(value: string): Uint8Array | null {
++  if (!/^[A-Za-z0-9_-]+$/.test(value)) {
++    return null;
++  }
++  const remainder = value.length % 4;
++  if (remainder === 1) {
++    return null;
++  }
++  const tail = BASE64URL_VALUES.get(value[value.length - 1] as string);
++  if (tail === undefined) {
++    return null;
++  }
++  if (remainder === 2 && (tail & 0x0f) !== 0) {
++    return null;
++  }
++  if (remainder === 3 && (tail & 0x03) !== 0) {
++    return null;
++  }
++  const output = new Uint8Array(Math.floor((value.length * 3) / 4));
++  let buffer = 0;
++  let bits = 0;
++  let offset = 0;
++  for (const character of value) {
++    const sextet = BASE64URL_VALUES.get(character);
++    if (sextet === undefined) {
++      return null;
++    }
++    buffer = (buffer << 6) | sextet;
++    bits += 6;
++    if (bits >= 8) {
++      bits -= 8;
++      output[offset] = (buffer >> bits) & 0xff;
++      offset += 1;
++    }
++  }
++  return output.subarray(0, offset);
++}
++
++export function encodeAttentionKey(itemId: string): string {
++  if (typeof itemId !== "string" || itemId.length === 0) {
++    throw new TypeError("Attention key must be a nonempty string.");
++  }
++  if (hasUnpairedSurrogate(itemId)) {
++    throw new TypeError("Attention key must be well-formed Unicode.");
++  }
++  return encodeBase64Url(new TextEncoder().encode(itemId));
++}
++
++export function decodeAttentionKey(key: unknown): string | null {
++  if (typeof key !== "string" || key.length === 0) {
++    return null;
++  }
++  const bytes = decodeBase64Url(key);
++  if (bytes === null || bytes.length === 0) {
++    return null;
++  }
++  try {
++    return new TextDecoder("utf-8", {
++      fatal: true,
++      ignoreBOM: true
++    }).decode(bytes);
++  } catch {
++    return null;
++  }
++}
+diff --git a/apps/web/frontend/lib/attention-record.ts b/apps/web/frontend/lib/attention-record.ts
+new file mode 100644
+index 0000000..7a9efdc
+--- /dev/null
++++ b/apps/web/frontend/lib/attention-record.ts
+@@ -0,0 +1,204 @@
++import type { components } from "../generated/api";
++
++import {
++  decodeAttentionKey,
++  isAttentionRecordKind,
++  type AttentionRecordKind
++} from "./attention-key";
++import { backendRequest } from "./backend";
++import { redirect } from "next/navigation";
++
++export type AttentionPublicRows = {
++  anomaly: components["schemas"]["TransactionAnomaliesRow"];
++  upcoming_cost: components["schemas"]["UpcomingFixedCostsRow"];
++  contract_review: components["schemas"]["ContractReviewCandidatesRow"];
++  contract_renewal: components["schemas"]["ContractRenewalWatchlistRow"];
++};
++
++export type AttentionSafeRow<T> = { [P in keyof T]?: T[P] | null };
++
++export type AttentionRecordResult<
++  K extends AttentionRecordKind = AttentionRecordKind
++> =
++  | {
++      [P in K]: {
++        status: "ok";
++        kind: P;
++        item_id: string;
++        rows: AttentionSafeRow<AttentionPublicRows[P]>[];
++      };
++    }[K]
++  | { status: "invalid" | "denied" | "not_found" }
++  | { status: "unavailable"; retryAfter: string | null };
++
++type ScalarType = "string" | "number";
++
++const ROW_FIELDS: {
++  [K in AttentionRecordKind]: {
++    readonly [P in keyof AttentionPublicRows[K]]: ScalarType;
++  };
++} = {
++  anomaly: {
++    amount: "string", anomaly_reason: "string", anomaly_type: "string",
++    booking_date: "string", counterparty_name: "string", direction: "string",
++    transaction_id: "string"
++  },
++  upcoming_cost: {
++    charge_id: "string", confidence: "string", contract_name: "string",
++    currency: "string", expected_amount: "string", expected_date: "string",
++    frequency: "string", provider: "string"
++  },
++  contract_review: {
++    contract_id: "string", currency: "string", current_price: "string",
++    market_reference: "string", provider: "string", reason: "string",
++    score: "number", utility_type: "string"
++  },
++  contract_renewal: {
++    contract_duration_days: "number", contract_id: "string",
++    contract_name: "string", currency: "string", current_price: "string",
++    days_until_renewal: "number", provider: "string", renewal_date: "string",
++    utility_type: "string"
++  }
++};
++
++const PROTOCOL_ERROR = "Attention record response failed validation.";
++
++function protocolError(): Error {
++  return new Error(PROTOCOL_ERROR);
++}
++
++function isRecord(value: unknown): value is Record<string, unknown> {
++  return typeof value === "object" && value !== null && !Array.isArray(value);
++}
++
++function isSafeRow(kind: AttentionRecordKind, value: unknown): boolean {
++  if (!isRecord(value)) {
++    return false;
++  }
++  const fields = ROW_FIELDS[kind] as Record<string, ScalarType>;
++  for (const [name, fieldValue] of Object.entries(value)) {
++    const expected = fields[name];
++    if (expected === undefined) {
++      return false;
++    }
++    if (fieldValue === null) {
++      continue;
++    }
++    if (typeof fieldValue !== expected) {
++      return false;
++    }
++  }
++  return true;
++}
++
++function parseRows<K extends AttentionRecordKind>(
++  kind: K,
++  itemId: string,
++  payload: unknown
++): AttentionSafeRow<AttentionPublicRows[K]>[] {
++  if (!isRecord(payload)) {
++    throw protocolError();
++  }
++  const keys = Object.keys(payload);
++  if (
++    keys.length !== 2 ||
++    !keys.includes("item_id") ||
++    !keys.includes("rows")
++  ) {
++    throw protocolError();
++  }
++  if (payload.item_id !== itemId) {
++    throw protocolError();
++  }
++  const rows = payload.rows;
++  if (!Array.isArray(rows) || !rows.every((row) => isSafeRow(kind, row))) {
++    throw protocolError();
++  }
++  return rows as AttentionSafeRow<AttentionPublicRows[K]>[];
++}
++
++const WEEKDAY = "(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun)";
++const LONG_WEEKDAY = "(?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)";
++const MONTH = "(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)";
++const IMF_FIXDATE = new RegExp(`^${WEEKDAY}, \\d{2} ${MONTH} \\d{4} \\d{2}:\\d{2}:\\d{2} GMT$`);
++const RFC_850_DATE = new RegExp(`^${LONG_WEEKDAY}, \\d{2}-${MONTH}-\\d{2} \\d{2}:\\d{2}:\\d{2} GMT$`);
++const ASCTIME_DATE = new RegExp(`^${WEEKDAY} ${MONTH} [ \\d]\\d \\d{2}:\\d{2}:\\d{2} \\d{4}$`);
++
++function parseRetryAfter(value: string | null): string | null {
++  if (value === null) {
++    return null;
++  }
++  const candidate = value.trim();
++  if (/^\d+$/.test(candidate)) {
++    return candidate;
++  }
++  const httpDate = IMF_FIXDATE.test(candidate) || RFC_850_DATE.test(candidate) || ASCTIME_DATE.test(candidate);
++  return httpDate && !Number.isNaN(Date.parse(candidate)) ? candidate : null;
++}
++
++function requestRecord(kind: AttentionRecordKind, itemId: string): Promise<Response> {
++  const params = { params: { path: { item_id: itemId } } };
++  switch (kind) {
++    case "anomaly":
++      return backendRequest("get", "/reports/transaction-anomalies/records/{item_id}", params);
++    case "upcoming_cost":
++      return backendRequest("get", "/reports/upcoming-fixed-costs/records/{item_id}", params);
++    case "contract_review":
++      return backendRequest("get", "/reports/contract-review-candidates/records/{item_id}", params);
++    case "contract_renewal":
++      return backendRequest("get", "/reports/contract-renewal-watchlist/records/{item_id}", params);
++  }
++}
++
++export function getAttentionRecord<K extends AttentionRecordKind>(
++  kind: K,
++  routeKey: string
++): Promise<AttentionRecordResult<K>>;
++export function getAttentionRecord(
++  kind: unknown,
++  routeKey: unknown
++): Promise<AttentionRecordResult>;
++export async function getAttentionRecord(
++  kind: unknown,
++  routeKey: unknown
++): Promise<AttentionRecordResult> {
++  if (!isAttentionRecordKind(kind)) {
++    return { status: "invalid" };
++  }
++  const itemId = decodeAttentionKey(routeKey);
++  if (itemId === null) {
++    return { status: "invalid" };
++  }
++
++  let response: Response;
++  try {
++    response = await requestRecord(kind, itemId);
++  } catch {
++    throw protocolError();
++  }
++
++  if (response.status === 401) {
++    redirect("/login");
++  }
++  if (response.status === 403) return { status: "denied" };
++  if (response.status === 404) return { status: "not_found" };
++  if (response.status === 503) {
++    return {
++      status: "unavailable",
++      retryAfter: parseRetryAfter(response.headers.get("retry-after"))
++    };
++  }
++  if (!response.ok) {
++    throw protocolError();
++  }
++
++  let payload: unknown;
++  try {
++    payload = await response.json();
++  } catch {
++    throw protocolError();
++  }
++
++  const rows = parseRows(kind, itemId, payload);
++  return { status: "ok", kind, item_id: itemId, rows } as AttentionRecordResult;
++}
+diff --git a/apps/web/frontend/ui-contracts/attention-current-report/baseline.tokens.json b/apps/web/frontend/ui-contracts/attention-current-report/baseline.tokens.json
+new file mode 100644
+index 0000000..2c2903e
+--- /dev/null
++++ b/apps/web/frontend/ui-contracts/attention-current-report/baseline.tokens.json
+@@ -0,0 +1,43 @@
++{
++  "metadata": {
++    "name": "attention-current-report-existing-default-shell",
++    "status": "frozen-existing-canonical-style-reuse; no-new-human-approval-claimed",
++    "source": "apps/web/frontend/ui-contracts/default-shell/baseline.tokens.json",
++    "runtime": "apps/web/frontend/app/generated/ui-tokens.css and app/globals.css"
++  },
++  "reuse": {
++    "colors": [
++      "--bg",
++      "--paper",
++      "--ink",
++      "--muted",
++      "--line",
++      "--line-strong",
++      "--accent",
++      "--accent-warm",
++      "--accent-cool",
++      "--ok",
++      "--warn"
++    ],
++    "typography": [
++      "--font-sans",
++      "--font-serif",
++      "--font-display",
++      "--type-scale-1",
++      "--type-scale-2",
++      "--type-scale-3",
++      "--type-scale-4",
++      "--type-scale-5",
++      "--type-scale-6"
++    ],
++    "shape": [
++      "--radius-panel",
++      "--radius-pill",
++      "--shadow"
++    ],
++    "existingAttentionMetadataFont": "--retro-font-mono is used by actual attentionIndex and attentionDomain; this does not select retro shell colors",
++    "layout": "existing panel section, sectionHeader, attentionList and attentionRow: 32px 1fr auto, 14px gap and vertical padding, line border; adapt narrow widths using existing responsive conventions",
++    "motion": "existing 120ms ease interactive transitions and prefers-reduced-motion rule",
++    "values": "The referenced tracked default-shell baseline is the value authority; no duplicate token definitions or alternate retro palette."
++  }
++}
+diff --git a/apps/web/frontend/ui-contracts/attention-current-report/intent.md b/apps/web/frontend/ui-contracts/attention-current-report/intent.md
+new file mode 100644
+index 0000000..80ee402
+--- /dev/null
++++ b/apps/web/frontend/ui-contracts/attention-current-report/intent.md
+@@ -0,0 +1,9 @@
++# Operating Picture: current attention records
++
++Status: frozen existing-style contract, derived from the operator's accepted HLA #1593 intent; not a claim of new human review or approval. Tracked and frozen under existing root-owned work; native implementation copies these contracts to the application repository first. Canonical prerequisite: `b2d0fe393ac0971e906cce275e91f45e94422593`, after all four PR85 CI jobs passed.
++
++A household operator needs to find the most urgent current finance and utility matters, open one distinct record, and understand the facts the authorized source publication actually provides. The queue is compact (eight records), calm and information-dense, with a clear priority label and a direct, keyboard-operable destination. Detail uses the existing default Operating Picture shell and visual language: warm paper, restrained dividers, readable labels, and source facts grouped into rows. Preserve the existing typography, spacing and motion; do not introduce an alternate visual direction, font, dependency, icons, or a shell redesign.
++
++Label queue and detail “Current report”; the cashflow month refers to cashflow alone. A current report is not a claim of today's observation, freshness, or history. Do not imply a recommendation, savings, aggregated component price, invented currency, or deletion. Missing values say “Unknown”. Status messages distinguish access denied, absent from the current report, and temporarily unavailable. Existing login redirect is preserved. Each source row remains visible, even when identities coincide. The queue may say no items only when a successful feed is empty; unavailable is never all clear.
++
++A malformed or missing feed rows array is an error, not a successful empty report. Valid JSON unknown-severity scenarios and pure-transform NaN controls remain distinct.
+diff --git a/apps/web/frontend/ui-contracts/attention-current-report/ui-contract.yaml b/apps/web/frontend/ui-contracts/attention-current-report/ui-contract.yaml
+new file mode 100644
+index 0000000..c9a8611
+--- /dev/null
++++ b/apps/web/frontend/ui-contracts/attention-current-report/ui-contract.yaml
+@@ -0,0 +1,32 @@
++version: 1
++status: frozen-existing-style-reuse
++intent: intent.md
++baseline: baseline.tokens.json
++surface: Operating Picture current report and individual record
++primitives:
++  AttentionQueue:
++    inputs: current attention rows with whole item_id, item_type, severity, title, detail, source_domain
++    behavior: stable severity 3 urgent, 2 soon, 1 watch, all other values unknown neutral; rank before limiting to eight
++    semantics: heading and ordered list; each supported row has a descriptive, keyboard-focusable link to its own detail
++    styling: existing panel section, attentionRow, Pill and inlineLink; no new palette
++  AttentionRecord:
++    inputs: kind and typed item_id plus all public source rows
++    behavior: render every returned row independently, preserving per-row prices and null as Unknown
++    semantics: heading, labeled facts and a return link; no color-only state
++    styling: AppShell, existing panels, typography and status primitives
++  RecordState:
++    states: [loading, denied, absent-from-current-report, unavailable, unexpected-error]
++    behavior: 401 redirects to login; 403, 404, 503 have distinct safe copy; 500 reaches generic error handling; no fallback source read
++    semantics: accessible heading and readable explanation without source facts
++scenarios:
++  - mixed unsorted more-than-eight valid JSON rows, stable ties, all valid priorities and unknown severities, correct top eight; NaN only at pure-transform boundary
++  - same-kind distinct records and slash/underscore whole keys, click and direct load through Next and real API
++  - all four kinds, every public component row and nullable facts, no invented labels or aggregation
++  - successful valid empty feed; unavailable and malformed/missing/non-array rows are not empty
++  - authenticated denied, unknown same and cross kind, source unavailable, busy 503 Retry-After, unauthenticated, unexpected 500
++  - long and unusual text, overflow, narrow mobile, keyboard navigation, reduced motion, screen-reader names
++validation:
++  - independent frozen pytest-compatible behavior suite plus actual Next and real backend positive tests
++  - controlled server-side transport for ranking and error branches, recorded separately from real-backend evidence
++  - Storybook states, browser accessibility and visual regression, existing 55 checks with matched Ubuntu Playwright 1.59.1
++  - targeted tests, typecheck and make verify-fast; exercise negative controls
+diff --git a/docs/README.md b/docs/README.md
+index a9e1d47..d010fe9 100644
+--- a/docs/README.md
++++ b/docs/README.md
+@@ -36,6 +36,7 @@ Use these tags when adding or updating docs so kernel-vs-app ownership stays exp
+ - `decisions/household-platform-adr-and-refactor-blueprint.md`
+ - `decisions/household-operating-platform-direction.md`
+ - `decisions/web-surface-shell-decision.md`
++- `notes/attention-record-client-boundary.md` — four-kind authenticated attention record client boundary, key codec, status mapping, and non-goals.
+ - `runbooks/project-working-practices.md`
+ - `runbooks/testing-and-verification.md`
+ - `runbooks/sprint-and-knowledge-operations.md`
+diff --git a/docs/notes/attention-record-client-boundary.md b/docs/notes/attention-record-client-boundary.md
+new file mode 100644
+index 0000000..41fa234
+--- /dev/null
++++ b/docs/notes/attention-record-client-boundary.md
+@@ -0,0 +1,68 @@
++# Attention Record Client Boundary
++
++Status: prerequisite boundary only. The four-kind current-report UI and HLA #1593
++remain open. This document records the client contract introduced on canonical
++`b2d0fe393ac0971e906cce275e91f45e94422593`; it does not claim a new human style
++approval or a completed product surface.
++
++## Scope
++
++- `apps/web/frontend/lib/attention-key.ts` owns the dependency-free whole-item key codec.
++- `apps/web/frontend/lib/attention-record.ts` reads one authorized source record for
++  `anomaly`, `upcoming_cost`, `contract_review`, or `contract_renewal`.
++- `apps/web/frontend/ui-contracts/attention-current-report/` reuses the frozen
++  existing default-shell style triplet. Those bytes are copied unchanged and are
++  frozen style reuse, not a claim of new human approval.
++- `backend.ts`, generated contracts, API routes, auth, pages, and reporting services
++  are unchanged. The reader calls the existing `backendRequest` transport with the
++  four generated literal record paths.
++
++## Key codec
++
++`encodeAttentionKey` emits the complete UTF-8 bytes of a nonempty well-formed Unicode
++string as canonical unpadded base64url. Empty input, non-strings, and unpaired
++surrogates throw `TypeError`; bytes are never silently replaced. `decodeAttentionKey`
++returns `null` for non-strings, empty input, padding, characters outside the base64url
++alphabet, impossible lengths, noncanonical tail bits, invalid UTF-8, or a decoded empty
++string. It never splits a key, guesses a prefix, folds case, or parses an identity.
++
++## Reader contract
++
++The reader validates kind and decodes the route key before any request, so invalid
++values return `invalid` with zero fetches. A successful response must be an object
++envelope with exactly `item_id` and `rows`, the exact decoded `item_id`, and an array
++of non-null row objects limited to the generated public row fields. Present non-null
++values must match the generated scalar type. Any malformed JSON, unexpected key,
++wrong identity, or wrong scalar type throws a sanitized protocol error; the reader
++never returns `[]`, substitutes a requested ID, or exposes response content in an
++exception. `rows: []` is passed through as a valid empty record under the generated
++contract and does not prove source existence outside API authority.
++
++Row order, duplicate multiplicity, null fields, amount/price strings, and all declared
++public fields are preserved exactly. Missing and null fields remain absent/null for a
++future `Unknown` presentation; no currency, price, total, or recommendation is invented.
++
++## Status handling
++
++| Status | Result |
++|---|---|
++| 200 valid envelope | `ok` with the decoded `item_id` and unchanged rows |
++| 401 | `redirect('/login')`, outside any transport catch |
++| 403 | `denied` |
++| 404 | `not_found` |
++| 503 | `unavailable`, with `retryAfter` only when the header is valid delta-seconds or an HTTP-date |
++| other non-OK | sanitized error |
++| network/JSON/protocol failure | sanitized error |
++
++There is no fallback to a list, first page, alternate source, warehouse, generic detail,
++or a second auth mechanism. Busy and source-unavailable 503 responses are both
++`unavailable`; the safe `Retry-After` header is transport metadata, not copy rendered
++verbatim.
++
++## Non-goals
++
++This prerequisite adds no user-visible queue, detail view, ranking, feed handling, or
++per-kind UI. Cashflow month is not a record observation. The follow-on UI must be
++measured independently under M700 and still needs real Next and authenticated API
++evidence, controlled failure fixtures, accessibility/visual checks, deployment health,
++and product smoke.
+diff --git a/tests/test_attention_record_client_boundary.py b/tests/test_attention_record_client_boundary.py
+new file mode 100644
+index 0000000..63fbac3
+--- /dev/null
++++ b/tests/test_attention_record_client_boundary.py
+@@ -0,0 +1,142 @@
++"""Frozen contracts and codec regressions for the attention record boundary."""
++
++from __future__ import annotations
++
++import base64
++import hashlib
++import json
++import shutil
++import subprocess
++from pathlib import Path
++
++ROOT = Path(__file__).resolve().parents[1]
++FRONTEND = ROOT / "apps" / "web" / "frontend"
++CONTRACTS = FRONTEND / "ui-contracts" / "attention-current-report"
++
++FROZEN = {
++    "intent.md": (9, "fb195a7c65517da1c0b4781759f1f89fb636f759e90b7befca55f788e9cb1f85"),
++    "baseline.tokens.json": (
++        43,
++        "ce1a7d8a48cf483519994f5d37872b49fe8472950bc6ef89a4451970c4f9c862",
++    ),
++    "ui-contract.yaml": (32, "603153cffbf78388d003a30387d4a2db63a3e4289da0e18a96fa934bc6392ee1"),
++}
++
++
++def test_frozen_attention_style_triplet_is_copied_unchanged() -> None:
++    for name, (lines, digest) in FROZEN.items():
++        path = CONTRACTS / name
++        assert path.is_file(), f"missing frozen contract {name}"
++        content = path.read_bytes()
++        assert content.count(b"\n") == lines
++        assert hashlib.sha256(content).hexdigest() == digest
++
++
++def test_attention_key_codec_is_strict_and_dependency_free(tmp_path: Path) -> None:
++    source = FRONTEND / "lib" / "attention-key.ts"
++    assert source.is_file()
++    text = source.read_text()
++    assert not any(token in text for token in ("Buffer", "require(", 'from "', "from '"))
++
++    node = shutil.which("node")
++    assert node is not None, "Node 20 is required for the codec regression"
++    tsc = FRONTEND / "node_modules" / ".bin" / "tsc"
++    if not tsc.is_file():
++        tsc = Path(shutil.which("tsc") or "")
++    assert tsc.is_file(), "frontend node_modules must be installed (npm ci)"
++
++    compiled = tmp_path / "out"
++    (tmp_path / "node_modules").symlink_to(FRONTEND / "node_modules", target_is_directory=True)
++    build = subprocess.run(
++        [
++            str(tsc),
++            str(source),
++            "--target",
++            "ES2022",
++            "--module",
++            "commonjs",
++            "--moduleResolution",
++            "node",
++            "--lib",
++            "ES2022,DOM",
++            "--types",
++            "node",
++            "--skipLibCheck",
++            "--outDir",
++            str(compiled),
++        ],
++        cwd=tmp_path,
++        capture_output=True,
++        text=True,
++        timeout=90,
++    )
++    assert build.returncode == 0, build.stdout + build.stderr
++    module = compiled / "attention-key.js"
++    assert module.is_file()
++
++    values = [
++        "anomaly_a/b_%_雪",
++        "review_grid/north_ä",
++        "renewal_🙂/x",
++        "\ufeffbom-leading",
++        "nul\u0000inside",
++        "a" * 511,
++    ]
++    invalid = ["", "YQ==", "YR", "a", "bad+", "_w", "wK8", "7aCA", None, 4, []]
++    runner = (
++        "const m=require(process.argv[1]); const v=JSON.parse(process.argv[2]);"
++        "const out={encoded:v.values.map(x=>m.encodeAttentionKey(x)),"
++        "decoded:v.values.map(x=>m.decodeAttentionKey(m.encodeAttentionKey(x))),"
++        "invalid:v.invalid.map(x=>m.decodeAttentionKey(x)),"
++        "kinds:v.kinds.map(x=>m.isAttentionRecordKind(x)),reject:[]};"
++        "for(const x of v.reject){try{m.encodeAttentionKey(x);out.reject.push(false)}"
++        "catch(e){out.reject.push(e instanceof TypeError)}}"
++        "console.log(JSON.stringify(out));"
++    )
++    payload = {
++        "values": values,
++        "invalid": invalid,
++        "kinds": [
++            "anomaly",
++            "upcoming_cost",
++            "contract_review",
++            "contract_renewal",
++            "other",
++            None,
++            1,
++        ],
++        "reject": ["", 42, None, {}, [], "\ud800", "\udc00", "\ud800x", "x\udc00"],
++    }
++    run = subprocess.run(
++        [node, "-e", runner, str(module), json.dumps(payload)],
++        cwd=tmp_path,
++        capture_output=True,
++        text=True,
++        timeout=30,
++    )
++    assert run.returncode == 0, run.stderr
++    result = json.loads(run.stdout)
++    expected = [
++        base64.urlsafe_b64encode(value.encode("utf-8")).decode().rstrip("=") for value in values
++    ]
++    assert result["decoded"] == values
++    assert result["encoded"] == expected
++    assert result["encoded"][3].startswith("77u_")
++    assert result["invalid"] == [None] * len(invalid)
++    assert result["kinds"] == [True] * 4 + [False] * 3
++    assert result["reject"] == [True] * len(payload["reject"])
++
++
++def test_attention_record_module_keeps_transport_local() -> None:
++    source = (FRONTEND / "lib" / "attention-record.ts").read_text()
++    for required in (
++        'from "./backend"',
++        'from "./attention-key"',
++        'from "next/navigation"',
++        "backendRequest",
++        'redirect("/login")',
++    ):
++        assert required in source
++    for forbidden in ("backendGet", "reports/attention-items", "resp.json()"):
++        assert forbidden not in source
++    assert source.count("records/{item_id}") == 4

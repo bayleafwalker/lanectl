@@ -1,0 +1,36 @@
+{
+  "head": "99253049d2b45643c0fca2ed55b34c1899596540",
+  "seed": "67e6355231d3b72159c20a9ae828ec320be88c15",
+  "native_outcome": "escalated",
+  "native_exit": 0,
+  "candidate": false,
+  "worker_lines": 621,
+  "changed_paths": [
+    "apps/web/frontend/lib/attention-key.ts",
+    "apps/web/frontend/lib/attention-record.ts",
+    "apps/web/frontend/ui-contracts/attention-current-report/baseline.tokens.json",
+    "apps/web/frontend/ui-contracts/attention-current-report/intent.md",
+    "apps/web/frontend/ui-contracts/attention-current-report/ui-contract.yaml",
+    "docs/README.md",
+    "docs/notes/attention-record-client-boundary.md",
+    "tests/test_attention_record_client_boundary.py"
+  ],
+  "backend_unchanged": true,
+  "contracts": {
+    "intent.md": {
+      "sha256": "fb195a7c65517da1c0b4781759f1f89fb636f759e90b7befca55f788e9cb1f85",
+      "lines": 9
+    },
+    "baseline.tokens.json": {
+      "sha256": "ce1a7d8a48cf483519994f5d37872b49fe8472950bc6ef89a4451970c4f9c862",
+      "lines": 43
+    },
+    "ui-contract.yaml": {
+      "sha256": "603153cffbf78388d003a30387d4a2db63a3e4289da0e18a96fa934bc6392ee1",
+      "lines": 32
+    }
+  },
+  "style_copy_order": "Native final response claims copied first; no independent temporal/first-commit claim. Exact contract requires first copy/count, not a separate commit.",
+  "patch_sha256": "a3efedef01e30015011697358910640751e74a709ba4a43017e5c089bbb8cb8c",
+  "disposition": "Parked actualR1; no sourceadoption or relabel. Only independently reproduced observer repair prepared for fresh native review."
+}

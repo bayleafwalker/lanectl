@@ -1,0 +1,11 @@
+# Case-insensitive redirect observation repair
+
+Actual Flash attempt hla-attention-client-boundary-a1 ended exit0 but escalated, not candidate, at source 99253049d2b45643c0fca2ed55b34c1899596540. Root measured 621 worker lines including the exact 84 style lines; backend.ts is unchanged. The source and actual outcome are retained separately. No gates or native outcome were waived, and the source was not adopted.
+
+First-party independent reproduction of unchanged acceptance ac2a reported exactly two KeyError Location failures. Real Next emitted 307 with lowercase location:/login; the test converted urllib headers to a case-sensitive dictionary. The proposed repair retains HTTPMessage on normal and HTTPError paths, changing exactly two lines. The original redirect status and /login assertions remain unchanged. Actual HTTP controls accept lowercase and title case and reject missing/wrong destination and wrong status.
+
+Exact repaired test SHA-256 c57154ceb6f60f1a01898ace9fa1ab9bfd9e222a6c06498648f6a0bdf09ea038; proposal 7c3c15a97c90aef41f1cc3e9a9f8638c23652af96201203c35bd1ffe7a1577f8. Outcome bytes are unchanged. The literal CLI on isolated preserved source returned eight passes and no skips; every tracked source blob matched 9925304 except the acceptance file. Canonical b2 still returns six missing-module failures and two fixture/oracle passes, no skips. Official scratch base lint returned no problems.
+
+Independent manual source review by /root/hla_source_manual_review found no blocker in the narrow two-line repair and inspected supplied falsifiers; it did not rerun tests or issue a native verdict. A fresh actual native GoPro review of finalized scratch revision2 is running. The canonical R1 packet remains unchanged and parked until a genuine accepted review, digest validation and guarded publication. Implementation remains bounded by M700/max2/2700; no arbitrary retry reset, failed-source adoption or full-UI completion is claimed.
+
+These are preparation and observer proof, not a passing native candidate or downstream full train/dev/CI qualification. Raw logs and patch whitespace remain intact. Exact boundary contract requires first copy/counting of the frozen artifacts; it does not require a separate first commit.

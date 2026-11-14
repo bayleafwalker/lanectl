@@ -1,0 +1,16 @@
+{
+  "artifacts": [
+    {
+      "path": "native-status.json",
+      "sha256": "574ff4ab146f5cc73a20967e3a71d83f701a24d40526325dbf8c589f3e71fbff"
+    },
+    {
+      "path": "source-check.json",
+      "sha256": "7976f07e7df87a6c65e72f40026178c6bed06d18f9847f77e2ed814e614da325"
+    },
+    {
+      "path": "worker.patch",
+      "sha256": "a3efedef01e30015011697358910640751e74a709ba4a43017e5c089bbb8cb8c"
+    }
+  ]
+}

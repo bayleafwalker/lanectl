@@ -1,0 +1,119 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+________________ test_40_status_redirect_and_sanitized_failures ________________
+
+tmp_path = PosixPath('/tmp/pytest-of-bayleaf/pytest-15154/test_40_status_redirect_and_sa0')
+
+    def test_40_status_redirect_and_sanitized_failures(tmp_path):
+        require_modules()
+        with Lab(tmp_path) as lab:
+            item_id = 'review_opaque/雪_%_safe'
+            for status, retry, expected in [(403, None, 'denied'), (404, None, 'not_found'), (503, None, 'unavailable'),
+                                            (503, '12', 'unavailable'), (503, 'Wed, 21 Oct 2015 07:28:00 GMT', 'unavailable'),
+                                            (503, 'not-a-date', 'unavailable'), (503, '-1', 'unavailable')]:
+                lab.state.update(status=status, body={'detail': SECRET}, retry=retry)
+                lab.state['hits'].clear()
+                code, _, payload = outcome(lab, 'contract_review', item_id)
+                assert code == 200 and SECRET.encode() not in payload
+                result = json.loads(payload)['result']
+                assert result['status'] == expected
+                if status == 503:
+                    expected_retry = retry if retry in ('12', 'Wed, 21 Oct 2015 07:28:00 GMT') else None
+                    assert result['retryAfter'] == expected_retry
+                lab.exact_hit('contract_review', item_id)
+            lab.state.update(status=401, body={'detail': SECRET}, retry=None)
+            lab.state['hits'].clear()
+            code, headers, payload = outcome(lab, 'contract_review', item_id)
+>           assert code in (303, 307, 308) and urllib.parse.urlsplit(headers['Location']).path == '/login', (code, headers)
+                                                                     ^^^^^^^^^^^^^^^^^^^
+E           KeyError: 'Location'
+
+tests/test_attention_record_boundary_acceptance.py:499: KeyError
+_____________ test_70_real_local_published_api_with_signed_session _____________
+
+tmp_path = PosixPath('/tmp/pytest-of-bayleaf/pytest-15154/test_70_real_local_published_a0')
+
+    def test_70_real_local_published_api_with_signed_session(tmp_path):
+        require_modules()
+        import uvicorn
+    
+        import tests.test_attention_record_api as source_fixture
+        from packages.pipelines.reporting_service import ReportingAccessMode, ReportingService
+        from packages.pipelines.transformation_service import TransformationService
+        from packages.storage.auth_store import UserRole
+        from packages.storage.duckdb_store import DuckDBStore
+        from tests.test_api_auth import _build_client
+    
+        assert Path(source_fixture.__file__).resolve().is_relative_to(ROOT), source_fixture.__file__
+        store = DuckDBStore.memory()
+        ts = TransformationService(store)
+        source_fixture.seed(ts)
+        source_fixture.refresh(ts)
+        publication = source_fixture.DuckPublicationStore()
+        source_fixture.publish(ts, publication)
+        # Synthetic in-memory publication mutation exercises a nullable public field.
+        publication.store.execute('UPDATE mart_contract_review_candidates SET market_reference = NULL')
+        reporting = ReportingService(ts, publication_store=publication, access_mode=ReportingAccessMode.PUBLISHED)
+        api_root = tmp_path / 'api'
+        api_root.mkdir()
+        client = _build_client(str(api_root), users=(('boundary-reader', 'synthetic-password', UserRole.ADMIN),), reporting_service=reporting)
+        login = client.post('/auth/login', json={'username': 'boundary-reader', 'password': 'synthetic-password'})
+        assert login.status_code == 200
+        session = client.cookies.get('homelab_analytics_session')
+        assert session, 'synthetic signed local session not established'
+        cookie = 'homelab_analytics_session=' + session
+        by_type = source_fixture.attention_by_type(client)
+        expected = source_fixture.expected_records(client)
+        assert any(row.get('market_reference') is None for (kind, _), rows in expected.items() if kind == 'contract_review' for row in rows)
+        assert set(by_type) == set(SEGMENTS) and all(by_type.values())
+        assert any('/' in value for values in by_type.values() for value in values)
+        selected = [(kind, max(ids, key=lambda value: (len(expected[(kind, value)]), '/' in value))) for kind, ids in by_type.items()]
+        assert sum(len(expected[pair]) > 1 for pair in selected) >= 2
+        review = dict(selected)['contract_review']
+        assert len(by_type['contract_review']) > 1
+        selected.append(('contract_review', next(value for value in by_type['contract_review'] if value != review)))
+        if not any('/' in value for _, value in selected):
+            selected.append(next((kind, value) for kind, values in by_type.items() for value in values if '/' in value))
+        assert any('/' in value for _, value in selected)
+        api_port = port()
+        server = uvicorn.Server(uvicorn.Config(client.app, host='127.0.0.1', port=api_port, log_level='error', lifespan='off'))
+        thread = threading.Thread(target=server.run, daemon=True)
+        thread.start()
+        try:
+            for _ in range(100):
+                if server.started:
+                    break
+                assert thread.is_alive(), 'real API failed to start'
+                time.sleep(.1)
+            assert server.started
+            with Lab(tmp_path / 'next') as lab:
+                lab.state['proxy'] = f'http://127.0.0.1:{api_port}'
+                lab.state['cookie_expected'] = cookie
+                for kind, item_id in selected:
+                    lab.state['hits'].clear()
+                    status, _, body = lab.call(kind, key(item_id), cookie)
+                    assert status == 200, body
+                    rows = expected[(kind, item_id)]
+                    assert json.loads(body)['result'] == {'status': 'ok', 'kind': kind, 'item_id': item_id, 'rows': rows}
+                    lab.exact_hit(kind, item_id)
+                lab.state['hits'].clear()
+                status, headers, _ = lab.call('contract_review', key(review), 'invalid_session=synthetic')
+>               assert status in (303, 307, 308) and urllib.parse.urlsplit(headers['Location']).path == '/login'
+                                                                           ^^^^^^^^^^^^^^^^^^^
+E               KeyError: 'Location'
+
+tests/test_attention_record_boundary_acceptance.py:659: KeyError
+=============================== warnings summary ===============================
+tests/test_attention_record_boundary_acceptance.py::test_70_real_local_published_api_with_signed_session
+  /tmp/hla-client-boundary-header-repair/source/.venv/lib/python3.13/site-packages/websockets/legacy/__init__.py:6: DeprecationWarning: websockets.legacy is deprecated; see https://websockets.readthedocs.io/en/stable/howto/upgrade.html for upgrade instructions
+    warnings.warn(  # deprecated in 14.0 - 2024-11-09
+
+tests/test_attention_record_boundary_acceptance.py::test_70_real_local_published_api_with_signed_session
+  /tmp/hla-client-boundary-header-repair/source/.venv/lib/python3.13/site-packages/uvicorn/protocols/websockets/websockets_impl.py:17: DeprecationWarning: websockets.server.WebSocketServerProtocol is deprecated
+    from websockets.server import WebSocketServerProtocol
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_attention_record_boundary_acceptance.py::test_40_status_redirect_and_sanitized_failures
+FAILED tests/test_attention_record_boundary_acceptance.py::test_70_real_local_published_api_with_signed_session
+2 failed, 2 warnings in 12.21s

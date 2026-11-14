@@ -1,0 +1,124 @@
+.FFFFF.F                                                                 [100%]
+=================================== FAILURES ===================================
+____________________ test_10_strict_codec_node_and_browser _____________________
+
+tmp_path = PosixPath('/tmp/pytest-of-bayleaf/pytest-15157/test_10_strict_codec_node_and_0')
+
+    def test_10_strict_codec_node_and_browser(tmp_path):
+>       require_modules()
+
+tests/test_attention_record_boundary_acceptance.py:268: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def require_modules():
+        for name in ('attention-key.ts', 'attention-record.ts'):
+>           assert (WEB / 'lib' / name).is_file(), f'MISSING_REQUIRED_BOUNDARY_MODULE: lib/{name}'
+E           AssertionError: MISSING_REQUIRED_BOUNDARY_MODULE: lib/attention-key.ts
+E           assert False
+E            +  where False = is_file()
+E            +    where is_file = ((PosixPath('/tmp/hla-client-boundary-header-repair/base/apps/web/frontend') / 'lib') / 'attention-key.ts').is_file
+
+tests/test_attention_record_boundary_acceptance.py:95: AssertionError
+____________ test_20_typescript_discriminated_result_and_falsifiers ____________
+
+tmp_path = PosixPath('/tmp/pytest-of-bayleaf/pytest-15157/test_20_typescript_discriminat0')
+
+    def test_20_typescript_discriminated_result_and_falsifiers(tmp_path):
+>       require_modules()
+
+tests/test_attention_record_boundary_acceptance.py:395: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def require_modules():
+        for name in ('attention-key.ts', 'attention-record.ts'):
+>           assert (WEB / 'lib' / name).is_file(), f'MISSING_REQUIRED_BOUNDARY_MODULE: lib/{name}'
+E           AssertionError: MISSING_REQUIRED_BOUNDARY_MODULE: lib/attention-key.ts
+E           assert False
+E            +  where False = is_file()
+E            +    where is_file = ((PosixPath('/tmp/hla-client-boundary-header-repair/base/apps/web/frontend') / 'lib') / 'attention-key.ts').is_file
+
+tests/test_attention_record_boundary_acceptance.py:95: AssertionError
+_______________ test_30_full_authorized_transport_and_mutations ________________
+
+tmp_path = PosixPath('/tmp/pytest-of-bayleaf/pytest-15157/test_30_full_authorized_transp0')
+
+    def test_30_full_authorized_transport_and_mutations(tmp_path):
+>       require_modules()
+
+tests/test_attention_record_boundary_acceptance.py:441: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def require_modules():
+        for name in ('attention-key.ts', 'attention-record.ts'):
+>           assert (WEB / 'lib' / name).is_file(), f'MISSING_REQUIRED_BOUNDARY_MODULE: lib/{name}'
+E           AssertionError: MISSING_REQUIRED_BOUNDARY_MODULE: lib/attention-key.ts
+E           assert False
+E            +  where False = is_file()
+E            +    where is_file = ((PosixPath('/tmp/hla-client-boundary-header-repair/base/apps/web/frontend') / 'lib') / 'attention-key.ts').is_file
+
+tests/test_attention_record_boundary_acceptance.py:95: AssertionError
+________________ test_40_status_redirect_and_sanitized_failures ________________
+
+tmp_path = PosixPath('/tmp/pytest-of-bayleaf/pytest-15157/test_40_status_redirect_and_sa0')
+
+    def test_40_status_redirect_and_sanitized_failures(tmp_path):
+>       require_modules()
+
+tests/test_attention_record_boundary_acceptance.py:480: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def require_modules():
+        for name in ('attention-key.ts', 'attention-record.ts'):
+>           assert (WEB / 'lib' / name).is_file(), f'MISSING_REQUIRED_BOUNDARY_MODULE: lib/{name}'
+E           AssertionError: MISSING_REQUIRED_BOUNDARY_MODULE: lib/attention-key.ts
+E           assert False
+E            +  where False = is_file()
+E            +    where is_file = ((PosixPath('/tmp/hla-client-boundary-header-repair/base/apps/web/frontend') / 'lib') / 'attention-key.ts').is_file
+
+tests/test_attention_record_boundary_acceptance.py:95: AssertionError
+____________________ test_50_malformed_success_fails_closed ____________________
+
+tmp_path = PosixPath('/tmp/pytest-of-bayleaf/pytest-15157/test_50_malformed_success_fail0')
+
+    def test_50_malformed_success_fails_closed(tmp_path):
+>       require_modules()
+
+tests/test_attention_record_boundary_acceptance.py:517: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def require_modules():
+        for name in ('attention-key.ts', 'attention-record.ts'):
+>           assert (WEB / 'lib' / name).is_file(), f'MISSING_REQUIRED_BOUNDARY_MODULE: lib/{name}'
+E           AssertionError: MISSING_REQUIRED_BOUNDARY_MODULE: lib/attention-key.ts
+E           assert False
+E            +  where False = is_file()
+E            +    where is_file = ((PosixPath('/tmp/hla-client-boundary-header-repair/base/apps/web/frontend') / 'lib') / 'attention-key.ts').is_file
+
+tests/test_attention_record_boundary_acceptance.py:95: AssertionError
+_____________ test_70_real_local_published_api_with_signed_session _____________
+
+tmp_path = PosixPath('/tmp/pytest-of-bayleaf/pytest-15157/test_70_real_local_published_a0')
+
+    def test_70_real_local_published_api_with_signed_session(tmp_path):
+>       require_modules()
+
+tests/test_attention_record_boundary_acceptance.py:595: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def require_modules():
+        for name in ('attention-key.ts', 'attention-record.ts'):
+>           assert (WEB / 'lib' / name).is_file(), f'MISSING_REQUIRED_BOUNDARY_MODULE: lib/{name}'
+E           AssertionError: MISSING_REQUIRED_BOUNDARY_MODULE: lib/attention-key.ts
+E           assert False
+E            +  where False = is_file()
+E            +    where is_file = ((PosixPath('/tmp/hla-client-boundary-header-repair/base/apps/web/frontend') / 'lib') / 'attention-key.ts').is_file
+
+tests/test_attention_record_boundary_acceptance.py:95: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_attention_record_boundary_acceptance.py::test_10_strict_codec_node_and_browser
+FAILED tests/test_attention_record_boundary_acceptance.py::test_20_typescript_discriminated_result_and_falsifiers
+FAILED tests/test_attention_record_boundary_acceptance.py::test_30_full_authorized_transport_and_mutations
+FAILED tests/test_attention_record_boundary_acceptance.py::test_40_status_redirect_and_sanitized_failures
+FAILED tests/test_attention_record_boundary_acceptance.py::test_50_malformed_success_fails_closed
+FAILED tests/test_attention_record_boundary_acceptance.py::test_70_real_local_published_api_with_signed_session
+6 failed, 2 passed in 6.16s

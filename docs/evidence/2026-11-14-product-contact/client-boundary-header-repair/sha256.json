@@ -1,0 +1,52 @@
+{
+  "artifacts": [
+    {
+      "path": "README.md",
+      "sha256": "39faaff4def2be6721798819af933485c446a068d3471b130c961fd257470ed1"
+    },
+    {
+      "path": "base-cli.log",
+      "sha256": "cf67010bbcdb02cd2821175f480b0fcb5101dda9905e512cae3f831b4777101a"
+    },
+    {
+      "path": "base-lint.log",
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570"
+    },
+    {
+      "path": "candidate-cli.log",
+      "sha256": "6084a86e099a2fd2a845d9d6d58cb6a7f592e1f143f39e966892d525abd86622"
+    },
+    {
+      "path": "draft-r2-release.toml",
+      "sha256": "acb5952d7a42ebad6a81231894334922a194ec304af3a9b40bc395eb51824bfe"
+    },
+    {
+      "path": "files/tests/test_attention_record_boundary_acceptance.py",
+      "sha256": "c57154ceb6f60f1a01898ace9fa1ab9bfd9e222a6c06498648f6a0bdf09ea038"
+    },
+    {
+      "path": "header-controls.log",
+      "sha256": "0743a94f9277f20d056d182e7caba226b5458e87537d3b3f3f816b76082a4290"
+    },
+    {
+      "path": "header-controls.py",
+      "sha256": "f01009da300c850c2c8c0776d3c35ac58caa7259898669d45e5042875406c8dd"
+    },
+    {
+      "path": "header-observation.log",
+      "sha256": "14d44840d81fda25e26e34ee3bda332031b7f4407d012c3c75b4c0512c3b10f6"
+    },
+    {
+      "path": "observe_headers.py",
+      "sha256": "6104e7c3071aaf81329b4d1a4304a33610b874da6d08e2d17a23a2ad4fe9f9c1"
+    },
+    {
+      "path": "original-reproduction.log",
+      "sha256": "9010f1be93b33c9555a64fc970f1140c3f9d0b60a4e87a1faac5c3af15828f53"
+    },
+    {
+      "path": "proposal.json",
+      "sha256": "7c3c15a97c90aef41f1cc3e9a9f8638c23652af96201203c35bd1ffe7a1577f8"
+    }
+  ]
+}
