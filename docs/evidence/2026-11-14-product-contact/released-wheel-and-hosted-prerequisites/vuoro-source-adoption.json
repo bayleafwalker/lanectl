@@ -1,0 +1,94 @@
+{
+  "pr": "https://github.com/bayleafwalker/vuoro/pull/325",
+  "checked_head": "e7b5f31c592a2620e90c0348decf670a8c0ceb45",
+  "implementation_sha": "74f132a981816264c6ff9f0efbc10c81a9be625b",
+  "canonical_main": "fa7a5371ff2f06b21aaf46d806e2d19e6b105c11",
+  "head_is_canonical_ancestor": true,
+  "canonical_tree_equals_checked_head": true,
+  "checks": [
+    {
+      "bucket": "pass",
+      "link": "https://github.com/bayleafwalker/vuoro/actions/runs/43638963602/job/132581956800",
+      "name": "workspace-store",
+      "state": "SUCCESS"
+    },
+    {
+      "bucket": "pass",
+      "link": "https://github.com/bayleafwalker/vuoro/actions/runs/43638963602/job/132581956711",
+      "name": "service-image",
+      "state": "SUCCESS"
+    },
+    {
+      "bucket": "pass",
+      "link": "https://github.com/bayleafwalker/vuoro/actions/runs/43638963602/job/132581956772",
+      "name": "native-settlement-demo",
+      "state": "SUCCESS"
+    },
+    {
+      "bucket": "pass",
+      "link": "https://github.com/bayleafwalker/vuoro/actions/runs/43638963602/job/132581956824",
+      "name": "ec00-large-cas",
+      "state": "SUCCESS"
+    },
+    {
+      "bucket": "pass",
+      "link": "https://github.com/bayleafwalker/vuoro/actions/runs/43638963602/job/132581956766",
+      "name": "ec00-transport-failures",
+      "state": "SUCCESS"
+    },
+    {
+      "bucket": "pass",
+      "link": "https://github.com/bayleafwalker/vuoro/actions/runs/43638963602/job/132581956852",
+      "name": "contracts-production-toolchain / qualify",
+      "state": "SUCCESS"
+    },
+    {
+      "bucket": "pass",
+      "link": "https://github.com/bayleafwalker/vuoro/actions/runs/43638963602/job/132581956856",
+      "name": "ec00-offline-packages",
+      "state": "SUCCESS"
+    },
+    {
+      "bucket": "pass",
+      "link": "https://github.com/bayleafwalker/vuoro/actions/runs/43638963602/job/132581956471",
+      "name": "ec00-browser-connect",
+      "state": "SUCCESS"
+    },
+    {
+      "bucket": "pass",
+      "link": "https://github.com/bayleafwalker/vuoro/actions/runs/43638963602/job/132581956754",
+      "name": "test",
+      "state": "SUCCESS"
+    },
+    {
+      "bucket": "pass",
+      "link": "https://github.com/bayleafwalker/vuoro/actions/runs/43638963602/job/132581956697",
+      "name": "settlement-scenario (16)",
+      "state": "SUCCESS"
+    },
+    {
+      "bucket": "pass",
+      "link": "https://github.com/bayleafwalker/vuoro/actions/runs/43638963602/job/132581956712",
+      "name": "settlement-scenario (17)",
+      "state": "SUCCESS"
+    },
+    {
+      "bucket": "pass",
+      "link": "https://github.com/bayleafwalker/vuoro/actions/runs/43638963602/job/132581956720",
+      "name": "mcp-strict-client",
+      "state": "SUCCESS"
+    },
+    {
+      "bucket": "pass",
+      "link": "https://github.com/bayleafwalker/vuoro/actions/runs/43638963628/job/132581956148",
+      "name": "currentness-owner",
+      "state": "SUCCESS"
+    }
+  ],
+  "local_image": "sha256:a29aa4f2baf467575be11833cba003a873d2edcfada4e17c63895e633ff40c91",
+  "source_suite": "3869passed153skipped",
+  "runtime_groups": 11,
+  "deployment": false,
+  "registry_publication": false,
+  "JSONL_authority_unchanged": true
+}

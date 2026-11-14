@@ -250,3 +250,19 @@ files match that release, and the installed readback returned observed with
 zero ready items. A synthetic invalid runner was refused with HTTP 401; see
 [installed evidence](../evidence/2026-11-14-product-contact/owner-catalog-compatibility/rollout.json). No claim, grant, profile, deployment
 or event-authority change was made.
+
+
+### 14November source composition and independent product packet
+
+VuoroPR325 landed the optional lanectl0.2.12/Python3.13composition after13CIchecks,
+native independent review,3869source tests and11bounded exact-image probes.
+[Adoption proof](../evidence/2026-11-14-product-contact/released-wheel-and-hosted-prerequisites/vuoro-source-adoption.json)
+records canonical ancestry and identical checked tree. Vuoro2903 is accepted;
+production hosting, persistence and JSONL authority remain unchanged.
+
+Independent HLA2904 addresses completed-core onboarding Expand; automatic
+collapse already exists on canonicalb2. The original1597unitcriterion remains.
+Its [frozen preparation packet](../evidence/2026-11-14-product-contact/onboarding-expand-preparation/README.md)
+passed independent gate review and actual base proof11controls/5semantic failures,
+no skips/errors. Native adversarial review and all candidate/product delivery
+proof remain pending; this adds no completed product item or boundary retry.

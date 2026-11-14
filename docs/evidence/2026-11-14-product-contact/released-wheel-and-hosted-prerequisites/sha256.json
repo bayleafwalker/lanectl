@@ -1,5 +1,5 @@
 {
-  "README.md": "475b67d3bae362edaee3bd12df3f19ae4f7a65b6110919e29092fdc88ab97487",
+  "README.md": "95cfdde5bbcfc8d54ef940ec6a5f62a5f08ceb4598de363cf64629bc019bc4b1",
   "SHA256SUMS": "fd421b7e6c03a7321f54b5ce392ca785590d21c16d0935bfd0947268827217b9",
   "build1.log": "243270adda9bbe156a59663513b6695f97ca5e760897e42afe225afd0edefef9",
   "build2.log": "76d05b75bee04cf663fddecacc04f4e9dd37f237952148a772070e4973b62fb4",
@@ -7,5 +7,6 @@
   "hosted-catalog.json": "781ed8fb5a6b9e1b432e84b2857e4eb93ef14f2b55639209b82e53e21a6879a5",
   "lanectl-0.2.12-artifact.json": "79033c00dda8edb1defcd9b2fe5314f17687f0dab55602525b4adb9c9fc78f48",
   "published-release.json": "bd624e951785838e2ae4db7ac544a40a42bb492ed1ccd1ff3b66428a2c6052d6",
-  "release-notes.md": "5f8bd89708027dd69691190f72bd489309996896a4b29225370ccd3defd9d415"
+  "release-notes.md": "5f8bd89708027dd69691190f72bd489309996896a4b29225370ccd3defd9d415",
+  "vuoro-source-adoption.json": "5961ece94469aa1da3a93df99077a748aa6a664814af09aa9f816cd4f1ea6a33"
 }
