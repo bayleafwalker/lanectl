@@ -1,0 +1,84 @@
+.........FFF.F.F                                                         [100%]
+=================================== FAILURES ===================================
+_________________________ test_onboarding[expand_core] _________________________
+
+case = 'expand_core'
+observations = {'auto_all': {'ok': True}, 'auto_core': {'ok': True}, 'dismiss': {'ok': True}, 'dismiss_after_override': {'error': "lo....getByRole('heading', { name: 'Get started — connect your data sources' }) to be visible\x1b[22m\n", 'ok': False}, ...}
+
+    @pytest.mark.parametrize('case',CASES)
+    def test_onboarding(case, observations):
+>       assert observations[case]['ok'], observations[case].get('error')
+E       AssertionError: locator.waitFor: Timeout 3000ms exceeded.
+E         Call log:
+E         [2m  - waiting for locator('article').getByRole('heading', { name: 'Get started — connect your data sources' }) to be visible[22m
+E         
+E       assert False
+
+tests/test_onboarding_expand_acceptance.py:205: AssertionError
+____________________ test_onboarding[expand_then_minimise] _____________________
+
+case = 'expand_then_minimise'
+observations = {'auto_all': {'ok': True}, 'auto_core': {'ok': True}, 'dismiss': {'ok': True}, 'dismiss_after_override': {'error': "lo....getByRole('heading', { name: 'Get started — connect your data sources' }) to be visible\x1b[22m\n", 'ok': False}, ...}
+
+    @pytest.mark.parametrize('case',CASES)
+    def test_onboarding(case, observations):
+>       assert observations[case]['ok'], observations[case].get('error')
+E       AssertionError: locator.waitFor: Timeout 3000ms exceeded.
+E         Call log:
+E         [2m  - waiting for locator('article').getByRole('heading', { name: 'Get started — connect your data sources' }) to be visible[22m
+E         
+E       assert False
+
+tests/test_onboarding_expand_acceptance.py:205: AssertionError
+__________________ test_onboarding[expand_source_transition] ___________________
+
+case = 'expand_source_transition'
+observations = {'auto_all': {'ok': True}, 'auto_core': {'ok': True}, 'dismiss': {'ok': True}, 'dismiss_after_override': {'error': "lo....getByRole('heading', { name: 'Get started — connect your data sources' }) to be visible\x1b[22m\n", 'ok': False}, ...}
+
+    @pytest.mark.parametrize('case',CASES)
+    def test_onboarding(case, observations):
+>       assert observations[case]['ok'], observations[case].get('error')
+E       AssertionError: locator.waitFor: Timeout 3000ms exceeded.
+E         Call log:
+E         [2m  - waiting for locator('article').getByRole('heading', { name: 'Get started — connect your data sources' }) to be visible[22m
+E         
+E       assert False
+
+tests/test_onboarding_expand_acceptance.py:205: AssertionError
+___________________ test_onboarding[dismiss_after_override] ____________________
+
+case = 'dismiss_after_override'
+observations = {'auto_all': {'ok': True}, 'auto_core': {'ok': True}, 'dismiss': {'ok': True}, 'dismiss_after_override': {'error': "lo....getByRole('heading', { name: 'Get started — connect your data sources' }) to be visible\x1b[22m\n", 'ok': False}, ...}
+
+    @pytest.mark.parametrize('case',CASES)
+    def test_onboarding(case, observations):
+>       assert observations[case]['ok'], observations[case].get('error')
+E       AssertionError: locator.waitFor: Timeout 3000ms exceeded.
+E         Call log:
+E         [2m  - waiting for locator('article').getByRole('heading', { name: 'Get started — connect your data sources' }) to be visible[22m
+E         
+E       assert False
+
+tests/test_onboarding_expand_acceptance.py:205: AssertionError
+_______________________ test_onboarding[storage_failure] _______________________
+
+case = 'storage_failure'
+observations = {'auto_all': {'ok': True}, 'auto_core': {'ok': True}, 'dismiss': {'ok': True}, 'dismiss_after_override': {'error': "lo....getByRole('heading', { name: 'Get started — connect your data sources' }) to be visible\x1b[22m\n", 'ok': False}, ...}
+
+    @pytest.mark.parametrize('case',CASES)
+    def test_onboarding(case, observations):
+>       assert observations[case]['ok'], observations[case].get('error')
+E       AssertionError: locator.waitFor: Timeout 3000ms exceeded.
+E         Call log:
+E         [2m  - waiting for locator('article').getByRole('heading', { name: 'Get started — connect your data sources' }) to be visible[22m
+E         
+E       assert False
+
+tests/test_onboarding_expand_acceptance.py:205: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_onboarding_expand_acceptance.py::test_onboarding[expand_core]
+FAILED tests/test_onboarding_expand_acceptance.py::test_onboarding[expand_then_minimise]
+FAILED tests/test_onboarding_expand_acceptance.py::test_onboarding[expand_source_transition]
+FAILED tests/test_onboarding_expand_acceptance.py::test_onboarding[dismiss_after_override]
+FAILED tests/test_onboarding_expand_acceptance.py::test_onboarding[storage_failure]
+5 failed, 11 passed in 27.71s
