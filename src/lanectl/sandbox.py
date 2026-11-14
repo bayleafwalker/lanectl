@@ -30,6 +30,7 @@ class Sandbox:
     inaccessible: tuple[str, ...] = ()
     clean_environment: bool = False
     environment: tuple[tuple[str, str], ...] | None = None
+    guard_completion: bool = False
 
     def prefix(self, cwd: Path, env_path: str | None = None) -> list[str]:
         if self.mode == "none":
@@ -39,8 +40,15 @@ class Sandbox:
         exe = shutil.which("systemd-run")
         if not exe:
             raise RuntimeError("sandbox mode systemd-run but systemd-run is not on PATH")
-        argv = [exe, "--user", "--quiet", "--pipe", "--wait", "--collect",
-                "-p", f"RuntimeMaxSec={self.timeout_s}", f"--working-directory={cwd}"]
+        argv = [exe, "--user", "--quiet", "--pipe", "--wait", "--collect"]
+        if self.guard_completion:
+            # Uncaught termination during startup must fail too. For oneshot,
+            # the command deadline is its start deadline, not RuntimeMaxSec.
+            argv += ["-p", "Type=oneshot", "-p", f"TimeoutStartSec={self.timeout_s}",
+                     "-p", "TimeoutStopSec=15"]
+        else:
+            argv += ["-p", f"RuntimeMaxSec={self.timeout_s}"]
+        argv.append(f"--working-directory={cwd}")
         if self.unit:
             argv.append(f"--unit={self.unit}")
         argv += [f"-pReadOnlyPaths={p}" for p in self.readonly]
@@ -74,6 +82,13 @@ class Sandbox:
         if self.mode == "none":
             return cmd
         payload = ["/bin/sh", "-c", cmd]
+        if self.guard_completion:
+            # Keep a parent outside the candidate shell: a child handling TERM
+            # with exit 0 must not turn an interrupted check into a pass.
+            # Pass cmd as one argument, never interpolate it into this script.
+            payload = ["/bin/sh", "-c",
+                       'trap "exit 125" HUP INT TERM; /bin/sh -c "$1"; rc=$?; exit "$rc"',
+                       "lanectl-command", cmd]
         if self.clean_environment:
             source = dict(self.environment) if self.environment is not None else os.environ
             env_exe = shutil.which("env", path=os.defpath)
@@ -148,4 +163,5 @@ def for_train(*, readonly, writable, timeout_s=1800, env=None):
     return Sandbox(mode='systemd-run', readonly=tuple(readonly), writable=tuple(writable),
                    timeout_s=timeout_s, inaccessible=tuple(dict.fromkeys(str(p) for p in paths)),
                    clean_environment=True,
+                   guard_completion=True,
                    environment=tuple((name, source[name]) for name in PASS_ENV if source.get(name)))
