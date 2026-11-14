@@ -1,0 +1,32 @@
+{
+  "schema": "hla-attention-ui-contract-freeze/v1",
+  "canonical_basis": "b2d0fe393ac0971e906cce275e91f45e94422593",
+  "requested_planner_model": "gpt-6.1-terra",
+  "planner": "/root/hla_attention_ui_plan",
+  "independent_plan_review": "/root/hla_source_manual_review",
+  "integration_review": "root",
+  "decision": "freeze existing-style full-intent contracts for independent acceptance authoring and later governed implementation",
+  "scope": "all four kinds, meaningful complete rows, correct production ranking/top8, strict whole-key routing, safe status states, real Next and backend proof",
+  "clarifications": [
+    "Canonical API prerequisite completed, no pending-PR claim",
+    "NaN only pure-transform control, valid JSON for HTTP fixtures",
+    "Malformed/missing/non-array feed rows are error, not successful empty"
+  ],
+  "authority": "operator full-plan continuation and reuse of existing canonical style; no new human baseline review claimed or extra approval gate",
+  "size": "unmeasured full worker M700; no cap waiver/test reclassification/type cuts",
+  "artifacts": [
+    {
+      "path": "intent.md",
+      "digest": "fb195a7c65517da1c0b4781759f1f89fb636f759e90b7befca55f788e9cb1f85"
+    },
+    {
+      "path": "baseline.tokens.json",
+      "digest": "ce1a7d8a48cf483519994f5d37872b49fe8472950bc6ef89a4451970c4f9c862"
+    },
+    {
+      "path": "ui-contract.yaml",
+      "digest": "603153cffbf78388d003a30387d4a2db63a3e4289da0e18a96fa934bc6392ee1"
+    }
+  ],
+  "implementation": "not started; frozen acceptance and fresh native adversarial review still required"
+}

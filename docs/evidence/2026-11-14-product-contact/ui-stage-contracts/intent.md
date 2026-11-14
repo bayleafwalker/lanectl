@@ -1,0 +1,9 @@
+# Operating Picture: current attention records
+
+Status: frozen existing-style contract, derived from the operator's accepted HLA #1593 intent; not a claim of new human review or approval. Tracked and frozen under existing root-owned work; native implementation copies these contracts to the application repository first. Canonical prerequisite: `b2d0fe393ac0971e906cce275e91f45e94422593`, after all four PR85 CI jobs passed.
+
+A household operator needs to find the most urgent current finance and utility matters, open one distinct record, and understand the facts the authorized source publication actually provides. The queue is compact (eight records), calm and information-dense, with a clear priority label and a direct, keyboard-operable destination. Detail uses the existing default Operating Picture shell and visual language: warm paper, restrained dividers, readable labels, and source facts grouped into rows. Preserve the existing typography, spacing and motion; do not introduce an alternate visual direction, font, dependency, icons, or a shell redesign.
+
+Label queue and detail “Current report”; the cashflow month refers to cashflow alone. A current report is not a claim of today's observation, freshness, or history. Do not imply a recommendation, savings, aggregated component price, invented currency, or deletion. Missing values say “Unknown”. Status messages distinguish access denied, absent from the current report, and temporarily unavailable. Existing login redirect is preserved. Each source row remains visible, even when identities coincide. The queue may say no items only when a successful feed is empty; unavailable is never all clear.
+
+A malformed or missing feed rows array is an error, not a successful empty report. Valid JSON unknown-severity scenarios and pure-transform NaN controls remain distinct.

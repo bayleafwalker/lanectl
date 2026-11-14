@@ -1,0 +1,9 @@
+{
+  "project": "lane-dev-train-20261114093455",
+  "containers_absent": true,
+  "network_absent": true,
+  "postgres_volume_absent": true,
+  "owned_image_tags_absent": true,
+  "train_worktree_absent": true,
+  "scope": "successful daemon inventories, normal land/teardown, exact owned resources only"
+}

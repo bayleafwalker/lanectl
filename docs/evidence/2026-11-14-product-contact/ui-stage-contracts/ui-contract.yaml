@@ -1,0 +1,32 @@
+version: 1
+status: frozen-existing-style-reuse
+intent: intent.md
+baseline: baseline.tokens.json
+surface: Operating Picture current report and individual record
+primitives:
+  AttentionQueue:
+    inputs: current attention rows with whole item_id, item_type, severity, title, detail, source_domain
+    behavior: stable severity 3 urgent, 2 soon, 1 watch, all other values unknown neutral; rank before limiting to eight
+    semantics: heading and ordered list; each supported row has a descriptive, keyboard-focusable link to its own detail
+    styling: existing panel section, attentionRow, Pill and inlineLink; no new palette
+  AttentionRecord:
+    inputs: kind and typed item_id plus all public source rows
+    behavior: render every returned row independently, preserving per-row prices and null as Unknown
+    semantics: heading, labeled facts and a return link; no color-only state
+    styling: AppShell, existing panels, typography and status primitives
+  RecordState:
+    states: [loading, denied, absent-from-current-report, unavailable, unexpected-error]
+    behavior: 401 redirects to login; 403, 404, 503 have distinct safe copy; 500 reaches generic error handling; no fallback source read
+    semantics: accessible heading and readable explanation without source facts
+scenarios:
+  - mixed unsorted more-than-eight valid JSON rows, stable ties, all valid priorities and unknown severities, correct top eight; NaN only at pure-transform boundary
+  - same-kind distinct records and slash/underscore whole keys, click and direct load through Next and real API
+  - all four kinds, every public component row and nullable facts, no invented labels or aggregation
+  - successful valid empty feed; unavailable and malformed/missing/non-array rows are not empty
+  - authenticated denied, unknown same and cross kind, source unavailable, busy 503 Retry-After, unauthenticated, unexpected 500
+  - long and unusual text, overflow, narrow mobile, keyboard navigation, reduced motion, screen-reader names
+validation:
+  - independent frozen pytest-compatible behavior suite plus actual Next and real backend positive tests
+  - controlled server-side transport for ranking and error branches, recorded separately from real-backend evidence
+  - Storybook states, browser accessibility and visual regression, existing 55 checks with matched Ubuntu Playwright 1.59.1
+  - targeted tests, typecheck and make verify-fast; exercise negative controls

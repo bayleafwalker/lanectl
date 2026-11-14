@@ -300,3 +300,23 @@ The tightened third command requires all three named cases to pass without
 skips; its planner implementation is being qualified against unchanged official
 per-file base lint before a fresh independent native review. No API candidate
 or UI delivery is claimed.
+
+## 2026-11-14 10:22 UTC: full record API canonical
+
+The complete four-kind HTTP layer passed actual native Pro execution, all five
+lane gates and independent qualification/review. Candidate01733b1 has685worker
+lines including460generated and112HTTPregression lines; both frozen inputs are
+unchanged. Full namespace verify-fast passed2755tests/120subtests/55matchedUI
+checks. Normal current-main trainc90eb86 passed2755tests plus combineddocs. Its
+declared dev image/defaultschema served all8complete groups through real HTTP,
+including3slashIDs/2multirowgroups, with independent SQL equality, all4unknown404
+controls andunauth401; reporting snapshots stayed unchanged. Wrongimage and
+nonempty refusals passed. Normal local land and exact owned cleanup completed.
+
+Canonical PR85 mergedb2d0fe393ac0971e906cce275e91f45e94422593 after all4CIjobs
+succeeded. Fresh advertised ancestry, lanectl canonical check and equal checked
+tree confirmed delivery. Detailed proof is in../2026-11-14-product-contact/api-a7-delivery/.
+Whole1593 remainsactive: StageC ranked individualUI, all4meaningfulrecordviews,
+realNext/click/status qualification and its fullfinaldelivery remain required.
+The existing-style contracts are now frozen for independent UIacceptance
+authoring; no production UI implementation or hosted-flow exit is claimed.

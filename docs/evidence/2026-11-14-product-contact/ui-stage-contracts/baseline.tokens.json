@@ -1,0 +1,43 @@
+{
+  "metadata": {
+    "name": "attention-current-report-existing-default-shell",
+    "status": "frozen-existing-canonical-style-reuse; no-new-human-approval-claimed",
+    "source": "apps/web/frontend/ui-contracts/default-shell/baseline.tokens.json",
+    "runtime": "apps/web/frontend/app/generated/ui-tokens.css and app/globals.css"
+  },
+  "reuse": {
+    "colors": [
+      "--bg",
+      "--paper",
+      "--ink",
+      "--muted",
+      "--line",
+      "--line-strong",
+      "--accent",
+      "--accent-warm",
+      "--accent-cool",
+      "--ok",
+      "--warn"
+    ],
+    "typography": [
+      "--font-sans",
+      "--font-serif",
+      "--font-display",
+      "--type-scale-1",
+      "--type-scale-2",
+      "--type-scale-3",
+      "--type-scale-4",
+      "--type-scale-5",
+      "--type-scale-6"
+    ],
+    "shape": [
+      "--radius-panel",
+      "--radius-pill",
+      "--shadow"
+    ],
+    "existingAttentionMetadataFont": "--retro-font-mono is used by actual attentionIndex and attentionDomain; this does not select retro shell colors",
+    "layout": "existing panel section, sectionHeader, attentionList and attentionRow: 32px 1fr auto, 14px gap and vertical padding, line border; adapt narrow widths using existing responsive conventions",
+    "motion": "existing 120ms ease interactive transitions and prefers-reduced-motion rule",
+    "values": "The referenced tracked default-shell baseline is the value authority; no duplicate token definitions or alternate retro palette."
+  }
+}

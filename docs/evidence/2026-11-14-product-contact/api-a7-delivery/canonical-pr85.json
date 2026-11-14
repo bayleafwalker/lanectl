@@ -1,0 +1,42 @@
+{
+  "schema": "hla-api-canonical-delivery/v1",
+  "recorded_at": "2026-11-14T10:33:47.227046+00:00",
+  "pull_request": "https://github.com/bayleafwalker/homelab-analytics/pull/85",
+  "checked_head": "c90eb864df4cda647a41d839000f1e1e5a6a74b8",
+  "canonical_merge_sha": "b2d0fe393ac0971e906cce275e91f45e94422593",
+  "merged": true,
+  "workflow_run": 43583634681,
+  "jobs": [
+    {
+      "id": 132413415742,
+      "name": "append-only-shards",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 132413415954,
+      "name": "verify-fast",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 132413415957,
+      "name": "dependency-audit",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 132413415994,
+      "name": "docker-smoke",
+      "status": "completed",
+      "conclusion": "success"
+    }
+  ],
+  "fresh_advertised_canonical_ancestry": true,
+  "lanectl_work_merged": true,
+  "local_fast_forwarded": true,
+  "checked_tree_equal_canonical": true,
+  "owned_runtime_cleanup": "independently verified exact resources absent after normal land/teardown",
+  "whole_hla1593_complete": false,
+  "next": "Full ranked individual record UI; no hosted-owner/product-count/week-long qualification claimed."
+}
