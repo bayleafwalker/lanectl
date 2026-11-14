@@ -1,0 +1,109 @@
+PATH=/projects/dev/_wt/hla-boundary-qualification-a3-20261114/.tooling/node-v20.20.1-linux-x64/bin:$PATH npm --prefix apps/web/frontend run ui:test
+
+> ui:test
+> start-server-and-test storybook http://127.0.0.1:6006 playwright:test
+
+1: starting server using command "npm run storybook"
+and when url "[ 'http://127.0.0.1:6006' ]" is responding with HTTP status code 200
+running tests using command "npm run playwright:test"
+
+
+> storybook
+> npm run tokens:build && storybook dev -p 6006 --ci
+
+
+> tokens:build
+> node scripts/build-ui-tokens.mjs
+
+@storybook/core v8.6.18
+
+
+attention => Storybook now collects completely anonymous telemetry regarding usage.
+This information is used to shape Storybook's roadmap and prioritize features.
+You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
+https://storybook.js.org/telemetry
+
+info => Serving static files from ././public at /
+info => Starting manager..
+info => Starting preview..
+info Using tsconfig paths for react-docgen
+╭─────────────────────────────────────────────────────────────────────╮
+│                                                                     │
+│   [38;2;162;224;94mStorybook 8.6.18 for react-vite started[39m                           │
+│   212 ms for manager and 324 ms for preview                         │
+│                                                                     │
+│   Local:            http://localhost:6006/                          │
+│   On your network:  http://192.168.10.55:6006/                      │
+│                                                                     │
+│   [38;2;243;173;56mA new version (10.6.5) is available![39m                              │
+│                                                                     │
+│   Upgrade now: [38;2;162;224;94mnpx storybook@latest upgrade[39m                         │
+│                                                                     │
+│   Read full changelog:                                              │
+│   https://github.com/storybookjs/storybook/blob/main/CHANGELOG.md   │
+│                                                                     │
+╰─────────────────────────────────────────────────────────────────────╯
+
+> playwright:test
+> playwright test
+
+
+Running 55 tests using 4 workers
+
+  ✓   2 [chromium] › playwright/ui-innovation.spec.js:28:3 › cashflow sankey demo-month renders flows and stays accessible (2.6s)
+  ✓   4 [chromium] › playwright/ui-wave-3.spec.js:21:1 › explain opens from the keyboard and closes with Escape (2.6s)
+  ✓   3 [chromium] › playwright/storybook-ui.spec.js:18:1 › app shell story stays accessible and visually stable (2.6s)
+  ✓   1 [chromium] › playwright/ops-console.spec.js:22:3 › console admin stays accessible (2.9s)
+  ✓   6 [chromium] › playwright/ui-wave-3.spec.js:44:1 › explain closes on an outside click (499ms)
+  ✓   5 [chromium] › playwright/ui-innovation.spec.js:28:3 › cashflow sankey categorised-with-occasional renders flows and stays accessible (871ms)
+  ✓   7 [chromium] › playwright/storybook-ui.spec.js:27:1 › retro shell story stays accessible and visually stable (951ms)
+  ✓   9 [chromium] › playwright/ui-wave-3.spec.js:56:1 › explain says when the lineage walk left older runs out (851ms)
+  ✓   8 [chromium] › playwright/ops-console.spec.js:22:3 › console reader stays accessible (1.2s)
+  ✓  11 [chromium] › playwright/storybook-ui.spec.js:36:1 › msw-backed story resolves mocked response (557ms)
+  ✓  10 [chromium] › playwright/ui-innovation.spec.js:28:3 › cashflow sankey focused-payee renders flows and stays accessible (839ms)
+  ✓  12 [chromium] › playwright/ui-wave-3.spec.js:65:1 › explain says nothing about truncation for a whole graph (481ms)
+  ✓  13 [chromium] › playwright/ops-console.spec.js:22:3 › console nothing-yet stays accessible (953ms)
+  ✓  14 [chromium] › playwright/storybook-ui.spec.js:42:1 › upload wizard enforces accept/retry gating before upload (929ms)
+  ✓  15 [chromium] › playwright/ui-innovation.spec.js:28:3 › cashflow sankey overspent renders flows and stays accessible (827ms)
+  ✓  16 [chromium] › playwright/ui-wave-3.spec.js:73:3 › explain lineage-unavailable stays accessible when open (842ms)
+  ✓  17 [chromium] › playwright/ops-console.spec.js:30:3 › heat grid full stays accessible (845ms)
+  ✓  19 [chromium] › playwright/ui-innovation.spec.js:28:3 › cashflow sankey sparse renders flows and stays accessible (798ms)
+  ✓  20 [chromium] › playwright/ui-wave-3.spec.js:73:3 › explain wallboard stays accessible when open (838ms)
+  ✓  22 [chromium] › playwright/ui-innovation.spec.js:37:1 › cashflow sankey payees are keyboard reachable links (456ms)
+  ✓  18 [chromium] › playwright/storybook-ui.spec.js:89:1 › policy template refuses submission until required inputs are supplied (1.4s)
+  ✓  23 [chromium] › playwright/ui-wave-3.spec.js:81:1 › explain panel stays inside a phone-width viewport (480ms)
+  ✓  21 [chromium] › playwright/ops-console.spec.js:30:3 › heat grid sparse stays accessible (852ms)
+  ✓  24 [chromium] › playwright/ui-innovation.spec.js:45:1 › cashflow sankey draws nothing when no money has been published (451ms)
+  ✓  25 [chromium] › playwright/storybook-ui.spec.js:117:1 › operating picture v2 story shows the grouped net in the hero (507ms)
+  ✓  27 [chromium] › playwright/ops-console.spec.js:30:3 › heat grid date-only stays accessible (843ms)
+  ✓  28 [chromium] › playwright/ui-innovation.spec.js:52:3 › cashflow bucket-ledger lists the buckets and stays accessible (770ms)
+  ✓  26 [chromium] › playwright/ui-wave-3.spec.js:90:1 › responsive table is a table on wide screens and slips at phone width (1.5s)
+  ✓  30 [chromium] › playwright/ui-innovation.spec.js:52:3 › cashflow bucket-ledger-overspent lists the buckets and stays accessible (742ms)
+  ✓  29 [chromium] › playwright/ops-console.spec.js:30:3 › heat grid empty stays accessible (815ms)
+  ✓  33 [chromium] › playwright/ops-console.spec.js:38:1 › console fits one 1440x900 screen without scrolling (449ms)
+  ✓  31 [chromium] › playwright/ui-wave-3.spec.js:110:1 › as-of scrubber marks the viewed month and shows gaps as inert (827ms)
+  ✓  32 [chromium] › playwright/ui-innovation.spec.js:52:3 › cashflow bucket-ledger-sparse lists the buckets and stays accessible (765ms)
+  ✓  34 [chromium] › playwright/ops-console.spec.js:63:1 › F1-F5 focus panels and Ctrl+K opens the shared command palette (493ms)
+  ✓  35 [chromium] › playwright/ui-wave-3.spec.js:120:1 › sparkline month labels stay readable and never overlap at any card width (495ms)
+  ✓  37 [chromium] › playwright/ops-console.spec.js:84:1 › console stacks at phone width without horizontal scroll (440ms)
+  ✓  36 [chromium] › playwright/ui-innovation.spec.js:60:3 › briefing mixed renders every section and stays accessible (852ms)
+  ✓  38 [chromium] › playwright/ui-innovation.spec.js:60:3 › briefing nothing-trusted-yet renders every section and stays accessible (821ms)
+  ✓  39 [chromium] › playwright/ui-innovation.spec.js:67:1 › cashflow flow list is the narrow-screen alternative (761ms)
+  ✓  40 [chromium] › playwright/ui-innovation.spec.js:74:3 › wallboard standard stays accessible (819ms)
+  ✓  41 [chromium] › playwright/ui-innovation.spec.js:74:3 › wallboard compact stays accessible (805ms)
+  ✓  42 [chromium] › playwright/ui-innovation.spec.js:74:3 › wallboard nothing-connected stays accessible (757ms)
+  ✓  43 [chromium] › playwright/ui-innovation.spec.js:81:1 › wallboard standard lays out the kiosk grid (467ms)
+  ✓  44 [chromium] › playwright/ui-innovation.spec.js:106:1 › wallboard compact mode hides the event feed and hotkey hint (454ms)
+  ✓  45 [chromium] › playwright/ui-innovation.spec.js:127:1 › wallboard refresh pauses while hidden and refreshes on return (454ms)
+  ✓  46 [chromium] › playwright/ui-innovation.spec.js:149:1 › wallboard refresh ticks without focus but not while hidden or hovered (3.3s)
+  ✓  47 [chromium] › playwright/ui-innovation.spec.js:168:3 › wallboard panel service-tile-up renders (750ms)
+  ✓  48 [chromium] › playwright/ui-innovation.spec.js:168:3 › wallboard panel devices renders (735ms)
+  ✓  49 [chromium] › playwright/ui-innovation.spec.js:168:3 › wallboard panel events renders (775ms)
+  ✓  50 [chromium] › playwright/ui-innovation.spec.js:168:3 › wallboard panel power renders (766ms)
+  ✓  51 [chromium] › playwright/ui-innovation.spec.js:168:3 › wallboard panel power-ambiguous renders (711ms)
+  ✓  52 [chromium] › playwright/ui-innovation.spec.js:175:1 › app shell rail groups the nav, marks the current page and stays accessible (787ms)
+  ✓  53 [chromium] › playwright/ui-innovation.spec.js:183:1 › app shell collapses to a menu button at phone width (463ms)
+  ✓  54 [chromium] › playwright/ui-innovation.spec.js:195:1 › state panels expose one alert and polite statuses (733ms)
+  ✓  55 [chromium] › playwright/ui-innovation.spec.js:201:1 › command palette opens with the keyboard and follows the highlighted link (944ms)
+
+  55 passed (26.2s)

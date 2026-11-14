@@ -1,0 +1,6 @@
+{"thrown": true, "same": true, "name": "Error", "message": "SYNTHETIC_SECRET_99332 synthetic_key_fragment", "cause": "SYNTHETIC_CAUSE_99332", "kind": "anomaly", "http_status": 500}
+{"thrown": true, "same": true, "name": "Error", "message": "SYNTHETIC_SECRET_99332 synthetic_key_fragment", "cause": "SYNTHETIC_CAUSE_99332", "kind": "upcoming_cost", "http_status": 500}
+{"thrown": true, "same": true, "name": "Error", "message": "SYNTHETIC_SECRET_99332 synthetic_key_fragment", "cause": "SYNTHETIC_CAUSE_99332", "kind": "contract_review", "http_status": 500}
+{"thrown": true, "same": true, "name": "Error", "message": "SYNTHETIC_SECRET_99332 synthetic_key_fragment", "cause": "SYNTHETIC_CAUSE_99332", "kind": "contract_renewal", "http_status": 500}
+{"next_pid": 2051150, "fixture_root": "/tmp/hla-transport-a3-independent-20261114/lab/web", "backend_source": "unchanged copied candidate", "node": "/projects/dev/homelab-analytics/.tooling/node-v20.20.1-linux-x64/bin"}
+{"lab_cleanup_complete": true}

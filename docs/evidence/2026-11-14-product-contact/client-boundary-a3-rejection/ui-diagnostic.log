@@ -1,0 +1,37 @@
+PATH=/projects/dev/_wt/hla-boundary-qualification-a3-20261114/.tooling/node-v20.20.1-linux-x64/bin:$PATH npm --prefix apps/web/frontend run ui:test
+
+> ui:test
+> start-server-and-test storybook http://127.0.0.1:6006 playwright:test
+
+1: starting server using command "npm run storybook"
+and when url "[ 'http://127.0.0.1:6006' ]" is responding with HTTP status code 200
+running tests using command "npm run playwright:test"
+
+
+> storybook
+> npm run tokens:build && storybook dev -p 6006 --ci
+
+
+> tokens:build
+> node scripts/build-ui-tokens.mjs
+
+@storybook/core v8.6.18
+
+info => Serving static files from ././public at /
+info => Starting manager..
+[38;2;241;97;97mError: ENOENT: no such file or directory, mkdir './node_modules/.cache/storybook/2a13ae461e8c72a5b9b898b869f90ee0bea3ba7e3dff82474944ecb21f774d51'[39m
+    at async mkdir (node:internal/fs/promises:853:10)
+    at async file:///projects/dev/homelab-analytics/apps/web/frontend/node_modules/@storybook/core/dist/builder-manager/index.js:1921:9
+    at async Promise.all (index 0)
+    at async getConfig (file:///projects/dev/homelab-analytics/apps/web/frontend/node_modules/@storybook/core/dist/builder-manager/index.js:1947:18)
+    at async Promise.all (index 1)
+    at async getData (file:///projects/dev/homelab-analytics/apps/web/frontend/node_modules/@storybook/core/dist/builder-manager/index.js:1830:22)
+    at async starterGeneratorFn (file:///projects/dev/homelab-analytics/apps/web/frontend/node_modules/@storybook/core/dist/builder-manager/index.js:2029:7)
+    at async Module.start (file:///projects/dev/homelab-analytics/apps/web/frontend/node_modules/@storybook/core/dist/builder-manager/index.js:2146:9)
+    at async storybookDevServer (/projects/dev/homelab-analytics/apps/web/frontend/node_modules/@storybook/core/dist/core-server/index.cjs:38056:11)
+    at async buildOrThrow (/projects/dev/homelab-analytics/apps/web/frontend/node_modules/@storybook/core/dist/core-server/index.cjs:36524:12)
+
+WARN Broken build, fix the error above.
+WARN You may need to refresh the browser.
+
+[?25l[2K[1G? Would you like to help improve Storybook by sending anonymous crash reports? › (Y/n)make: *** [Makefile:167: web-ui-test] Terminated

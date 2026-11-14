@@ -1,0 +1,6 @@
+{
+  "name": "hla-boundary-a3-qual-browser",
+  "container_id": "a3c17edb21da814cc796a47b7e1239fd401c171f3ae1013fef43ef81db9b23cb",
+  "image": "sha256:b0ab6f3cb99aa7803adbc14d9027ec1785fc6e433b97e134e0f8fe61683b6b53",
+  "logs": "Listening on ws://127.0.0.1:34284/\n"
+}

@@ -1,0 +1,65 @@
+{
+  "reason": "All22 actual generic-api-key findings verified:18 URL query tokens decode to exact synthetic fixture item IDs;4 matches assign a deliberately synthetic sentinel to an unused variable named secret. No credentials, bypass or allowlist; raw ephemeral originals untouched.",
+  "records": [
+    {
+      "path": "transport/next.log",
+      "original_sha256": "5b1ec71c6f865c7294e619041e21fa47e3174c58506aafd0d22d03db53ed357c",
+      "redacted_sha256": "564abf641e4894474f833a70610cd40ba096636a22f318a9ee24429a1c10c55b",
+      "placeholder": "<synthetic-route-id-omitted>",
+      "literal_item_id": "SYNTHETIC_KEY_99332",
+      "occurrences": 4,
+      "restore": "Replace placeholder by unpadded base64url of the UTF-8 literal_item_id (not an authentication key)."
+    },
+    {
+      "path": "redirect-control/next.log",
+      "original_sha256": "65d3aa27c0f085fae77babbd307bfa93b8160877a13a71268b8b23b6097519d9",
+      "redacted_sha256": "58ebfdd92d892db8df94ed8808b3a85f073d6fe50577898b9c1c332661344fb0",
+      "placeholder": "<synthetic-route-id-omitted>",
+      "literal_item_id": "SYNTHETIC_KEY_99332",
+      "occurrences": 4,
+      "restore": "Replace placeholder by unpadded base64url of the UTF-8 literal_item_id (not an authentication key)."
+    },
+    {
+      "path": "statusbody/next.log",
+      "original_sha256": "ddbc4feb6bdc682fdcbae13287500f48b0682db4c2aea6a365c24de52c191488",
+      "redacted_sha256": "328ae53df113f7b5d3ad89d550507515d396d34cf14044f5bc39d313f2e4f6fc",
+      "placeholder": "<synthetic-route-id-omitted>",
+      "literal_item_id": "review_status_body/雪_%_privatekey",
+      "occurrences": 10,
+      "restore": "Replace placeholder by unpadded base64url of the UTF-8 literal_item_id (not an authentication key)."
+    },
+    {
+      "path": "transport/probe.py",
+      "original_sha256": "89835b398fb62e8ae73148fb5b18acb2880ab285c13b94845d788539da174ba1",
+      "redacted_sha256": "4b1ec14f1a6635d4e8c343a2f6f77427b5b5d0d4744a697deb64ae34c8d1cc1d",
+      "placeholder": "<synthetic-sentinel-omitted>",
+      "restore_text": "SYNTHETIC_SECRET_99332",
+      "restore": "Replace placeholder with restore_text; it is the deliberately synthetic probe sentinel also present in the measured error result, never a credential. Reconstruct before byte comparison or execution."
+    },
+    {
+      "path": "redirect-control/probe.py",
+      "original_sha256": "111112dd2f723e67deaa27ac27cd28e1a9ff30cea683c655db5ca6f1b04acb6f",
+      "redacted_sha256": "2be0c2acb58a5daf5b72ab5b727a47ed11104dcb93b44c2274b0e560a384ad6f",
+      "placeholder": "<synthetic-sentinel-omitted>",
+      "restore_text": "SYNTHETIC_SECRET_99332",
+      "restore": "Replace placeholder with restore_text; it is the deliberately synthetic probe sentinel also present in the measured error result, never a credential. Reconstruct before byte comparison or execution."
+    },
+    {
+      "path": "transport/observing-route.ts",
+      "original_sha256": "76e0d4cd17f216367ff874f4ab2a5f51783840c4cd52e370df6fa58610896532",
+      "redacted_sha256": "d1d8fab53f9cc48b76fda1adc2ddb067cf76d499d9d778aa6dc409cfd6630d9e",
+      "placeholder": "<synthetic-sentinel-omitted>",
+      "restore_text": "SYNTHETIC_SECRET_99332",
+      "restore": "Replace placeholder with restore_text; it is the deliberately synthetic probe sentinel also present in the measured error result, never a credential. Reconstruct before byte comparison or execution."
+    },
+    {
+      "path": "redirect-control/observing-route.ts",
+      "original_sha256": "359c5c5653c0b94c283883aa7f2bb4c2d5d881f296907d75edaab9ab3f0c792d",
+      "redacted_sha256": "ce8bb58dd6555245a6ba7bea088bbcaa6746d9c9b6885bc5c3a42717db62af27",
+      "placeholder": "<synthetic-sentinel-omitted>",
+      "restore_text": "SYNTHETIC_SECRET_99332",
+      "restore": "Replace placeholder with restore_text; it is the deliberately synthetic probe sentinel also present in the measured error result, never a credential. Reconstruct before byte comparison or execution."
+    }
+  ],
+  "correction": "Initial classification of the4 code findings as query-parser text was wrong. Redacted scanner Match proved they are synthetic sentinel assignments. Unneeded query-parser redaction was fully reverted and original hashes verified before exact sentinel-only redaction."
+}

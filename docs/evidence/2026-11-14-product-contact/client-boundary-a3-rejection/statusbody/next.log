@@ -1,0 +1,19 @@
+  ▲ Next.js 14.2.35
+  - Local:        http://127.0.0.1:46353
+  - Network:      http://127.0.0.1:46353
+
+ ✓ Starting...
+ ✓ Ready in 1015ms
+ ✓ Compiled /acceptance-infra in 242ms (47 modules)
+ GET /acceptance-infra 200 in 295ms
+ ✓ Compiled /acceptance-boundary in 33ms (51 modules)
+ GET /acceptance-boundary?kind=%22contract_review%22&key=%22<synthetic-route-id-omitted>%22 307 in 66ms
+ GET /acceptance-boundary?kind=%22contract_review%22&key=%22<synthetic-route-id-omitted>%22 200 in 9ms
+ GET /acceptance-boundary?kind=%22contract_review%22&key=%22<synthetic-route-id-omitted>%22 200 in 6ms
+ GET /acceptance-boundary?kind=%22contract_review%22&key=%22<synthetic-route-id-omitted>%22 200 in 5ms
+ GET /acceptance-boundary?kind=%22contract_review%22&key=%22<synthetic-route-id-omitted>%22 500 in 6ms
+ GET /acceptance-boundary?kind=%22contract_review%22&key=%22<synthetic-route-id-omitted>%22 307 in 6ms
+ GET /acceptance-boundary?kind=%22contract_review%22&key=%22<synthetic-route-id-omitted>%22 200 in 5ms
+ GET /acceptance-boundary?kind=%22contract_review%22&key=%22<synthetic-route-id-omitted>%22 200 in 4ms
+ GET /acceptance-boundary?kind=%22contract_review%22&key=%22<synthetic-route-id-omitted>%22 200 in 5ms
+ GET /acceptance-boundary?kind=%22contract_review%22&key=%22<synthetic-route-id-omitted>%22 500 in 6ms

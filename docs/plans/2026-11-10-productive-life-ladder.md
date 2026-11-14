@@ -212,9 +212,23 @@ Independent frozen CLI 8/8, status/body 10/10, BOM 2/2 and seven native speciali
 reviews passed. Its first full Make failed without retained stdout because of
 a harness error; a narrow reproduction found Storybook's cache pointed into
 read-only canonical dependencies. An owned dependency copy passed all 55 matched
-browser checks without lockfile, baseline or tolerance changes. Final full Make
-has resumed under installed v0.2.12. Normal train, dev and canonical delivery
-remain pending; no prerequisite or whole UI completion is claimed.
+browser checks without lockfile, baseline or tolerance changes. Root's subsequent source read identified uncaught transport failures. An
+independent real Next/Node20 probe confirmed that all four kinds propagate the
+original synthetic Error object, message and cause. The observing fixture
+exposes those fields deliberately; no production disclosure was observed. The
+existing outcome already requires sanitized transport errors, so this is
+model-error. The final full Make was intentionally stopped, not passed; the
+installed v0.2.12 supervisor returned 125 with no inner completion marker. Exact
+owned browser, unit and qualification checkout cleanup passed.
+
+A3 is parked and R2's two-attempt budget is exhausted. The
+[rejection archive](../evidence/2026-11-14-product-contact/client-boundary-a3-rejection/)
+keeps all passing checks, the raw counterexample and redirect controls, partial
+verification and source. No invalid source was adopted. Missing test coverage
+does not turn the clear requirement into a spec-gap or authorize a new revision.
+The permitted integrator fix classes are spec-gap and gate-gap, not model-error.
+Normal train, dev and canonical delivery remain pending; no prerequisite or
+whole UI completion is claimed.
 
 The [portable repaired full-UI observer](../evidence/2026-11-14-product-contact/ui-portable-observer-preparation/)
 is preparation only. Its base run has six missing-feature failures, three

@@ -1,0 +1,12 @@
+........                                                                 [100%]
+=============================== warnings summary ===============================
+tests/test_attention_record_boundary_acceptance.py::test_70_real_local_published_api_with_signed_session
+  /projects/dev/_wt/hla-boundary-qualification-a3-20261114/.venv/lib/python3.13/site-packages/websockets/legacy/__init__.py:6: DeprecationWarning: websockets.legacy is deprecated; see https://websockets.readthedocs.io/en/stable/howto/upgrade.html for upgrade instructions
+    warnings.warn(  # deprecated in 14.0 - 2024-11-09
+
+tests/test_attention_record_boundary_acceptance.py::test_70_real_local_published_api_with_signed_session
+  /projects/dev/_wt/hla-boundary-qualification-a3-20261114/.venv/lib/python3.13/site-packages/uvicorn/protocols/websockets/websockets_impl.py:17: DeprecationWarning: websockets.server.WebSocketServerProtocol is deprecated
+    from websockets.server import WebSocketServerProtocol
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+8 passed, 2 warnings in 24.55s

@@ -1,0 +1,22 @@
+[
+  {
+    "location": "/login",
+    "kind": "anomaly",
+    "http_status": 307
+  },
+  {
+    "location": "/login",
+    "kind": "upcoming_cost",
+    "http_status": 307
+  },
+  {
+    "location": "/login",
+    "kind": "contract_review",
+    "http_status": 307
+  },
+  {
+    "location": "/login",
+    "kind": "contract_renewal",
+    "http_status": 307
+  }
+]

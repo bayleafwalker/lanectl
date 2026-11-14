@@ -1,0 +1,4 @@
+actual Node {"encoded": ["77u_YQ", "77u_"], "decoded": ["\ufeffa", "\ufeff"]}
+.actual browser {"encoded":["77u_YQ","77u_"],"decoded":["﻿a","﻿"],"invalid":[],"kinds":[]}
+.
+2 passed in 6.63s

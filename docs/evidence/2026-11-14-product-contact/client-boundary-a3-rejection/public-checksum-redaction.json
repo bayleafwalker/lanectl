@@ -1,0 +1,55 @@
+{
+  "reason": "Exact public planner-frozen baseline checksum; previous identical hook false positive verified in a2 rejection. Only this public checksum omitted, no credentials or guard bypass. Raw originals remain ephemeral /tmp.",
+  "placeholder": "<public-frozen-baseline-sha256-omitted>",
+  "reconstruction": "Hash ../ui-stage-contracts/baseline.tokens.json bytes and replace placeholder bytes; verify original_sha256 before running fixture or applying worker.diff.",
+  "records": [
+    {
+      "path": "god-class-file-size.prompt.txt",
+      "original_sha256": "5b7be626bfd498ca4f6d709324ce20a62ca8fa76f49885a23fbd6e23ced16f1a",
+      "redacted_sha256": "caf016673ba2c61e15c51e7c4824043514b436e4ce6ac81612b9bc55faa11abd",
+      "occurrences": 1
+    },
+    {
+      "path": "pack-boundary.prompt.txt",
+      "original_sha256": "bc86a3c246fc86eb7331da582f1714c2c057c46d0b8f25d2a5764d707a2a4bce",
+      "redacted_sha256": "2f83f58f061d00a24d8d792f064fb4a0235cf9830502cfb47c07731964c11657",
+      "occurrences": 1
+    },
+    {
+      "path": "repetition-vs-abstraction.prompt.txt",
+      "original_sha256": "4ca5dfee7f610977624a8bee5c434fa9c295d878cea3a90e73d7dca0661d0a10",
+      "redacted_sha256": "a39b86c2ae6444caa767ff290062fff4c0b5da1f766a2debea6cb8f632e81e28",
+      "occurrences": 1
+    },
+    {
+      "path": "semantic-ownership.prompt.txt",
+      "original_sha256": "c93b834b4e5ba0fca7c61f488f967b67bd3d6efb1cddea8f56528c1f5d93fb7f",
+      "redacted_sha256": "8cf46cd4a830ccaed607dfc63437a39d4f283a8a3996e65728e2bc5a28c08131",
+      "occurrences": 1
+    },
+    {
+      "path": "stratum-coherence.prompt.txt",
+      "original_sha256": "3e22307bf19ce5977f58cd3086ffcde73753e4cc843e83f225a5f3fa51368768",
+      "redacted_sha256": "cd7563c53d447b2ff40c325e6035d646807905e9a5ff7ac0b3a8e9a431b252e8",
+      "occurrences": 1
+    },
+    {
+      "path": "test-quality.prompt.txt",
+      "original_sha256": "c0ef3d9829e14832d182b9cc7795075cf49b9e8fcbf232720666fe30b59d8c0f",
+      "redacted_sha256": "94bab0f396d979db03992e7732b7b21a042224893861fcf68d1d8d7a1dcf26b8",
+      "occurrences": 1
+    },
+    {
+      "path": "suppression-drift.prompt.txt",
+      "original_sha256": "d1fd6d32ca0545d09a8481e23272bb2123a0db9a5165ae16c5348a688c976a97",
+      "redacted_sha256": "ac907b3c1115b66d789eaa81a6b4447ca5e1a984a87c053c13da77508281adeb",
+      "occurrences": 1
+    },
+    {
+      "path": "worker.diff",
+      "original_sha256": "796ae9927f21f4d08c992d6f2f0377a7bb0cf44a590611b470a8eb04f1db600e",
+      "redacted_sha256": "f19ecc4d6027f2531b57fbecec95ab4d4ff07ea6382407b03effb9df63f53eca",
+      "occurrences": 1
+    }
+  ]
+}

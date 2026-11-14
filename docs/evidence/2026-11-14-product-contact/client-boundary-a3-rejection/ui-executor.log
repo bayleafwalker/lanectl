@@ -1,0 +1,5 @@
+Traceback (most recent call last):
+  File "/tmp/hla-boundary-a3-qualification-20261114/ui-executor.py", line 64, in <module>
+    assert marker.is_file(), 'inner make did not complete'
+           ~~~~~~~~~~~~~~^^
+AssertionError: inner make did not complete

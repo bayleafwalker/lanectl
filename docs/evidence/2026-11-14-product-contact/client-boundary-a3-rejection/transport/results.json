@@ -1,0 +1,38 @@
+[
+  {
+    "thrown": true,
+    "same": true,
+    "name": "Error",
+    "message": "SYNTHETIC_SECRET_99332 synthetic_key_fragment",
+    "cause": "SYNTHETIC_CAUSE_99332",
+    "kind": "anomaly",
+    "http_status": 500
+  },
+  {
+    "thrown": true,
+    "same": true,
+    "name": "Error",
+    "message": "SYNTHETIC_SECRET_99332 synthetic_key_fragment",
+    "cause": "SYNTHETIC_CAUSE_99332",
+    "kind": "upcoming_cost",
+    "http_status": 500
+  },
+  {
+    "thrown": true,
+    "same": true,
+    "name": "Error",
+    "message": "SYNTHETIC_SECRET_99332 synthetic_key_fragment",
+    "cause": "SYNTHETIC_CAUSE_99332",
+    "kind": "contract_review",
+    "http_status": 500
+  },
+  {
+    "thrown": true,
+    "same": true,
+    "name": "Error",
+    "message": "SYNTHETIC_SECRET_99332 synthetic_key_fragment",
+    "cause": "SYNTHETIC_CAUSE_99332",
+    "kind": "contract_renewal",
+    "http_status": 500
+  }
+]

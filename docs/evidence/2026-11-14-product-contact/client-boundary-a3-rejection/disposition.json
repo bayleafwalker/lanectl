@@ -1,0 +1,25 @@
+{
+  "head": "94ecb4c5504034e23d93c3b9dd03f1acaf6b3863",
+  "seed": "b5353d9f794c9a5a6dad2772100fc9768b45efd3",
+  "worker_lines": 643,
+  "frozen_acceptance": "8/8 no skips",
+  "status_body": "10/10 no skips; tracked invariance1310",
+  "BOM": "2/2 actual Node20/browser",
+  "native_reviews": {
+    "count": 7,
+    "model": "claude-sonnet-5-5",
+    "exit": 0,
+    "no_permission_denials": true,
+    "blockers_from_those_reviews": 0
+  },
+  "narrow_UI": "55/55 matched Ubuntu Playwright, unchanged baseline/tolerance/lock",
+  "blocker": "All4 branches propagate same synthetic transport Error identity/message/cause, violating existing sanitized transport error requirement; actual unchanged backend in real Next/Node20",
+  "production_leak_claimed": false,
+  "probe_limit": "Fixture deliberately exposes caught error fields; does not prove default production response leaks them. global.fetch failure injected in owned Next process only.",
+  "redirect_control": "All4 synthetic401 responses produce actual Next307/location/login",
+  "judgment": "MODEL-ERROR; a3 parked, R2max2 consumed, no further retry/new revision/model-error integrator repair or source adoption",
+  "first_full_make": "nonzero2; stdout lost by executor assertion before persistence; independent narrow reproduction identifies read-only canonical node_modules Storybook cache setup issue; NOT full pass",
+  "final_full_make": "intentionally stopped after confirmed blocker at test-fast~26%; installed0.2.12 returns125; innercompletionabsent; rawlogpartial, NOT pass",
+  "cleanup": "Only exact owned finalMake unit stopped/collected, owned browser removed/absence verified, qualification checkout removed. Original failed candidate branch preserved.",
+  "next": "No train/dev/PR/merge for invalid prerequisite. Full UI1593 pending; original scope/outcome/caps remain. Missing test coverage does not relabel explicit requirement as spec-gap."
+}
