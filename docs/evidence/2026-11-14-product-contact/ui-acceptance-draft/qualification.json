@@ -1,0 +1,86 @@
+{
+  "schema": "hla-ui-acceptance-draft-qualification/v1",
+  "recorded_at": "2026-11-14T11:13:24.982551+00:00",
+  "base_sha": "b2d0fe393ac0971e906cce275e91f45e94422593",
+  "draft": true,
+  "publication": "not performed",
+  "native_review": "not launched; automatic approval review rejected external DeepSeek UI payload; specific approval requested",
+  "author": {
+    "task": "/root/source_r3_qualification",
+    "requested_model": "gpt-6.1-terra",
+    "runtime_variant_independently_attested": false,
+    "native_author_invocation_claimed": false
+  },
+  "test_digest": "57c9e9eef945a90d133a7a0f2b29194b1d9df7cd6a0007c52a50672b1fc02bf5",
+  "proposal_digest": "f0b12356e5724c56a603b442bc77ca36ebec9d8e3f1c6ec398fe059abb321d5a",
+  "author_reported_checks": {
+    "canonical_context_ruff": "pass",
+    "official_base_lint": [],
+    "canonical_base_execution": "6 named missing-UI failures; 3 passing controls; zero skips",
+    "source_specific_auth": "1 passed",
+    "disjoint_DOM": "nested single row=1; identical sibling rows=2",
+    "all_nine_forced_skips": "runner exit1",
+    "junit_invalid_incomplete": "rejected",
+    "owned_browser_postgres_cleanup": "no owned resources remain"
+  },
+  "limits": [
+    "No UI implementation or UI-positive click/content success exists yet",
+    "Manual audit is a first-party snapshot/repair review; reviewer did not rerun runtime tests",
+    "No independent native acceptance verdict or publication authorization exists",
+    "Control scripts retain their original session-local paths; execute only after deliberate path rebinding and digest checks"
+  ],
+  "artifacts": [
+    {
+      "path": "proposal.json",
+      "digest": "f0b12356e5724c56a603b442bc77ca36ebec9d8e3f1c6ec398fe059abb321d5a"
+    },
+    {
+      "path": "draft-audit.json",
+      "digest": "64f0b97b8b17224d0c217ea628479510f113bed82b6b1103877c42d1bb368d2e"
+    },
+    {
+      "path": "official-base-lint.log",
+      "digest": "d0a82e905f27805a581d732461ed94a1ed451ebc9dc32daf514dac87026597ea"
+    },
+    {
+      "path": "canonical-base-execution.log",
+      "digest": "c93649604901f23a190098cb39c96ff0521b00b31126ca64ff88bcbc12483b30"
+    },
+    {
+      "path": "real-auth-control.log",
+      "digest": "4587efbdbc7b05b2d9cf66e689ffe1582006e821390893b5cb2fd00ecad27edd"
+    },
+    {
+      "path": "disjoint-controls.log",
+      "digest": "25f774eda8fb3240690eaf479bc0d7c8ca92d0a2bd3172c6d2bbe017a4d37768"
+    },
+    {
+      "path": "forced-skip.log",
+      "digest": "964bc6750bef7df0508eb223d2a798cbab2e33aab89ec17db6b271d77c86fb40"
+    },
+    {
+      "path": "junit-controls.log",
+      "digest": "0829f9747958cd9be12cefad681d028554435c65fb0f286636cd48b49f60727f"
+    },
+    {
+      "path": "review-driver.py",
+      "digest": "ba82d527f102ed56af67fa62970f2c50a586b3573db33ad5a8abb74ba67b3d71"
+    },
+    {
+      "path": "retention-helper.py",
+      "digest": "744888d46d39a1aae80e229d6443d7909427fa0d205c97e41430e330b3d5fc91"
+    },
+    {
+      "path": "junit-control.py",
+      "digest": "54d65e853716fb573ac0dbecd3e07fac5bccb38112294149ffe728af1272310b"
+    },
+    {
+      "path": "disjoint-control.py",
+      "digest": "1e4730f2510ef8a833e1bf211e38d397415fe65dd4c6865977733a43c24ff00b"
+    },
+    {
+      "path": "forced-skip-plugin.py",
+      "digest": "3164a5cf8250e337ba7d38fbafce19b6b80ff8a8be4f45592b6bf7673c77dbe5"
+    }
+  ]
+}

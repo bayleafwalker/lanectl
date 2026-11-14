@@ -1,0 +1,30 @@
+{
+  "schema": "hla-ui-acceptance-draft-audit/v1",
+  "recorded_at": "2026-11-14T11:07:30.131477+00:00",
+  "reviewer": "/root/hla_source_manual_review; first-party read-only snapshot audit",
+  "initial_snapshot": {
+    "test_digest": "ba44c2cc6fee12d6c3f147c87906924e981baf2864391a898093a80bba208d74",
+    "proposal_digest": "2c797726032550400b4efdae94b4bfb313b81f48dfdb833bafc5891d196b98d1",
+    "findings": [
+      "Nested semantic row candidates could count the same visible row multiple times, masking dropped duplicate-identical components",
+      "Denied/error tests lacked a unique prior successful fact per kind to prove stale facts disappear"
+    ]
+  },
+  "narrow_repair_review": {
+    "test_digest": "57c9e9eef945a90d133a7a0f2b29194b1d9df7cd6a0007c52a50672b1fc02bf5",
+    "proposal_digest": "f0b12356e5724c56a603b442bc77ca36ebec9d8e3f1c6ec398fe059abb321d5a",
+    "result": "both findings closed for reviewed bytes",
+    "checks": [
+      "Nested aliases excluded; semantic choices li/dl/tr/data-record-row retained",
+      "Recorded browser control nested one row=1, identical siblings=2",
+      "Each kind first renders a fresh unique sentinel on success, then requires its absence and no fallback on403/404/503/Busy",
+      "Direct real-API preflight request logs cleared before each actual Next click/deep-link observation"
+    ]
+  },
+  "limits": [
+    "No tests or runtime invoked by this read-only reviewer",
+    "Not review of subsequent bytes or a native acceptance verdict",
+    "Exact old draft bodies were not retained here; finding/repair provenance is recorded",
+    "Final exact-byte official base lint and independent native review remain required"
+  ]
+}

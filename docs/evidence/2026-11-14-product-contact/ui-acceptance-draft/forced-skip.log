@@ -1,0 +1,5 @@
+sssssssss                                                                [100%]
+=========================== short test summary info ============================
+SKIPPED [9] tests/test_attention_current_ui_acceptance.py: synthetic no-skip falsifier
+9 skipped in 0.06s
+UI acceptance incomplete: invalid skipped count

@@ -1,0 +1,10 @@
+{
+  "schema": "native-review-launch-rejection/v1",
+  "recorded_at": "2026-11-14T11:13:43.085284+00:00",
+  "action": "Launch lanectl-hla-ui-spec-r1-review user unit invoking official specification._invoke for opencode-go/deepseek-v4-pro",
+  "executed": false,
+  "automatic_approval_review": "rejected",
+  "stated_reason": "The command launches a native external-model review that may transmit the frozen HLA acceptance and repository-derived contents, but the user\u2019s explicit approval covered only eight host-fence files sent to Anthropic, not this UI payload or destination.",
+  "response": "No retry or alternate caller; requested specific approval; preserving completed acceptance checks while waiting.",
+  "question": "May I send the public HLA UI acceptance proposal, its frozen style contracts, and the public repository context to OpenCode Go\u2019s DeepSeek V4 Pro for the required read-only independent review? Credentials and private Vuoro code are excluded."
+}

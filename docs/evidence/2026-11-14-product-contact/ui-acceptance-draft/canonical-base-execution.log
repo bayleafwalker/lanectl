@@ -1,0 +1,261 @@
+FFFFFF...                                                                [100%]
+=================================== FAILURES ===================================
+_______________ test_rank_is_stable_descending_before_top_eight ________________
+
+lab = ({'mode': 'normal', 'real_api': None, 'record': {}, 'requests': ['/auth/me', '/reports/monthly-cashflow', '/reports/re...s', '/reports/attention-items', '/reports/recent-changes', ...], ...}, <function lab.<locals>.visit at 0x75b9fb8696c0>)
+
+    def test_rank_is_stable_descending_before_top_eight(lab):
+        state, visit = lab
+        rows = [item(i, value, list(SEGMENTS)[i % len(SEGMENTS)])
+                for i, value in enumerate([1, 3, 2, 1, 3, 2, 3, 1, 2, 3, 2, None])]
+        state['rows'] = rows
+        page = visit('/operating-picture')
+        assert page['status'] == 200, page
+        expected = [1, 4, 6, 9, 2, 5, 8, 10]
+        observed = [next((i for i in range(len(rows)) if re.search(rf'Synthetic item {i}(?!\d)', row['text'])), None)
+                    for row in page['rows']]
+>       assert observed == expected, f'current report priority ordering before top eight: {observed} != {expected}'
+E       AssertionError: current report priority ordering before top eight: [0, 3, 7, 2, 5, 8, 10, 1] != [1, 4, 6, 9, 2, 5, 8, 10]
+E       assert [0, 3, 7, 2, 5, 8, ...] == [1, 4, 6, 9, 2, 5, ...]
+E         
+E         At index 0 diff: 0 != 1
+E         Use -v to get more diff
+
+tests/test_attention_current_ui_acceptance.py:249: AssertionError
+___________________ test_unknown_priorities_are_neutral_last ___________________
+
+lab = ({'mode': 'normal', 'real_api': None, 'record': {}, 'requests': ['/auth/me', '/reports/monthly-cashflow', '/reports/re...s', '/reports/attention-items', '/reports/recent-changes', ...], ...}, <function lab.<locals>.visit at 0x75b9fb8696c0>)
+
+    def test_unknown_priorities_are_neutral_last(lab):
+        state, visit = lab
+        rows = [item(100, None), item(101, '3'), item(102, 8), item(103, 1), item(104, 'bad')]
+        rows.append({k: v for k, v in item(105, None).items() if k != 'severity'})
+        state['rows'] = rows
+        page = visit('/operating-picture')
+        observed = [next((i for i in range(100, 106) if re.search(rf'Synthetic item {i}(?!\d)', row['text'])), None)
+                    for row in page['rows']]
+>       assert observed == [103, 100, 101, 102, 104, 105], f'unknown ordering: {observed}'
+E       AssertionError: unknown ordering: [103, 101, 102, 100, 104, 105]
+E       assert [103, 101, 102, 100, 104, 105] == [103, 100, 101, 102, 104, 105]
+E         
+E         At index 1 diff: 101 != 100
+E         Use -v to get more diff
+
+tests/test_attention_current_ui_acceptance.py:268: AssertionError
+_______________ test_distinct_links_encode_whole_key_and_lookup ________________
+
+lab = ({'mode': 'normal', 'real_api': None, 'record': {}, 'requests': ['/auth/me', '/reports/monthly-cashflow', '/reports/re...s', '/reports/attention-items', '/reports/recent-changes', ...], ...}, <function lab.<locals>.visit at 0x75b9fb8696c0>)
+
+    def test_distinct_links_encode_whole_key_and_lookup(lab):
+        state, visit = lab
+        rows = [item(201, 3, 'contract_review'), item(202, 2, 'contract_review')]
+        state['rows'] = rows
+        page = visit('/operating-picture')
+        hrefs = [row['links'][0] for row in page['rows']]
+>       assert len(set(hrefs)) == 2, f'distinct attention records share destination: {hrefs}'
+E       AssertionError: distinct attention records share destination: ['/review', '/review']
+E       assert 1 == 2
+E        +  where 1 = len({'/review'})
+E        +    where {'/review'} = set(['/review', '/review'])
+
+tests/test_attention_current_ui_acceptance.py:279: AssertionError
+___________ test_detail_error_statuses_do_not_fetch_fallback_or_leak ___________
+
+lab = ({'mode': 'normal', 'real_api': None, 'record': {'item_id': 'anomaly_opaque/301_ä', 'rows': [{'amount': '7.1250', 'ano...s', '/reports/attention-items', '/reports/recent-changes', ...], ...}, <function lab.<locals>.visit at 0x75b9fb8696c0>)
+
+    def test_detail_error_statuses_do_not_fetch_fallback_or_leak(lab):
+        state, visit = lab
+        for kind in SEGMENTS:
+            row = item(301, 3, kind)
+            route = '/operating-picture/attention/' + kind + '/' + key(row['item_id'])
+            sentinel = 'StaleGuard-' + uuid.uuid4().hex[:12]
+            records = {
+                'anomaly': {'transaction_id': 'tx-1', 'counterparty_name': sentinel, 'booking_date': '2026-01-02', 'amount': '7.1250', 'direction': 'outflow', 'anomaly_reason': 'large', 'anomaly_type': 'amount'},
+                'upcoming_cost': {'charge_id': 'charge-1', 'contract_name': 'Fixture contract', 'provider': sentinel, 'expected_amount': '7.1250', 'currency': 'EUR', 'frequency': 'monthly', 'expected_date': '2026-01-02', 'confidence': 'high'},
+                'contract_review': {'contract_id': 'contract-1', 'provider': sentinel, 'utility_type': 'electricity', 'reason': 'review_needed', 'current_price': '7.1250', 'currency': 'EUR', 'market_reference': None, 'score': 1},
+                'contract_renewal': {'contract_id': 'contract-1', 'contract_name': 'Fixture contract', 'provider': sentinel, 'utility_type': 'electricity', 'renewal_date': '2026-01-02', 'days_until_renewal': 4, 'current_price': '7.1250', 'currency': 'EUR'},
+            }
+            state['mode'] = 'normal'
+            state['record'] = {'item_id': row['item_id'], 'rows': [records[kind]]}
+            positive = visit(route)
+>           assert positive['status'] == 200 and sentinel in positive['body'], (kind, positive)
+E           AssertionError: ('anomaly', {'body': "Kotona
+E             
+E             There's no page at this address
+E             
+E             The link may be old, or the page moved. Press Ctrl ...e to jump to the one you need.
+E             
+E             Go to dashboard
+E             Open the cashflow map", 'groups': [], 'queue': '', 'rows': [], ...})
+E           assert (404 == 200)
+
+tests/test_attention_current_ui_acceptance.py:312: AssertionError
+_______________ test_only_a_valid_empty_feed_can_show_all_clear ________________
+
+lab = ({'mode': 'missing-feed', 'real_api': None, 'record': {'item_id': 'anomaly_opaque/301_ä', 'rows': [{'amount': '7.1250'...s', '/reports/attention-items', '/reports/recent-changes', ...], ...}, <function lab.<locals>.visit at 0x75b9fb8696c0>)
+
+    def test_only_a_valid_empty_feed_can_show_all_clear(lab):
+        state, visit = lab
+        state['rows'] = []
+        state['mode'] = 'normal'
+        empty = visit('/operating-picture')
+        assert empty['status'] == 200 and ('all clear' in empty['body'].lower() or 'no attention' in empty['body'].lower())
+        for mode in ('missing-feed', 'null-feed', 'object-feed', 'invalid-json', 'feed-unavailable'):
+            state['mode'] = mode
+            result = visit('/operating-picture')
+>           assert 'all clear' not in result['body'].lower(), (mode, result)
+E           AssertionError: ('missing-feed', {'body': 'Skip to content
+E             Kotona
+E             Jump to a page
+E             Ctrl K
+E             
+E             Today
+E             
+E             Dashboard
+E             Operating picture
+E             M...
+E             No ratios yet.
+E             TOP CATEGORIES · FEBRUARY 2024
+E             No category spend yet.', 'groups': [], 'queue': '', 'rows': [], ...})
+E           assert 'all clear' not in 'skip to con...y spend yet.'
+E             
+E             'all clear' is contained here:
+E               on items. all clear.
+E               affordability
+E               no ratios yet.
+E               top categories · february 2024
+E               no category spend yet.
+
+tests/test_attention_current_ui_acceptance.py:342: AssertionError
+_____________ test_real_api_all_kinds_complete_rows_and_opaque_ids _____________
+
+lab = ({'mode': 'missing-feed', 'real_api': None, 'record': {'item_id': 'anomaly_opaque/301_ä', 'rows': [{'amount': '7.1250'...s', '/reports/attention-items', '/reports/recent-changes', ...], ...}, <function lab.<locals>.visit at 0x75b9fb8696c0>)
+tmp_path = PosixPath('/tmp/pytest-of-bayleaf/pytest-15073/test_real_api_all_kinds_comple0')
+
+    def test_real_api_all_kinds_complete_rows_and_opaque_ids(lab, tmp_path):
+        """The browser calls real ASGI API + reader backed by disposable PostgreSQL."""
+        import uvicorn
+    
+        import tests.postgres_test_support as postgres_support
+        import tests.test_attention_record_api as frozen
+        from packages.pipelines.reporting_service import ReportingAccessMode, ReportingService
+        from packages.pipelines.transformation_service import TransformationService
+        from packages.storage.duckdb_store import DuckDBStore
+        from packages.storage.postgres_reporting import PostgresReportingStore
+        from tests.postgres_test_support import docker_is_available, running_postgres_container
+    
+        assert Path(frozen.__file__).resolve().is_relative_to(ROOT), frozen.__file__
+        assert docker_is_available(), 'real API acceptance requires Docker/PostgreSQL; no skip'
+        state, visit = lab
+        store = DuckDBStore.memory()
+        ts = TransformationService(store)
+        frozen.seed(ts)
+        frozen.refresh(ts)
+        server = None
+        thread = None
+    
+        @contextmanager
+        def required_postgres():
+            names = []
+            original_run = subprocess.run
+    
+            def observe(args, *positional, **kwargs):
+                if isinstance(args, list) and args[:2] == ['docker', 'run'] and '--name' in args:
+                    names.append(args[args.index('--name') + 1])
+                return original_run(args, *positional, **kwargs)
+    
+            try:
+                with patch.object(postgres_support.subprocess, 'run', side_effect=observe):
+                    with running_postgres_container() as dsn:
+                        yield dsn
+            except pytest.skip.Exception as exc:
+                pytest.fail(f'PostgreSQL availability changed; no skip: {exc}', pytrace=False)
+            finally:
+                if names:
+                    for name in names:
+                        original_run(['docker', 'rm', '-f', name], capture_output=True, text=True, timeout=30)
+                    inventory = original_run(['docker', 'ps', '-a', '--format', '{{.Names}}'],
+                                             capture_output=True, text=True, timeout=20)
+                    assert len(names) == 1 and inventory.returncode == 0 and all(
+                        name not in inventory.stdout.splitlines() for name in names
+                    ), 'owned PostgreSQL cleanup unverified'
+    
+        try:
+            with required_postgres() as dsn:
+                pg = PostgresReportingStore(dsn)
+                frozen.publish(ts, pg)
+                pg.execute_statements([('UPDATE mart_contract_review_candidates SET market_reference = NULL', [])])
+                service = ReportingService(ts, publication_store=pg, access_mode=ReportingAccessMode.PUBLISHED)
+                client = frozen.make_client(tmp_path, ts, service, name='real-api')
+                by_type = frozen.attention_by_type(client)
+                expected = frozen.expected_records(client)
+                assert set(by_type) == set(SEGMENTS) and all(by_type.values()), by_type
+                assert any(row.get('market_reference') is None for (kind, _), rows in expected.items() if kind == 'contract_review' for row in rows), 'fixture lacks null market reference'
+                assert any('/' in value for values in by_type.values() for value in values), 'fixture lacks slash ID'
+                selected = []
+                for kind, ids in by_type.items():
+                    ordered = sorted(ids, key=lambda v: (len(expected[(kind, v)]), '/' in v), reverse=True)
+                    selected.append((kind, ordered[0]))
+                assert sum(len(expected[k]) > 1 for k in selected) >= 2, 'fixture lacks two multi-row groups'
+                same_kind = next((kind for kind, ids in by_type.items() if len(ids) > 1), None)
+                assert same_kind is not None, 'fixture lacks distinct same-kind IDs'
+                selected.append((same_kind, next(v for v in by_type[same_kind] if v != dict(selected)[same_kind])))
+                slash_kind, slash_id = next((kind, item_id) for kind, item_id in selected if '/' in item_id)
+                selected_ids = [item_id for _, item_id in selected]
+                assert len(selected_ids) == len(set(selected_ids)) == 5
+                # Bound the disposable current feed to five genuine published IDs;
+                # ranking before top-eight is tested separately with >8 inputs.
+                pg.execute_statements([('DELETE FROM mart_open_attention_items WHERE NOT (item_id = ANY(%s))', [selected_ids])])
+                for kind, item_id in selected:
+                    actual_rows = frozen.get_rows(client, kind, item_id)
+                    assert frozen.canon(actual_rows) == frozen.canon(expected[(kind, item_id)]), (kind, item_id)
+                    other = next(k for k in SEGMENTS if k != kind)
+                    assert frozen.get_record(client, other, item_id).status_code == 404
+                api_port = free_port()
+                config = uvicorn.Config(client.app, host='127.0.0.1', port=api_port, log_level='error', lifespan='off')
+                server = uvicorn.Server(config)
+                thread = threading.Thread(target=server.run, daemon=True)
+                thread.start()
+                for _ in range(100):
+                    if server.started:
+                        break
+                    assert thread.is_alive(), 'real API server exited during startup'
+                    time.sleep(.1)
+                assert server.started, 'real API server did not start'
+                state['real_api'] = f'http://127.0.0.1:{api_port}'
+                for kind, item_id in selected:
+                    url = state['real_api'] + '/reports/' + SEGMENTS[kind] + '/records/' + urllib.parse.quote(item_id, safe='')
+                    with urllib.request.urlopen(url, timeout=20) as response:
+                        body = json.load(response)
+                        assert response.status == 200 and body['item_id'] == item_id
+                        assert frozen.canon(body['rows']) == frozen.canon(expected[(kind, item_id)])
+                print('real API preflight: four kinds, five distinct IDs, slash, two multirow groups, null market reference and HTTP rows verified')
+                listing = visit('/operating-picture')
+                links = [link for row in listing['rows'] for link in row['links']]
+                for click_kind, click_id in selected:
+                    href = f'/operating-picture/attention/{click_kind}/{key(click_id)}'
+>                   assert href in links, f'real API record missing distinct Next detail link: {click_kind} {links}'
+E                   AssertionError: real API record missing distinct Next detail link: anomaly ['/review', '/review', '/review', '/review', '/review']
+E                   assert '/operating-picture/attention/anomaly/YW5vbWFseV81ZDlkMmI1MGUxMDMwNTI4' in ['/review', '/review', '/review', '/review', '/review']
+
+tests/test_attention_current_ui_acceptance.py:451: AssertionError
+----------------------------- Captured stdout call -----------------------------
+real API preflight: four kinds, five distinct IDs, slash, two multirow groups, null market reference and HTTP rows verified
+=============================== warnings summary ===============================
+tests/test_attention_current_ui_acceptance.py::test_real_api_all_kinds_complete_rows_and_opaque_ids
+  /tmp/lanectl-base-r33mq3q_/wt/.venv/lib/python3.13/site-packages/websockets/legacy/__init__.py:6: DeprecationWarning: websockets.legacy is deprecated; see https://websockets.readthedocs.io/en/stable/howto/upgrade.html for upgrade instructions
+    warnings.warn(  # deprecated in 14.0 - 2024-11-09
+
+tests/test_attention_current_ui_acceptance.py::test_real_api_all_kinds_complete_rows_and_opaque_ids
+  /tmp/lanectl-base-r33mq3q_/wt/.venv/lib/python3.13/site-packages/uvicorn/protocols/websockets/websockets_impl.py:17: DeprecationWarning: websockets.server.WebSocketServerProtocol is deprecated
+    from websockets.server import WebSocketServerProtocol
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_attention_current_ui_acceptance.py::test_rank_is_stable_descending_before_top_eight
+FAILED tests/test_attention_current_ui_acceptance.py::test_unknown_priorities_are_neutral_last
+FAILED tests/test_attention_current_ui_acceptance.py::test_distinct_links_encode_whole_key_and_lookup
+FAILED tests/test_attention_current_ui_acceptance.py::test_detail_error_statuses_do_not_fetch_fallback_or_leak
+FAILED tests/test_attention_current_ui_acceptance.py::test_only_a_valid_empty_feed_can_show_all_clear
+FAILED tests/test_attention_current_ui_acceptance.py::test_real_api_all_kinds_complete_rows_and_opaque_ids
+6 failed, 3 passed, 2 warnings in 62.91s (0:01:02)

@@ -1,0 +1,12 @@
+valid accepted
+zero rejected
+incomplete rejected
+skipped rejected
+failure rejected
+error rejected
+duplicate rejected
+wrong-module rejected
+summary-mismatch rejected
+malformed rejected
+missing-count rejected
+missing rejected
