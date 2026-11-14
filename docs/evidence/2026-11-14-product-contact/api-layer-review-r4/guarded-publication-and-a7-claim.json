@@ -1,0 +1,111 @@
+{
+  "measured_at": "2026-11-14T08:57:44.952714+00:00",
+  "published_commit": "a273e5afaa1ae3b36c5f7405328d616399da864c",
+  "events": [
+    {
+      "data": {
+        "provenance": "guarded-publish",
+        "release_id": "hla-attention-records-r5",
+        "revision": 4
+      },
+      "item_id": "hla-attention-records-r5",
+      "schema": "lanectl.event/v1",
+      "ts": "2026-11-14T08:55:21Z",
+      "type": "release.published"
+    },
+    {
+      "data": {
+        "attempt_id": "hla-attention-records-r5-a7",
+        "base_sha": "30c0caf6c78d257ff5db79f42cca0b56a0f934b9",
+        "branch": "lane/hla-attention-records-r5-a7",
+        "lane": "implement",
+        "lane_digest": "sha256:7bd3d1f327b84636",
+        "lane_revision": 3,
+        "model": "opencode-go/deepseek-v4-pro",
+        "release_revision": 4,
+        "runner_process": {
+          "boot_id": "bd59e4fd-e182-4b3a-aa2e-b78ebef31fa6",
+          "host": "workstation",
+          "machine_id": "e681b85141f226386e176a1de00fcc3ab4546197d3aa937aad606d73ce133a5b",
+          "pid": 461785,
+          "start_ticks": "1081255"
+        },
+        "worker": "opencode",
+        "worker_unit": "lanectl-attempt-17989ac4960965a867e1e7d1.service"
+      },
+      "item_id": "hla-attention-records-r5",
+      "schema": "lanectl.event/v1",
+      "ts": "2026-11-14T08:55:22Z",
+      "type": "item.claimed"
+    },
+    {
+      "data": {
+        "alternatives": {
+          "opencode-go/deepseek-v4-pro": 0.25,
+          "opencode-go/deepseek-v4.1-flash": 0.75
+        },
+        "basis": [
+          "release:hla-attention-records-r5@4",
+          "lane:implement@3"
+        ],
+        "chosen": "opencode-go/deepseek-v4-pro",
+        "cycle_id": "cyc-b71a3e0de6494975a7e248c1c26b8bd4",
+        "decision_id": "dec-d1624727598347abaa3357d84d1e0989",
+        "kind": "dispatch",
+        "mechanism": "weighted-hash/v1",
+        "phase": "proposed",
+        "policy_revision": "lane/implement@3",
+        "probabilities": {
+          "opencode-go/deepseek-v4-pro": 1.0,
+          "opencode-go/deepseek-v4.1-flash": 0.0
+        },
+        "snapshot_ts": "2026-11-14T08:55:22Z",
+        "subject": {
+          "attempt_id": "hla-attention-records-r5-a7",
+          "item_id": "hla-attention-records-r5"
+        }
+      },
+      "item_id": "hla-attention-records-r5",
+      "schema": "lanectl.event/v1",
+      "ts": "2026-11-14T08:55:22Z",
+      "type": "lane.decision"
+    },
+    {
+      "data": {
+        "alternatives": {
+          "opencode-go/deepseek-v4-pro": 0.25,
+          "opencode-go/deepseek-v4.1-flash": 0.75
+        },
+        "basis": [
+          "release:hla-attention-records-r5@4",
+          "lane:implement@3"
+        ],
+        "chosen": "opencode-go/deepseek-v4-pro",
+        "cycle_id": "cyc-b71a3e0de6494975a7e248c1c26b8bd4",
+        "decision_id": "dec-399380a96e0b4541b28659002cf9b1ed",
+        "kind": "dispatch",
+        "mechanism": "weighted-hash/v1",
+        "phase": "applied",
+        "policy_revision": "lane/implement@3",
+        "probabilities": {
+          "opencode-go/deepseek-v4-pro": 1.0,
+          "opencode-go/deepseek-v4.1-flash": 0.0
+        },
+        "proposal_id": "dec-d1624727598347abaa3357d84d1e0989",
+        "snapshot_ts": "2026-11-14T08:55:22Z",
+        "subject": {
+          "attempt_id": "hla-attention-records-r5-a7",
+          "item_id": "hla-attention-records-r5"
+        }
+      },
+      "item_id": "hla-attention-records-r5",
+      "schema": "lanectl.event/v1",
+      "ts": "2026-11-14T08:55:22Z",
+      "type": "lane.decision"
+    }
+  ],
+  "implementation_state": "claimed/running; no candidate acceptance or delivery claimed",
+  "reviewed_source_base": "30c0caf6c78d257ff5db79f42cca0b56a0f934b9",
+  "current_integration_main": "529e41807dc3a6d22fe42bb61594be8a7fbe1f1b",
+  "whole_work_complete": false
+}

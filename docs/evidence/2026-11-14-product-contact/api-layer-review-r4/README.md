@@ -31,3 +31,8 @@ reviewed release base stays30c; the guarded current runner checks the exact
 canonical head, ancestry and four-path delta, fast-forwards the local canonical
 checkout and leaves normal train integration/CI mandatory. The earlier prepared
 runner required canonical HEAD equal30c and was never executed.
+
+Actual guarded publication completed08:55:21UTC and canonical commit `a273e5a`
+preceded normal Pro a7 claim08:55:22UTC. The selected publication/claim events are
+retained in `guarded-publication-and-a7-claim.json`. The attempt is running; no
+candidate, HTTP delivery or whole HLA1593 completion is inferred.

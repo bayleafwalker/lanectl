@@ -5,3 +5,5 @@ The revision 3 specification evidence does not review this revision. A fresh ind
 The actual R4 native review returned revise: the original explicit slow selector can succeed with skipped cases. A first-party planner gate now requires all three named cases to pass with zero skips. This tightened draft requires fresh independent review; no verdict is claimed.
 
 Fresh native review3 completed done/exit0 with accept at08:49:57UTC; the final official base lint and publication validator both returned empty lists. The packet remains draft until guarded publication. Exact original acceptance and full four-kind/M700 scope are unchanged. A later canonical documentation-only advance529e418 was independently checked against product intention; source review remains bound to30c and normal train integration remains mandatory.
+
+Guarded publication completed08:55:21UTC and was committed as `a273e5a`. Normal Pro attempt `hla-attention-records-r5-a7` was claimed08:55:22UTC. This file records historical holds; revision4 is now published, with candidate qualification and delivery still pending.
