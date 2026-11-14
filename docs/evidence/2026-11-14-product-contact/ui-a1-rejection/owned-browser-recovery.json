@@ -1,0 +1,40 @@
+{
+  "schema": "hla-rejected-attempt-owned-browser-recovery/v1",
+  "recorded_at": "2026-11-14T14:52:42.727522+00:00",
+  "attempt_id": "hla-attention-ui-a1",
+  "reason": "Native timeout killed fixture before finalizer; leftover exact attempt-mounted browser independently identified after terminal rejection",
+  "ownership_proof": {
+    "id": "ada3db5392209f48527c0b9491d43e4d1f0dd163b514552a0aa66fb9e4b71dee",
+    "name": "/hla-attention-accept-65cf8f85efcb",
+    "image": "sha256:b0ab6f3cb99aa7803adbc14d9027ec1785fc6e433b97e134e0f8fe61683b6b53",
+    "created": "2026-11-14T14:28:57.261092976Z",
+    "path": "node",
+    "args": [
+      "/opt/node_modules/playwright/cli.js",
+      "run-server",
+      "--host",
+      "127.0.0.1",
+      "--port",
+      "34225"
+    ],
+    "mounts": [
+      {
+        "Type": "bind",
+        "Source": "/projects/dev/_wt/lanes/hla-attention-ui-a1/apps/web/frontend/node_modules",
+        "Destination": "/opt/node_modules",
+        "Mode": "ro",
+        "RW": false,
+        "Propagation": "rprivate"
+      }
+    ],
+    "native_unit_active_state": "inactive",
+    "attempt_worktree_already_discarded": true,
+    "created_within_native_interval": true
+  },
+  "remove_status": 0,
+  "remove_stdout": "ada3db5392209f48527c0b9491d43e4d1f0dd163b514552a0aa66fb9e4b71dee\n",
+  "remove_stderr": "",
+  "inventory_status": 0,
+  "absent": true,
+  "scope": "This exact owned browser only; no global resource-absence claim, no a2 resource touched"
+}
