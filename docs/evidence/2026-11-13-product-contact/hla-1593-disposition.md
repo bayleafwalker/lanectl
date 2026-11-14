@@ -246,7 +246,7 @@ Publication truth was separately repaired and released as0.2.9 atf9267ea32e481f2
 All four HTTP APIs/generated contracts, meaningful ranked individual UI, complete train/dev/CI delivery, strict host apply/qualification and hosted runner identity remain open. Served HLA1593/496 retains the complete delivery scope; lanectl2899/497 is the separate completed publication repair. Current host observation still shows olddbf142 with empty RootDirectory. Both encrypted workstation names are aliases; the committed deployment helper --host workstation remains correct. GitOps drift checks report real unapplied desired configuration on workstation, devbox and infra; no remote deployment readiness is inferred.
 
 
-## 2026-11-14: source R3 qualified and submitted for canonical CI
+## 2026-11-14: source R3 qualified and merged canonically
 
 Native Pro attempt a3 genuinely completed done/exit0 at
 `78bf4f4ca15fe2fbe7086d1018f5533930cb8af4`, with all five gates passing.
@@ -271,8 +271,9 @@ single-attempt publisher. Normal local landing and owned teardown completed,
 and independent inspection confirmed the resources absent.
 
 Canonical [PR83](https://github.com/bayleafwalker/homelab-analytics/pull/83)
-contains that exact checked train. Its CI is still pending; local landing is
-not canonical completion. Detailed raw evidence and the reproducible harness
+contains that exact checked train. All four CI jobs passed, and it merged as
+`30c0caf6c78d257ff5db79f42cca0b56a0f934b9`. Fresh canonical ancestry
+confirmed the checked head is merged. Detailed raw evidence and the reproducible harness
 are in `../2026-11-14-product-contact/`. Full HLA1593 remains active: all four
 HTTP record endpoints and generated contracts, meaningful ranked individual UI,
 and their complete verification/dev/canonical delivery remain open.
@@ -292,3 +293,10 @@ actual-host tests and matching Sovite baseline passed, independent review
 approved its scoped policy promotion, and canonical lanectl `ac4c4dd` selects
 systemd for Sovite. That does not establish hosted runner authorization or the
 ladder's product-count or week-long operational exits.
+
+The full API revision4 remains draft over that canonical source. Actual native
+review requested revision because PostgreSQL fixture skips could return success.
+The tightened third command requires all three named cases to pass without
+skips; its planner implementation is being qualified against unchanged official
+per-file base lint before a fresh independent native review. No API candidate
+or UI delivery is claimed.

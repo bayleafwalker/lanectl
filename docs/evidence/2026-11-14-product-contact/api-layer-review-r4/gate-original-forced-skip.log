@@ -1,0 +1,7 @@
+QUALIFICATION_IMPORT tests.test_attention_record_api /tmp/hla-api-source7134-preview/tests/test_attention_record_api.py
+QUALIFICATION_IMPORT tests.postgres_test_support /tmp/hla-api-source7134-preview/tests/postgres_test_support.py
+QUALIFICATION_IMPORT packages.domains.overview.pipelines.attention_records /tmp/hla-api-source7134-preview/packages/domains/overview/pipelines/attention_records.py
+sss                                                                      [100%]
+=========================== short test summary info ============================
+SKIPPED [3] tests/postgres_test_support.py:58: Docker is required for Postgres adapter integration tests.
+3 skipped, 29 deselected in 6.82s

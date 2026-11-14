@@ -1,0 +1,20 @@
+{
+  "kind": "first-party independent guard audit",
+  "reviewer": "/root/hla_source_manual_review",
+  "identity": "First-party Codex based on GPT-6; exact variant not independently attested",
+  "final_guard_sha256": "7cc1222151c01559ef58b9ff473f73a13d0b99800ac111ca5674930e25098aad",
+  "verdict": "pass",
+  "checks": [
+    "Original1173-byte input and two commands unchanged",
+    "Strict report parser independently exercised valid and missing/malformed/incomplete/skip/failure controls",
+    "Integration-marked non-slow wrapper runs only at execution, not collection",
+    "Child selects only original three API cases, so no wrapper recursion",
+    "Reviewed forced-skip and real positive logs separately"
+  ],
+  "limits": [
+    "Did not independently rerun real PostgreSQL",
+    "Did not independently run official base lint",
+    "Does not replace native review or candidate acceptance"
+  ],
+  "consequence": "Default fast pytest including this frozen guard requires working Docker/PostgreSQL and fails closed when unavailable."
+}

@@ -1,0 +1,6 @@
+QUALIFICATION_IMPORT tests.test_attention_record_api /tmp/hla-api-source7134-preview/tests/test_attention_record_api.py
+QUALIFICATION_IMPORT tests.postgres_test_support /tmp/hla-api-source7134-preview/tests/postgres_test_support.py
+QUALIFICATION_IMPORT packages.domains.overview.pipelines.attention_records /tmp/hla-api-source7134-preview/packages/domains/overview/pipelines/attention_records.py
+...                                                                      [100%]
+3 passed in 25.65s
+PostgreSQL gate: all three named cases passed without skips

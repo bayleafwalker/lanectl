@@ -1,88 +1,62 @@
 {
   "schema": "lanectl-specification/v1",
-  "release_digest": "9816b5757653776c47abc9ff8a4a82a9420266f0575d86bfc06a148055bdcc6a",
+  "release_digest": "a6b48797f92da3efb0e728ba2dbb24dcc698d2ae33a3b174dccdeef7b9405503",
   "review": {
-    "verdict": "accept",
-    "reason": "Revision3 is purely additive over the independently accepted revision2 artifact. I verified that the accepted test (git 0155a1f:backlog/hla-attention-records-r5/files/tests/test_attention_record_api.py, sha256 d77e1d1fb685e3952a243c86d0c9924841a28d894b74d83c13e8f72b40350152) is a byte-for-byte PREFIX of the proposal's embedded test (sha256 34da78c8cb79c5ecc6d38e740c6b2ee90433dc000e6633cb3bf853aff6bb3abb): the unified diff adds exactly 96 lines (one helper `_observe_warehouse_reads` and three test functions) with zero deletions or modifications, so no existing executable statement or assertion is weakened. The three additions precisely encode the three measured publication boundaries: (1) `test_strict_published_without_store_is_unavailable_without_warehouse_reads` asserts strict PUBLISHED/no-store refuses 503 while `_observe_warehouse_reads` (patching DuckDBStore.fetchall/fetchall_dicts, the exact methods `run_on_warehouse` delegates to) records zero warehouse reads; (2) `test_published_postgres_missing_identity_column_is_unavailable` asserts a positive 200 before `ALTER TABLE ... DROP COLUMN charge_id`, then safe 503 for both the known `item_id` and a plausible unknown key with `raise_server_exceptions=False` surfacing the would-be 500 as a response, `calls == []` blocking any warehouse fallback, and an unrelated contract_review row still resolving; (3) `test_published_postgres_empty_identity_never_resolves_forged_key` proves the production row model admits an empty charge_id via `UPCOMING_FIXED_COSTS_ROW_MODEL.model_validate(to_jsonable(rows[0]))` and the production store admits it via `store.replace_rows(..., MART_UPCOMING_FIXED_COSTS_30D_COLUMNS, ...)`, refuses the forged `upcoming__<date>` key with detail-only 400/404/422/503 (not 200), and confirms the unrelated intact row still resolves. Source authority is real: `UPCOMING_FIXED_COSTS_ROW_MODEL` (report_routes.py:149), `to_jsonable` (apps/api/support.py:455), and `MART_UPCOMING_FIXED_COSTS_30D_COLUMNS` (subscription_models.py:117, the exact columns used by PUBLICATION_RELATIONS) all exist and are imported from production modules. Cleanup is sound (uuid-named disposable Postgres with `docker rm -f` in a context manager; `tmp_path`/`monkeypatch` auto-clean). The outcome restates the complete four-kind contract and the a4 rejection (missing column 500, empty identity 200) without narrowing scope or adding grants. No fixture error, weakened assertion, or tautological check found.",
-    "trivial_pass": "No attack yields a trivial pass. Each new assertion discriminates correct from incorrect behavior and cannot be satisfied by a blanket response: test 1 would still require 503 with zero DuckDB reads (a warehouse-fallback implementation returns 200 and populates `calls`); test 2 requires a positive 200 before the drop and an intact contract_review resolution afterward, so a blanket-503 implementation fails the positive assertions, while the `statuses=(503,)` check fails any uncaught 500; test 3 requires both the forged-key refusal AND the intact-row resolution, so the fix cannot simply reject all upcoming reads. `_observe_warehouse_reads` is non-vacuous: it patches the exact DuckDB methods that the warehouse read path (`run_on_warehouse` -> `fn(service.store)` -> `store.fetchall_dicts`) exercises, so `assert calls == []` would catch a fallback-to-warehouse fix. The `model_validate`/`replace_rows` proofs additionally forbid the fix from solving the empty-identity bug by tightening the row model or store (a policy bypass), and the unchanged `malformed` list (`upcoming_None_<due>` -> 400/404/422) continues to refuse None only in the charge_id position via SQL binding, not a global `'None' in item_id` ban.",
+    "verdict": "revise",
+    "reason": "The frozen acceptance input is behaviorally strong for the portable DuckDB paths and is genuinely anti-trivial-pass via its source-query observer, and I confirmed the canonical source (30c0caf) really exposes ReportingService.get_attention_record plus public AttentionRecordNotFoundError/AttentionRecordUnavailableError and that a canonical checkout fails on the genuinely missing /reports/{segment}/records/{item_id} route (all frozen imports resolve; no attention_record_routes or run_on_warehouse references), not on imports/fixtures/setup. However, the required real-PostgreSQL qualification is NOT mechanically enforced. The three @pytest.mark.integration + @pytest.mark.slow PG tests are silently deselected by the repo default `addopts = -ra -m \"not slow\"` in pytest.ini, and running_postgres_container() calls pytest.skip() (not fail) when Docker is absent, whereas the already-landed source-level tests/test_attention_source_records.py uses required_postgres() which `assert docker_is_available()` and fails. The outcome's 'explicit integration-and-slow selection, with no skips' is prose, not a test, Makefile target, or CI gate. Because the empty-charge_id forge ('upcoming__date' must never 200), the real lower lease/missing-column unavailable path, and the actual-PG NULL/empty-identity boundary are exercised only by those skippable tests, a worker can pass all 29 fast tests while the actual-PG contract is never run. This must be revised to add a fail-not-skip guard and/or a committed selection gate before the input can be accepted as a complete gate.",
+    "trivial_pass": "Trivial-pass attack: the adapter ignores the opaque key and returns a hard-coded {item_id: rows} map, or issues whole-source SELECT * / WHERE 1=1 / scalar-only and filters in Python. The frozen contract REJECTS this: test_lookup_binds_complete_key_at_source_before_limit and test_stale_identity_probe_does_not_fetch_source_data monkeypatch the store methods, replay the real SQL against real data, and require (a) item_id present as a bound parameter and absent from the SQL text, (b) a WHERE clause carrying a placeholder, (c) no LIMIT before WHERE, (d) every observed row's source_key equals item_id, and (e) any scalar probe be SELECT 1/COUNT/EXISTS ... IS NULL with at most one row. A hard-coded map observes no source query and fails; a fetch-all or false-WHERE fails (b)/(d) because competing identities exist in the same relation. A separate trivial pass the frozen file does NOT reject is the silent-skip path: the three real-PG tests are deselected by `-m \"not slow\"` and running_postgres_container() pytest.skip()s without Docker, so the actual-PG contract can be 'passed' by never exercising it.",
     "checks": [
-      "SHA-256 identity: accepted rev2 = d77e1d1fb685e3952a243c86d0c9924841a28d894b74d83c13e8f72b40350152 (git 0155a1f blob); proposal rev3 = 34da78c8cb79c5ecc6d38e740c6b2ee90433dc000e6633cb3bf853aff6bb3abb.",
-      "Additive-only delta verified byte-for-byte: rev2 is a prefix of rev3 (cmp equal on the shared 1077-line prefix); unified diff is +96/-0 (one helper + three test functions), no existing line modified.",
-      "Test count 17 -> 20; the three new names are unique and do not collide with any existing test; module compiles (python3 -m py_compile) and contains no skip/xfail/skipif/importorskip/type-ignore/noqa.",
-      "test_strict_published_without_store_is_unavailable_without_warehouse_reads: publication_store=None + PUBLISHED; asserts status 503 and `calls == []` after patching DuckDBStore.fetchall/fetchall_dicts (the exact methods run_on_warehouse -> fn(store).fetchall_dicts delegates to).",
-      "test_published_postgres_missing_identity_column_is_unavailable: positive `assert_resolves` (200) before `ALTER TABLE mart_upcoming_fixed_costs_30d DROP COLUMN charge_id`; `raise_server_exceptions=False` turns the would-be 500 into an observed response; asserts 503 for known item_id and plausible unknown `upcoming_ffffffffffffffff_<date>` with detail-only body and no warehouse reads; unrelated contract_review resolves; @integration @slow.",
-      "test_published_postgres_empty_identity_never_resolves_forged_key: `UPCOMING_FIXED_COSTS_ROW_MODEL.model_validate(to_jsonable(rows[0]))` proves the production model admits charge_id=''; `store.replace_rows(..., MART_UPCOMING_FIXED_COSTS_30D_COLUMNS, ...)` proves the store admits it; forged `upcoming__<date>` refused with detail-only 400/404/422/503 and `calls == []`; intact row still resolves; @integration @slow.",
-      "Actual source authority: imports resolve to production symbols \u2014 UPCOMING_FIXED_COSTS_ROW_MODEL (apps/api/routes/report_routes.py:149), to_jsonable (apps/api/support.py:455), MART_UPCOMING_FIXED_COSTS_30D_COLUMNS (packages/domains/finance/pipelines/subscription_models.py:117); the columns list is identical to PUBLICATION_RELATIONS[MART_UPCOMING_FIXED_COSTS_30D_TABLE].columns and charge_id is `VARCHAR` (nullable -> str | None), so empty string is genuinely admissible.",
-      "Exception-to-HTTP assertion is real: the missing-column psycopg error under raise_server_exceptions=False surfaces as 500, so `statuses=(503,)` fails on the a4 bug (500) and passes only when the source maps the fault to a safe 503.",
-      "Cleanup: running_postgres_container spins a uuid-named disposable postgres:16-alpine container and removes it via `docker rm -f` in finally; tmp_path and monkeypatch are auto-undone.",
-      "Outcome restates all four kinds (transaction-anomalies, contract-review-candidates, contract-renewal-watchlist, upcoming-fixed-costs), the opaque slash-carrying item_id, exact-key binding before limit/filter, permissions, PUBLISHED no-fallback, missing/stale 503 vs unknown 404, no key fabrication from NULL/empty, the empty-charge_id refusal set, literal-None-not-globally-invalid, detail-only failures, regenerated OpenAPI/TypeScript, and unchanged required gates (slow Postgres, verify-fast, independent review, train/dev deploy, CI/merge); it adds no grant/migration/frontend/auth change and no suppressions."
+      "Canonical source contract present: packages/domains/overview/pipelines/attention_records.py defines get_attention_record plus public AttentionRecordNotFoundError(KeyError) and AttentionRecordUnavailableError(RuntimeError), and packages/pipelines/reporting_service.py exposes get_attention_record/get_open_attention_items as public delegating methods (lines 877-881).",
+      "Source reader binds the complete opaque key in real SQL ('prefix_' || identity || ... = ?/%s) and never splits or matches an equal-looking prefix; the four _ATTENTION_KINDS map anomaly/contract_review/contract_renewal/upcoming_cost to their source relations and identity columns.",
+      "Busy/programming-error preservation is correct in the source: get_attention_record catches only (psycopg.Error, duckdb.Error), so WarehouseBusyError(RuntimeError) and unrelated RuntimeError propagate unchanged, and install_warehouse_access maps WarehouseBusyError to 503 with Retry-After and retry_after_seconds (shape {\"error\", \"retry_after_seconds\"}, not {\"detail\"}), which the frozen file correctly does not conflate with the detail-only 404/503.",
+      "All four routes, segments, and row models are present and correct: SEGMENTS maps to transaction-anomalies/contract-review-candidates/contract-renewal-watchlist/upcoming-fixed-costs, and ROW_MODELS names match the existing report_routes.py Pydantic row models (TransactionAnomaliesRow, ContractReviewCandidatesRow, ContractRenewalWatchlistRow, UpcomingFixedCostsRow).",
+      "Own-source authorization is enforced through the existing path policy: _reports_read_permission maps /reports/{first_segment}/... to publication_read_permission(first_segment), so /reports/transaction-anomalies/records/{item_id} requires reports.read.publication.transaction-anomalies, not the attention-items permission; test_source_publication_permission_reads_only_its_own_segment and test_attention_only_permission_never_exposes_source_records assert 403 cross-segment and attention-only.",
+      "Encoded-slash routing and prefix-of-each-other identities are exercised: record_path uses quote(item_id, safe='') and _build asserts '/' is present in contract_review and contract_renewal keys, while grid/north vs grid vs grid_north distinguish slash/underscore prefixes.",
+      "No-fallback/current-publication authority is enforced: test_published_reads_never_fall_back_to_the_warehouse, test_unpublished_source_relation_is_unavailable, and test_strict_published_without_store_is_unavailable_without_warehouse_reads (via _observe_warehouse_reads asserting calls == []) forbid warehouse reads in PUBLISHED mode.",
+      "NULL/empty identity vs unsupported mutation is covered: NULL charge_id and partial NULL yield 503 (not 404), missing charge_id column yields 503 without warehouse reads, empty charge_id ('upcoming__date') never resolves 200, and the literal string 'None' remains a valid nonempty identity (404 as provably absent, not 503 as fabricated).",
+      "Detail-only 404/503 shape is enforced: assert_not_resolved requires set(body) == {'detail'} and bans stored fields (SOURCE_NAMES, charge_ids, contract/date/amount secrets); because _register_exception_handlers maps KeyError to {\"error\": ...}, the adapter must explicitly catch AttentionRecordNotFoundError/AttentionRecordUnavailableError and raise HTTPException to satisfy the {\"detail\"} contract.",
+      "OpenAPI/TypeScript contract generation for all four endpoints is checked against the live app.openapi() and apps/web/frontend/generated/openapi.json and api.d.ts, including path params == ['item_id'] and rows items resolving to the exact existing Pydantic row-model schemas.",
+      "Genuine-missing-feature failure confirmed: every frozen-file import (create_app, AccountTransactionService, subscription_charge_id, MockOidcIssuer, running_postgres_container, to_jsonable, MART_UPCOMING_FIXED_COSTS_30D_COLUMNS, UPCOMING_FIXED_COSTS_ROW_MODEL, etc.) exists in the canonical tree, so running against 30c0caf fails at the unregistered route (404 then assert status_code == 200), not at import/fixture/setup time.",
+      "DEFICIENCY (mechanical enforcement): pytest.ini sets addopts = -ra -m \"not slow\", silently deselecting the three @pytest.mark.integration + @pytest.mark.slow PG tests, and running_postgres_container() pytest.skip()s when Docker is absent; the frozen file lacks the fail-not-skip required_postgres() guard that the landed source-level test uses, so the outcome's 'explicit integration-and-slow selection, with no skips' is unenforced prose.",
+      "Coverage gap noted: the canonical WarehouseBusyError 503 Retry-After response and unrelated-programming-error-remains-500 behavior are not asserted by the frozen file (deferred to worker regression tests), so the frozen gate alone does not verify that the adapter fails to sanitize those into availability responses."
     ]
   },
   "author_model": "gpt-6.1-terra",
   "reviewer_model": "opencode-go/deepseek-v4-pro",
-  "intent_digest": "689a2bcc876c6cdddebde0f4397e54b40896407b8ffd7d2cb54739d6b59cfcb3",
-  "recorded_at": "2026-11-13T16:56:00.924748+00:00",
-  "lint_problems": [],
+  "intent_digest": "ea1ed67b1c9f0098d1cdfbf77e3748cda6f0a30e554419518cf232fdabfb5f39",
+  "recorded_at": "2026-11-14T08:06:50.210778+00:00",
+  "lint_problems": [
+    "adversarial review requests revision"
+  ],
   "usage": {
     "author": null,
     "reviewer": {
-      "input_tokens": 135986,
-      "output_tokens": 7173,
-      "reasoning_tokens": 44347,
-      "cache_read_tokens": 3047424,
+      "input_tokens": 134653,
+      "output_tokens": 7171,
+      "reasoning_tokens": 29420,
+      "cache_read_tokens": 2267904,
       "cache_write_tokens": 0,
       "cost_usd": 0.0,
-      "steps": 45
+      "steps": 36
     }
   },
-  "prior_independent_review_commit": "0155a1f",
-  "review_prompt_sha256": "5eb7628498fef49177cd805715d83421860684bfda82204d76eb7bc5af3d4f2b",
-  "planner_import_cleanup": {
-    "previous_commit": "1545992",
-    "before_sha256": "9f6cc5f96a21e568cf41b132bd6525701e25ddf2b4e89810b0729a78a94880dd",
-    "after_sha256": "d77e1d1fb685e3952a243c86d0c9924841a28d894b74d83c13e8f72b40350152",
-    "non_import_statements_identical": true,
-    "import_bindings_identical": true,
-    "change": "Ruff I001 import ordering only. All non-import statements, test functions, decorators and assertions unchanged.",
-    "independent_frozen_ruff_before": "I001 at line17; failed before any implementation",
-    "independent_frozen_ruff_after": "All checks passed!",
-    "attempt_accountability": {
-      "a1": "Actual source forbidden type-ignore model error; frozen Ruff error is separate planner fault. Functional acceptance gate passed, but no candidate acceptance.",
-      "a2": "Coordinator stopped exact native unit for verified unpassable frozen context; framework recorded infra/no changes.",
-      "a3": "Scheduled tick raced draft hold; exact native unit stopped for same verified planner defect, no changes. Standing timer was not stopped/disabled; naturally completed tick and enabled timer verified.",
-      "approval_rejection": "Automatic review rejected stopping lanectl-tick.service; accepted narrower exact-retry stops resolved the task."
-    },
-    "lint_context": "Canonical HLA cwd, actual tests/test_attention_record_api.py stdin filename, repository config discovery, no cache",
-    "outside_path_config_limit": "Explicit --config on the external backlog path classified first-party imports differently; only the canonical project context is accepted as evidence."
+  "mandatory_acceptance_commands": [
+    "uv run --no-sync python -m pytest -q -p no:cacheprovider tests/test_attention_record_api.py",
+    "uv run --no-sync python -m pytest -q -p no:cacheprovider -m 'integration and slow' tests/test_attention_record_api.py"
+  ],
+  "prior_specification_sha256": "3e8910364f220d35c0c84e8cd1e02d31a3c3afa86ac4062dfe9a4bed7c89bbac",
+  "scope_revision": {
+    "model_requested": "gpt-6.1-terra",
+    "harness": "first-party API planner agent",
+    "task": "/root/source_r3_qualification",
+    "proposal_sha256": "b540dc5491e4d23d69d1a79b67d716aab7675e5b620df263c47072a3c250c452",
+    "frozen_input_unchanged": true,
+    "frozen_input_sha256": "34da78c8cb79c5ecc6d38e740c6b2ee90433dc000e6633cb3bf853aff6bb3abb",
+    "new_author_invocation_for_frozen_tests": false,
+    "canonical_source": "30c0caf6c78d257ff5db79f42cca0b56a0f934b9",
+    "original_full_api_scope_preserved": true,
+    "unaccepted_reference_is_not_implementation_approval": true
   },
-  "frozen_static_lint": {
-    "command": [
-      "/projects/dev/homelab-analytics/.venv/bin/ruff",
-      "check",
-      "--no-cache",
-      "--stdin-filename",
-      "tests/test_attention_record_api.py",
-      "-"
-    ],
-    "cwd": "/projects/dev/homelab-analytics",
-    "exit_code": 0,
-    "output": "All checks passed!"
-  },
-  "previous_comment_cleanup": {
-    "previous_commit": "8db959bae02e169a046d2df4c27d9e5d65b675ff",
-    "before_sha256": "faf23bef902e219be1d9c2f2d32adf8d081f78064f7b720a6dc8c3d3fe303c03",
-    "after_sha256": "9f6cc5f96a21e568cf41b132bd6525701e25ddf2b4e89810b0729a78a94880dd",
-    "executable_ast_sha256": "8629a42ba549074e6ad26dc3309a13489e8cd9083daf25744e0bc9b836d6a543",
-    "compiled_code_equal": true,
-    "change": "Removed one unused inline type-ignore comment; all executable code identical."
-  },
-  "planner_boundary_extension": {
-    "kind": "additive-first-party-planner-correction",
-    "author_model": "GPT-6",
-    "prior_sha256": "d77e1d1fb685e3952a243c86d0c9924841a28d894b74d83c13e8f72b40350152",
-    "current_sha256": "34da78c8cb79c5ecc6d38e740c6b2ee90433dc000e6633cb3bf853aff6bb3abb",
-    "prior_top_level_nodes_unchanged": true,
-    "added_top_level_nodes": 4,
-    "rejected_candidate": "b41e2c6c6dbad1a410e4048a6aebf4e958b8498f"
-  }
+  "diagnostics_root": "/tmp/lanectl-hla-api-r4-review",
+  "invocation": "official specification._invoke unchanged"
 }

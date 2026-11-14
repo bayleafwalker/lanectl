@@ -1,0 +1,142 @@
+QUALIFICATION_IMPORT tests.test_attention_record_api /tmp/hla-api-source30-control/tests/test_attention_record_api.py
+QUALIFICATION_IMPORT tests.postgres_test_support /tmp/hla-api-source30-control/tests/postgres_test_support.py
+QUALIFICATION_IMPORT packages.domains.overview.pipelines.attention_records /tmp/hla-api-source30-control/packages/domains/overview/pipelines/attention_records.py
+FFF                                                                      [100%]
+=================================== FAILURES ===================================
+__________________ test_published_postgres_attention_records ___________________
+
+tmp_path = PosixPath('/tmp/pytest-of-bayleaf/pytest-15003/test_published_postgres_attent0')
+
+    @pytest.mark.integration
+    @pytest.mark.slow
+    def test_published_postgres_attention_records(tmp_path: Path) -> None:
+        ts = TransformationService(DuckDBStore.memory())
+        facts = seed(ts)
+        refresh(ts)
+        with running_postgres_container() as dsn:
+            store = PostgresReportingStore(dsn)
+            publish(ts, store)
+            reporting = ReportingService(
+                ts,
+                publication_store=store,
+                access_mode=ReportingAccessMode.PUBLISHED,
+            )
+            client = make_client(tmp_path, ts, reporting, name='postgres')
+            grouped = attention_by_type(client)
+            expected = expected_records(client)
+            assert any('/' in item_id for item_id in grouped['contract_review'])
+            assert any('/' in item_id for item_id in grouped['contract_renewal'])
+            for item_type in ('contract_review', 'contract_renewal', 'upcoming_cost'):
+                for item_id in grouped[item_type]:
+>                   assert_resolves(client, item_type, item_id, expected.get((item_type, item_id), []))
+
+tests/test_attention_record_api.py:920: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_attention_record_api.py:359: in assert_resolves
+    rows = get_rows(client, item_type, item_id)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+client = <starlette.testclient.TestClient object at 0x7460a8d82e40>
+item_type = 'contract_review'
+item_id = 'review_grid/north_multiple_contracts_same_type'
+
+    def get_rows(client: TestClient, item_type: str, item_id: str) -> list[dict[str, Any]]:
+        response = get_record(client, item_type, item_id)
+>       assert response.status_code == 200, (item_type, item_id, response.status_code, response.text)
+E       AssertionError: ('contract_review', 'review_grid/north_multiple_contracts_same_type', 404, '{"detail":"Not Found"}')
+E       assert 404 == 200
+E        +  where 404 = <Response [404 Not Found]>.status_code
+
+tests/test_attention_record_api.py:343: AssertionError
+________ test_published_postgres_missing_identity_column_is_unavailable ________
+
+tmp_path = PosixPath('/tmp/pytest-of-bayleaf/pytest-15003/test_published_postgres_missin0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7460a0ee3bb0>
+
+    @pytest.mark.integration
+    @pytest.mark.slow
+    def test_published_postgres_missing_identity_column_is_unavailable(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        ts = TransformationService(DuckDBStore.memory())
+        facts = seed(ts)
+        refresh(ts)
+        with running_postgres_container() as dsn:
+            store = PostgresReportingStore(dsn)
+            publish(ts, store)
+            reporting = ReportingService(ts, publication_store=store, access_mode=ReportingAccessMode.PUBLISHED)
+            client = make_client(tmp_path, ts, reporting, name='postgres-missing-column')
+            rows = list_rows(client, 'upcoming_cost')
+            item_id = source_key('upcoming_cost', rows[0])
+            unknown = 'upcoming_ffffffffffffffff_' + str(rows[0]['expected_date'])
+>           assert_resolves(client, 'upcoming_cost', item_id, [rows[0]])
+
+tests/test_attention_record_api.py:1126: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_attention_record_api.py:359: in assert_resolves
+    rows = get_rows(client, item_type, item_id)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+client = <starlette.testclient.TestClient object at 0x7460a0cd4a50>
+item_type = 'upcoming_cost', item_id = 'upcoming_14c37d134aa82300_2026-11-14'
+
+    def get_rows(client: TestClient, item_type: str, item_id: str) -> list[dict[str, Any]]:
+        response = get_record(client, item_type, item_id)
+>       assert response.status_code == 200, (item_type, item_id, response.status_code, response.text)
+E       AssertionError: ('upcoming_cost', 'upcoming_14c37d134aa82300_2026-11-14', 404, '{"detail":"Not Found"}')
+E       assert 404 == 200
+E        +  where 404 = <Response [404 Not Found]>.status_code
+
+tests/test_attention_record_api.py:343: AssertionError
+_______ test_published_postgres_empty_identity_never_resolves_forged_key _______
+
+tmp_path = PosixPath('/tmp/pytest-of-bayleaf/pytest-15003/test_published_postgres_empty_0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7460a0ee3230>
+
+    @pytest.mark.integration
+    @pytest.mark.slow
+    def test_published_postgres_empty_identity_never_resolves_forged_key(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        from apps.api.routes.report_routes import UPCOMING_FIXED_COSTS_ROW_MODEL
+        from apps.api.support import to_jsonable
+        from packages.domains.finance.pipelines.subscription_models import (
+            MART_UPCOMING_FIXED_COSTS_30D_COLUMNS,
+        )
+    
+        ts = TransformationService(DuckDBStore.memory())
+        facts = seed(ts)
+        refresh(ts)
+        rows = ts.store.fetchall_dicts('SELECT * FROM mart_upcoming_fixed_costs_30d ORDER BY charge_id')
+        assert len(rows) >= 2
+        with running_postgres_container() as dsn:
+            store = PostgresReportingStore(dsn)
+            publish(ts, store)
+            reporting = ReportingService(ts, publication_store=store, access_mode=ReportingAccessMode.PUBLISHED)
+            client = make_client(tmp_path, ts, reporting, name='postgres-empty-id')
+            intact_id = source_key('upcoming_cost', rows[1])
+>           intact_rows = get_rows(client, 'upcoming_cost', intact_id)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_attention_record_api.py:1163: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+client = <starlette.testclient.TestClient object at 0x7460a11fd6d0>
+item_type = 'upcoming_cost', item_id = 'upcoming_8d1e2f620e1c9cfb_2026-11-14'
+
+    def get_rows(client: TestClient, item_type: str, item_id: str) -> list[dict[str, Any]]:
+        response = get_record(client, item_type, item_id)
+>       assert response.status_code == 200, (item_type, item_id, response.status_code, response.text)
+E       AssertionError: ('upcoming_cost', 'upcoming_8d1e2f620e1c9cfb_2026-11-14', 404, '{"detail":"Not Found"}')
+E       assert 404 == 200
+E        +  where 404 = <Response [404 Not Found]>.status_code
+
+tests/test_attention_record_api.py:343: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_attention_record_api.py::test_published_postgres_attention_records
+FAILED tests/test_attention_record_api.py::test_published_postgres_missing_identity_column_is_unavailable
+FAILED tests/test_attention_record_api.py::test_published_postgres_empty_identity_never_resolves_forged_key
+3 failed in 32.39s
+PostgreSQL gate: pytest failed with exit 1

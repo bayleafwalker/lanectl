@@ -1,0 +1,82 @@
+{
+  "measured_at": "2026-11-14T08:36:12.092658+00:00",
+  "commands": [
+    {
+      "argv": [
+        "readlink",
+        "-f",
+        "/run/current-system"
+      ],
+      "exit": 0,
+      "stdout": "/nix/store/80v92jsvka63203m3dsyjklajhi1pv5x-nixos-system-workstation-26.11.20261111.d4f25a3\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "nixos-version",
+        "--json"
+      ],
+      "exit": 0,
+      "stdout": "{\"configurationRevision\":\"536d12c34894f74ee8519b36c5b6a75857cbf160\",\"kernelVersion\":\"6.18.63\",\"nixosVersion\":\"26.11.20261111.d4f25a3\",\"nixpkgsRevision\":\"d4f25a3e562008648d45bcf2d70bcc7422cad84e\",\"specialisations\":[]}\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "systemctl",
+        "--failed",
+        "--no-legend"
+      ],
+      "exit": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "systemctl",
+        "--user",
+        "--failed",
+        "--no-legend"
+      ],
+      "exit": 0,
+      "stdout": "\u25cf lanectl-hla-api-r4-review-r2.service loaded failed failed [systemd-run] /home/bayleaf/.local/share/uv/tools/lanectl/bin/python /tmp/hla-api-layer-r4-review-r2.py\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "systemctl",
+        "--user",
+        "show",
+        "lanectl-tick.service",
+        "-p",
+        "Result",
+        "-p",
+        "ExecMainStatus",
+        "-p",
+        "ExecMainExitTimestamp"
+      ],
+      "exit": 0,
+      "stdout": "Result=success\nExecMainExitTimestamp=Sat 2026-11-14 10:06:50 EET\nExecMainStatus=0\n",
+      "stderr": ""
+    },
+    {
+      "argv": [
+        "systemctl",
+        "--user",
+        "is-active",
+        "lanectl-tick.timer"
+      ],
+      "exit": 0,
+      "stdout": "active\n",
+      "stderr": ""
+    }
+  ],
+  "scope": "Current host observation; no new full-system closure equality claim.",
+  "unit": {
+    "target": "/nix/store/vbmdkg7f0hnm1lfzxrkm9282hbxvgikv-unit-lanectl-train-.service/lanectl-train@.service",
+    "sha256": "76a4bb361b19f5430342007a33c651455ba52c4206deec2f904423f32f43ed33"
+  },
+  "launcher": {
+    "path": "/nix/store/sv6rr6451k6kjj3rh5kv5pkm08rmjrlr-launcher.py",
+    "sha256": "526956f9cd67511f4b47cc01c965f00b418d55a56b3940b30eefcc7eec4b447e"
+  }
+}

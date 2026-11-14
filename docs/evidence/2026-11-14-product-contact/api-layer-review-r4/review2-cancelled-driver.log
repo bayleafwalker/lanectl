@@ -1,0 +1,20 @@
+Starting fresh actual native GoPro R4 review of unchanged1173 plus fail-closed PG gate
+{"persistent_review_root": "/tmp/lanectl-hla-api-r4-review-r2", "timeout_s": 1800}
+Traceback (most recent call last):
+  File "/tmp/hla-api-layer-r4-review-r2.py", line 65, in <module>
+    review_raw, usage = invoke(
+                        ~~~~~~^
+        repo, lane, expected_base, reviewer, prompt, proposal=proposal,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        timeout_s=1800, run_root=diagnostics,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/tmp/lanectl_persistent_spec_review.py", line 68, in invoke
+    response, usage = spec._invoke(repo, lane, base_sha, model, prompt,
+                      ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                                  proposal=proposal, timeout_s=timeout_s)
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/bayleaf/.local/share/uv/tools/lanectl/lib/python3.13/site-packages/lanectl/specification.py", line 102, in _invoke
+    raise ValueError(f'spec model failed or escalated: {result.outcome}')
+ValueError: spec model failed or escalated: failed

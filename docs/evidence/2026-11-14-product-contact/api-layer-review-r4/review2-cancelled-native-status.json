@@ -1,0 +1,1 @@
+{"ended": "2026-11-14T08:34:55Z", "escalation_reason": null, "exit_code": 143, "final_message_tail": "", "model": "opencode-go/deepseek-v4-pro", "outcome": "failed", "started": "2026-11-14T08:34:00Z", "usage": {"cache_read_tokens": 173568, "cache_write_tokens": 0, "cost_usd": 0.0, "input_tokens": 48549, "output_tokens": 1078, "reasoning_tokens": 664, "steps": 9}}

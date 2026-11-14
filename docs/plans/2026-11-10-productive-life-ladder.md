@@ -106,3 +106,26 @@ Found on the way: implement rev 3 broke the seed fixture's literal weights repla
 fixture rewrites the whole line); lane-written deploy tests compared against 13:00 UTC today and
 went red after it (fixed). Not yet modelled: V4 Pro's own $15/month limit as a scoped window
 (the mechanism now exists; budget in output tokens still to derive).
+
+## Progress (2026-11-14)
+
+The strict-root host fence is applied and qualified; served #2889 is done.
+Canonical lanectl `ac4c4dd` promotes only Sovite to its ownership-compatible
+`systemd` mode after matching its full baseline. The earlier environment-only
+status above is historical. The installed client is0.2.9, including reviewed
+retry routing, cleanup and truthful publication evidence corrections.
+
+Product contact continues under HLA1593. Identity PR82 and source-reader PR83
+are canonical; PR83 passed the real train/deploy/land path, all four canonical
+CI jobs and fresh ancestry verification at merge `30c0caf`. Real default-schema
+image smoke checked seven publications and all four complete attention source
+groups. The four-kind HTTP adapter remains draft during independent acceptance
+review, and meaningful ranked individual UI and final delivery remain open.
+These prerequisites do not constitute whole1593 completion or the ladder's
+about20 ruled-item exit. Detailed evidence is in
+`../evidence/2026-11-14-product-contact/`.
+
+The timer is active and its latest tick succeeded. No week-long autonomous
+class exit is claimed. Hosted discovery still does not establish authorized
+owner reads; the last credential-loaded probe returned identity-required401.
+There is no hosted-flow completion or event-authority switch.

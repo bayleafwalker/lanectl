@@ -1,0 +1,84 @@
+{
+  "kind": "hla-attention-ui-preparation/v1",
+  "basis": {
+    "canonical_head": "30c0caf6c78d257ff5db79f42cca0b56a0f934b9",
+    "pending_intent": "/tmp/hla-attention-ui-intent-pending-api.txt",
+    "source_status": "read-only preparation; no source/tests changed; untracked homelab-analytics/error.log preserved unread",
+    "product_intention": [
+      {"file":"docs/product/core-household-operating-picture.md", "evidence":"Overview includes a short list of items deserving attention; explainability/traceability and stable publication are core product principles."},
+      {"file":"docs/plans/kotona-operating-picture-brief.md", "evidence":"B-F remain dispositioned pending gates; do not treat pending Stage C brief as API authority."},
+      {"file":"docs/product/frontend-ui-delivery-playbook.md", "evidence":"Publish-lane work uses style/primitive/scenario contracts, Storybook plus browser interaction/accessibility/regression evidence; toolchain completion must be evidenced."}
+    ]
+  },
+  "current_ui": {
+    "page":"apps/web/frontend/app/operating-picture/page.js",
+    "page_lines":"148-173, 175-197, 211-237",
+    "behavior":"Server page gets current user, then concurrent backend reads including attention list. Cashflow label derives only from latest booking_month. Attention is currently sorted ascending with (severity ?? 9), then passed to view.",
+    "view":"apps/web/frontend/components/operating-picture-view.js:13-20, 91-129",
+    "behavior_detail":"1 urgent / 2 soon / other watch; first eight after page sort; empty copy says all clear; row title/detail; row Review CTA and section See all both go to /review.",
+    "transport":"apps/web/frontend/lib/backend.ts:522-535, 626-629; 401 redirects /login, other non-OK statuses throw generic Error, absent body throws. Feed getter typed from generated OpenAPI, /reports/attention-items rows.",
+    "tests":"apps/web/frontend/stories/operating-picture-view.stories.jsx:25-90; three numeric fixture items in stories/support/fixtures.jsx:51-73; story asserts title/rank and empty/all-clear. No Playwright Operating Picture route coverage found; existing Playwright config defaults to Storybook baseURL (playwright.config.js)."
+  },
+  "public_model_facts": {
+    "summary_feed_current_contract": {
+      "model":"AttentionItemRow; apps/web/frontend/generated/api.d.ts:4287-4301, apps/api/routes/report_routes.py:196,1117-1125",
+      "fields":{"item_id":"string required","item_type":"string required","severity":"number required","source_domain":"string required","title":"string required","detail":"string required"},
+      "note":"AttentionItemSnapshotRow has nullable fields, but that is for as-of snapshots; accepted scope says current feed/detail and no cashflow-month-as-observation inference. Summary feed is not sufficient for requested source facts."
+    },
+    "source_groups": [
+      {
+        "kind":"anomaly", "identity":"anomaly_ + transaction_id", "reader":"packages/domains/overview/pipelines/attention_records.py:53-57,97-132",
+        "source_model":"packages/domains/finance/pipelines/transaction_models.py:148-156 (mart_transaction_anomalies_current)",
+        "fields":{"transaction_id":"required string","booking_date":"required date","counterparty_name":"required string","amount":"required DECIMAL(18,4)","direction":"required string","anomaly_type":"required string","anomaly_reason":"required string"},
+        "currency":"No currency column in this source model; do not render or infer a currency."
+      },
+      {
+        "kind":"upcoming_cost", "identity":"upcoming_ + charge_id + '_' + expected_date", "reader":"packages/domains/overview/pipelines/attention_records.py:78-82,97-132",
+        "source_model":"packages/domains/finance/pipelines/subscription_models.py:117-126 (mart_upcoming_fixed_costs_30d)",
+        "fields":{"charge_id":"nullable in source schema (attention identity validity makes null/empty unable to create a usable record key)","contract_name":"required string","provider":"required string","frequency":"required string","expected_amount":"required DECIMAL(18,4)","currency":"required string","expected_date":"required date","confidence":"required string"},
+        "currency":"Present per row. Keep amount and currency paired; no aggregation across component rows."
+      },
+      {
+        "kind":"contract_review", "identity":"review_ + contract_id + '_' + reason", "reader":"packages/domains/overview/pipelines/attention_records.py:59-63,97-132",
+        "source_model":"packages/domains/utilities/pipelines/utility_models.py:113-122 (mart_contract_review_candidates)",
+        "fields":{"contract_id":"required string","provider":"required string","utility_type":"required string","reason":"required string","score":"required integer","current_price":"required DECIMAL(18,4)","market_reference":"nullable DECIMAL(18,4)","currency":"required string"},
+        "currency":"Present per row; market_reference may be null. Summary severity maps from score; detail wording should not confuse score with market data."
+      },
+      {
+        "kind":"contract_renewal", "identity":"renewal_ + contract_id + '_' + renewal_date", "reader":"packages/domains/overview/pipelines/attention_records.py:65-69,97-132",
+        "source_model":"packages/domains/utilities/pipelines/utility_models.py:126-136 (mart_contract_renewal_watchlist)",
+        "fields":{"contract_id":"required string","contract_name":"required string","provider":"required string","utility_type":"required string","renewal_date":"required date","days_until_renewal":"required integer","current_price":"required DECIMAL(18,4)","currency":"required string","contract_duration_days":"nullable integer"},
+        "currency":"Present per row. Duration is nullable and is not in requested facts."
+      }
+    ],
+    "group_rows":"get_attention_record() returns a list of full matching rows, explicitly preserving complete groups (attention_records.py:97-108). Payment identity is charge+date; review identity contract+reason; renewal identity contract+date. UI must preserve each returned row as its own component rather than aggregate prices or collapse distinct components. No list fields exist to invent labels."
+  },
+  "ranking_contract": {
+    "requirement":"3 > 2 > 1, stable input order on equal severity; missing/null/nonnumeric/unsupported severity is unknown and neutral, ranked last; cap remains 8 after ordering.",
+    "current":"app/operating-picture/page.js:211-213 currently ascending and nullish fallback only; it does not guard nonnumeric strings/NaN. operating-picture-view.js:107 applies eight cap after ranking; labels 1/2/else at lines 13-20.",
+    "production_path_acceptance":"Exercise the exported/production ranking path from deliberately unsorted mixed-domain source rows, >8 fixture including at least two equal valid severities and null/missing/non-numeric/unsupported values. Assert exact severity ordering, tie stability, neutral unknown copy, and exact top-8 membership. Do not hand-sort fixture or test only source text."
+  },
+  "routing_and_status": {
+    "known_seam":"Reporting layer already has get_attention_record(item_type,item_id) delegating to whole-key source reads (packages/pipelines/reporting_service.py:880-881; packages/domains/overview/pipelines/attention_records.py:97-160). It binds the full opaque key; does not split IDs; can return multiple rows; differentiates not-found from unavailable. It is not exposed in apps/api/routes or generated web OpenAPI at this HEAD (rg found no API call-site).",
+    "prerequisites_from_reviewed_stage_b":"Exact REST path/method, kind enum, request/response schema, auth permissions, status codes for 403/404/503, error-body schema, and generated OpenAPI artifact must come from landed/frozen Stage B; do not name/assume an endpoint before that. Need confirmed percent-encoded slash behavior on server and API path. Existing service method may be backing seam but its presence does not establish HTTP contract or permission safety.",
+    "frontend_requirements":"Typed helper should retain HTTP status/error classification for this record read without changing every backend caller. 401 must still call redirect('/login'). 403 must show denied without alternate source/list read. 404 says record is absent from current report, not deleted/no history. 503 says unavailable and must not look empty/all-clear. Error rendering must not include returned source facts or try another endpoint.",
+    "opaque_route":"Construct a URL with encodeURIComponent(whole item_id) for one route segment and verify via a real request/click that slash-containing IDs round-trip to the correct record. Do not parse IDs by underscore or prefix; include cross-kind/unknown checks so IDs cannot resolve via another kind. Exact URL shape deferred to API contract."
+  },
+  "actual_next_e2e_strategy": {
+    "test_harness":"Add an app-level Playwright project/test with baseURL pointing at actual Next dev/server, not Storybook. Existing config only sets Storybook baseURL and has no app webServer (apps/web/frontend/playwright.config.js). Start disposable HLA API/reporting fixture plus Next server; route the browser from the real operating-picture list to the Next dynamic detail page, whose server-side typed helper performs the API call. Seed distinct same-kind rows and records for all four kinds in the authorized source publications; assert clicked destination and rendered exact returned facts/component rows.",
+    "url_encoding":"For an actual opaque ID containing '/', inspect the rendered anchor href and click it; assert same route's server-resolved ID/result corresponds to exact API record. Also direct-load that href to cover deep links. If Next 14 dynamic-segment handling cannot deliver encoded slash, document proven limitation and choose a route encoding that preserves opaque whole key after API contract review; do not downgrade to type-section link.",
+    "status_matrix":"Against actual API contract/auth: signed-out 401 -> Next login redirect; reader lacking source capability 403 -> denied page with no source detail; unknown same-kind and cross-kind ID 404 -> current-report not-found language; unavailable source 503 -> unavailable state, never all-clear. Verify no alternate list/source endpoint is called for denial and failures expose no row fields.",
+    "other":"Keep Storybook for visual/presentational scenario coverage, not route proof. Deterministic test date via Playwright clock/frozen app time for days remaining. Do not update screenshot baselines just to silence host mismatches."
+  },
+  "scope_estimate_not_measurement": {
+    "basis":"Implementation estimate only; exact API packet/generation and test harness are unresolved until Stage B lands. No diff produced or tests run.",
+    "likely_paths":"Operating-picture page/view and fixtures; backend.ts plus generated API after contract export; new dynamic detail page/component/styles; app-level Playwright config/spec + fixture/auth setup; possibly small typed status normalization helper.",
+    "rough_changed_lines":"UI source 180-300; focused component/API unit checks and story 100-180; actual Next/API Playwright setup and scenarios 180-300; generated types 40-120 depending schemas. Approx 500-900 changed lines total; crosses a 700-line boundary likely if test harness is new. Decompose by outcomes: (1) API prerequisite/types/status read seam, (2) feed ranking/links/detail rendering, (3) actual Next status/opaque-ID integration acceptance. Root decides M700 definition and staffing from Stage B diff, not this estimate."
+  },
+  "unresolved_only_after_stage_b": [
+    "Exact Stage B endpoint route, payload field names and auth scopes/status semantics; generated type availability.",
+    "Whether API returns public source rows exactly as current mart models, or a filtered/renamed projection; do not assume extra fields.",
+    "Percent-encoded slash support on the chosen Next route and resulting parameter value.",
+    "Whether API's required 403 covers all row-source access or only particular source kinds; never workaround it via existing finance/utilities list endpoints."
+  ]
+}

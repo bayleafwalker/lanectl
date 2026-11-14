@@ -1,0 +1,4 @@
+{
+  "reason": "Known official per-file base-lint incompatibility: helper has no collectible tests. Stopped only this owned native review. No verdict inferred.",
+  "native_unit": "lanectl-attempt-bae4435bfac5e06694baa22e.service"
+}

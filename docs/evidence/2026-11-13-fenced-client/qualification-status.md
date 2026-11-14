@@ -263,3 +263,24 @@ and User=lanectl-train; no policy promotion or #2889 closeout is claimed.
 ## Client0.2.9 and publication correction
 
 Client0.2.9 atf9267ea32e481f2a1ecf3f57b07ff0e888e1d0cf is installed after measured idle checks; all61 runtime Python files match reviewed implementation209268d. Focused52/full1038 tests passed, independent source review cleared all findings, and real append-only invalidation of two false draft-publication records preserved every operational projection. This repairs evidence semantics, not the filesystem boundary. Strict host apply and actual strict-generation qualification remain pending; no #2889 closeout or Sovite policy promotion. See ../2026-11-13-product-contact/lanectl-v029-installed.json and publication-invalidation-result.json.
+
+## 2026-11-14: strict host qualified; #2889 complete
+
+The operator applied committed source `2e77a4e`; actual strict-root qualification
+and independent audit passed. Sovite's identical source baseline and fenced
+check both produced 2,797 passed / 1,140 skipped, counted from retained progress
+rows. Boundary, required-input refusal, DNS/TLS, writable checkout, timeout,
+cancellation and cleanup controls passed within their documented scope. The
+reviewed policy promotion landed as canonical lanectl `ac4c4dd`, selecting
+`systemd` for Sovite, and a normal configured canary passed. Served #2889 is done
+and reservation498 released. See `../2026-11-14-strict-host/` for raw evidence
+and the exact limits; the other repositories keep their qualified configured modes.
+
+A later host observation at configuration `536d12c` retains the identical
+qualified fence unit and launcher. The lanectl tick succeeded, its timer is
+active, and no failed system/user units remain after the documented cancellation
+of an owned read-only API review. The host-generation observation is recorded in
+`../2026-11-14-product-contact/current-host-fence-recheck.json`. Whole-system
+closure differences remain separately unresolved. Hosted authorized work still
+returns identity-required; discovery is not authentication, JSONL remains
+authoritative, and the product-count/week-long ladder exits are not established.
