@@ -131,12 +131,22 @@ canonical API base. Its unchanged-base run reaches real Next and API fixtures
 and reports six missing-UI failures with three passing controls and no skips.
 Forced skips and incomplete JUnit results are rejected. The
 [draft qualification](../evidence/2026-11-14-product-contact/ui-acceptance-draft/qualification.json)
-binds the proposal and test bytes. The independent native review has not run:
-automatic approval review rejected transmission of this public UI payload to
-OpenCode Go DeepSeek V4 Pro, and specific approval is pending. No UI release
-has been published or implemented. Meaningful views for all four record kinds,
-production ranking and navigation, independent qualification, and complete
-UI train/dev/CI delivery remain required.
+binds the proposal and test bytes. The operator approved the public review and
+gave standing authorization for OpenCode and Claude reviews and full
+implementation within the requested work. Repository data classifications,
+protected paths, gates and effect authority still apply.
+
+The actual native DeepSeek V4 Pro review completed with accept and exit 0;
+the unchanged official base check and publication validation both returned no
+problems. [Review and root disposition](../evidence/2026-11-14-product-contact/ui-spec-review-r1/root-disposition.json)
+retain the genuine findings and require additional candidate evidence for
+non-null market references and accurate field labels. Guarded publication
+occurred at 13:45:08 UTC on November 14, followed by normal Pro attempt
+`hla-attention-ui-a1`. Its
+[publication and claim receipt](../evidence/2026-11-14-product-contact/ui-spec-review-r1/guarded-publication-and-a1-claim.json)
+is a running-attempt snapshot, not implementation or product acceptance.
+Meaningful views for all four record kinds, production ranking and navigation,
+independent qualification, and complete UI train/dev/CI delivery remain required.
 
 These prerequisites do not constitute whole HLA1593 completion or the ladder's
 about 20 ruled-item exit. Neither source/API prerequisites nor acceptance
