@@ -53,10 +53,10 @@ def test_invalid_or_unavailable_owner_list_stays_unknown(changes):
     ({"x": [1, False]}, {"const": {"x": [1.0, False]}}, True),
     ({"x": [1, False]}, {"const": {"x": [True, False]}}, False),
     ("ok", {"enum": "ok"}, False), ("ok", {"enum": []}, False),
-    ("ok", {"const": "ok", "pattern": "^ok$"}, False),
+    ("ok", {"const": "ok", "format": "custom"}, False),
     ("ok", {"const": "ok", "type": "unsupported"}, False),
     ("ok", {"const": float("nan")}, False),
-    ({}, {"type": "object", "properties": {"absent": {"const": "x", "pattern": "x"}}}, False),
+    ({}, {"type": "object", "properties": {"absent": {"const": "x", "format": "custom"}}}, False),
     ([], {"type": "array", "items": {"enum": []}}, False),
 ])
 def test_literal_constraints(value, schema, expected):
