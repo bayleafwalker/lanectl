@@ -1,0 +1,4 @@
+hla-ui-extra-qualification/test_semantic_records.py::test_each_public_fact_has_correct_semantic_label_and_separate_row
+hla-ui-extra-qualification/test_semantic_records.py::test_real_current_api_nonnull_market_reference_preserves_value_precision
+
+2 tests collected in 0.28s

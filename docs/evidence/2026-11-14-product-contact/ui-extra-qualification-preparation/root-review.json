@@ -1,0 +1,95 @@
+{
+  "schema": "hla-ui-extra-qualification-preparation/v1",
+  "recorded_at": "2026-11-14T14:13:00.874603+00:00",
+  "author": "/root/source_r3_qualification; first-party independent qualification preparation, no UI product implementation",
+  "root_check": {
+    "command": "PYTHONPATH=/tmp/hla-attention-ui-spec/base:/tmp/hla-ui-extra-qualification /projects/dev/homelab-analytics/.venv/bin/python -m pytest -q -p no:cacheprovider /tmp/hla-ui-extra-qualification/test_semantic_oracle_offline.py",
+    "result": "29 passed in0.29s"
+  },
+  "author_controls": [
+    "Matched Ubuntu browser extraction accepts dl/spans/paragraphs and rejects wrong/missing market reference, swapped field labels, invented component labels and nested aliases; owned browser removed",
+    "Forced uv-wrapper timeout and SIGTERM cancellation preserve primary outcome/partial logs and verify exact container/PID-birth-group cleanup; wrong identity/label/daemon inventory/malformed-ledger cases refuse"
+  ],
+  "independent_review": {
+    "reviewer": "/root/hla_source_manual_review",
+    "initial_finding": "HOLD: natural invented Component type=Solar and Price component label=Energy bypassed original oracle",
+    "repair": "Identity/name/type/label families now rejected; legitimate provided price/date/provider and structural headings remain accepted",
+    "narrow_closure": "PASS exact semantic_oracle digest030011ace9d4ca800271f72e2827b9e87ca2bbb8926311ca3f70a40d8bf3d439; lifecycle/source audit no other concrete blockers",
+    "runtime_by_reviewer": false
+  },
+  "limits": [
+    "No test run against live worker or stable candidate yet; no deployed product smoke",
+    "Real non-null market case uses isolated synthetic published mart UPDATE; it qualifies real API source read and UI transport, not publisher-produced value provenance",
+    "Market reference needs accurate value, not an extra currency label; current/expected prices retain source currency",
+    "Literal NaN untested; valid JSON strings are not NaN evidence",
+    "Bounded label vocabulary and DOM observer may need justified adaptation for a valid candidate layout, preserving falsifiers; does not prove every conceivable invented phrase",
+    "Forced lifecycle controls used TemporaryDirectory; retained source and assertion summary log establish those checks, but original per-control raw ledgers/output directories were cleaned after controls. Actual future candidate output persists in the explicit output directory."
+  ],
+  "rematerialization": "Original runnable scratch root /tmp/hla-ui-extra-qualification; archived control paths retain original session-local checkout references and require deliberate hash-checked rematerialization.",
+  "artifacts": [
+    {
+      "path": "README.md",
+      "sha256": "6cdb1b51acc4710f36a785e026bea68cfdbf4c10775bf95dcab43f3f6d78a702"
+    },
+    {
+      "path": "browser-control-input.json",
+      "sha256": "94c1e0f373707ab2b3e41b3198789c071c1ad551d117070648a9b2bcf0fbc8b5"
+    },
+    {
+      "path": "browser-control.cjs",
+      "sha256": "6a4441f886adb3c73f0703aeb6be3dfb383a1d84d8e327f77d3a3188469ae20e"
+    },
+    {
+      "path": "browser-controls.log",
+      "sha256": "3549437eb1d2c24f31de0193339b854d5182e6020f9803d69f639ba5aeace3cb"
+    },
+    {
+      "path": "check_browser_extractor.py",
+      "sha256": "5834334f18b8e25bb5cc1bde9ceb60cceaaf6f4c7d9661c90b4558f47ef87c23"
+    },
+    {
+      "path": "check_lifecycle.py",
+      "sha256": "91085e8a52d79cd707d5eb6e61145c71ab58fd9a90d036e2fdcf73783da2b60d"
+    },
+    {
+      "path": "collection.log",
+      "sha256": "8579bcc317ac7c0bb38915bd6d29435083c5ad9b89bf7aa456a3f55a2e1de4b3"
+    },
+    {
+      "path": "fake_owned_child.py",
+      "sha256": "9ec8665c849f6d7c07959086fc32f933f64edd7d13b043edcfb3b5d64431f18d"
+    },
+    {
+      "path": "lifecycle-controls.log",
+      "sha256": "5578351922a8535b5fed9b5436156ebc4810d2b5007a87c7a3806942acce3a15"
+    },
+    {
+      "path": "offline.log",
+      "sha256": "1ee11384c238172f13afa3817bbfc309de567a5563262966281b9ecce29af2a9"
+    },
+    {
+      "path": "ownership.py",
+      "sha256": "49c226ad82103706c5785cd132d18154bb5b0879d91f0f9942503c118dff9fc2"
+    },
+    {
+      "path": "path-guard.log",
+      "sha256": "23878863a21354c279811c2af881695155b83f8ff5c71a5afeab461d921f2fb9"
+    },
+    {
+      "path": "run_candidate.py",
+      "sha256": "676961eaf9eec6c6aee7492f3126a8b519fc169a4811886f2b8c41975d514452"
+    },
+    {
+      "path": "semantic_oracle.py",
+      "sha256": "030011ace9d4ca800271f72e2827b9e87ca2bbb8926311ca3f70a40d8bf3d439"
+    },
+    {
+      "path": "test_semantic_oracle_offline.py",
+      "sha256": "f83875c25a317f3350989304806a455c74f3a7cdc50cbb701e73d46bcb636a9f"
+    },
+    {
+      "path": "test_semantic_records.py",
+      "sha256": "6db451a76f6d0cfea0faf768ecf1ffba9e0bd3e53c2e7f4db9b38b2a9cc9d7e0"
+    }
+  ]
+}

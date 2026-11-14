@@ -1,0 +1,6 @@
+timeout: primary preserved; exact container and PID/birth group absent
+cancel: primary preserved; exact container and PID/birth group absent
+bad process birth: cleanup refused and reported failure
+daemon inventory failure: cleanup refused and reported failure
+wrong container label: cleanup refused and reported failure
+malformed ledger: cleanup failure recorded
