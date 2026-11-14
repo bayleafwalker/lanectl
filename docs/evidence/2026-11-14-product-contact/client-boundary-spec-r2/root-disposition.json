@@ -1,0 +1,10 @@
+{
+  "review": "actual native accept/DONE0",
+  "base_lint": [],
+  "publication_validation": [],
+  "r1_attempt_preserved": "escalated, not candidate; no relabel or source adoption",
+  "revision_reason": "Independently reproduced HTTP-header observer defect; exactly two substitutions retain HTTPMessage; all existing status/destination assertions unchanged.",
+  "policy": "max_attempts2 per release revision, M700,2700s unchanged. R1 consumed one escalated attempt; R2 is a genuine corrected specification, not an assertion that old per-revision counters carry over.",
+  "required_extra_candidate_evidence": "Malformed non-JSON/empty error bodies must preserve 401redirect/403denied/404notfound/503unavailable and sanitized500. Native reviewer correctly flags this untested ordering obligation; supplemental proof is required before candidate acceptance. Existing backend unchanged/scope/style84 also independently inspected.",
+  "review_limits": "Reviewer static inspection is not execution or candidate qualification. Root actual preserved-source8pass does not adopt that source or establish full train/dev/CI."
+}

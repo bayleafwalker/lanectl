@@ -1,0 +1,3 @@
+Starting actual native independent client-boundary acceptance review
+{"persistent_review_root": "/tmp/lanectl-hla-client-boundary-spec-r2-review", "timeout_s": 1800}
+{"verdict": "accept", "lint_problems": [], "publication_validation": []}

@@ -112,9 +112,9 @@ def http(url, cookie=MARKER):
     request = urllib.request.Request(url, headers={'Cookie': cookie})
     try:
         with urllib.request.build_opener(NoRedirect).open(request, timeout=20) as response:
-            return response.status, dict(response.headers), response.read()
+            return response.status, response.headers, response.read()
     except urllib.error.HTTPError as exc:
-        return exc.code, dict(exc.headers), exc.read()
+        return exc.code, exc.headers, exc.read()
 
 
 def stop(proc):

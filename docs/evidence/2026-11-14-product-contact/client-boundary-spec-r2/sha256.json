@@ -1,0 +1,48 @@
+{
+  "artifacts": [
+    {
+      "path": "active-runtime.json",
+      "sha256": "15f3d7a1aaa5f860503a79b96096615e9800c0b69c98973d1be84a32dc6f14cd"
+    },
+    {
+      "path": "actual-return.json",
+      "sha256": "3ed8cc2405008798d5c1ab5b3127771a17cb2b7ce4fd246394bf9598beacb6e1"
+    },
+    {
+      "path": "driver.log",
+      "sha256": "e092883cbcbf079b91becd95c46b447c357c319b2c56eb0772f5c318f0585c93"
+    },
+    {
+      "path": "native-raw.json",
+      "sha256": "3ed8cc2405008798d5c1ab5b3127771a17cb2b7ce4fd246394bf9598beacb6e1"
+    },
+    {
+      "path": "native-status.json",
+      "sha256": "a64e82547f623516c459103eb89c816d2da8c32894fe490f632bd3d1513cc949"
+    },
+    {
+      "path": "prior-r1/release.toml",
+      "sha256": "d13f055d691dfc741e239f2be82390e7cd7503fda60243648e092444591f27ee"
+    },
+    {
+      "path": "prior-r1/specification.json",
+      "sha256": "cdba6ebf6e93cee6b2b418a6303f31920f603fe1f6ec42c9c935bb80a443e03d"
+    },
+    {
+      "path": "request.json",
+      "sha256": "f306f0980238dd06ae7d3e03dc24b0b28da4577806b661de2fbf58e3a66b4ad1"
+    },
+    {
+      "path": "retention.json",
+      "sha256": "ad1ed6243ea081e7d97d9e7bf7443870a40e1ea693c6c7fb4a35354451f1de93"
+    },
+    {
+      "path": "reviewed-specification.json",
+      "sha256": "52014474ac50aa1913874faedb4cc2048cf96544b1f50251636a0a5dc683aaaa"
+    },
+    {
+      "path": "root-disposition.json",
+      "sha256": "aa7d6792589d4d62e9880b8f888efd4e07652a45dc807f9b9a88ce782d7c1a6d"
+    }
+  ]
+}
