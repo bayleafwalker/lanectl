@@ -1,0 +1,50 @@
+{
+  "schema": "lanectl-specification/v1",
+  "release_digest": "79f05dbe544ff637c826d6e8f7c96206805ebb7eb5b90790e11fc918ea96fbf9",
+  "review": {
+    "verdict": "accept",
+    "reason": "The frozen acceptance is sound and the base-negative is authentic. The probe page renders the actual OnboardingChecklist via @/components/onboarding-checklist and supplies only source names (sessionStorage fixture), never replacement logic, so the component subject is real, not mocked; the unit fault wrappers import the actual helper by file URL and override exactly one export. Post-action state is genuinely awaited (every click/evaluate/reload is awaited and the heading/badge/text locators use waitFor), so the five base failures are awaited post-Expand heading timeouts, not races. Population is exact: 16 named cases with set(result)==set(CASES) and a JUnit gate asserting 16 testcases and zero skipped/failure/error. Source fingerprinting covers all tracked paths (mode + sha256 + symlink target) and asserts before/after equality twice (inner _observations and the outer module fixture), and the base fingerprint matches the b2d0fe393ac0971e906cce275e91f45e94422593 checkout byte-for-byte (onboarding-checklist.js, page.js, onboarding-sources.js all match). Process-group cleanup uses killpg on a start_new_session child with a verify-absence-then-SIGKILL loop, and owner-Docker cleanup verifies the hla-onboard.owner label before rm and covers the post-creation launch-timeout path. Helper absence is never the base negative: the base evidence shows 11 passive/persistence controls green and exactly the 5 post-Expand heading cases red, and the unit gate independently rejects a missing/failing helper. All three previously-blocking sage findings are repaired and falsified: version-only wrapper rejection (oracle-selftest/version-only-rejection.log fails on 'worker wrapper did not reject freshness semantically'), wiring baseline fingerprint bound before any worktree/Next allocation (run_wiring_probe line 16-22; stale-rejection.log), and post-creation Docker timeout cleanup (test_docker_timeout.py + docker-timeout-selftest.log). Artifact hashes are bound: proposal.json's embedded acceptance equals the evidence file and all six declared gate hashes match sha256.json. The packet correctly and explicitly defers real-page role/as-of/timestamp/auth/accessibility, the 55 matched Playwright visual checks, full make verify-fast, and train/dev/CI/product-intention pass as separate mandatory checks rather than waiving them. I found no real gap in the frozen acceptance itself.",
+    "trivial_pass": "Concrete attack: a worker pytest wrapper that only shells out to `node --version` (or a hard-coded pass) would satisfy the bare 'pytest passes' check while never touching the helper. This is rejected: qualify_unit.py, after the candidate helper passes seven named Node tests, copies the checkout to an owned scratch and rewrites the helper path with four closed semantic fault wrappers (freshness adds the equality-boundary row, required marks all sources required, override clears userExpanded, dismissal clears dismissed), then runs the worker wrapper against each copy and asserts y.returncode!=0 with an AssertionError (and no ERR_MODULE/SyntaxError/Cannot-find-module). A version-only wrapper stays green under all four faults and trips 'worker wrapper did not reject freshness semantically' (observed in oracle-selftest/version-only-rejection.log), so the attack is rejected. A node--version-only wrapper likewise cannot qualify.",
+    "checks": [
+      "Byte-identity: proposal.json embedded tests.test_onboarding_expand_acceptance.py equals the evidence file and its sha256 433c05b58d0c02fc5a9d4347db55c109afd289d442b835fc808409580acf2b48; all six frozen gate hashes (acceptance, onboarding-unit-contract.test.mjs, qualify_unit.py, qualify_wiring.py, run_wiring_probe.py, unit-gate-spec.md) match the evidence directory and sha256.json.",
+      "Real component subject, no replacement mocks: probe page imports the actual OnboardingChecklist; fixtures only set freshDatasets names via sessionStorage; the four fault wrappers do `import * as real from <fileURL>` and override a single export, delegating the rest.",
+      "True post-action awaits: click/evaluate/reload are awaited and heading/badge/text use waitFor, so base failures are awaited heading timeouts (locator.waitFor Timeout 3000ms) rather than flaky/racy assertions.",
+      "Exact-16 / no-skip population: CASES has 16 entries, set(result)==set(CASES), and main() re-parses junit.xml asserting 16 testcases, matching names, and no skipped/failure/error.",
+      "Source fingerprint and immutability: snapshot() hashes every git ls-files tracked path (mode + sha256 or symlink target) and asserts before==after in both the inner and outer scopes; base fingerprint matches the b2d0fe checkout exactly.",
+      "Process-group and owner-Docker cleanup including launch timeout: stop() uses killpg on start_new_session children with absence verification then SIGKILL; cleanup_browser verifies the hla-onboard.owner label before rm; select_browser's 45s launch timeout surfaces partial output and cleans a post-creation container (test_docker_timeout falsifier).",
+      "Helper absence is never the base negative: base evidence is 11 green passive/persistence controls + 5 red post-Expand heading failures, 0 skips/errors; a missing/failing helper is rejected separately by qualify_unit line 21 (zero/skip/todo/import failure).",
+      "Three sage blockers repaired and falsified: version-only wrapper rejection, wiring baseline fingerprint bound before worktree/Next allocation, and post-creation Docker timeout cleanup each have a positive falsifier log confirming they now fail-closed.",
+      "Semantics preserved: strict <7-day boundary (1ms either side and equality), future fresh, invalid/null/empty not fresh, required vs optional vs duplicate/unknown counting, dismissal wins over all, override remains full, manual compact without core shows badge, passive auto-collapse unchanged.",
+      "Wiring gate fail-closed: run_wiring_probe substitutes an override wrapper (checklistView forces userExpanded:false) and qualify_wiring requires exactly the 5 Expand cases to fail with a heading error while the 11 controls stay green and exactly one tracked path changes, proving the component truly consumes the helper view path.",
+      "Deferred scope correctly declared, not waived: real-page role/as-of/timestamp/auth/accessibility, 55 matched Ubuntu Playwright checks, full make verify-fast, and train/dev/CI/product-intention pass remain separate mandatory checks; the packet says so explicitly and does not count them as established by the component fixture."
+    ]
+  },
+  "author_model": "gpt-6",
+  "reviewer_model": "opencode-go/deepseek-v4-pro",
+  "intent_digest": "f5c5508ef33774397f28252a047d091fe2100222eef017b63bf1b5f8a6d9374b",
+  "recorded_at": "2026-11-14T20:58:37.169947+00:00",
+  "lint_problems": [
+    "infrastructure: actual official base run has16setupERRORS, missing locked node_modules; not the expected11pass5semanticfail population"
+  ],
+  "usage": {
+    "author": null,
+    "reviewer": {
+      "input_tokens": 106612,
+      "output_tokens": 6256,
+      "reasoning_tokens": 23849,
+      "cache_read_tokens": 1173248,
+      "cache_write_tokens": 0,
+      "cost_usd": 0.15578328,
+      "steps": 21
+    }
+  },
+  "author_provenance": "First-party coordinator adopts delegated acceptance authorship; native Opus planning only, no native author invocation claimed.",
+  "mandatory_acceptance_commands": [
+    "uv run --no-sync python tests/test_onboarding_expand_acceptance.py"
+  ],
+  "invocation": "official installed specification._invoke unchanged; cleanup retention only",
+  "diagnostics_root": "/tmp/hla-onboarding-native-spec-review-20261114",
+  "candidate_unit_mutation_wiring_results": "UNOBSERVED",
+  "base_population_qualified": false,
+  "publication_blocker": "Classifier returned[] for setupAssertionError; coordinator inspected raw population and rejected the result. Acceptance portability repair requires fresh native review and digest binding before publication."
+}
