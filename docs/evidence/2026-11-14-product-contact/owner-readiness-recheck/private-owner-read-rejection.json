@@ -1,0 +1,11 @@
+{
+  "schema": "private-owner-read-rejection/v1",
+  "recorded_at": "2026-11-14T13:55:45.455438+00:00",
+  "action": "Read private vuoro-cloud AGENTS.md, .claude/gates.json and docs/plans/2026-11-10-lanectl-on-vuoro-cloud.md to diagnose enrolled runner401",
+  "executed": false,
+  "automatic_approval_review": "rejected",
+  "stated_reason": "The command reads private vuoro-cloud repository material despite the retained restriction that this private source must not be read or used without specific authorization; standing approval for public UI/OpenCode work does not override that restriction.",
+  "operator_provider_authorization": "Standing OpenCode/Claude reviews and full implementation approval recorded separately in ui-acceptance-draft/provider-authorization.json; no repeat provider question was asked.",
+  "response": "No private source read, no alternate caller or sandbox workaround. Specific read-only private-owner diagnosis question pending. Public UI native implementation continues independently.",
+  "requested_private_scope": "Owner instructions, lanectl integration plan and relevant runner-authentication code only; no credential values, grants or deployment changes."
+}
