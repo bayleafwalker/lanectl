@@ -1,0 +1,1 @@
+real acquisition Busy -> HTTP 503 Retry-After=5 retry_after_seconds=5; 200 before/after; injected factory calls=1

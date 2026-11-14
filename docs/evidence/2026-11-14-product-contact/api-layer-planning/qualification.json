@@ -1,0 +1,38 @@
+{
+  "schema": "hla.api-layer-planning-qualification/v1",
+  "qualified_source": "713402007fd31fd5537f45945af557a7393682f8",
+  "source_api_overlay_only": true,
+  "source_reader_overwritten": false,
+  "frozen_api_lines": 1173,
+  "frozen_source_lines": 619,
+  "frozen_source_sha256": "b8a2d8b9527c5f2af7b05c1ee0608f3a574a537df78c46dc8ff671633284d078",
+  "frozen_fast_passed": 29,
+  "frozen_real_postgres_passed": 3,
+  "skips": 0,
+  "source_only_control": "expected missing HTTP record route, not import/setup failure",
+  "unfiltered_query_falsifier": "expected bound-selection assertion failed; tests unchanged",
+  "api_worker_diff": {
+    "app_registration": 2,
+    "new_route_module": 55,
+    "generated_typescript": 220,
+    "generated_openapi": 240,
+    "worker_regressions": 72,
+    "added_total": 589,
+    "deleted_total": 0,
+    "planner_input_excluded": 1173,
+    "budget": 700
+  },
+  "prototype_regressions": {
+    "combined_fast_passed": 30,
+    "combined_fast_failed": 1,
+    "slow_passed": 1,
+    "failure": "Busy HTTP test patches removed attention_records.run_on_warehouse name before HTTP; stale worker-test hook, not frozen contract failure",
+    "independent_real_busy_probe": "503, Retry-After5/retry_after_seconds5, 200 before and after through real acquisition"
+  },
+  "new_native_api_stage_requirement": "Preserve original frozen file and all four endpoints/generated contracts. Worker must implement HTTP regression against actual canonical/public or real lower boundary rather than obsolete private patch target. No source edits or prototype approval implied.",
+  "source_canonical_status": "PR83 CI still pending at observation; local checked source7134 available. Formal API rebase/publication waits actual canonical source merge.",
+  "cleanup": "all owned PostgreSQL test containers absent",
+  "durability": "cross-host-replicated after canonical Git publication; original scratch session-local",
+  "unaccepted_reference_commit": "a02efec5e6da761e8febf71b38b14894af92eda3",
+  "frozen_input_sha256": "34da78c8cb79c5ecc6d38e740c6b2ee90433dc000e6633cb3bf853aff6bb3abb"
+}

@@ -1,0 +1,50 @@
+.............................F.                                          [100%]
+=================================== FAILURES ===================================
+______________ test_warehouse_busy_keeps_canonical_retry_response ______________
+
+tmp_path = PosixPath('/tmp/pytest-of-bayleaf/pytest-14998/test_warehouse_busy_keeps_cano0')
+
+    def test_warehouse_busy_keeps_canonical_retry_response(tmp_path: Path) -> None:
+        ts, path = _seeded()
+        reporting = ReportingService(ts, access_mode=ReportingAccessMode.WAREHOUSE)
+        client = make_client(tmp_path, ts, reporting)
+        busy = WarehouseBusyError("synthetic", 1, RuntimeError("held"))
+>       with patch("packages.domains.overview.pipelines.attention_records.run_on_warehouse", side_effect=busy):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_attention_record_failures.py:57: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/home/bayleaf/.local/share/uv/python/cpython-3.13.16-linux-x86_64-gnu/lib/python3.13/unittest/mock.py:1503: in __enter__
+    original, local = self.get_original()
+                      ^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <unittest.mock._patch object at 0x7b5fd244cc20>
+
+    def get_original(self):
+        target = self.getter()
+        name = self.attribute
+    
+        original = DEFAULT
+        local = False
+    
+        try:
+            original = target.__dict__[name]
+        except (AttributeError, KeyError):
+            original = getattr(target, name, DEFAULT)
+        else:
+            local = True
+    
+        if name in _builtins and isinstance(target, ModuleType):
+            self.create = True
+    
+        if not self.create and original is DEFAULT:
+>           raise AttributeError(
+                "%s does not have the attribute %r" % (target, name)
+            )
+E           AttributeError: <module 'packages.domains.overview.pipelines.attention_records' from '/tmp/hla-api-source7134-preview/packages/domains/overview/pipelines/attention_records.py'> does not have the attribute 'run_on_warehouse'
+
+/home/bayleaf/.local/share/uv/python/cpython-3.13.16-linux-x86_64-gnu/lib/python3.13/unittest/mock.py:1473: AttributeError
+=========================== short test summary info ============================
+FAILED tests/test_attention_record_failures.py::test_warehouse_busy_keeps_canonical_retry_response
+1 failed, 30 passed, 4 deselected in 79.19s (0:01:19)

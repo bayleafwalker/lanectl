@@ -1,0 +1,29 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+___________ test_record_routes_are_published_in_generated_contracts ____________
+
+tmp_path = PosixPath('/tmp/pytest-of-bayleaf/pytest-14999/test_record_routes_are_publish0')
+
+    def test_record_routes_are_published_in_generated_contracts(tmp_path: Path) -> None:
+        ts = TransformationService(DuckDBStore.memory())
+        client = make_client(
+            tmp_path,
+            ts,
+            ReportingService(ts, access_mode=ReportingAccessMode.WAREHOUSE),
+            name='contracts',
+        )
+        live = client.app.openapi()
+        generated = json.loads(
+            (REPO_ROOT / 'apps/web/frontend/generated/openapi.json').read_text()
+        )
+        typescript = (REPO_ROOT / 'apps/web/frontend/generated/api.d.ts').read_text()
+        for item_type, segment in SEGMENTS.items():
+            path = '/reports/' + segment + '/records/{item_id}'
+>           assert path in live['paths'], path
+E           AssertionError: /reports/transaction-anomalies/records/{item_id}
+E           assert '/reports/transaction-anomalies/records/{item_id}' in {'/adapters/contracts': {'get': {'description': "Get contract vocabulary summary (directions and trust levels).\n\nRet...Successful Response'}, '422': {'content': {'application/json': {...}}, 'description': 'Validation Error'}}, ...}}, ...}
+
+tests/test_attention_record_api.py:725: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_attention_record_api.py::test_record_routes_are_published_in_generated_contracts
+1 failed in 1.35s
