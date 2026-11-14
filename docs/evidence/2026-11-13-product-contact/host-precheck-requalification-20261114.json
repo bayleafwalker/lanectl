@@ -1,0 +1,28 @@
+{
+  "schema": "lanectl.host-precheck-requalification/v1",
+  "observed_at": "2026-11-14T06:01:51.702764+00:00",
+  "source_commit": "2e77a4eca60a4338aeab00b8f48756916c93d226",
+  "operator_failure": {
+    "phase": "nix flake check evaluation, before switch",
+    "check": "actionq-retirement",
+    "initial_source_path": "/nix/store/lybwlgldf4hqhb5awin9gjn171v29cxh-source",
+    "second_source_path": "/nix/store/6v0vns20d14b9rmwrrvq4hcgl7mn89d2-source",
+    "cause": "unknown: original path unavailable for comparison"
+  },
+  "qualification": {
+    "current_source_matches_git_archive": true,
+    "current_source_nar_hash": "sha256-NDz24pezknzVMOun9ehFG6Uebjlaxd549gAORmS/wgQ=",
+    "actionq_check_exit": 0,
+    "full_flake_check_exit": 0,
+    "full_flake_check_command": "python3 scripts/committed-flake.py --repo /projects/dev/gitops-nixos --revision 2e77a4eca60a4338aeab00b8f48756916c93d226 -- nix flake check @COMMITTED_FLAKE@ --show-trace",
+    "exact_system_build_exit": 0,
+    "exact_system": "/nix/store/kpndahh9nvq26ggcpz927dssfmxfz6g0-nixos-system-workstation-26.11.20261111.d4f25a3"
+  },
+  "running_system": "/nix/store/xc11b8dbidazhi6nvpdg9hng9lbna50b-nixos-system-workstation-26.11.20261111.d4f25a3",
+  "running_root_directory": "",
+  "running_user": "lanectl-train",
+  "source_changes": false,
+  "check_waivers": false,
+  "activation_performed": false,
+  "scope": "Exact source/check/build qualification only. Authenticated operator switch and live host boundary/repository qualification remain open. No causal Nix fix claimed."
+}
