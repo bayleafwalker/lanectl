@@ -10,6 +10,13 @@ import re
 _MAX_DEPTH = 64
 _DRAFT = "https://json-schema.org/draft/2020-12/schema"
 _TYPES = {"object", "array", "string", "integer", "number", "boolean", "null"}
+_CATALOG_PATTERNS = {
+    r"^run_[0-9A-HJKMNP-TV-Z]{26}$",
+    r"^lease_[0-9A-HJKMNP-TV-Z]{26}$",
+    r"^outcome_[0-9A-HJKMNP-TV-Z]{26}$",
+    r"^[0-9a-f]{64}$",
+    r"^(self-reported|checked|role-separated|identity-separated|human-authorized)(\+(self-reported|checked|role-separated|identity-separated|human-authorized))*$",
+}
 _ANNOTATIONS = {"title", "description", "default", "examples", "deprecated", "readOnly", "writeOnly"}
 _KEYWORDS = {"$schema", "type", "const", "enum", "anyOf", "properties", "required",
              "additionalProperties", "items", "minLength", "maxLength", "pattern",
@@ -86,14 +93,16 @@ def _supported(schema, depth=0):
             return False
     if "pattern" in schema:
         pattern = schema["pattern"]
-        # Python and ECMA regex differ for extensions and character-class
-        # escapes; reject those forms rather than claiming equivalence.
-        if (type(pattern) is not str or "(?" in pattern
-                or re.search(r"\\[A-Za-z0-9]", pattern)):
+        # Only literal ASCII patterns (with optional anchors) and these exact
+        # owner catalog expressions are known to have matching ECMA/Python
+        # behavior and bounded execution. Other regex syntax fails closed.
+        if (type(pattern) is not str or len(pattern) > 256
+                or (pattern not in _CATALOG_PATTERNS
+                    and re.fullmatch(r"\^?[A-Za-z0-9_-]+\$?", pattern) is None)):
             return False
         try:
             re.compile(pattern)
-        except re.error:
+        except (re.error, OverflowError, RecursionError):
             return False
     for key in _ANNOTATIONS & schema.keys():
         value = schema[key]

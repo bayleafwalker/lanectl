@@ -102,3 +102,11 @@ def test_captured_lease_non_null_branch_checks_nested_constraints():
     assert _valid(result, schema)
     for change in ({"ttl_seconds": 29}, {"lease_id": "wrong"}, {"stale": 1}, {"unknown": 1}):
         assert not _valid(dict(result, current_lease=dict(lease, **change)), schema)
+
+
+@pytest.mark.parametrize("pattern,value", [
+    ("^a.b$", "a\rb"),
+    ("x{999999999999999999999999}", "x"),
+])
+def test_divergent_or_oversized_patterns_fail_closed(pattern, value):
+    assert not _valid(value, {"type": "string", "pattern": pattern})
