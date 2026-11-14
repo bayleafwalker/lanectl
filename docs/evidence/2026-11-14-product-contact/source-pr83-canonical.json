@@ -1,0 +1,38 @@
+{
+  "schema": "hla.source-canonical-delivery/v1",
+  "pull_request": "https://github.com/bayleafwalker/homelab-analytics/pull/83",
+  "checked_head": "713402007fd31fd5537f45945af557a7393682f8",
+  "canonical_merge_sha": "30c0caf6c78d257ff5db79f42cca0b56a0f934b9",
+  "merged": true,
+  "workflow_run": 43570734455,
+  "jobs": [
+    {
+      "id": 132374335616,
+      "name": "verify-fast",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 132374335753,
+      "name": "docker-smoke",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 132374335811,
+      "name": "append-only-shards",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    {
+      "id": 132374335830,
+      "name": "dependency-audit",
+      "status": "completed",
+      "conclusion": "success"
+    }
+  ],
+  "independent_fresh_canonical_ancestry": true,
+  "local_checkout_fast_forwarded": true,
+  "whole_work_complete": false,
+  "next": "Full four-kind HTTP layer revision4 remains draft pending fresh native review; UI and final product delivery remain open."
+}

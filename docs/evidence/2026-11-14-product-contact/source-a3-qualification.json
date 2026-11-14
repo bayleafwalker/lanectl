@@ -48,15 +48,17 @@
     "train": "train-20261114064740",
     "tip": "713402007fd31fd5537f45945af557a7393682f8",
     "check": "passed: 2724 fast, 32 deselected, 120 subtests, 560.21s",
-    "source_landed": false,
+    "source_landed": true,
     "whole_work_complete": false,
     "dev": "normal declared deployment passed at checked tip; real-image/default-schema source smoke passed after isolated harness Path repair and fresh runtime",
     "local_landed": true,
     "canonical_pull_request": "https://github.com/bayleafwalker/homelab-analytics/pull/83",
     "canonical_pr_head": "713402007fd31fd5537f45945af557a7393682f8",
-    "canonical_ci": "pending",
-    "owned_dev_teardown": "Normal landed teardown passed; independent Docker/project containers, network, image tags and PostgreSQL volume absent; train worktree removed."
+    "canonical_ci": "all four jobs completed successfully",
+    "owned_dev_teardown": "Normal landed teardown passed; independent Docker/project containers, network, image tags and PostgreSQL volume absent; train worktree removed.",
+    "canonical_merge_sha": "30c0caf6c78d257ff5db79f42cca0b56a0f934b9",
+    "canonical_ancestry_verified": true
   },
-  "remaining": "Local checked landing and canonical source PR CI/merge; then all four HTTP APIs/generated contracts, ranked individual UI and full delivery. Source-only not whole Work.",
+  "remaining": "Complete four-kind HTTP adapter revision4, generated contracts, ranked individual UI and full final delivery. Whole HLA1593 remains active.",
   "durability": "cross-host-replicated after canonical Git publication; original /tmp artifacts session-local"
 }
