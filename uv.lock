@@ -91,7 +91,7 @@ wheels = [
 
 [[package]]
 name = "lanectl"
-version = "0.2.12"
+version = "0.2.13"
 source = { editable = "." }
 
 [package.dev-dependencies]

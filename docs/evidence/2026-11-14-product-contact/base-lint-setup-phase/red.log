@@ -1,0 +1,113 @@
+F.F..FF                                                                  [100%]
+=================================== FAILURES ===================================
+________ test_real_pytest_setup_call_and_mixed_phases[setup-assertion] _________
+
+tmp_path = PosixPath('/tmp/pytest-of-bayleaf/pytest-15239/test_real_pytest_setup_call_an0')
+source = 'import pytest\n@pytest.fixture\ndef unavailable():\n    assert False, "locked frontend modules unavailable"\ndef test_fixture(unavailable):\n    assert True\n'
+expected = 'spec-gap'
+
+    @pytest.mark.parametrize('source,expected', [
+        (SETUP, 'spec-gap'), (CALL, 'expected'), (SETUP + CALL, 'spec-gap')],
+        ids=['setup-assertion', 'call-assertion', 'mixed-phases'])
+    def test_real_pytest_setup_call_and_mixed_phases(tmp_path, source, expected):
+        output = run_pytest(tmp_path, source)
+        if source != CALL:
+            assert 'ERROR at setup of test_fixture' in output
+>       assert classify_failure(output) == expected, output
+E       AssertionError: E                                                                        [100%]
+E         ==================================== ERRORS ====================================
+E         ________________________ ERROR at setup of test_fixture ________________________
+E         test_subject.py:4: in unavailable
+E             assert False, "locked frontend modules unavailable"
+E         E   AssertionError: locked frontend modules unavailable
+E         E   assert False
+E         =========================== short test summary info ============================
+E         ERROR test_subject.py::test_fixture - AssertionError: locked frontend modules...
+E         1 error in 0.06s
+E         
+E       assert 'expected' == 'spec-gap'
+E         
+E         - spec-gap
+E         + expected
+
+tests/stage8/test_base_lint_setup_phase.py:41: AssertionError
+__________ test_real_pytest_setup_call_and_mixed_phases[mixed-phases] __________
+
+tmp_path = PosixPath('/tmp/pytest-of-bayleaf/pytest-15239/test_real_pytest_setup_call_an2')
+source = 'import pytest\n@pytest.fixture\ndef unavailable():\n    assert False, "locked frontend modules unavailable"\ndef test_fixture(unavailable):\n    assert True\ndef test_product():\n    assert 1 == 2, "product behavior absent"\n'
+expected = 'spec-gap'
+
+    @pytest.mark.parametrize('source,expected', [
+        (SETUP, 'spec-gap'), (CALL, 'expected'), (SETUP + CALL, 'spec-gap')],
+        ids=['setup-assertion', 'call-assertion', 'mixed-phases'])
+    def test_real_pytest_setup_call_and_mixed_phases(tmp_path, source, expected):
+        output = run_pytest(tmp_path, source)
+        if source != CALL:
+            assert 'ERROR at setup of test_fixture' in output
+>       assert classify_failure(output) == expected, output
+E       AssertionError: EF                                                                       [100%]
+E         ==================================== ERRORS ====================================
+E         ________________________ ERROR at setup of test_fixture ________________________
+E         test_subject.py:4: in unavailable
+E             assert False, "locked frontend modules unavailable"
+E         E   AssertionError: locked frontend modules unavailable
+E         E   assert False
+E         =================================== FAILURES ===================================
+E         _________________________________ test_product _________________________________
+E         test_subject.py:8: in test_product
+E             assert 1 == 2, "product behavior absent"
+E         E   AssertionError: product behavior absent
+E         E   assert 1 == 2
+E         =========================== short test summary info ============================
+E         FAILED test_subject.py::test_product - AssertionError: product behavior absent
+E         ERROR test_subject.py::test_fixture - AssertionError: locked frontend modules...
+E         1 failed, 1 error in 0.06s
+E         
+E       assert 'expected' == 'spec-gap'
+E         
+E         - spec-gap
+E         + expected
+
+tests/stage8/test_base_lint_setup_phase.py:41: AssertionError
+____ test_recorded_fresh_clone_setup_errors_are_not_a_semantic_base_failure ____
+
+    def test_recorded_fresh_clone_setup_errors_are_not_a_semantic_base_failure():
+        root = Path(__file__).resolve().parents[2]
+        output = (root / 'docs/evidence/2026-11-14-product-contact/'
+                  'onboarding-native-review-and-fresh-base/official-base-lint.log').read_text()
+        assert '16 errors' in output and 'Node20/locked modules unavailable' in output
+>       assert classify_failure(output) == 'spec-gap'
+E       AssertionError: assert 'expected' == 'spec-gap'
+E         
+E         - spec-gap
+E         + expected
+
+tests/stage8/test_base_lint_setup_phase.py:64: AssertionError
+_____ test_real_base_lint_records_fixture_problem_and_refuses_publication ______
+
+estate = (PosixPath('/tmp/pytest-of-bayleaf/pytest-15239/test_real_base_lint_records_fi0/target'), <function estate.<locals>.release at 0x797f3cc81a80>, <lanectl.events.EventLog object at 0x797f3cbb2660>)
+
+    def test_real_base_lint_records_fixture_problem_and_refuses_publication(estate):
+        def adapter(**kwargs):
+            result = fake_adapter(**kwargs)
+            if 'adversarial reviewer' not in kwargs['prompt']:
+                response = {'outcome': 'Add product behavior',
+                            'tests': {'tests/test_acc_spec.py': SETUP}}
+                (kwargs['worktree'] / '.lanectl-spec/response.json').write_text(json.dumps(response))
+            return result
+    
+        release = make(estate, adapter_fn_override=adapter)
+        evidence = json.loads((release / 'specification.json').read_text())
+>       assert evidence['lint_problems'] == ['spec-gap: tests/test_acc_spec.py']
+E       AssertionError: assert [] == ['spec-gap: t..._acc_spec.py']
+E         
+E         Right contains one more item: 'spec-gap: tests/test_acc_spec.py'
+E         Use -v to get more diff
+
+tests/stage8/test_base_lint_setup_phase.py:78: AssertionError
+=========================== short test summary info ============================
+FAILED tests/stage8/test_base_lint_setup_phase.py::test_real_pytest_setup_call_and_mixed_phases[setup-assertion]
+FAILED tests/stage8/test_base_lint_setup_phase.py::test_real_pytest_setup_call_and_mixed_phases[mixed-phases]
+FAILED tests/stage8/test_base_lint_setup_phase.py::test_recorded_fresh_clone_setup_errors_are_not_a_semantic_base_failure
+FAILED tests/stage8/test_base_lint_setup_phase.py::test_real_base_lint_records_fixture_problem_and_refuses_publication
+4 failed, 3 passed in 1.19s

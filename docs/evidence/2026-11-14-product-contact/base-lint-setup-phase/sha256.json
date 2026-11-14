@@ -1,0 +1,12 @@
+{
+  "README.md": "fb6dc7adde73027fcb9854ff1459a673b7bac4b5d070d3f2351b74add315355c",
+  "execution.json": "71b22fdc1b3a46ac8b81ddb348e1975e3b39124085ea55a4a7cc5e9a105d4e9f",
+  "full-suite.log": "f0391677056c436f0e272dd9ecadbdbfc42031dcd358627858e31a9d4b470cfd",
+  "native-review.json": "b9b15cbeeb7e18b26c863814f929b56983c8a12f9c4e4dafd186cca4060c07d1",
+  "red-initial.log": "f3a342a05f9342afd6005463799e84dcec12fbe4c3d9956624a349162a2aaa3f",
+  "red.log": "b56dc4a2baf0b9296791a215f0a5b754f5bd8ec1a1afc304162d6d1696eb7829",
+  "review-prompt.txt": "6f9d935ff49198cbef69f6489dc21e439ee897f91f19d396d1e200f6d44520d5",
+  "runtime-source-sha256.json": "bb6f76b79098c39c3a07b63f499bfac47f25e33320ec28ec606a91943efd9abe",
+  "source.diff": "b513f458b7c021f0d93a91537f1a6b9ee081aa8c73147d302e8c4a2b397b1bf1",
+  "targeted-green.log": "f7341c0148f7eaed390880394eeb80f7d682b754a9fbd9afd5c398dd30dafc77"
+}
