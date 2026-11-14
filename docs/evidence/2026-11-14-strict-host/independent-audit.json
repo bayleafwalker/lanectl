@@ -1,0 +1,25 @@
+{
+  "reviewer": "/root/nix_source_race",
+  "harness": "first-party API agent",
+  "independent_of_implementation_and_live_probes": true,
+  "verdict": "pass-with-explicit-condition",
+  "condition": "Canonical HLA configured namespace setup/check must pass before applying /tmp/lanectl-sovite-strict-policy.patch",
+  "sovite_counts_independently_recounted": true,
+  "policy_change": "Sovite only: environment -> systemd, plus updated explanatory comment",
+  "source_controls": "Mandatory-input VM falsifier, exact live unit+launcher binding, no fallback and coordinator refusal verified; current lanectl namespace suite 1038 passed",
+  "residual_limits": [
+    "Shared UID and host process namespace permit sibling signalling and /proc exposure",
+    "Network, localhost and abstract sockets remain reachable",
+    "Nix store readable and daemon reachable; store must not contain secrets",
+    "No disk or CPU quotas",
+    "Native-provider authentication not independently reverified by this auditor",
+    "Whole-system wallpaper mode discrepancy unresolved"
+  ],
+  "durability": "cross-host-replicated only after canonical Git publication; original /tmp files session-local",
+  "condition_satisfied": true,
+  "condition_evidence": "hla-canonical-namespace.json: configured setup/check exit0; 2715 passed, 1 make-unavailable skip, 29 deselected, 120 subtests",
+  "normal_configured_canary": "sovite-policy-canary.json: exit0 without backend override",
+  "model_requested": "gpt-6.1-terra",
+  "runtime_model_identity_independently_verified": false,
+  "final_review": "Evidence supports landing and closing2889 after precise manifest/fence-specific wording corrections; those corrections applied. No whole-system closure identity or exhaustive live manifest enumeration claimed."
+}

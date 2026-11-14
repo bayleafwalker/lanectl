@@ -1,0 +1,76 @@
+{
+  "source_sha": "00d29faa84415ca802a68247f98294072b5d4c7d",
+  "host_runtime": "/nix/store/vhiryb7m7hh1qgpqamzqzyk6vgxn8yxp-nixos-system-workstation-26.11.20261111.d4f25a3",
+  "client_python": "/home/bayleaf/.local/share/uv/python/cpython-3.13.16-linux-x86_64-gnu/bin/python3.13",
+  "parser": "lines matching ^([.sFxE]+)\\s*\\[\\s*\\d+%\\]; concatenate captured symbols and count each",
+  "baseline": {
+    "passed_dot": 2797,
+    "skipped_s": 1140,
+    "failed_F": 0,
+    "errors_E": 0,
+    "xfail_x": 0,
+    "total": 3937,
+    "progress_lines": 55
+  },
+  "strictroot": {
+    "passed_dot": 2797,
+    "skipped_s": 1140,
+    "failed_F": 0,
+    "errors_E": 0,
+    "xfail_x": 0,
+    "total": 3937,
+    "progress_lines": 55
+  },
+  "named_units": {
+    "fenced-2220ea36204cb401": {
+      "systemctl": "ActiveState=inactive\nSubState=dead",
+      "spool_exists": false
+    },
+    "fenced-44ac33fea43d642e": {
+      "systemctl": "ActiveState=inactive\nSubState=dead",
+      "spool_exists": false
+    },
+    "fenced-48a5b6c0ea23c14c": {
+      "systemctl": "ActiveState=inactive\nSubState=dead",
+      "spool_exists": false
+    },
+    "fenced-54af3b004d768fe2": {
+      "systemctl": "ActiveState=inactive\nSubState=dead",
+      "spool_exists": false
+    },
+    "fenced-59cccad8db91f10d": {
+      "systemctl": "ActiveState=inactive\nSubState=dead",
+      "spool_exists": false
+    },
+    "fenced-bd0de2bd13b0abc3": {
+      "systemctl": "ActiveState=inactive\nSubState=dead",
+      "spool_exists": false
+    },
+    "fenced-f46fcb97b6f277d7": {
+      "systemctl": "ActiveState=inactive\nSubState=dead",
+      "spool_exists": false
+    }
+  },
+  "note": "Boundary/probes harnesses do not retain generated unit names; their successful client return establishes terminal receipt and removal through client path. Named units listed are those retained in other evidence.",
+  "hla_canonical_namespace": {
+    "source_sha": "9cf62cb7271ed0e15e35877ab772709808470bea",
+    "isolation": "namespace",
+    "phases": {
+      "setup": {
+        "command": "uv sync -q --extra dev",
+        "returncode": 0
+      },
+      "check": {
+        "command": "uv run --no-sync ruff check . && uv run --no-sync python -m pytest -q -p no:cacheprovider -m 'not slow'",
+        "returncode": 0
+      }
+    },
+    "raw_result": "hla-canonical-namespace.json",
+    "owned_user_unit": "run-p115350-i115351.service",
+    "harness_pid": 115295,
+    "pytest_pid": 115388,
+    "worktree": "/projects/dev/_wt/lanectl-qualified-homelab-analytics-p4eo69ky/checkout",
+    "worktree_removed": true,
+    "durability": "session-local ephemeral"
+  }
+}

@@ -48,11 +48,11 @@ env_allow = ["PATH", "HOME"]
 
 # sovite: public (github). Full suite exit 0 in 8m on a fresh worktree.
 [repos.sovite]
-# Explicit uncoordinated exception: user namespaces project trusted root-owned
-# ancestors as UID 65534. Actual comparison: 2797 passed outside; 66 failures +
-# 25 setup errors inside. Keep environment stripping; disk credentials remain
-# readable by same-user train code. Never coordinate this mode.
-train_isolation = "environment"
+# The separate-UID strict-root host fence preserves Sovite's ownership checks.
+# Actual host qualification: 2797 passed / 1140 skipped, matching the clean
+# baseline; credential/environment, lifecycle and cleanup probes also passed.
+# See docs/fenced-train.md for the host requirements and residual boundaries.
+train_isolation = "systemd"
 path = "/projects/dev/sovite"
 main = "main"
 setup_cmd = "uv sync -q --extra test"

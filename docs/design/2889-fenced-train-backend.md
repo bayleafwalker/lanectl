@@ -1,10 +1,12 @@
 # 2889 — Fenced train backend for ownership-guarded repositories
 
-Status: implementation and qualification in progress (2026-11-13). Client source
-is released as 0.2.6; the dedicated host account and first service generation are
-installed. The stricter filesystem allow-list correction remains under review
-and must be applied and requalified before Sovite's policy changes. This document
-records the approved design; current evidence is linked from `docs/fenced-train.md`.
+Status: strict-host qualification and independent policy review passed
+(2026-11-14). Client0.2.9 and the fence unit and launcher from gitops source2e77a4e are
+qualified against the live separate-UID empty-root service. Sovite's configured policy now selects
+`systemd`; its full2,797-pass/1,140-skip outcome matches the clean baseline.
+See [current evidence](../evidence/2026-11-14-strict-host/host-binding.json) and
+[the runtime contract](../fenced-train.md). This does not qualify hosted owner
+identity, cross-train process/network isolation or the ladder's evidence clocks.
 
 ## Problem and security boundary
 

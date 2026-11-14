@@ -1,0 +1,151 @@
+{
+  "repo": "sovite",
+  "mode": "probes",
+  "elapsed_s": 0.41,
+  "result": {
+    "outside_control_exit": 1,
+    "outside_control": {
+      "checkout_writable": true,
+      "inherited_secret_names": [
+        "FJ_TOKEN",
+        "LANECTL_TEST_API_KEY",
+        "CREDENTIALS_DIRECTORY"
+      ],
+      "nix_uid": 0,
+      "root_uid": 0,
+      "rows": [
+        {
+          "path": "/home/bayleaf/.cache/lanectl-fence-home-b7omabyz/.config/vuoro/credentials/runner",
+          "read": "OPENED",
+          "write": "OPENED"
+        },
+        {
+          "path": "/home/bayleaf/.cache/lanectl-fence-home-b7omabyz/.config/forgejo/token",
+          "read": "OPENED",
+          "write": "OPENED"
+        },
+        {
+          "path": "/home/bayleaf/.cache/lanectl-fence-home-b7omabyz/.local/share/forgejo-cli/keys.json",
+          "read": "OPENED",
+          "write": "OPENED"
+        },
+        {
+          "path": "/home/bayleaf/.cache/lanectl-fence-home-b7omabyz/.local/share/opencode/auth.json",
+          "read": "OPENED",
+          "write": "OPENED"
+        },
+        {
+          "path": "/home/bayleaf/.cache/lanectl-fence-home-b7omabyz/.codex/auth.json",
+          "read": "OPENED",
+          "write": "OPENED"
+        },
+        {
+          "path": "/home/bayleaf/.cache/lanectl-fence-home-b7omabyz/.claude/.credentials.json",
+          "read": "OPENED",
+          "write": "OPENED"
+        },
+        {
+          "path": "/home/bayleaf/.cache/lanectl-fence-home-b7omabyz/.ssh/key",
+          "read": "OPENED",
+          "write": "OPENED"
+        },
+        {
+          "path": "/home/bayleaf/.cache/lanectl-fence-home-b7omabyz/runtime/credentials/runner",
+          "read": "OPENED",
+          "write": "OPENED"
+        },
+        {
+          "path": "/home/bayleaf/.cache/lanectl-fence-home-b7omabyz/.local/state/lanectl/synthetic-state",
+          "read": "OPENED",
+          "write": "OPENED"
+        },
+        {
+          "path": "/projects/dev/lanectl-fence-project-b09zduiw/other-repo-marker",
+          "read": "OPENED",
+          "write": "OPENED"
+        },
+        {
+          "path": "/projects/dev/sovite/pyproject.toml",
+          "read": "OPENED",
+          "write": "OPENED"
+        },
+        {
+          "path": "/projects/dev/lanectl/governance/repos.toml",
+          "read": "OPENED",
+          "write": "OPENED"
+        }
+      ],
+      "uid": 1000
+    },
+    "fenced_exit": 0,
+    "fenced": {
+      "checkout_writable": true,
+      "inherited_secret_names": [],
+      "nix_uid": 0,
+      "root_uid": 0,
+      "rows": [
+        {
+          "path": "/home/bayleaf/.cache/lanectl-fence-home-b7omabyz/.config/vuoro/credentials/runner",
+          "read": "ENOENT",
+          "write": "ENOENT"
+        },
+        {
+          "path": "/home/bayleaf/.cache/lanectl-fence-home-b7omabyz/.config/forgejo/token",
+          "read": "ENOENT",
+          "write": "ENOENT"
+        },
+        {
+          "path": "/home/bayleaf/.cache/lanectl-fence-home-b7omabyz/.local/share/forgejo-cli/keys.json",
+          "read": "ENOENT",
+          "write": "ENOENT"
+        },
+        {
+          "path": "/home/bayleaf/.cache/lanectl-fence-home-b7omabyz/.local/share/opencode/auth.json",
+          "read": "ENOENT",
+          "write": "ENOENT"
+        },
+        {
+          "path": "/home/bayleaf/.cache/lanectl-fence-home-b7omabyz/.codex/auth.json",
+          "read": "ENOENT",
+          "write": "ENOENT"
+        },
+        {
+          "path": "/home/bayleaf/.cache/lanectl-fence-home-b7omabyz/.claude/.credentials.json",
+          "read": "ENOENT",
+          "write": "ENOENT"
+        },
+        {
+          "path": "/home/bayleaf/.cache/lanectl-fence-home-b7omabyz/.ssh/key",
+          "read": "ENOENT",
+          "write": "ENOENT"
+        },
+        {
+          "path": "/home/bayleaf/.cache/lanectl-fence-home-b7omabyz/runtime/credentials/runner",
+          "read": "ENOENT",
+          "write": "ENOENT"
+        },
+        {
+          "path": "/home/bayleaf/.cache/lanectl-fence-home-b7omabyz/.local/state/lanectl/synthetic-state",
+          "read": "ENOENT",
+          "write": "ENOENT"
+        },
+        {
+          "path": "/projects/dev/lanectl-fence-project-b09zduiw/other-repo-marker",
+          "read": "ENOENT",
+          "write": "ENOENT"
+        },
+        {
+          "path": "/projects/dev/sovite/pyproject.toml",
+          "read": "ENOENT",
+          "write": "ENOENT"
+        },
+        {
+          "path": "/projects/dev/lanectl/governance/repos.toml",
+          "read": "ENOENT",
+          "write": "ENOENT"
+        }
+      ],
+      "uid": 1120
+    }
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "source": "Actual native worker completed while strict host fence was active; not a train execution, source landing or hosted owner proof. Historical Claude evidence remains in the earlier qualification directory.",
+  "events": [
+    {
+      "data": {
+        "attempt_id": "hla-attention-source-reader-a3",
+        "elapsed_s": 1762.4,
+        "escalation_reason": null,
+        "exit_code": 0,
+        "final_tail": "ve while intact siblings still do.\n   - Error mapping: `psycopg.Error`/`duckdb.Error` \u2192 `AttentionRecordUnavailableError` (driver marker never in the message); `WarehouseBusyError`/`RuntimeError` propagate unchanged.\n\n2. **`packages/pipelines/reporting_service.py`** \u2014 extracted `get_open_attention_items` to the facade and added a thin `get_attention_record` delegator. Final file is **1533 lines** (below the 1534-line canonical cap).\n\n3. **`docs/architecture/pipeline-ambiguity-classification.md`** \u2014 classified the new file as `APP (overview)` (cross-domain household identity composition, not kernel), updated date.\n\n### Verification\n- `uv run --no-sync python -m pytest -q -p no:cacheprovider tests/test_attention_source_records.py` \u2192 **8 passed**\n- `uv run --no-sync python -m pytest -q -p no:cacheprovider -m 'integration and slow' tests/test_attention_source_records.py` \u2192 **3 passed** (real Docker Postgres, disposable adapter)\n- `ruff check` \u2192 clean (import ordering auto-fixed); `mypy` on both files \u2192 clean\n- Targeted regression tests (attention identity, reporting service, mart read registry, architecture contracts, warehouse sessions, reporting API, snapshots, extensions) \u2192 **276 passed**\n\nTotal change: ~187 added+deleted lines (well under the 700 cap). No existing tests modified; no test file added (the planner-owned acceptance file is the gate). The full follow-on delivery stack (API, UI, independent review, verify-fast, train/dev, CI) remains open for the integration owner.",
+        "head_sha": "78bf4f4ca15fe2fbe7086d1018f5533930cb8af4",
+        "isolation_breach": false,
+        "main_changed": false,
+        "outcome": "done",
+        "seed_sha": "0dfdf13e0fb818fcc9e927578fb18d165dd9128f"
+      },
+      "item_id": "hla-attention-source-reader",
+      "schema": "lanectl.event/v1",
+      "ts": "2026-11-14T06:29:32Z",
+      "type": "attempt.finished"
+    },
+    {
+      "data": {
+        "attempt_id": "hla-attention-source-reader-a3",
+        "model": "opencode-go/deepseek-v4-pro",
+        "provider": "opencode",
+        "source": "adapter",
+        "units": {
+          "cache_read_tokens": 5283328,
+          "cache_write_tokens": 0,
+          "cost_usd": 0.0,
+          "input_tokens": 173097,
+          "output_tokens": 8683,
+          "reasoning_tokens": 62923,
+          "steps": 48
+        }
+      },
+      "item_id": "hla-attention-source-reader",
+      "schema": "lanectl.event/v1",
+      "ts": "2026-11-14T06:29:32Z",
+      "type": "usage.recorded"
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+{
+  "command": "import socket,ssl; print(\"DNS\", socket.getaddrinfo(\"pypi.org\",443, type=socket.SOCK_STREAM)[0][4][0]); s=socket.create_connection((\"pypi.org\",443),timeout=15); t=ssl.create_default_context().wrap_socket(s,server_hostname=\"pypi.org\"); print(\"TLS\",t.version(),t.getpeercert()[\"subjectAltName\"][:2]); t.close()",
+  "returncode": 0,
+  "stdout": "Starting lanectl fenced train fenced-bd0de2bd13b0abc3...\nlanectl-train: prepared train fenced-bd0de2bd13b0abc3: argv[0]='/run/current-system/sw/bin/bash' timeout=1800s\nStarted lanectl fenced train fenced-bd0de2bd13b0abc3.\nlanectl-train: run fenced-bd0de2bd13b0abc3: cwd=/var/lib/lanectl-train/trains/fenced-bd0de2bd13b0abc3/repo timeout=1800s\nDNS 2a04:4e42::223\nTLS TLSv1.3 (('DNS', 'pypi.org'), ('DNS', '*.pypi.org'))\nlanectl-train: finish fenced-bd0de2bd13b0abc3: succeeded (success/exited/0)\nlanectl-train@fenced-bd0de2bd13b0abc3.service: Deactivated successfully.\nlanectl-train@fenced-bd0de2bd13b0abc3.service: Consumed 189ms CPU time over 271ms wall clock time, 18.8M memory peak, 104K read from disk, 144K written to disk, 5.4K incoming IP traffic, 2.2K outgoing IP traffic.\n",
+  "stderr": ""
+}

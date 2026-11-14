@@ -1,0 +1,39 @@
+{
+  "schema": "lanectl.strict-host-binding/v1",
+  "observed_at": "2026-11-14T06:20:51.749417+00:00",
+  "running_system": "/nix/store/vhiryb7m7hh1qgpqamzqzyk6vgxn8yxp-nixos-system-workstation-26.11.20261111.d4f25a3",
+  "configuration_revision": "2e77a4eca60a4338aeab00b8f48756916c93d226",
+  "root_directory": "/run/lanectl-train/.rootfs",
+  "service_user": "lanectl-train",
+  "uid": 1120,
+  "client_version": "0.2.9",
+  "client_source": "f9267ea32e481f2a1ecf3f57b07ff0e888e1d0cf",
+  "unit_path": "/nix/store/vbmdkg7f0hnm1lfzxrkm9282hbxvgikv-unit-lanectl-train-.service/lanectl-train@.service",
+  "unit_sha256": "76a4bb361b19f5430342007a33c651455ba52c4206deec2f904423f32f43ed33",
+  "launcher_path": "/nix/store/sv6rr6451k6kjj3rh5kv5pkm08rmjrlr-launcher.py",
+  "launcher_sha256": "526956f9cd67511f4b47cc01c965f00b418d55a56b3940b30eefcc7eec4b447e",
+  "launcher_matches_git_commit": true,
+  "fence_unit_and_launcher_identical_to_exact_helper_build": true,
+  "exact_helper_system": "/nix/store/kpndahh9nvq26ggcpz927dssfmxfz6g0-nixos-system-workstation-26.11.20261111.d4f25a3",
+  "whole_system_closure_equality_claimed": false,
+  "whole_system_difference": "Home Manager wallpaper file executable modes differ; bytes/names match. Underlying source-accessor discrepancy unresolved. Fence unit and launcher are identical.",
+  "vm_derivation": "/nix/store/vpghgflg9z9j4fxki2k1c77nwcr5kj7f-vm-test-run-lanectl-train-fence.drv",
+  "vm_result": "/nix/store/w3c3032s1ijjzkld2hdi2qcnmw7lg5q4-vm-test-run-lanectl-train-fence",
+  "exact_vm_build_exit": 0,
+  "missing_required_input_failure": "source-bound VM removes /etc/hosts; namespace failure observed, candidate marker absent, coordinator ownership restored",
+  "named_cleanup_audit": "7 retained names inactive/dead, all named spools absent; other successful harness invocations did not retain names and are not individually re-audited",
+  "remaining": "Independent audit condition satisfied by canonical HLA namespace exit0; reviewed Sovite systemd policy applied and normal configured canary exit0. Canonical publication/CI and served closeout pending.",
+  "hla_namespace": {
+    "source": "9cf62cb7271ed0e15e35877ab772709808470bea",
+    "returncode": 0,
+    "passed": 2715,
+    "skipped": 1,
+    "skip_reason": "make unavailable on configured command PATH",
+    "deselected": 29,
+    "subtests_passed": 120
+  },
+  "policy_focused_tests": {
+    "passed": 38,
+    "elapsed_s": 6.05
+  }
+}

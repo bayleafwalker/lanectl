@@ -5,22 +5,42 @@ It uses the fixed root-owned `lanectl-train@.service` template. A launch or
 qualification failure returns a failed command; it never selects another mode.
 Namespace remains the default. Coordinated work refuses environment-only mode.
 
-The host must install the reviewed account, template, launcher, spool, outside-tree
-receipt directory and narrow coordinator authorization. The currently installed host is
-gitops-nixos commit `dbf142e2636d0397c7aeb5cacad3b4b1adfe2df4`; its runbook is
-`docs/runbooks/lanectl-train-fence.md` in that repository. The workstation now has
-UID/GID1120, a non-login account, coordinator-owned 0700 spool and root-owned 0755
-receipt directory. No general sudo grant is used.
+The host must install the reviewed account, template, launcher, spool,
+outside-tree receipt directory and narrow coordinator authorization. On
+2026-11-14 the workstation was observed running gitops-nixos revision
+`2e77a4eca60a4338aeab00b8f48756916c93d226` with
+`RootDirectory=/run/lanectl-train/.rootfs` and UID/GID1120. The account has no
+login shell; the spool is coordinator-owned 0700 and receipts are root-owned.
+No general sudo grant is used.
 
-That installed generation uses a read-only host tree with path denials. A live
-public-canary probe shows `/etc/issue` is still readable. It does not meet the
-design's filesystem allow-list requirement. The correction using an empty
-`RootDirectory` was independently reviewed and merged through gitops PR84 at
-`2e77a4eca60a4338aeab00b8f48756916c93d226`. Its NixOS VM tests, workstation
-build, exact committed deploy-source build, PR CI and post-merge CI passed. See
-[the source/build binding](evidence/2026-11-13-fenced-client/strict-root-source-integrated.json).
-Host apply and actual-host requalification remain required. Sovite's policy has
-not been promoted.
+The earlier `dbf142e` generation exposed undeclared host files through a
+read-only host tree. The applied correction uses an empty root and explicit
+read-only inputs. Its live public-canary probe now rejects `/etc/issue`; the
+unfenced control can open it. The installed unit and launcher exactly match the
+reviewed source and evaluated build. The running whole-system output differs
+from the helper build through Home Manager wallpaper executable modes; that
+source-accessor discrepancy remains unresolved. This qualification binds the
+fence, not equality of the entire system closures. See the
+[host binding](evidence/2026-11-14-strict-host/host-binding.json).
+
+The current strict-root run matches Sovite's clean baseline: 2,797 passed and
+1,140 skipped, with no failure or error markers. Both setup and check exited
+successfully. Pytest's double-quiet output omits a summary, so counts are
+independently parsed from the retained progress lines. Boundary, DNS/TLS,
+setup/check/recheck/historical recovery, timeout, cancellation and lost-stop
+acknowledgement probes passed. Seven retained unit names are inactive with
+spools removed; some other successful harness calls did not retain unit names
+and cannot be individually re-audited. See the
+[raw evidence and parser](evidence/2026-11-14-strict-host/summary.json).
+
+Sovite now selects `systemd` after independent review and the required
+repository regressions passed. A normal configured canary, without a backend
+override, reran repository setup and verified UID1120, root/nix UID0, checkout
+writes and the absent undeclared host file. The policy tests passed38 cases.
+Other repositories retain namespace mode: lanectl passed1,038 tests, appservice
+passed its configured validator, and HLA passed2,715 tests plus120 subtests with
+one existing make-unavailable skip. Candidate HLA delivery separately runs its
+full verification with the required make/browser tools.
 
 Each command gets a fresh self-contained checkout and private home. Setup runs
 inside the same fence before a check. Nothing is copied back. The client accepts
@@ -28,13 +48,11 @@ only a coherent root-owned receipt bound to the exact request and nonce, after
 terminal state and ownership handback. Failed or uncertain stop acknowledgement
 retains a named orphan; remove it only after proving the exact service stopped.
 
-The installed-service qualification matches Sovite's ordinary baseline:
-2,797 passed / 1,140 skipped. Synthetic probes deny 24 read/write opens, strip secret
-environment names, preserve checkout writes and observe root/nix UID 0 with the
-train at UID 1120. Actual build, recheck, historical reconstruction, timeout,
-cancellation and deliberate lost-stop acknowledgement also pass. Raw evidence
-and reproducible harnesses are in
+Historical qualification and reproducible harness reviews remain in
 [`docs/evidence/2026-11-13-fenced-client/`](evidence/2026-11-13-fenced-client/).
+The current strict-root probe rejects 26 read/write opens to 13 denied paths,
+strips synthetic secret environment names, preserves checkout writes and
+observes root/nix UID 0 with the train at UID 1120.
 
 Qualify the selected repository before changing its policy. Additional direct
 systemd smoke tests found concrete limits:
@@ -76,8 +94,9 @@ mandatory read-only host inputs, plus systemd's API filesystems and host
 `os-release` metadata. Missing mandatory inputs prevent execution. No sibling
 checkout is bound. The root receipt directory is visible for the fixed root
 post-step; candidate writes are denied by root ownership. The host runbook owns
-the exact manifest and its VM falsifiers. These are source-defined properties
-until the correction is applied and live probes pass.
+the exact manifest and its VM falsifiers. The installed unit matches the source-checked manifest. Live probes exercise
+selected inputs and denials; the source-bound VM also forces a missing
+mandatory input to fail before candidate execution.
 
 Subprocesses stay in the systemd control group even after `setsid`. Actual-host
 cancellation observed a live escaped child, acknowledged one stop, then proved
@@ -104,5 +123,5 @@ The current installed client is 0.2.9 at
 `f9267ea32e481f2a1ecf3f57b07ff0e888e1d0cf`; its runtime bytes match the reviewed
 publication-evidence repair. See the
 [installation evidence](evidence/2026-11-13-product-contact/lanectl-v029-installed.json).
-The older host qualification above does not establish a strict-root pass for
-this client or the pending host generation.
+The current strict-root evidence above uses this installed client. It does not
+establish hosted runner authentication or the ladder's operational clocks.

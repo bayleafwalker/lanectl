@@ -1,0 +1,13 @@
+{
+  "schema": "lanectl.sovite-configured-policy-canary/v1",
+  "source_sha": "00d29faa84415ca802a68247f98294072b5d4c7d",
+  "configured_isolation": "systemd",
+  "configured_setup": "uv sync -q --extra test",
+  "command": "/run/current-system/sw/bin/python3 -c 'import json,os,pathlib; pathlib.Path(\".policy-canary\").write_text(\"synthetic\"); x={\"uid\":os.getuid(),\"root_uid\":os.stat(\"/\").st_uid,\"nix_uid\":os.stat(\"/nix\").st_uid,\"unlisted_issue_visible\":pathlib.Path(\"/etc/issue\").exists(),\"checkout_write\":True}; print(json.dumps(x)); assert x[\"uid\"]==1120 and x[\"root_uid\"]==x[\"nix_uid\"]==0 and not x[\"unlisted_issue_visible\"]'",
+  "returncode": 0,
+  "stdout": "Starting lanectl fenced train fenced-fb002d355fd351c0...\nlanectl-train: prepared train fenced-fb002d355fd351c0: argv[0]='/run/current-system/sw/bin/bash' timeout=1800s\nStarted lanectl fenced train fenced-fb002d355fd351c0.\nlanectl-train: run fenced-fb002d355fd351c0: cwd=/var/lib/lanectl-train/trains/fenced-fb002d355fd351c0/repo timeout=1800s\n{\"uid\": 1120, \"root_uid\": 0, \"nix_uid\": 0, \"unlisted_issue_visible\": false, \"checkout_write\": true}\nlanectl-train: finish fenced-fb002d355fd351c0: succeeded (success/exited/0)\nlanectl-train@fenced-fb002d355fd351c0.service: Deactivated successfully.\nlanectl-train@fenced-fb002d355fd351c0.service: Consumed 2.285s CPU time over 3.994s wall clock time, 275.1M memory peak, 7.1M read from disk, 113.6M written to disk, 48.7M incoming IP traffic, 401.7K outgoing IP traffic.\n",
+  "stderr": "",
+  "scope": "Normal configured backend with real repository setup and synthetic trusted canary; full unchanged repository check is separately recorded. No product train or owner completion claimed.",
+  "unit_terminal": "ActiveState=inactive\nSubState=dead",
+  "spool_exists": false
+}
