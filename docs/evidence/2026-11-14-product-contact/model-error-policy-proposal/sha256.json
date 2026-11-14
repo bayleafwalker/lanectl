@@ -1,0 +1,19 @@
+{
+  "README.md": "32c7f5f14094e57c4e4bdb284efa92eeb62dc78834706fdeaa2292fef37fbb6d",
+  "decision-brief.md": "c078ed54f3affec7a102a0234afd3488656b38b2a0e5b7f6fb42c9738a0b3769",
+  "full-suite-final.log": "df65a3c52cad9a9b3861a8a39fe7a330a79f3d2f0e6acf0f50d014404a19e098",
+  "full-suite-r2.log": "096823c16d5ebfd965c919926802fe93fa274dbfc06b629360c335559da50b6e",
+  "full-suite.log": "d8483b056835c77f5594c9c2ae88f3d3362e3d40f40cca4fb334f34277a2b746",
+  "native-review.json": "81db76e205ae727e02dc52be206e402b395bf665db847ba20f0164f36a84ba55",
+  "overbudget-repair-green.log": "287a068c3d70d41ef29cc2b0cc1f364ac88132f7ef5eeb2d9f705be4cd656133",
+  "overbudget-repair-red.log": "e5d74ee0c9d1d8577d399fbb7590745d4b9282730804b17ce68944aab9d58d7d",
+  "overbudget-repair-typecheck.log": "8fa1cf5506304e8abac55868e7f1a136c9b1dde57a3981a382da4c21ea129a6f",
+  "overbudget-repair.diff": "63c74ef68598df460963ebaf325a5783b74b45c422422c47ff15d59d9dc7ce16",
+  "overbudget-repair.json": "f7f7d1e57b46f48bdd5251ffcc0631dc602ec65ed00bb95a3f1e619524ac3fee",
+  "policy-final-green.log": "ac84d31254b1f0be729bbe2e90dcf691256875726c8d4a6bf0802d69e59cc6ed",
+  "policy-green.log": "ac84d31254b1f0be729bbe2e90dcf691256875726c8d4a6bf0802d69e59cc6ed",
+  "policy-red.log": "02ec856c15857b10ea3f99ddd8173fc855c49b9288df9d98362c97f214f9292f",
+  "projection-proof.json": "5fc28fe0d40077b47855958a777a2c6a124941623bdda5d15adb1e1bc6fa4624",
+  "review-execution.json": "fbc8d62a01a70887376c22e772a09754203c871ab7cc322022ffc10b8af3be3a",
+  "review-prompt.txt": "586376127f0f98b158ad58d250d05d913787a94fdad198d8875842086da9256d"
+}

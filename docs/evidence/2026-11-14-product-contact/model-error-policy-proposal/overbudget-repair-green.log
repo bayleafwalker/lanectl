@@ -1,0 +1,9 @@
+============================= test session starts ==============================
+platform linux -- Python 3.14.10, pytest-9.1.1, pluggy-1.7.0
+rootdir: /tmp/wt-hla-model-error-a3
+configfile: pytest.ini
+collected 3 items
+
+tests/test_attention_record_boundary_worker.py ...                       [100%]
+
+============================== 3 passed in 3.75s ===============================
