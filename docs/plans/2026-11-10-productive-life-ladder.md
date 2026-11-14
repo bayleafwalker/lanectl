@@ -112,7 +112,7 @@ went red after it (fixed). Not yet modelled: V4 Pro's own $15/month limit as a s
 The strict-root host fence is applied and qualified; served #2889 is done.
 Canonical lanectl `ac4c4dd` promotes only Sovite to its ownership-compatible
 `systemd` mode after matching its full baseline. The earlier environment-only
-status above is historical. The installed client is0.2.9, including reviewed
+status above is historical. The installed client is0.2.10, including reviewed
 retry routing, cleanup and truthful publication evidence corrections.
 
 Product contact continues under HLA1593. Identity PR82 and source-reader PR83
@@ -184,10 +184,13 @@ remain required. These steps add no completed product-item count.
 Specific approved owner diagnosis established that the enrolled runner's
 issuer is `https://api.vuoro.cloud`. The earlier direct shared-service 401 is
 historical evidence from the wrong destination. An actual read at the issuer
-authenticated, correlated and returned an empty ready list. Installed lanectl
-still reports that result as unknown because its catalog-schema validator
-rejects valid literal constraints. Served `lanectl#2900` tracks the repair.
-The first fix passed its suite but independent review and actual catalog
-inspection found broader compatibility gaps; it remains unmerged and
-uninstalled while remediation proceeds. No claim, grant, profile, deployment
+authenticated, correlated and returned an empty ready list. Installed lanectl 0.2.9
+reported that result as unknown because its catalog-schema validator rejected
+valid literal constraints. Served `lanectl#2900` tracked the repair. The first
+fix passed its suite but independent review and actual catalog inspection
+found broader compatibility gaps. Revised source was independently cleared,
+passed 1097 tests, landed and released as v0.2.10. All 62 installed runtime
+files match that release, and the installed readback returned observed with
+zero ready items. A synthetic invalid runner was refused with HTTP 401; see
+[installed evidence](../evidence/2026-11-14-product-contact/owner-catalog-compatibility/rollout.json). No claim, grant, profile, deployment
 or event-authority change was made.

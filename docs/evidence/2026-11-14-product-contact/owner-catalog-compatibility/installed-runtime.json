@@ -1,0 +1,6 @@
+{
+  "distribution": "0.2.10",
+  "canonical_release_commit": "686eb27cb9629da3ee36b4e0710945dcc3a7125e",
+  "runtime_files_byte_equal": 62,
+  "runtime_path": "/home/bayleaf/.local/share/uv/tools/lanectl/lib/python3.13/site-packages/lanectl"
+}

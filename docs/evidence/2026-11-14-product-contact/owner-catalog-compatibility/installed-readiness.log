@@ -1,0 +1,8 @@
+Running as unit: lanectl-owner-installed-readiness-20261114-r1.service
+{"catalog_revision": "4230516fcb775d72e14dfa774c8395a9f50ad5b640ccd9134648a8c659f22af3", "distribution": "0.2.10", "endpoint": "https://api.vuoro.cloud", "ready_count": 0, "ready_state": "observed", "release_commit": "686eb27cb9629da3ee36b4e0710945dcc3a7125e"}
+{"code": "identity-invalid", "control": "synthetic-invalid-runner", "http": 401, "refused": true}
+          Finished with result: success
+Main processes terminated with: code=exited, status=0/SUCCESS
+               Service runtime: 1.047s
+             CPU time consumed: 100ms
+                   Memory peak: 19.3M (swap: 0B)

@@ -1,0 +1,17 @@
+{
+  "cause": "Two transient diagnostic failures were retained long enough for the ordinary failed-unit poller to report them.",
+  "units": [
+    {
+      "unit": "lanectl-owner-catalog-compat-20261114-r1.service",
+      "cause": "CA bundle absent from transient environment; TLS verification failed.",
+      "corrected_check": "r2 with SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt succeeded."
+    },
+    {
+      "unit": "lanectl-owner-issuer-auth-control-20261114-r1.service",
+      "cause": "Clean-worktree precondition refused concurrent uncommitted test additions before network.",
+      "corrected_check": "r2 on clean f71656f observed0 and invalid-identity401."
+    }
+  ],
+  "action": "Recorded results, then reset only those terminal owned failure flags. Failed system and user lists subsequently empty; tick success, timer and notifier enabled.",
+  "future_one_off_diagnostics": "Use systemd-run --collect and retain command exit and logs; no notifier exclusions or global reset."
+}

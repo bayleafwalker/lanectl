@@ -13,3 +13,9 @@ The exact candidate source then read the issuer: every captured lifecycle input/
 The first compatibility probe lacked SSL_CERT_FILE and failed certificate-chain verification. Retrying with /etc/ssl/certs/ca-certificates.crt succeeded with TLS verification enabled. Only its exact terminal failed-unit flag was cleared after recording the result. Failed source checks are evidence; process exit 0 alone never establishes authentication or readiness.
 
 Served work is lanectl#2900, execution reservation 499 for this session. Raw log whitespace is intentionally retained. Git publication makes this selected evidence cross-host-replicated; /tmp originals remain ephemeral.
+
+## Release and installed readback
+
+Release v0.2.10 is canonical at `686eb27cb9629da3ee36b4e0710945dcc3a7125e`. The final test-only additions passed 1097 tests, as did the integrated release metadata. Native-reviewed runtime source remained byte-identical. Installation waited for native workers, trains and the tick to be inactive; all 62 installed runtime files match the tag. The installed client then returned observed with zero ready items at the verified issuer. A synthetic invalid runner was refused with identity-invalid401. The one-off readback unit used --collect; its exit and output are retained. This completes the bounded compatibility repair, not the hosted claim-to-outcome flow. No real ready work was found by that read.
+
+The operator reported multiple systemd alerts during diagnosis. The notifier ledger identified the two retained failed diagnostic units documented in diagnostic-alerts.json. Their corrected checks succeeded; only their terminal failure flags were reset. Both failed-unit lists were empty afterward, with the timer and monitoring still enabled.
