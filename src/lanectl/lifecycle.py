@@ -11,6 +11,7 @@ import json
 from pathlib import Path
 import sqlite3
 
+from .catalog_schema import supported as _schema_supported, valid as _valid
 from .coordination import CoordinationError
 
 
@@ -98,32 +99,6 @@ def local_facts(events, *, item_id=None, attempt_id=None, run_id=None):
             "local.receipt": _event_fact("local.receipt", receipts)}
 
 
-def _valid(value, schema):
-    """Small, conservative JSON-schema validator for catalog result schemas."""
-    if not isinstance(schema, dict):
-        return False
-    kind = schema.get("type")
-    if kind == "object":
-        if not isinstance(value, dict):
-            return False
-        if any(name not in value for name in schema.get("required", ())):
-            return False
-        return all(name not in schema.get("properties", {}) or _valid(item, schema["properties"][name])
-                   for name, item in value.items())
-    if kind == "array":
-        return isinstance(value, list) and all(_valid(item, schema.get("items", {})) for item in value)
-    if kind == "string":
-        return isinstance(value, str)
-    if kind == "integer":
-        return isinstance(value, int) and not isinstance(value, bool)
-    if kind == "number":
-        return isinstance(value, (int, float)) and not isinstance(value, bool)
-    if kind == "boolean":
-        return isinstance(value, bool)
-    if kind == "null":
-        return value is None
-    return False
-
 
 def _definition(catalog, operation):
     definition = next((item for item in catalog["operations"] if item.get("name") == operation), None)
@@ -138,9 +113,13 @@ def _definition(catalog, operation):
 
 def _arguments(definition, values):
     schema = definition.get("input_schema", {})
+    if not _schema_supported(schema):
+        raise CoordinationError("owner catalog has an unsupported input schema")
     properties = schema.get("properties", {}) if isinstance(schema, dict) else {}
     required = schema.get("required", ()) if isinstance(schema, dict) else ()
     result = {name: values[name] for name in properties if name in values}
+    if not _valid(result, schema):
+        raise CoordinationError("owner catalog arguments do not match input schema")
     if any(name not in result for name in required):
         raise CoordinationError("owner catalog cannot construct required read arguments")
     if any(not _valid(value, properties[name]) for name, value in result.items()):

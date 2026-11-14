@@ -1,0 +1,1024 @@
+{
+  "work.evidence.tail-v1": {
+    "input_schema": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "properties": {
+        "run_id": {
+          "pattern": "^run_[0-9A-HJKMNP-TV-Z]{26}$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "run_id"
+      ],
+      "type": "object"
+    },
+    "result_schema": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "properties": {
+        "item": {
+          "anyOf": [
+            {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "additionalProperties": false,
+              "properties": {
+                "chain_prev_digest": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "chain_seq": {
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                "claims": {
+                  "items": {
+                    "$schema": "https://json-schema.org/draft/2020-12/schema",
+                    "additionalProperties": false,
+                    "properties": {
+                      "claim_type": {
+                        "enum": [
+                          "target_stale",
+                          "precondition_refused",
+                          "capability_unavailable",
+                          "evidence_persisted",
+                          "effect_completed",
+                          "effect_failed",
+                          "effect_uncertain",
+                          "effect_not_invoked",
+                          "observation"
+                        ]
+                      },
+                      "confirms": {
+                        "type": [
+                          "boolean",
+                          "null"
+                        ]
+                      },
+                      "detail": {
+                        "type": "object"
+                      },
+                      "freshness": {
+                        "anyOf": [
+                          {
+                            "$schema": "https://json-schema.org/draft/2020-12/schema",
+                            "additionalProperties": false,
+                            "properties": {
+                              "position": {
+                                "type": "integer"
+                              },
+                              "scope": {
+                                "minLength": 1,
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "scope",
+                              "position"
+                            ],
+                            "type": "object"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      },
+                      "grant_id": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "subject": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "claim_type",
+                      "subject",
+                      "grant_id",
+                      "freshness",
+                      "confirms",
+                      "detail"
+                    ],
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "collector": {
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "digest": {
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "item_id": {
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "kind": {
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "provenance": {
+                  "type": "object"
+                },
+                "ref": {
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "validity": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "additionalProperties": false,
+                  "properties": {
+                    "basis": {
+                      "enum": [
+                        "indefinite",
+                        "bounded",
+                        "until_inputs_change"
+                      ]
+                    },
+                    "component_digests": {
+                      "type": "object"
+                    },
+                    "valid_from": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "valid_until": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "basis",
+                    "valid_from",
+                    "valid_until",
+                    "component_digests"
+                  ],
+                  "type": "object"
+                }
+              },
+              "required": [
+                "item_id",
+                "kind",
+                "ref",
+                "digest",
+                "collector",
+                "validity",
+                "claims",
+                "provenance",
+                "chain_seq",
+                "chain_prev_digest"
+              ],
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "repo_id": {
+          "type": "string"
+        },
+        "run_id": {
+          "pattern": "^run_[0-9A-HJKMNP-TV-Z]{26}$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "repo_id",
+        "run_id",
+        "item"
+      ],
+      "type": "object"
+    }
+  },
+  "work.lease.read-v1": {
+    "input_schema": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "properties": {
+        "item_id": {
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "item_id"
+      ],
+      "type": "object"
+    },
+    "result_schema": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "properties": {
+        "current_lease": {
+          "anyOf": [
+            {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "additionalProperties": false,
+              "properties": {
+                "acquired_at": {
+                  "type": "string"
+                },
+                "end_reason": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "ended_at": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "expires_at": {
+                  "type": "string"
+                },
+                "generation": {
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                "heartbeat_at": {
+                  "type": "string"
+                },
+                "heartbeat_interval_seconds": {
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                "item_id": {
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                "lease_id": {
+                  "pattern": "^lease_[0-9A-HJKMNP-TV-Z]{26}$",
+                  "type": "string"
+                },
+                "principal_id": {
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "run_id": {
+                  "pattern": "^run_[0-9A-HJKMNP-TV-Z]{26}$",
+                  "type": "string"
+                },
+                "stale": {
+                  "type": "boolean"
+                },
+                "state": {
+                  "enum": [
+                    "active",
+                    "superseded",
+                    "settled",
+                    "released"
+                  ]
+                },
+                "superseded_by": {
+                  "anyOf": [
+                    {
+                      "pattern": "^lease_[0-9A-HJKMNP-TV-Z]{26}$",
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "takeover_of": {
+                  "anyOf": [
+                    {
+                      "pattern": "^lease_[0-9A-HJKMNP-TV-Z]{26}$",
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "ttl_seconds": {
+                  "maximum": 3600,
+                  "minimum": 30,
+                  "type": "integer"
+                },
+                "verification": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "additionalProperties": false,
+                  "properties": {
+                    "profile": {
+                      "pattern": "^(self-reported|checked|role-separated|identity-separated|human-authorized)(\\+(self-reported|checked|role-separated|identity-separated|human-authorized))*$",
+                      "type": "string"
+                    },
+                    "required_checks": {
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "requirements": {
+                      "items": {
+                        "enum": [
+                          "checks",
+                          "verifier-role",
+                          "verifier-identity",
+                          "human-authorization"
+                        ]
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": [
+                    "profile",
+                    "requirements",
+                    "required_checks"
+                  ],
+                  "type": "object"
+                },
+                "workspace_id": {
+                  "minLength": 1,
+                  "type": "string"
+                }
+              },
+              "required": [
+                "lease_id",
+                "generation",
+                "item_id",
+                "run_id",
+                "principal_id",
+                "workspace_id",
+                "state",
+                "ttl_seconds",
+                "heartbeat_interval_seconds",
+                "acquired_at",
+                "heartbeat_at",
+                "expires_at",
+                "ended_at",
+                "end_reason",
+                "takeover_of",
+                "superseded_by",
+                "verification",
+                "stale"
+              ],
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "evaluated_at": {
+          "type": "string"
+        },
+        "item_id": {
+          "minimum": 1,
+          "type": "integer"
+        },
+        "leases": {
+          "items": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "additionalProperties": false,
+            "properties": {
+              "acquired_at": {
+                "type": "string"
+              },
+              "end_reason": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "ended_at": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "expires_at": {
+                "type": "string"
+              },
+              "generation": {
+                "minimum": 1,
+                "type": "integer"
+              },
+              "heartbeat_at": {
+                "type": "string"
+              },
+              "heartbeat_interval_seconds": {
+                "minimum": 1,
+                "type": "integer"
+              },
+              "item_id": {
+                "minimum": 1,
+                "type": "integer"
+              },
+              "lease_id": {
+                "pattern": "^lease_[0-9A-HJKMNP-TV-Z]{26}$",
+                "type": "string"
+              },
+              "principal_id": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "run_id": {
+                "pattern": "^run_[0-9A-HJKMNP-TV-Z]{26}$",
+                "type": "string"
+              },
+              "state": {
+                "enum": [
+                  "active",
+                  "superseded",
+                  "settled",
+                  "released"
+                ]
+              },
+              "superseded_by": {
+                "anyOf": [
+                  {
+                    "pattern": "^lease_[0-9A-HJKMNP-TV-Z]{26}$",
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "takeover_of": {
+                "anyOf": [
+                  {
+                    "pattern": "^lease_[0-9A-HJKMNP-TV-Z]{26}$",
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "ttl_seconds": {
+                "maximum": 3600,
+                "minimum": 30,
+                "type": "integer"
+              },
+              "verification": {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "additionalProperties": false,
+                "properties": {
+                  "profile": {
+                    "pattern": "^(self-reported|checked|role-separated|identity-separated|human-authorized)(\\+(self-reported|checked|role-separated|identity-separated|human-authorized))*$",
+                    "type": "string"
+                  },
+                  "required_checks": {
+                    "items": {
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "requirements": {
+                    "items": {
+                      "enum": [
+                        "checks",
+                        "verifier-role",
+                        "verifier-identity",
+                        "human-authorization"
+                      ]
+                    },
+                    "type": "array"
+                  }
+                },
+                "required": [
+                  "profile",
+                  "requirements",
+                  "required_checks"
+                ],
+                "type": "object"
+              },
+              "workspace_id": {
+                "minLength": 1,
+                "type": "string"
+              }
+            },
+            "required": [
+              "lease_id",
+              "generation",
+              "item_id",
+              "run_id",
+              "principal_id",
+              "workspace_id",
+              "state",
+              "ttl_seconds",
+              "heartbeat_interval_seconds",
+              "acquired_at",
+              "heartbeat_at",
+              "expires_at",
+              "ended_at",
+              "end_reason",
+              "takeover_of",
+              "superseded_by",
+              "verification"
+            ],
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "outcome_reports": {
+          "items": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "additionalProperties": false,
+            "properties": {
+              "checks": {
+                "items": {
+                  "$schema": "https://json-schema.org/draft/2020-12/schema",
+                  "additionalProperties": false,
+                  "properties": {
+                    "name": {
+                      "maxLength": 128,
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "ref": {
+                      "maxLength": 512,
+                      "type": "string"
+                    },
+                    "status": {
+                      "enum": [
+                        "passed",
+                        "failed"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "status"
+                  ],
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              "created_at": {
+                "type": "string"
+              },
+              "decision_id": {
+                "type": [
+                  "integer",
+                  "null"
+                ]
+              },
+              "detail": {
+                "type": "string"
+              },
+              "details": {
+                "type": "object"
+              },
+              "disposition": {
+                "enum": [
+                  "settled",
+                  "recorded",
+                  "awaiting-verification",
+                  "rejected"
+                ]
+              },
+              "item_id": {
+                "minimum": 1,
+                "type": "integer"
+              },
+              "lease_id": {
+                "pattern": "^lease_[0-9A-HJKMNP-TV-Z]{26}$",
+                "type": "string"
+              },
+              "outcome": {
+                "enum": [
+                  "succeeded",
+                  "failed"
+                ]
+              },
+              "parked": {
+                "$schema": "https://json-schema.org/draft/2020-12/schema",
+                "additionalProperties": false,
+                "properties": {
+                  "event_id": {
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  "reason_ref": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "event_id",
+                  "reason_ref"
+                ],
+                "type": "object"
+              },
+              "payload": {
+                "type": "object"
+              },
+              "payload_digest": {
+                "pattern": "^[0-9a-f]{64}$",
+                "type": "string"
+              },
+              "principal_id": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "reason_code": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "report_id": {
+                "pattern": "^outcome_[0-9A-HJKMNP-TV-Z]{26}$",
+                "type": "string"
+              },
+              "run_id": {
+                "pattern": "^run_[0-9A-HJKMNP-TV-Z]{26}$",
+                "type": "string"
+              },
+              "summary": {
+                "type": "string"
+              },
+              "verification_profile": {
+                "pattern": "^(self-reported|checked|role-separated|identity-separated|human-authorized)(\\+(self-reported|checked|role-separated|identity-separated|human-authorized))*$",
+                "type": "string"
+              }
+            },
+            "required": [
+              "report_id",
+              "item_id",
+              "lease_id",
+              "run_id",
+              "principal_id",
+              "outcome",
+              "summary",
+              "payload",
+              "checks",
+              "payload_digest",
+              "disposition",
+              "reason_code",
+              "verification_profile",
+              "decision_id",
+              "created_at"
+            ],
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "parked": {
+          "anyOf": [
+            {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "additionalProperties": false,
+              "properties": {
+                "event_id": {
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                "lease_id": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "parked_at": {
+                  "type": "string"
+                },
+                "reason_ref": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "report_id": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              },
+              "required": [
+                "event_id",
+                "reason_ref",
+                "report_id",
+                "lease_id",
+                "parked_at"
+              ],
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "repo_id": {
+          "type": "string"
+        },
+        "verification": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "additionalProperties": false,
+          "properties": {
+            "profile": {
+              "pattern": "^(self-reported|checked|role-separated|identity-separated|human-authorized)(\\+(self-reported|checked|role-separated|identity-separated|human-authorized))*$",
+              "type": "string"
+            },
+            "required_checks": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "requirements": {
+              "items": {
+                "enum": [
+                  "checks",
+                  "verifier-role",
+                  "verifier-identity",
+                  "human-authorization"
+                ]
+              },
+              "type": "array"
+            }
+          },
+          "required": [
+            "profile",
+            "requirements",
+            "required_checks"
+          ],
+          "type": "object"
+        }
+      },
+      "required": [
+        "repo_id",
+        "item_id",
+        "current_lease",
+        "leases",
+        "outcome_reports",
+        "verification",
+        "evaluated_at"
+      ],
+      "type": "object"
+    }
+  },
+  "work.public.item-v1": {
+    "input_schema": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "properties": {
+        "work_id": {
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "work_id"
+      ],
+      "type": "object"
+    },
+    "result_schema": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "properties": {
+        "as_of": {
+          "type": "string"
+        },
+        "authority": {
+          "const": "sprintctl"
+        },
+        "item": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "additionalProperties": false,
+          "properties": {
+            "blocked": {
+              "type": "boolean"
+            },
+            "blocked_by": {
+              "items": {
+                "minimum": 1,
+                "type": "integer"
+              },
+              "type": "array"
+            },
+            "created_at": {
+              "type": "string"
+            },
+            "priority": {
+              "maximum": 9,
+              "minimum": 1,
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "resolution": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "status": {
+              "enum": [
+                "pending",
+                "active",
+                "done",
+                "blocked"
+              ]
+            },
+            "title": {
+              "maxLength": 160,
+              "minLength": 1,
+              "type": "string"
+            },
+            "updated_at": {
+              "type": "string"
+            },
+            "work_id": {
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          "required": [
+            "work_id",
+            "title",
+            "priority",
+            "status",
+            "blocked",
+            "updated_at",
+            "created_at",
+            "resolution",
+            "blocked_by"
+          ],
+          "type": "object"
+        },
+        "state": {
+          "enum": [
+            "ok",
+            "unavailable"
+          ]
+        }
+      },
+      "required": [
+        "authority",
+        "as_of",
+        "state",
+        "item"
+      ],
+      "type": "object"
+    }
+  },
+  "work.public.list-v1": {
+    "input_schema": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "properties": {},
+      "type": "object"
+    },
+    "result_schema": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "properties": {
+        "as_of": {
+          "type": "string"
+        },
+        "authority": {
+          "const": "sprintctl"
+        },
+        "items": {
+          "items": {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "additionalProperties": false,
+            "properties": {
+              "blocked": {
+                "type": "boolean"
+              },
+              "priority": {
+                "maximum": 9,
+                "minimum": 1,
+                "type": [
+                  "integer",
+                  "null"
+                ]
+              },
+              "status": {
+                "enum": [
+                  "pending",
+                  "active",
+                  "done",
+                  "blocked"
+                ]
+              },
+              "title": {
+                "maxLength": 160,
+                "minLength": 1,
+                "type": "string"
+              },
+              "updated_at": {
+                "type": "string"
+              },
+              "work_id": {
+                "minimum": 1,
+                "type": "integer"
+              }
+            },
+            "required": [
+              "work_id",
+              "title",
+              "priority",
+              "status",
+              "blocked",
+              "updated_at"
+            ],
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "state": {
+          "enum": [
+            "ok",
+            "unavailable"
+          ]
+        }
+      },
+      "required": [
+        "authority",
+        "as_of",
+        "state",
+        "items"
+      ],
+      "type": "object"
+    }
+  },
+  "work.run.resolve-v1": {
+    "input_schema": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "properties": {
+        "run_id": {
+          "pattern": "^run_[0-9A-HJKMNP-TV-Z]{26}$",
+          "type": "string"
+        }
+      },
+      "required": [
+        "run_id"
+      ],
+      "type": "object"
+    },
+    "result_schema": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "additionalProperties": false,
+      "properties": {
+        "client_id": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "grant_id": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "principal_id": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "repo_id": {
+          "type": "string"
+        },
+        "run_id": {
+          "pattern": "^run_[0-9A-HJKMNP-TV-Z]{26}$",
+          "type": "string"
+        },
+        "workspace_id": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "repo_id",
+        "run_id",
+        "principal_id",
+        "workspace_id",
+        "client_id",
+        "grant_id"
+      ],
+      "type": "object"
+    }
+  }
+}

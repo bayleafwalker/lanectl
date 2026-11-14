@@ -1,0 +1,18 @@
+{
+  "reviewed_source": "7dcb22d90ddbefa7d29a70437f719ffe8b738cf8",
+  "test_only_commit": "f71656f24879168336df2477be12d07b56f0ef3b",
+  "source_unchanged": true,
+  "coverage_full_passed": 1097,
+  "integration_full_passed": 1097,
+  "issuer_read": "observed",
+  "ready_count": 0,
+  "invalid_runner_control": {
+    "http": 401,
+    "code": "identity-invalid"
+  },
+  "release_version": "0.2.10",
+  "installed_at_this_record": "0.2.9",
+  "hosted_flow_complete": false,
+  "jsonl_authoritative": true,
+  "review_advisories": "A1/A2/A5 closed with test-only nested evidence/lease/outcome/input/depth cases. A4 test renamed for conservative regex rejection; A3 redundant checks and A6 whitespace accepted nonblocking."
+}
