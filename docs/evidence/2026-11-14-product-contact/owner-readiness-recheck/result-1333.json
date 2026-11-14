@@ -1,0 +1,32 @@
+{
+  "recorded_at": "2026-11-14T13:35:07.681625+00:00",
+  "probe_log_last_modified": "2026-11-14T13:33:02.499446+00:00",
+  "operation": "work.public.list-v1",
+  "result": {
+    "advertised_work_reads": [
+      "work.public.item-v1",
+      "work.public.list-v1"
+    ],
+    "catalog_revision": "7b73e270744a349d59f4fc65c458e60ff160e10cb522cbf856f392758fcafc19",
+    "endpoint": "https://vuoro-shared.apps.kotona.app",
+    "environment": "vuoro-shared",
+    "ready_count": null,
+    "ready_state": "unknown",
+    "ready_work_ids": null,
+    "refusal": {
+      "code": "identity-required",
+      "http": 401
+    }
+  },
+  "process_exit": 0,
+  "authorized_read": false,
+  "credential_handling": "Existing enrolled runner loaded via systemd LoadCredential; no credential value emitted or substituted.",
+  "effects": "Read-only; no enrollment/grant/profile/claim/authority/activation changes.",
+  "limits": [
+    "Process exit0 proves probe completion, not authentication.",
+    "Refusal does not establish deployed root cause.",
+    "Separate connected tool returned workspace-ambiguous and cannot qualify this runner identity."
+  ],
+  "next_prerequisite": "Diagnose existing runner identity through owner enrollment flow; observe an authorized repository-scoped owner read before coordinated execution.",
+  "probe_log_sha256": "7f9613fae1869c09f2455e968210b998a4ad3754a8d230c617b25d8079592c42"
+}
