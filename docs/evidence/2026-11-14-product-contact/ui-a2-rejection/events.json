@@ -1,0 +1,178 @@
+[
+  {
+    "data": {
+      "attempt_id": "hla-attention-ui-a2",
+      "base_sha": "b2d0fe393ac0971e906cce275e91f45e94422593",
+      "branch": "lane/hla-attention-ui-a2",
+      "lane": "implement",
+      "lane_digest": "sha256:7bd3d1f327b84636",
+      "lane_revision": 3,
+      "model": "opencode-go/deepseek-v4.1-flash",
+      "release_revision": 1,
+      "runner_process": {
+        "boot_id": "bd59e4fd-e182-4b3a-aa2e-b78ebef31fa6",
+        "host": "workstation",
+        "machine_id": "e681b85141f226386e176a1de00fcc3ab4546197d3aa937aad606d73ce133a5b",
+        "pid": 950765,
+        "start_ticks": "2820033"
+      },
+      "worker": "opencode",
+      "worker_unit": "lanectl-attempt-f204a9251312f8c31c6b26c6.service"
+    },
+    "item_id": "hla-attention-ui",
+    "schema": "lanectl.event/v1",
+    "ts": "2026-11-14T14:32:39Z",
+    "type": "item.claimed"
+  },
+  {
+    "data": {
+      "amount": 11991.368421052632,
+      "attempt_id": "hla-attention-ui-a2",
+      "pool": "opencode-go:default",
+      "provider": "opencode",
+      "reservation_id": "res-hla-attention-ui-a2",
+      "unit": "output_tokens"
+    },
+    "item_id": "hla-attention-ui",
+    "schema": "lanectl.event/v1",
+    "ts": "2026-11-14T14:32:39Z",
+    "type": "capacity.reserved"
+  },
+  {
+    "data": {
+      "attempt_id": "hla-attention-ui-a2",
+      "elapsed_s": 2700.1,
+      "escalation_reason": null,
+      "exit_code": 124,
+      "final_tail": "I'll start by exploring the repository state and the acceptance test file.",
+      "head_sha": "57c2b0fdbcfaa5a5ed0d969774d798bf023f18b1",
+      "isolation_breach": false,
+      "main_changed": false,
+      "outcome": "failed",
+      "seed_sha": "785d3ed31dfe39a36f02be0a28bd7751c0a67a52"
+    },
+    "item_id": "hla-attention-ui",
+    "schema": "lanectl.event/v1",
+    "ts": "2026-11-14T15:17:41Z",
+    "type": "attempt.finished"
+  },
+  {
+    "data": {
+      "attempt_id": "hla-attention-ui-a2",
+      "model": "opencode-go/deepseek-v4.1-flash",
+      "provider": "opencode",
+      "source": "adapter",
+      "units": {
+        "cache_read_tokens": 21588864,
+        "cache_write_tokens": 0,
+        "cost_usd": 0.14417808000000001,
+        "input_tokens": 223894,
+        "output_tokens": 35192,
+        "reasoning_tokens": 41187,
+        "steps": 149
+      }
+    },
+    "item_id": "hla-attention-ui",
+    "schema": "lanectl.event/v1",
+    "ts": "2026-11-14T15:17:41Z",
+    "type": "usage.recorded"
+  },
+  {
+    "data": {
+      "attempt_id": "hla-attention-ui-a2",
+      "gate": "diff-policy",
+      "passed": false,
+      "violations": [
+        "size-budget: 728 changed lines > 700 for size M"
+      ]
+    },
+    "item_id": "hla-attention-ui",
+    "schema": "lanectl.event/v1",
+    "ts": "2026-11-14T15:20:46Z",
+    "type": "gate.result"
+  },
+  {
+    "data": {
+      "attempt_id": "hla-attention-ui-a2",
+      "gate": "fail-on-base",
+      "passed": true,
+      "violations": []
+    },
+    "item_id": "hla-attention-ui",
+    "schema": "lanectl.event/v1",
+    "ts": "2026-11-14T15:20:46Z",
+    "type": "gate.result"
+  },
+  {
+    "data": {
+      "attempt_id": "hla-attention-ui-a2",
+      "gate": "acceptance-on-base",
+      "passed": true,
+      "violations": []
+    },
+    "item_id": "hla-attention-ui",
+    "schema": "lanectl.event/v1",
+    "ts": "2026-11-14T15:20:46Z",
+    "type": "gate.result"
+  },
+  {
+    "data": {
+      "attempt_id": "hla-attention-ui-a2",
+      "gate": "acceptance",
+      "passed": true,
+      "violations": []
+    },
+    "item_id": "hla-attention-ui",
+    "schema": "lanectl.event/v1",
+    "ts": "2026-11-14T15:20:46Z",
+    "type": "gate.result"
+  },
+  {
+    "data": {
+      "attempt_id": "hla-attention-ui-a2",
+      "gate": "job:ruff",
+      "passed": true,
+      "violations": []
+    },
+    "item_id": "hla-attention-ui",
+    "schema": "lanectl.event/v1",
+    "ts": "2026-11-14T15:20:46Z",
+    "type": "gate.result"
+  },
+  {
+    "data": {
+      "attempt_id": "hla-attention-ui-a2",
+      "by": "gates",
+      "decision": "rejected",
+      "reasons": [
+        "diff-policy: size-budget: 728 changed lines > 700 for size M",
+        "worker outcome failed"
+      ],
+      "rules_revision": "decision-rules/v3"
+    },
+    "item_id": "hla-attention-ui",
+    "schema": "lanectl.event/v1",
+    "ts": "2026-11-14T15:20:46Z",
+    "type": "decision.recorded"
+  },
+  {
+    "data": {
+      "attempt_id": "hla-attention-ui-a2",
+      "decision": "rejected",
+      "elapsed_s": 2700.1,
+      "gates_failed": [
+        "diff-policy"
+      ],
+      "lane_revision": 3,
+      "model": "opencode-go/deepseek-v4.1-flash",
+      "rules_revision": "decision-rules/v3",
+      "size": "M",
+      "task_class": "product-ui",
+      "worker": "opencode"
+    },
+    "item_id": "hla-attention-ui",
+    "schema": "lanectl.event/v1",
+    "ts": "2026-11-14T15:20:46Z",
+    "type": "experiment.recorded"
+  }
+]

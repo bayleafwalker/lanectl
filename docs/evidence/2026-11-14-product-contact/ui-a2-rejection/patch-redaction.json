@@ -1,0 +1,13 @@
+{
+  "schema": "public-file-checksum-redaction/v1",
+  "reason": "Normal gitleaks generic-api-key misclassified a verified frozen public baseline SHA256 under a filename containing tokens. No credential found, scanner rule or hook bypass.",
+  "artifact": "worker.redacted.patch",
+  "inspection_only": true,
+  "line": 1022,
+  "source_file": "docs/evidence/2026-11-14-product-contact/ui-stage-contracts/baseline.tokens.json",
+  "marker": "[verified public file checksum omitted; see patch-redaction.json]",
+  "original_patch_sha256": "8c2c7191f9d8bf38bc609a60985ffc8b7bc386070632f95905c22efe497591e6",
+  "redacted_patch_sha256": "0a7a49440c3a9113da7fb4edf7f7140d760009c2ce9559446fb1a98ee4c2ec0e",
+  "lossless_reconstruction": "Replace marker exactly once with SHA256(source_file bytes), require original_patch_sha256; root verified byte-for-byte.",
+  "original_source_commit": "57c2b0fdbcfaa5a5ed0d969774d798bf023f18b1"
+}

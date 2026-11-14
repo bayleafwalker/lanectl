@@ -1,0 +1,24 @@
+{
+  "schema": "hla-ui-native-attempt-rejection/v1",
+  "recorded_at": "2026-11-14T15:25:18.653800+00:00",
+  "head_sha": "57c2b0fdbcfaa5a5ed0d969774d798bf023f18b1",
+  "seed_sha": "785d3ed31dfe39a36f02be0a28bd7751c0a67a52",
+  "native_outcome": "failed",
+  "native_exit": 124,
+  "elapsed_s": 2700.1,
+  "worker_changed_lines": 728,
+  "size_M_limit": 700,
+  "gates": {
+    "diff-policy": false,
+    "fail-on-base": true,
+    "acceptance-on-base": true,
+    "acceptance": true,
+    "job:ruff": true
+  },
+  "decision": "rejected",
+  "release_state": "parked; actual R1 max2 exhausted",
+  "adopted": false,
+  "full_four_kind_scope_preserved": true,
+  "next": "Independently authored/reviewed all-four-kind frontend transport+wholekeycodec prerequisite, then fullUI over genuine canonical prerequisite; measured reasons, no cap waiver or same-scope try reset. Corrected observer72d remains unpublished pending proper metadata/base/fresh review.",
+  "source_patch": "worker.redacted.patch inspection-only; exact lossless checksum reconstruction and original source identity in patch-redaction.json"
+}
