@@ -53,3 +53,38 @@ def test_retry_prompt_reaches_adapter_and_matches_owner_digest(estate, monkeypat
     assert 'BOM input loses its leading character' in captured[0]
     starts = [call[1] for call in owner.calls if call[0] == 'start']
     assert starts[-1][3] == 'sha256:' + hashlib.sha256(captured[0].encode()).hexdigest()
+
+
+def test_feedback_retains_exact_last_three_including_parked():
+    events = []
+    for number in range(1, 5):
+        aid = f'a{number}'
+        events.append(claim('x', aid, model=f'model-{number}'))
+        decision = rejection('x', aid, f'reason-{number}')
+        if number == 3:
+            decision['data']['decision'] = 'parked'
+        events.append(decision)
+    events.append(claim('x', 'current'))
+    assert runner._retry_feedback(events, 'x', 1, 'current') == [
+        {'attempt_id': f'a{number}', 'model': f'model-{number}', 'reason': f'reason-{number}'}
+        for number in (2, 3, 4)
+    ]
+
+
+def test_rendered_retry_prompt_stable_after_unrelated_and_later_events(estate):
+    _, release, log = estate
+    release('stable-proof', SUB_TEST)
+    current = runner.admit('implement', log)
+    events = [claim('stable-proof', 'prior'),
+              rejection('stable-proof', 'prior', 'prior observation'),
+              claim('stable-proof', current.attempt_id)]
+    def rendered(history):
+        feedback = runner._retry_feedback(history, current.rel.id, current.rel.revision,
+                                          current.attempt_id)
+        return runner.render_prompt(current.rel, current.lane, current.repo, feedback=feedback)
+    before = rendered(events)
+    events.extend([claim('other', 'other-attempt'), rejection('other', 'other-attempt', 'unrelated'),
+                   rejection('stable-proof', 'prior', 'late observation'),
+                   claim('stable-proof', 'future'), rejection('stable-proof', 'future', 'future observation')])
+    assert 'prior observation' in before
+    assert rendered(events) == before
