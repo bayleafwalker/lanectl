@@ -1,0 +1,28 @@
+{
+  "artifacts": [
+    {
+      "path": "native-opus-plan.md",
+      "sha256": "406c752936a4cd8ca825a90bf76182bb0c9caa813c68204fd65219da22e17511"
+    },
+    {
+      "path": "outcome.diff",
+      "sha256": "2eb6e307b061b33880ca0d543d813b435958eec9e3b5b1d4a3a9436790029792"
+    },
+    {
+      "path": "outcome.preparatory.md",
+      "sha256": "92fbd056f13f5f82fbce6dc1338aeaccc568e6ccb7391a98941ef126e006c96e"
+    },
+    {
+      "path": "plan.md",
+      "sha256": "1d7211c8c24805fd687eb482ab66feaf2149d68edc1774d602a2e5b16f9e82ab"
+    },
+    {
+      "path": "proposal.preparatory.json",
+      "sha256": "38a08c5bb17fb76df93851b941eca49bdc8f1a04c16767bd8a81589ca65b463e"
+    },
+    {
+      "path": "root-disposition.md",
+      "sha256": "8c96d05a13fce4fdbfebad507ed49d44542de65dd343875b909a5936734fce53"
+    }
+  ]
+}
