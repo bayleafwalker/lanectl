@@ -1,0 +1,12 @@
+{
+  "exit_code": 0,
+  "returncode": 1,
+  "failed_cases": [
+    "dismiss_after_override",
+    "expand_core",
+    "expand_source_transition",
+    "expand_then_minimise",
+    "storage_failure"
+  ],
+  "actual_population_qualified": true
+}

@@ -1,0 +1,28 @@
+{
+  "problems": [],
+  "returncode": 1,
+  "failed_cases": [
+    "dismiss_after_override",
+    "expand_core",
+    "expand_source_transition",
+    "expand_then_minimise",
+    "storage_failure"
+  ],
+  "expected_failed_cases": [
+    "dismiss_after_override",
+    "expand_core",
+    "expand_source_transition",
+    "expand_then_minimise",
+    "storage_failure"
+  ],
+  "passed": 11,
+  "failed": 5,
+  "errors": 0,
+  "skipped": 0,
+  "actual_population_qualified": true,
+  "base_sha": "b2d0fe393ac0971e906cce275e91f45e94422593",
+  "acceptance_sha256": "70c99c1058cb47d4d0b58be0bf9bb75dd38ce1441e553dcc6674ad02af02da30",
+  "release_digest": "08dafd76a9044eb17fb1915d4ae4a015ba65e93a273d4327f75204c9f97276c6",
+  "publication": false,
+  "candidate_evidence": "UNOBSERVED"
+}

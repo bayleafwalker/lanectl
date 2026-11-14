@@ -1,50 +1,75 @@
 {
   "schema": "lanectl-specification/v1",
-  "release_digest": "79f05dbe544ff637c826d6e8f7c96206805ebb7eb5b90790e11fc918ea96fbf9",
+  "release_digest": "08dafd76a9044eb17fb1915d4ae4a015ba65e93a273d4327f75204c9f97276c6",
   "review": {
     "verdict": "accept",
-    "reason": "The frozen acceptance is sound and the base-negative is authentic. The probe page renders the actual OnboardingChecklist via @/components/onboarding-checklist and supplies only source names (sessionStorage fixture), never replacement logic, so the component subject is real, not mocked; the unit fault wrappers import the actual helper by file URL and override exactly one export. Post-action state is genuinely awaited (every click/evaluate/reload is awaited and the heading/badge/text locators use waitFor), so the five base failures are awaited post-Expand heading timeouts, not races. Population is exact: 16 named cases with set(result)==set(CASES) and a JUnit gate asserting 16 testcases and zero skipped/failure/error. Source fingerprinting covers all tracked paths (mode + sha256 + symlink target) and asserts before/after equality twice (inner _observations and the outer module fixture), and the base fingerprint matches the b2d0fe393ac0971e906cce275e91f45e94422593 checkout byte-for-byte (onboarding-checklist.js, page.js, onboarding-sources.js all match). Process-group cleanup uses killpg on a start_new_session child with a verify-absence-then-SIGKILL loop, and owner-Docker cleanup verifies the hla-onboard.owner label before rm and covers the post-creation launch-timeout path. Helper absence is never the base negative: the base evidence shows 11 passive/persistence controls green and exactly the 5 post-Expand heading cases red, and the unit gate independently rejects a missing/failing helper. All three previously-blocking sage findings are repaired and falsified: version-only wrapper rejection (oracle-selftest/version-only-rejection.log fails on 'worker wrapper did not reject freshness semantically'), wiring baseline fingerprint bound before any worktree/Next allocation (run_wiring_probe line 16-22; stale-rejection.log), and post-creation Docker timeout cleanup (test_docker_timeout.py + docker-timeout-selftest.log). Artifact hashes are bound: proposal.json's embedded acceptance equals the evidence file and all six declared gate hashes match sha256.json. The packet correctly and explicitly defers real-page role/as-of/timestamp/auth/accessibility, the 55 matched Playwright visual checks, full make verify-fast, and train/dev/CI/product-intention pass as separate mandatory checks rather than waiving them. I found no real gap in the frozen acceptance itself.",
-    "trivial_pass": "Concrete attack: a worker pytest wrapper that only shells out to `node --version` (or a hard-coded pass) would satisfy the bare 'pytest passes' check while never touching the helper. This is rejected: qualify_unit.py, after the candidate helper passes seven named Node tests, copies the checkout to an owned scratch and rewrites the helper path with four closed semantic fault wrappers (freshness adds the equality-boundary row, required marks all sources required, override clears userExpanded, dismissal clears dismissed), then runs the worker wrapper against each copy and asserts y.returncode!=0 with an AssertionError (and no ERR_MODULE/SyntaxError/Cannot-find-module). A version-only wrapper stays green under all four faults and trips 'worker wrapper did not reject freshness semantically' (observed in oracle-selftest/version-only-rejection.log), so the attack is rejected. A node--version-only wrapper likewise cannot qualify.",
+    "reason": "The frozen acceptance and its bound candidate gates are sound, non-trivial, and correctly scope the completed-core Expand bug against the actual component subject. The acceptance starts a real isolated Next dev copy whose fixture page imports the real @/components/onboarding-checklist and supplies only source NAMES via sessionStorage/state (no replacement logic), so the component's own activeCount/requiredDone/allCoreActive/view computation is what is exercised. The base evidence is genuine and correctly negative: a fresh b2d0fe3 normal uv-sync clone produced 16 cases, 11 controls PASS, exactly 5 post-Expand heading failures (expand_core, expand_then_minimise, expand_source_transition, dismiss_after_override, storage_failure), 0 errors/skips, npm exit 0, owned deps/process groups/browser container removed, tracked source unchanged \u2014 and the negative is the missing 'Get started \u2014 connect your data sources' heading, never helper absence or an infra error. A trivial always-full fix cannot pass because auto_core/auto_all require the passive badge; a zero-helper inline fix cannot pass because the wiring mutant (checklistView override cleared) would leave all 16 green and the oracle requires a failing mutant. The unit gate pins the strict <7-day boundary (equality + 1ms either side), future/invalid/null/empty timestamps, required-vs-optional and duplicate progress counts, dismiss-wins-over-all, override-stays-full, and manual compact via 7 named Node tests, and its four closed fault wrappers (freshness/required/override/dismissal) must each fail with failureType:'testCodeFailure' (not import/parse). The portability repair installs the exact candidate package.json+package-lock.json via Node20 npm ci into owned scratch only when node_modules/next is absent, logs install output/exit, treats install failure/timeout as an infrastructure error (never a skip or semantic negative), and removes its npm group and scratch in finally; the install-failure and docker-timeout selftests prove these fail-closed paths. All six frozen artifact hashes and the proposal's embedded acceptance bytes match the bound sha256 values. The three prior sage blockers are repaired and falsifier-verified: version-only wrapper rejected under injected semantic faults (version-only-rejection.log), green wiring baseline fingerprint bound before worktree/Next allocation (stale-rejection.log), and post-creation Docker launch timeout handled with owner-verified container removal (docker-timeout-selftest.log). Real-page timestamp/role/past-asof/auth/accessibility, the 55 matched Playwright baselines, full make verify-fast, and the product-intention pass are explicitly and correctly deferred to separate mandatory checks rather than claimed by the component fixture. No real gap that would admit a false-positive or false-negative fix was found.",
+    "trivial_pass": "Concrete trivial-pass attack: a candidate supplies a pytest 'wrapper' that merely invokes `node --version` (or asserts Node 20 is present) and returns pass, so the worker's Node unit tests never actually run and any semantic fault in the helper is invisible. Rejected: qualify_unit.py first runs the frozen 7-test contract against the real helper and asserts '# tests 7/# pass 7/# fail 0/# skipped 0/# todo 0', then injects each of the four bound fault wrappers (freshness equality-row re-add, required-counts-as-required, userExpanded-cleared, dismissed-cleared) into an OWNED checkout copy and requires the worker's wrapper to fail there with AssertionError/assert evidence and no import/parse/module-not-found error; a version-only wrapper yields 'worker wrapper did not reject freshness semantically', as captured in version-only-rejection.log. This same fault-injection also forces the worker's own Node unit tests (not the frozen contract alone) to be semantically meaningful.",
     "checks": [
-      "Byte-identity: proposal.json embedded tests.test_onboarding_expand_acceptance.py equals the evidence file and its sha256 433c05b58d0c02fc5a9d4347db55c109afd289d442b835fc808409580acf2b48; all six frozen gate hashes (acceptance, onboarding-unit-contract.test.mjs, qualify_unit.py, qualify_wiring.py, run_wiring_probe.py, unit-gate-spec.md) match the evidence directory and sha256.json.",
-      "Real component subject, no replacement mocks: probe page imports the actual OnboardingChecklist; fixtures only set freshDatasets names via sessionStorage; the four fault wrappers do `import * as real from <fileURL>` and override a single export, delegating the rest.",
-      "True post-action awaits: click/evaluate/reload are awaited and heading/badge/text use waitFor, so base failures are awaited heading timeouts (locator.waitFor Timeout 3000ms) rather than flaky/racy assertions.",
-      "Exact-16 / no-skip population: CASES has 16 entries, set(result)==set(CASES), and main() re-parses junit.xml asserting 16 testcases, matching names, and no skipped/failure/error.",
-      "Source fingerprint and immutability: snapshot() hashes every git ls-files tracked path (mode + sha256 or symlink target) and asserts before==after in both the inner and outer scopes; base fingerprint matches the b2d0fe checkout exactly.",
-      "Process-group and owner-Docker cleanup including launch timeout: stop() uses killpg on start_new_session children with absence verification then SIGKILL; cleanup_browser verifies the hla-onboard.owner label before rm; select_browser's 45s launch timeout surfaces partial output and cleans a post-creation container (test_docker_timeout falsifier).",
-      "Helper absence is never the base negative: base evidence is 11 green passive/persistence controls + 5 red post-Expand heading failures, 0 skips/errors; a missing/failing helper is rejected separately by qualify_unit line 21 (zero/skip/todo/import failure).",
-      "Three sage blockers repaired and falsified: version-only wrapper rejection, wiring baseline fingerprint bound before worktree/Next allocation, and post-creation Docker timeout cleanup each have a positive falsifier log confirming they now fail-closed.",
-      "Semantics preserved: strict <7-day boundary (1ms either side and equality), future fresh, invalid/null/empty not fresh, required vs optional vs duplicate/unknown counting, dismissal wins over all, override remains full, manual compact without core shows badge, passive auto-collapse unchanged.",
-      "Wiring gate fail-closed: run_wiring_probe substitutes an override wrapper (checklistView forces userExpanded:false) and qualify_wiring requires exactly the 5 Expand cases to fail with a heading error while the 11 controls stay green and exactly one tracked path changes, proving the component truly consumes the helper view path.",
-      "Deferred scope correctly declared, not waived: real-page role/as-of/timestamp/auth/accessibility, 55 matched Ubuntu Playwright checks, full make verify-fast, and train/dev/CI/product-intention pass remain separate mandatory checks; the packet says so explicitly and does not count them as established by the component fixture."
+      "Actual component subject, not a replacement mock: the fixture page imports the real @/components/onboarding-checklist and only toggles source names via sessionStorage/useState; activeCount/requiredDone/requiredTotal/allCoreActive and the badge/full decision are computed inside the component.",
+      "True post-action awaits: every interaction uses `await click` followed by `await heading(p).waitFor`/`await waitText(...)` (3s timeouts) \u2014 no sleep-based settling; the five base failures are the awaited post-Expand heading locator timing out, matching the bug exactly.",
+      "Exact-16 no-skip population: main() re-parses the JUnit and asserts len(cases)==len(CASES) with the exact set of 16 test_onboarding[...] names and no skipped/failure/error; _observations also asserts set(result)==set(CASES).",
+      "Source fingerprint and immutability: snapshot() hashes every `git ls-files` tracked path (mode+sha256, symlink target as link) before and after, and both source-invariance.txt and outer-invariance.txt plus aggregate-errors.txt are asserted; the wiring probe additionally binds the baseline fingerprint (bytes, modes, symlinks) to the exact clean candidate before allocating any worktree or launching Next (stale-rejection.log).",
+      "Process-group cleanup: next/npm/browser procs are started with start_new_session=True and stop() killpg SIGTERM\u2192SIGKILL with an absence-verified loop that raises if the owned group lingers; cleanup.txt records browser/Next/container absent.",
+      "Owner-Docker cleanup including launch timeout: select_browser labels the container hla-onboard.owner=<uuid>, and on TimeoutExpired writes partial stdout/stderr then the except path re-inspects the owner label before docker rm -f and verifies removal; docker-timeout-selftest.log proves post-creation timeout is surfaced with partial output retained and the owned container removed.",
+      "Unit contract correctness against source semantics: the 7 tests pin strict `<` 7 days (equality and 1ms either side), future-fresh, invalid/null/empty-not-fresh, duplicate-ignored required-vs-optional counts (activeCount=4/requiredDone=1/requiredTotal=2), allCoreActive via requiredDone>=requiredTotal, dismiss>override>compact/allCore precedence.",
+      "Meaningful mutation controls: four closed ESM fault wrappers import the exact helper by file URL and each must produce its specific `not ok N - <name>` with failureType:'testCodeFailure' (asserted non-zero exit and no ERR_MODULE/SyntaxError/Cannot find module), so infra failure cannot masquerade as a semantic negative.",
+      "Version-only wrapper rejected under real semantic faults (not just a node shim): qualify_unit.py runs the worker's wrapper against all four gate-generated faults in an owned copy and asserts AssertionError/assert evidence; version-only-rejection.log documents the rejection.",
+      "Production wiring is real, not a test artifact: run_wiring_probe copies the real helper byte-identically to a sidecar, substitutes a closed checklistView override, and the oracle requires a green 16-case baseline, exactly one changed tracked path (the helper), unchanged controls, and the same five post-Expand heading failures under the mutant; a candidate that does not consume checklistView would fail 'wiring mutant unexpectedly passed'.",
+      "Portability repair is fail-closed and preserves semantics: npm ci of the exact candidate package.json+package-lock.json into owned scratch only when modules absent, install exit/timeout logged, owned npm group stopped and scratch removed in finally; forced npm exit 72 surfaced as an infrastructure error (install-failure-selftest.log), never a skip or semantic negative, and the sixteen case/behavior strings are byte-identical to the prior packet.",
+      "Hash and artifact binding: the six frozen gate artifacts and the proposal's embedded acceptance bytes sha256 to the bound values (acceptance 70c99c10..., contract 0642c8ec..., qualify_unit 71d4827b..., qualify_wiring 07c5e86a..., run_wiring_probe d30353f6..., unit-gate-spec 97ff1eac...), and inventory.json covers 117 files.",
+      "Scope boundaries honored rather than waived: real-page timestamp/role/past-asof/auth/accessibility, the 55 matched Ubuntu Playwright baselines, full make verify-fast, train/dev/CI, and the product-intention pass against docs/product/core-household-operating-picture.md and docs/plans/kotona-operating-picture-brief.md are explicitly listed as separate mandatory later checks, not claimed by the component fixture."
     ]
   },
   "author_model": "gpt-6",
   "reviewer_model": "opencode-go/deepseek-v4-pro",
-  "intent_digest": "f5c5508ef33774397f28252a047d091fe2100222eef017b63bf1b5f8a6d9374b",
-  "recorded_at": "2026-11-14T20:58:37.169947+00:00",
-  "lint_problems": [
-    "infrastructure: actual official base run has16setupERRORS, missing locked node_modules; not the expected11pass5semanticfail population"
-  ],
+  "intent_digest": "be5ec89e43f7d3653aa7e4d7ba8c4c33fbf7f8a34f8a94e49b60845d1d07c453",
+  "recorded_at": "2026-11-14T21:17:18.854197+00:00",
+  "lint_problems": [],
   "usage": {
     "author": null,
     "reviewer": {
-      "input_tokens": 106612,
-      "output_tokens": 6256,
-      "reasoning_tokens": 23849,
-      "cache_read_tokens": 1173248,
+      "input_tokens": 118442,
+      "output_tokens": 5537,
+      "reasoning_tokens": 36652,
+      "cache_read_tokens": 1052928,
       "cache_write_tokens": 0,
-      "cost_usd": 0.15578328,
-      "steps": 21
+      "cost_usd": 0.18487036,
+      "steps": 20
     }
   },
   "author_provenance": "First-party coordinator adopts delegated acceptance authorship; native Opus planning only, no native author invocation claimed.",
   "mandatory_acceptance_commands": [
     "uv run --no-sync python tests/test_onboarding_expand_acceptance.py"
   ],
+  "base_population_proof": {
+    "problems": [],
+    "returncode": 1,
+    "failed_cases": [
+      "dismiss_after_override",
+      "expand_core",
+      "expand_source_transition",
+      "expand_then_minimise",
+      "storage_failure"
+    ],
+    "expected_failed_cases": [
+      "dismiss_after_override",
+      "expand_core",
+      "expand_source_transition",
+      "expand_then_minimise",
+      "storage_failure"
+    ],
+    "passed": 11,
+    "failed": 5,
+    "errors": 0,
+    "skipped": 0,
+    "actual_population_qualified": true,
+    "base_sha": "b2d0fe393ac0971e906cce275e91f45e94422593",
+    "acceptance_sha256": "70c99c1058cb47d4d0b58be0bf9bb75dd38ce1441e553dcc6674ad02af02da30",
+    "release_digest": "08dafd76a9044eb17fb1915d4ae4a015ba65e93a273d4327f75204c9f97276c6",
+    "publication": false,
+    "candidate_evidence": "UNOBSERVED"
+  },
   "invocation": "official installed specification._invoke unchanged; cleanup retention only",
-  "diagnostics_root": "/tmp/hla-onboarding-native-spec-review-20261114",
-  "candidate_unit_mutation_wiring_results": "UNOBSERVED",
-  "base_population_qualified": false,
-  "publication_blocker": "Classifier returned[] for setupAssertionError; coordinator inspected raw population and rejected the result. Acceptance portability repair requires fresh native review and digest binding before publication."
+  "candidate_unit_mutation_wiring_results": "UNOBSERVED"
 }

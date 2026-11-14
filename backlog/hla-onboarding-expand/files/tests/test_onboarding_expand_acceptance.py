@@ -131,9 +131,9 @@ def cleanup_browser(owned):
     inventory=subprocess.run(['docker','ps','-a','--no-trunc','--format','{{.ID}}'],capture_output=True,text=True)
     assert removed.returncode==0 and inventory.returncode==0 and ident not in inventory.stdout.splitlines(), 'browser removal unverified'
 
-def _observations():
+def _observations(modules):
     OUT.mkdir(parents=True,exist_ok=True)
-    before=snapshot(); (OUT/'source-fingerprint.json').write_text(json.dumps(before,sort_keys=True)+'\n'); modules=WEB/'node_modules'
+    before=snapshot(); (OUT/'source-fingerprint.json').write_text(json.dumps(before,sort_keys=True)+'\n')
     assert Path(NODE).is_file() and (modules/'next/package.json').is_file(), 'Node20/locked modules unavailable'
     version=subprocess.run([NODE,'--version'],capture_output=True,text=True); assert version.returncode==0 and version.stdout.startswith('v20.')
     with tempfile.TemporaryDirectory(prefix='hla-onboarding-lab-') as temp:
@@ -185,12 +185,37 @@ def _observations():
 @pytest.fixture(scope='module')
 def observations():
     OUT.mkdir(parents=True,exist_ok=True)
-    before=snapshot();result=None;errors=[]
+    before=snapshot();result=None;errors=[];deps=None;install_proc=None
     try:
-        result=_observations()
+        modules=WEB/'node_modules'
+        if not (modules/'next/package.json').is_file():
+            assert NODE and Path(NODE).is_file(),'Node20 unavailable'
+            npm=Path(NODE).parent/'npm';assert npm.is_file(),'npm unavailable'
+            deps=tempfile.TemporaryDirectory(prefix='hla-onboarding-deps-');directory=Path(deps.name)
+            for name in ('package.json','package-lock.json'): shutil.copy2(WEB/name,directory/name)
+            env=dict(os.environ,PATH=str(Path(NODE).parent)+':'+os.environ.get('PATH',''))
+            with (OUT/'npm-ci.stdout').open('w') as stdout,(OUT/'npm-ci.stderr').open('w') as stderr:
+                install_proc=subprocess.Popen([str(npm),'ci','--no-audit','--no-fund'],cwd=directory,env=env,stdout=stdout,stderr=stderr,start_new_session=True)
+                try: rc=install_proc.wait(timeout=300)
+                except subprocess.TimeoutExpired:
+                    (OUT/'npm-ci.timeout').write_text('npm ci timeout; partial logs retained\n');raise AssertionError('npm ci timeout')
+            (OUT/'npm-ci.exit').write_text(str(rc)+'\n')
+            assert rc==0,'locked npm ci failed; see npm-ci logs'
+            modules=directory/'node_modules'
+            assert (modules/'next/package.json').is_file(),'locked npm ci did not install Next'
+        result=_observations(modules)
     except BaseException as exc:
         errors.append(f'primary: {type(exc).__name__}: {exc}')
     finally:
+        try: stop(install_proc)
+        except BaseException as exc: errors.append(f'npm process group: {exc}')
+        if deps is not None:
+            try:
+                location=Path(deps.name);deps.cleanup()
+                if location.exists(): errors.append('owned dependencies remain')
+                (OUT/'deps-cleanup.txt').write_text('owned dependency directory absent\n' if not location.exists() else 'owned dependency directory remains\n')
+            except BaseException as exc: errors.append(f'dependency cleanup: {exc}')
+        else: (OUT/'deps-cleanup.txt').write_text('existing modules used; no owned dependencies\n')
         try:
             after=snapshot()
             if after!=before: errors.append('tracked source changed')

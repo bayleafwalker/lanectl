@@ -1,0 +1,27 @@
+{
+  "release": "https://github.com/bayleafwalker/lanectl/releases/tag/v0.2.13",
+  "assets": [
+    {
+      "name": "lanectl-0.2.13-artifact.json",
+      "sha256": "07a56d334bc8d3a7c0d02d2570b23d34e7293160ee04dd5b106fcea82ca7988f",
+      "size_bytes": 6779,
+      "download_matches": true,
+      "github_digest": "sha256:07a56d334bc8d3a7c0d02d2570b23d34e7293160ee04dd5b106fcea82ca7988f"
+    },
+    {
+      "name": "lanectl-0.2.13-py3-none-any.whl",
+      "sha256": "9d10fc950caecf1383d75cbb19da7e66aa5742ce24f5f42c87aa6322c5b67a5b",
+      "size_bytes": 225602,
+      "download_matches": true,
+      "github_digest": "sha256:9d10fc950caecf1383d75cbb19da7e66aa5742ce24f5f42c87aa6322c5b67a5b"
+    },
+    {
+      "name": "SHA256SUMS",
+      "sha256": "0b84d50b281c61fa4e1df7c99469cda0e87335b7112479c30755e8938f8482d0",
+      "size_bytes": 193,
+      "download_matches": true,
+      "github_digest": "sha256:0b84d50b281c61fa4e1df7c99469cda0e87335b7112479c30755e8938f8482d0"
+    }
+  ],
+  "all_match": true
+}
