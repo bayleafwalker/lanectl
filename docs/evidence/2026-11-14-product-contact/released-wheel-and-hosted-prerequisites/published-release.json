@@ -1,0 +1,34 @@
+{
+  "release_id": 445530939,
+  "tag": "v0.2.12",
+  "url": "https://github.com/bayleafwalker/lanectl/releases/tag/v0.2.12",
+  "draft": false,
+  "immutable": false,
+  "published_at": "2026-11-14T19:17:38Z",
+  "assets": [
+    {
+      "id": 748511006,
+      "name": "lanectl-0.2.12-artifact.json",
+      "size": 855,
+      "digest": "sha256:79033c00dda8edb1defcd9b2fe5314f17687f0dab55602525b4adb9c9fc78f48",
+      "state": "uploaded",
+      "url": "https://github.com/bayleafwalker/lanectl/releases/download/v0.2.12/lanectl-0.2.12-artifact.json"
+    },
+    {
+      "id": 748511002,
+      "name": "lanectl-0.2.12-py3-none-any.whl",
+      "size": 225471,
+      "digest": "sha256:934f03933acbe2548752cdb9a25799669504921df51ce9b5bbb438a59dd0ac30",
+      "state": "uploaded",
+      "url": "https://github.com/bayleafwalker/lanectl/releases/download/v0.2.12/lanectl-0.2.12-py3-none-any.whl"
+    },
+    {
+      "id": 748511005,
+      "name": "SHA256SUMS",
+      "size": 193,
+      "digest": "sha256:fd421b7e6c03a7321f54b5ce392ca785590d21c16d0935bfd0947268827217b9",
+      "state": "uploaded",
+      "url": "https://github.com/bayleafwalker/lanectl/releases/download/v0.2.12/SHA256SUMS"
+    }
+  ]
+}

@@ -119,9 +119,13 @@ The dedicated UID is shared by trains, so sibling processes remain a residual
 boundary. Network behavior is unchanged. This backend does not establish hosted
 runner authentication or complete the delivery ladder's operational clocks.
 
-The current installed client is 0.2.9 at
+The November 13 strict-root qualification used installed client 0.2.9 at
 `f9267ea32e481f2a1ecf3f57b07ff0e888e1d0cf`; its runtime bytes match the reviewed
 publication-evidence repair. See the
 [installation evidence](evidence/2026-11-13-product-contact/lanectl-v029-installed.json).
-The current strict-root evidence above uses this installed client. It does not
-establish hosted runner authentication or the ladder's operational clocks.
+That strict-root evidence remains bound to its recorded client and host. The
+current installed client is 0.2.12; its separate namespace completion repair and
+all 62 installed runtime files are recorded in the
+[installed-runtime proof](evidence/2026-11-14-product-contact/namespace-completion/installed-runtime.json).
+Neither result establishes a hosted claim-to-outcome flow or the ladder's
+operational clocks.

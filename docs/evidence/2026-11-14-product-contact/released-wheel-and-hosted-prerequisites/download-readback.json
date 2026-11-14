@@ -1,0 +1,27 @@
+{
+  "release_id": 445530939,
+  "tag": "v0.2.12",
+  "url": "https://github.com/bayleafwalker/lanectl/releases/tag/v0.2.12",
+  "assets": [
+    {
+      "name": "lanectl-0.2.12-artifact.json",
+      "sha256": "sha256:79033c00dda8edb1defcd9b2fe5314f17687f0dab55602525b4adb9c9fc78f48",
+      "size": 855,
+      "download_matches_local": true
+    },
+    {
+      "name": "lanectl-0.2.12-py3-none-any.whl",
+      "sha256": "sha256:934f03933acbe2548752cdb9a25799669504921df51ce9b5bbb438a59dd0ac30",
+      "size": 225471,
+      "download_matches_local": true
+    },
+    {
+      "name": "SHA256SUMS",
+      "sha256": "sha256:fd421b7e6c03a7321f54b5ce392ca785590d21c16d0935bfd0947268827217b9",
+      "size": 193,
+      "download_matches_local": true
+    }
+  ],
+  "release_immutable": false,
+  "scope": "consumer must verify pinned wheel digest; readback proves current published bytes, not permanent URL immutability"
+}

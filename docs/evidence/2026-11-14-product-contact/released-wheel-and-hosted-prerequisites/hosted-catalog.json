@@ -1,0 +1,16 @@
+{
+  "observed_at": "2026-11-14T19:12:48.788285+00:00",
+  "issuer": "https://api.vuoro.cloud",
+  "catalog_revision": "4230516fcb775d72e14dfa774c8395a9f50ad5b640ccd9134648a8c659f22af3",
+  "operation_count": 85,
+  "lane_stream_operations": [],
+  "coordination_operations": [
+    "work.lease.acquire-v1",
+    "work.lease.complete-v1",
+    "work.lease.heartbeat-v1",
+    "work.lease.read-v1",
+    "work.lease.report-outcome-v1"
+  ],
+  "scope": "authenticated discovery with existing issuer runner; no invoke, run registration, claim, grant or authority changes",
+  "public_without_credential": "handshake401 observed separately; cannot infer operation absence from that refusal"
+}

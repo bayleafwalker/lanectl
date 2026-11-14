@@ -1,0 +1,20 @@
+{
+  "schema": "lanectl-release-artifact/v1",
+  "version": "0.2.12",
+  "tag": "v0.2.12",
+  "source_commit": "b56f9cf4a7d9741069436f83e298f5dbde7e687b",
+  "wheel_filename": "lanectl-0.2.12-py3-none-any.whl",
+  "wheel_sha256": "934f03933acbe2548752cdb9a25799669504921df51ce9b5bbb438a59dd0ac30",
+  "wheel_size": 225471,
+  "python_requires": ">=3.13",
+  "runtime_dependencies": [],
+  "runtime_source_files_verified": 62,
+  "independent_offline_builds_byte_equal": true,
+  "installed_wheel_byte_equal": true,
+  "source_review": "Claude Sonnet5.5 CLEAR on7842494; executableAST unchanged exceptdocstring/comments",
+  "tests": {
+    "passed": 1120,
+    "evidence": "docs/evidence/2026-11-14-product-contact/namespace-completion/final-suite.log"
+  },
+  "scope": "reproducible release wheel; no hosted deployment, registry composition or authority switch proved"
+}

@@ -69,22 +69,27 @@ authoritative until the separate served-store qualification and cutover below.
 
 Repository governance may explicitly select `train_isolation = "environment"`
 for uncoordinated repositories. This strips inherited secrets but preserves host
-ownership IDs; it provides no credential-file barrier. Sovite uses this exception
-because its ownership checks reject UID 65534 projections under user namespaces:
-its real baseline passed 2,797 tests while namespace execution failed 66 with
-25 setup errors. The checks remain unchanged. Such trains can read same-user
-credential files, including runner credentials for other repositories. With
-coordination configured, `doctor` names every environment-only repository;
-coordinated admission and execution refuse this mode. No command silently falls
-back from a failed namespace. A different fenced backend needs separate full-suite
-qualification before this exception can be removed.
+ownership IDs; it provides no credential-file barrier. Sovite previously used
+this exception because its ownership checks reject UID 65534 projections under
+user namespaces. Its ordinary baseline was 2,797 passed / 1,140 skipped, while
+namespace execution failed 66 with 25 setup errors. The tests were not weakened.
+With coordination configured, `doctor` names every environment-only repository;
+coordinated admission and execution refuse that mode. No command silently falls
+back from a failed namespace.
 
-The opt-in `systemd` backend in 0.2.5 uses the installed root-owned system service
-and a separate static UID. Its actual Sovite run matches the ordinary baseline,
-and direct-file/environment, timeout, cancellation and historical-recovery probes
-pass. Repository policy promotion remains separate from source release. See the
-[fenced-train guide](../fenced-train.md) for host prerequisites, measured limits
-and qualification evidence.
+Sovite now selects `train_isolation = "systemd"` in repository policy after
+workstation qualification of the separate-UID, root-owned host service. Its real
+run matched the ordinary 2,797 / 1,140 baseline; direct-file/environment,
+timeout, cancellation and historical-recovery controls also passed. This policy
+promotion is distinct from the earlier 0.2.5 source release and does not claim
+that another host has installed the service. See the
+[fenced-train guide](../fenced-train.md) for host requirements and measured limits.
+
+Since 0.2.12, namespace train commands also supervise child completion: stopping
+an unfinished check fails even when the child handles termination with a zero
+exit. Startup, timeout, TERM-ignoring child and ordinary result controls are
+recorded in the [completion qualification](../evidence/2026-11-14-product-contact/namespace-completion/README.md).
+The separate-UID backend retains its root-owned completion receipts.
 
 A failed post-merge setup now fails the train rather than allowing a green check
 to hide it. Rechecks and historical qualification use the same selected boundary.
