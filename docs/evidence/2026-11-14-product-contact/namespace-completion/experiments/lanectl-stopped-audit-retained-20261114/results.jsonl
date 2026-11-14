@@ -1,0 +1,2 @@
+{"case": "positive", "unit": "run-p1874926-i1874927.service", "ready": true, "done": true, "thread_alive": false, "stop_rc": null, "stop_stderr": null, "result_rc": 0, "stdout": "", "stderr": "", "journal_rc": 0}
+{"case": "stopped", "unit": "run-p1875037-i1875038.service", "ready": true, "done": false, "thread_alive": false, "stop_rc": 0, "stop_stderr": "", "result_rc": 0, "stdout": "", "stderr": "", "journal_rc": 0}

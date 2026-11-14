@@ -1,0 +1,9 @@
+{
+  "reviewed_commit": "7842494392aef12e2a263252ef1dc36239ba821f",
+  "post_review_changes": "tests, module docstring and comments only",
+  "method": "AST comparison ignoring location attributes and module docstring only",
+  "executable_ast_equal": {
+    "src/lanectl/sandbox.py": true,
+    "src/lanectl/runner.py": true
+  }
+}

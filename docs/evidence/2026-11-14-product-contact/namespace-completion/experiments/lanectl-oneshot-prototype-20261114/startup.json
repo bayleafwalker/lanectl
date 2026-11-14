@@ -1,0 +1,1 @@
+{"prototype": true, "case": "missing_service_executable", "unit": "lanectl-audit-oneshot-missing-20261114.service", "returncode": 1, "stdout": "", "stderr": "Failed to find executable /nonexistent/lanectl-synthetic-missing-executable: No such file or directory\n", "journal_rc": 0}

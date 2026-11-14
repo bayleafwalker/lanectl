@@ -1,0 +1,38 @@
+FFFFF                                                                    [100%]
+=================================== FAILURES ===================================
+_______________ test_stopped_namespace_command_is_failure[False] _______________
+tests/stage8/test_namespace_completion.py:54: in test_stopped_namespace_command_is_failure
+    assert result.returncode != 0, result
+E   AssertionError: CompletedProcess(args="/run/current-system/sw/bin/systemd-run --user --quiet --pipe --wait --collect -p RuntimeMaxSec=...; touch /tmp/pytest-of-bayleaf/pytest-15220/test_stopped_namespace_command0/done'", returncode=0, stdout='', stderr='')
+E   assert 0 != 0
+E    +  where 0 = CompletedProcess(args="/run/current-system/sw/bin/systemd-run --user --quiet --pipe --wait --collect -p RuntimeMaxSec=...; touch /tmp/pytest-of-bayleaf/pytest-15220/test_stopped_namespace_command0/done'", returncode=0, stdout='', stderr='').returncode
+_______________ test_stopped_namespace_command_is_failure[True] ________________
+tests/stage8/test_namespace_completion.py:54: in test_stopped_namespace_command_is_failure
+    assert result.returncode != 0, result
+E   AssertionError: CompletedProcess(args='/run/current-system/sw/bin/systemd-run --user --quiet --pipe --wait --collect -p RuntimeMaxSec=... touch /tmp/pytest-of-bayleaf/pytest-15220/test_stopped_namespace_command1/done\'', returncode=0, stdout='', stderr='')
+E   assert 0 != 0
+E    +  where 0 = CompletedProcess(args='/run/current-system/sw/bin/systemd-run --user --quiet --pipe --wait --collect -p RuntimeMaxSec=... touch /tmp/pytest-of-bayleaf/pytest-15220/test_stopped_namespace_command1/done\'', returncode=0, stdout='', stderr='').returncode
+____________ test_stopped_check_never_becomes_checked_train[build] _____________
+tests/stage8/test_namespace_completion.py:74: in test_stopped_check_never_becomes_checked_train
+    assert ': FAILED ' in result, result
+E   AssertionError: train-20261114184123: PASSED included=['stopped-check-a1'] excluded=[]
+E     worktree: /tmp/pytest-of-bayleaf/pytest-15220/test_stopped_check_never_becom0/wt/train-20261114184123
+E     
+E   assert ': FAILED ' in "train-20261114184123: PASSED included=['stopped-check-a1'] excluded=[]\nworktree: /tmp/pytest-of-bayleaf/pytest-15220/test_stopped_check_never_becom0/wt/train-20261114184123\n"
+___________ test_stopped_check_never_becomes_checked_train[recheck] ____________
+tests/stage8/test_namespace_completion.py:90: in test_stopped_check_never_becomes_checked_train
+    assert 'FAILED' in result, result
+E   AssertionError: tt: PASSED recheck at 50de80af94e0d77e5d8b69b9b37415e6028e886e
+E   assert 'FAILED' in 'tt: PASSED recheck at 50de80af94e0d77e5d8b69b9b37415e6028e886e'
+__________ test_stopped_check_never_becomes_checked_train[historical] __________
+tests/stage8/test_namespace_completion.py:85: in test_stopped_check_never_becomes_checked_train
+    assert 'failed recheck; not landing' in result, result
+E   AssertionError: landed ['stopped-check-a1'] on main at 50de80af94e0; fixes={}
+E   assert 'failed recheck; not landing' in "landed ['stopped-check-a1'] on main at 50de80af94e0; fixes={}"
+=========================== short test summary info ============================
+FAILED tests/stage8/test_namespace_completion.py::test_stopped_namespace_command_is_failure[False]
+FAILED tests/stage8/test_namespace_completion.py::test_stopped_namespace_command_is_failure[True]
+FAILED tests/stage8/test_namespace_completion.py::test_stopped_check_never_becomes_checked_train[build]
+FAILED tests/stage8/test_namespace_completion.py::test_stopped_check_never_becomes_checked_train[recheck]
+FAILED tests/stage8/test_namespace_completion.py::test_stopped_check_never_becomes_checked_train[historical]
+5 failed, 5 deselected in 0.72s

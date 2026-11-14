@@ -856,6 +856,8 @@ def _train_command(repo, checkout: Path, command: str):
                                        str(Path(repo.path).resolve())),
                               writable=(str(checkout.resolve()),), timeout_s=1800)
     try:
+        # Namespace commands allow 1800s startup/runtime plus a 15s bounded
+        # stop; leave transport headroom before this fail-closed outer timeout.
         return subprocess.run(sb.wrap_shell(command, checkout), shell=True, cwd=checkout,
                               capture_output=True, text=True,
                               env=sandboxing.transport_environment(), timeout=1830)

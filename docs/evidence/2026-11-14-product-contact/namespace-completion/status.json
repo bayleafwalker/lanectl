@@ -1,0 +1,48 @@
+{
+  "source_commit": "7842494392aef12e2a263252ef1dc36239ba821f",
+  "installed_unchanged": "0.2.11",
+  "item": "lanectl#2902",
+  "reservation": 501,
+  "old_source_failure_cases": [
+    "direct-stop",
+    "child-TERM-exit0",
+    "build-false-PASSED",
+    "recheck-false-PASSED",
+    "historical-false-LANDED"
+  ],
+  "full_suite": {
+    "exit": 0,
+    "passed": 1119,
+    "seconds": 124.45
+  },
+  "scope": "namespace train commands only; default worker shims and separate-UID receipt backend unchanged",
+  "limits": "bounded empirical stop tests; no arbitrary hostile same-UID isolation or manager-loss cleanup guarantee",
+  "review": {
+    "model": "claude-sonnet-5-5",
+    "subtype": "success",
+    "exit": 0,
+    "permission_denials": [],
+    "verdict": "CLEAR",
+    "reviewed_commit": "7842494392aef12e2a263252ef1dc36239ba821f",
+    "lows_addressed": "Added committed TERM-ignoring stop regression, 30s deadline with early-stop assertion, corrected docstring and outer-timeout comment. Full suite rerunning; no runtime behavior changed after reviewed source."
+  },
+  "durability": "cross-host-replicated only after canonical push; /tmp originals ephemeral",
+  "actual_candidate": {
+    "source_commit": "7842494392aef12e2a263252ef1dc36239ba821f",
+    "sandbox_sha256": "ab6b459271d3be5c57c537ef8f12f0ee825b0ad8d3e31fb0e0e229b4e93a493c",
+    "term_ignoring_stop_seconds": 15.03,
+    "stop_exit": 0,
+    "command_exit": 1,
+    "all_3_recorded_pids_gone": true,
+    "done_absent_after_ack": true,
+    "units_collected": 7,
+    "quoting": "corrected fixture exact match; initial fixture mismatch retained"
+  },
+  "systemd_version": "262 (262)",
+  "final_suite": {
+    "exit": 0,
+    "passed": 1120,
+    "seconds": 139.61
+  },
+  "release": "v0.2.12 prepared; canonical push and install pending"
+}

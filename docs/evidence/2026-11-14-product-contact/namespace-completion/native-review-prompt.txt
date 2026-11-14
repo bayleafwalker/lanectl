@@ -1,0 +1,201 @@
+Read-only independent native Claude Sonnet5-5 security/correctness review of immutable public LANECTL candidate 7842494392aef12e2a263252ef1dc36239ba821f in /tmp/lanectl-namespace-review-7842494. Use Read/Grep/Glob only; no execution, edits, delegation, private repos or credentials. Return findings first with file lines and CLEAR/BLOCKED verdict; do not merge. Scope is src/lanectl/sandbox.py and tests/stage8/test_namespace_completion.py; read runner/config/tests/docs as needed. Source is local unpushed; installed client remains0.2.11. Full required suite still running, targeted25passed. Do not invent unobserved passes.
+
+Verified original bug: namespace _train_command accepted systemd-run --wait return0 when unit externally stopped before completion, including child TERM trap exiting0. New actual regressions ran RED on original: directcommand returned0, build markedPASSED, recheckPASSED, historicallandLANDED. They now pass. Combined prototype tested stop during ExecStartPre/MainPID0, delayedparenttrap,8startup immediate stops, normal/trap0/ignore/lingeringchild, timeout, output262144. Prototype is bounded evidence not allinterleavings. Candidate only for_train enables defaultfalse guard_completion; prefix uses Typeoneshot/TimeoutStartSec1800/TimeoutStopSec15 instead RuntimeMaxSec; fixed trusted shell parent trapHUPINTTERMexit125, child command one quoted argv; env-i and filesystem mounts preserved. Other wrap_shell consumers/workers/shims remain default; strict separateUID root receipt backend unchanged. Runner1830outertimeout alreadyfailclosed, but not a proof of processcleanup; namespace sameUID boundary never claimed arbitrary hostile isolation/strictreceipt parity.
+
+Challenge earlystartup/no-main signals, systemd stop semantics, shell executionoptimization/childtrap0, timeout and15sstop bound/outputpipes/descendants, shellquoting and normalstatus, cleanenv/mounts, accidentalbroadscope, testsfalsepositives/cleanup, existing intended commit-bound checks in docs/full-stack-operation.md and docs/fenced-train.md. Installed tool must not be mutated while actual HLA qualification active. Need smallest justified fix, no unrelated authority/gate/security redesign. Independent design reviewer found no blocker but called for actualsource TERM-ignoring15s cleanup test now running. Source review cannot establish product deployment/hosted/autonomousqualification.
+
+EXACT DIFF:
+commit 7842494392aef12e2a263252ef1dc36239ba821f
+Author:     Juha Huotari <juhahuotari@outlook.com>
+AuthorDate: Sat Nov 14 20:43:40 2026 +0200
+Commit:     Juha Huotari <juhahuotari@outlook.com>
+CommitDate: Sat Nov 14 20:43:40 2026 +0200
+
+    fix: reject interrupted namespace train checks
+
+diff --git a/src/lanectl/sandbox.py b/src/lanectl/sandbox.py
+index 20aa0cd..9ce31e0 100644
+--- a/src/lanectl/sandbox.py
++++ b/src/lanectl/sandbox.py
+@@ -30,6 +30,7 @@ class Sandbox:
+     inaccessible: tuple[str, ...] = ()
+     clean_environment: bool = False
+     environment: tuple[tuple[str, str], ...] | None = None
++    guard_completion: bool = False
+ 
+     def prefix(self, cwd: Path, env_path: str | None = None) -> list[str]:
+         if self.mode == "none":
+@@ -39,8 +40,15 @@ class Sandbox:
+         exe = shutil.which("systemd-run")
+         if not exe:
+             raise RuntimeError("sandbox mode systemd-run but systemd-run is not on PATH")
+-        argv = [exe, "--user", "--quiet", "--pipe", "--wait", "--collect",
+-                "-p", f"RuntimeMaxSec={self.timeout_s}", f"--working-directory={cwd}"]
++        argv = [exe, "--user", "--quiet", "--pipe", "--wait", "--collect"]
++        if self.guard_completion:
++            # Uncaught termination during startup must fail too. For oneshot,
++            # the command deadline is its start deadline, not RuntimeMaxSec.
++            argv += ["-p", "Type=oneshot", "-p", f"TimeoutStartSec={self.timeout_s}",
++                     "-p", "TimeoutStopSec=15"]
++        else:
++            argv += ["-p", f"RuntimeMaxSec={self.timeout_s}"]
++        argv.append(f"--working-directory={cwd}")
+         if self.unit:
+             argv.append(f"--unit={self.unit}")
+         argv += [f"-pReadOnlyPaths={p}" for p in self.readonly]
+@@ -74,6 +82,13 @@ class Sandbox:
+         if self.mode == "none":
+             return cmd
+         payload = ["/bin/sh", "-c", cmd]
++        if self.guard_completion:
++            # Keep a parent outside the candidate shell: a child handling TERM
++            # with exit 0 must not turn an interrupted check into a pass.
++            # Pass cmd as one argument, never interpolate it into this script.
++            payload = ["/bin/sh", "-c",
++                       'trap "exit 125" HUP INT TERM; /bin/sh -c "$1"; rc=$?; exit "$rc"',
++                       "lanectl-command", cmd]
+         if self.clean_environment:
+             source = dict(self.environment) if self.environment is not None else os.environ
+             env_exe = shutil.which("env", path=os.defpath)
+@@ -148,4 +163,5 @@ def for_train(*, readonly, writable, timeout_s=1800, env=None):
+     return Sandbox(mode='systemd-run', readonly=tuple(readonly), writable=tuple(writable),
+                    timeout_s=timeout_s, inaccessible=tuple(dict.fromkeys(str(p) for p in paths)),
+                    clean_environment=True,
++                   guard_completion=True,
+                    environment=tuple((name, source[name]) for name in PASS_ENV if source.get(name)))
+diff --git a/tests/stage8/test_namespace_completion.py b/tests/stage8/test_namespace_completion.py
+new file mode 100644
+index 0000000..7814ea6
+--- /dev/null
++++ b/tests/stage8/test_namespace_completion.py
+@@ -0,0 +1,130 @@
++"""Real manager stops must not manufacture a passing namespace train check."""
++from dataclasses import replace
++from pathlib import Path
++import shlex
++import subprocess
++import threading
++import time
++import uuid
++
++import pytest
++
++from lanectl import runner, sandbox
++
++
++def stop_during_check(monkeypatch, tmp_path, *, trap=False, prestart=False):
++    """Stop only the unique unit after candidate code proves it started."""
++    unit = f'lanectl-test-stop-{uuid.uuid4().hex}.service'
++    ready, done = tmp_path / 'ready', tmp_path / 'done'
++    original = sandbox.for_train
++    monkeypatch.setattr(sandbox, 'for_train', lambda **kw: replace(
++        original(**kw), unit=unit, timeout_s=5))
++    if prestart:
++        script = tmp_path / 'before-main.sh'
++        script.write_text(f'touch {shlex.quote(str(ready))}; sleep 20\n')
++        prefix = sandbox.Sandbox.prefix
++        monkeypatch.setattr(sandbox.Sandbox, 'prefix', lambda self, cwd, env_path=None:
++                            prefix(self, cwd, env_path) + ['-p', f'ExecStartPre=/bin/sh {script}'])
++    command = (
++        ('trap "exit 0" TERM; ' if trap else '')
++        + f'touch {shlex.quote(str(ready))}; sleep 20 & wait; touch {shlex.quote(str(done))}'
++    )
++    outcomes = []
++
++    def stop():
++        deadline = time.monotonic() + 10
++        while not ready.exists() and time.monotonic() < deadline:
++            time.sleep(.01)
++        if ready.exists():
++            outcomes.append(subprocess.run(['systemctl', '--user', 'stop', unit],
++                                           capture_output=True, timeout=20).returncode)
++
++    thread = threading.Thread(target=stop)
++    thread.start()
++    return command, thread, outcomes, done
++
++
++@pytest.mark.parametrize('trap,prestart', [(False, False), (True, False), (False, True)])
++def test_stopped_namespace_command_is_failure(estate, monkeypatch, tmp_path, trap, prestart):
++    spec = runner.load_repos()['target']
++    checkout = tmp_path / 'checkout'
++    checkout.mkdir()
++    command, thread, stops, done = stop_during_check(
++        monkeypatch, tmp_path, trap=trap, prestart=prestart)
++    try:
++        result = runner._train_command(spec, checkout, command)
++    finally:
++        thread.join(25)
++    assert not thread.is_alive()
++    assert stops == [0]
++    assert not done.exists()
++    assert result.returncode != 0, result
++
++
++@pytest.mark.parametrize('operation', ['build', 'recheck', 'historical'])
++def test_stopped_check_never_becomes_checked_train(estate, monkeypatch, tmp_path, operation):
++    from tests.stage8.test_work_sync_extra import _train, _head
++    repo, release, log = estate
++    release('stopped-check', 'def test_ok():\n    assert True\n')
++    claim = runner.admit('implement', log)
++    base = _head(repo)
++    command, thread, stops, done = stop_during_check(monkeypatch, tmp_path, trap=True)
++    original = runner.load_repos()['target']
++    monkeypatch.setattr(runner, 'load_repos', lambda: {
++        'target': replace(original, setup_cmd='', check_cmd=command)})
++    try:
++        if operation == 'build':
++            subprocess.run(['git', '-C', str(repo), 'branch', 'stopped-candidate', base], check=True)
++            monkeypatch.setattr(runner, 'candidates', lambda *a: [{
++                'attempt_id': claim.attempt_id, 'branch': 'stopped-candidate', 'title': 'stop proof'}])
++            result = runner.build_train(log, 'target')
++            assert ': FAILED ' in result, result
++            assert not [e['data'] for e in log.read() if e['type'] == 'train.built'][-1]['passed']
++        else:
++            _train(log, repo, 'stopped-check', base)
++            if operation == 'recheck':
++                worktree = Path([e['data'] for e in log.read()
++                                 if e['type'] == 'train.built'][-1]['worktree'])
++                subprocess.run(['git', '-C', str(repo), 'worktree', 'add', '--detach',
++                                str(worktree), base], check=True, capture_output=True)
++            if operation == 'historical':
++                result = runner.land(log, 'tt')
++                assert 'failed recheck; not landing' in result, result
++                assert not [e for e in log.read() if e['type'] == 'item.landed']
++                assert not [e['data'] for e in log.read() if e['type'] == 'train.built'][-1].get('checked_sha')
++            else:
++                result = runner.recheck_train(log, 'tt')
++                assert 'FAILED' in result, result
++                assert not [e['data'] for e in log.read() if e['type'] == 'train.built'][-1]['passed']
++    finally:
++        thread.join(25)
++    assert not thread.is_alive()
++    assert stops == [0]
++    assert not done.exists()
++    assert _head(repo) == base
++
++
++@pytest.mark.parametrize('command,code,out,err', [
++    ("printf '%s\\n' 'a b' \"quote'\";\nprintf '%s' stderr >&2", 0, "a b\nquote'\n", 'stderr'),
++    ('exit 7', 7, '', ''),
++    ('exec /bin/sh -c "exit 9"', 9, '', ''),
++    ('timeout .1s sleep 10', 124, '', ''),
++    ('head -c 262144 /dev/zero | tr "\\0" x', 0, 'x' * 262144, ''),
++])
++def test_namespace_completion_preserves_shell_results(estate, tmp_path, command, code, out, err):
++    checkout = tmp_path / 'checkout'
++    checkout.mkdir()
++    result = runner._train_command(runner.load_repos()['target'], checkout, command)
++    assert (result.returncode, result.stdout, result.stderr) == (code, out, err)
++
++
++def test_namespace_start_deadline_fails_without_late_completion(estate, monkeypatch, tmp_path):
++    checkout = tmp_path / 'checkout'
++    checkout.mkdir()
++    done = checkout / 'done'
++    original = sandbox.for_train
++    monkeypatch.setattr(sandbox, 'for_train', lambda **kw: replace(original(**kw), timeout_s=1))
++    result = runner._train_command(runner.load_repos()['target'], checkout,
++                                   f'sleep 10; touch {shlex.quote(str(done))}')
++    assert result.returncode != 0
++    assert not done.exists()

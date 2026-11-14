@@ -2,7 +2,7 @@
 
 Governance path. Enforces the lane EffectGrant on the filesystem: everything
 under `readonly` roots is mounted read-only except the attempt's own checkout.
-Seed implementation: `systemd-run --user` (mount namespaces, RuntimeMaxSec).
+Seed implementation: `systemd-run --user` (mount namespaces, command deadlines).
 Added 2026-11-08 after OpenCode workers wrote into the main checkout.
 """
 from __future__ import annotations

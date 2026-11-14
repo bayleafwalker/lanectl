@@ -44,6 +44,13 @@ effects without relanding. Lost tracker-note acknowledgements can still
 duplicate notes because the existing note API has no idempotency key; terminal
 status reconciliation converges independently.
 
+Since 0.2.12, namespace train commands retain a supervising shell so a stopped
+check fails even when its child handles termination with a zero exit. A oneshot
+service also rejects termination during startup. The command deadline is 1800
+seconds, followed by a 15-second stop limit within the outer transport timeout.
+This is the existing namespace boundary; the separate-UID backend keeps its
+root-owned completion receipt.
+
 Since 0.2.11, new claims pass up to three bounded prior integrator rejection
 observations to a retry of the same item and release revision. The observations
 do not change its outcome, scope, tests, routing or attempt budget. The exact
