@@ -1,0 +1,30 @@
+{
+  "kind": "independent current-target-state pass",
+  "reviewer": "/root/hla_source_manual_review",
+  "verdict": "pass",
+  "reviewed_source_base": "30c0caf6c78d257ff5db79f42cca0b56a0f934b9",
+  "fresh_canonical": "529e41807dc3a6d22fe42bb61594be8a7fbe1f1b",
+  "exact_diff_paths": [
+    "docs/README.md",
+    "docs/plans/2026-11-14-basis-tracked-revalidation.md",
+    "docs/plans/household-outcome-evidence-decision-plan.md",
+    "requirements/analytics-and-reporting.md"
+  ],
+  "findings": [
+    "Base is canonical ancestor; zero intervening runtime changes",
+    "New basis qualification is planned experiment-local work, not attention API behavior or wire contract",
+    "Existing reporting/authority boundaries remain; no new attention source/auth criteria",
+    "Normal train must integrate with current canonical main and pass usual checks/CI"
+  ],
+  "citations": [
+    "docs/plans/2026-11-14-basis-tracked-revalidation.md:9",
+    "docs/plans/2026-11-14-basis-tracked-revalidation.md:57",
+    "docs/plans/2026-11-14-basis-tracked-revalidation.md:152",
+    "docs/plans/2026-11-14-basis-tracked-revalidation.md:166",
+    "requirements/analytics-and-reporting.md:200"
+  ],
+  "limits": [
+    "Independent reviewer checked local objects/diff; root separately fetched canonical",
+    "Does not review future runtime changes or prove unexecuted train"
+  ]
+}

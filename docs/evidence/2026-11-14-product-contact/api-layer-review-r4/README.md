@@ -18,3 +18,16 @@ original command or lanectl policy. Fresh native review3 remains required.
 The UI preparation JSON is read-only planning, not measured implementation size or
 approved source. Its 500–900-line estimate is uncertain; the actual worker diff
 and full UI behavior decide any legitimate decomposition.
+
+Fresh native review3 completed **done/exit0, accept** at08:49:57UTC. Its exact
+response, usage, native status, complete-retention flag and final specification
+are retained. The official base lint and publication validator returned `[]`.
+No candidate implementation is approved by this acceptance review.
+
+Canonical HLA subsequently advanced to529e418 through four documentation and
+requirements paths only. A separate independent target-state pass found the new
+basis-revalidation plan introduces no attention API/auth/source change. The
+reviewed release base stays30c; the guarded current runner checks the exact
+canonical head, ancestry and four-path delta, fast-forwards the local canonical
+checkout and leaves normal train integration/CI mandatory. The earlier prepared
+runner required canonical HEAD equal30c and was never executed.

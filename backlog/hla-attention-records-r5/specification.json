@@ -1,62 +1,60 @@
 {
   "schema": "lanectl-specification/v1",
-  "release_digest": "a6b48797f92da3efb0e728ba2dbb24dcc698d2ae33a3b174dccdeef7b9405503",
+  "release_digest": "d98606247f1cbddac1922462b86fda09996ba914f7eda49195984c64e1c6a662",
   "review": {
-    "verdict": "revise",
-    "reason": "The frozen acceptance input is behaviorally strong for the portable DuckDB paths and is genuinely anti-trivial-pass via its source-query observer, and I confirmed the canonical source (30c0caf) really exposes ReportingService.get_attention_record plus public AttentionRecordNotFoundError/AttentionRecordUnavailableError and that a canonical checkout fails on the genuinely missing /reports/{segment}/records/{item_id} route (all frozen imports resolve; no attention_record_routes or run_on_warehouse references), not on imports/fixtures/setup. However, the required real-PostgreSQL qualification is NOT mechanically enforced. The three @pytest.mark.integration + @pytest.mark.slow PG tests are silently deselected by the repo default `addopts = -ra -m \"not slow\"` in pytest.ini, and running_postgres_container() calls pytest.skip() (not fail) when Docker is absent, whereas the already-landed source-level tests/test_attention_source_records.py uses required_postgres() which `assert docker_is_available()` and fails. The outcome's 'explicit integration-and-slow selection, with no skips' is prose, not a test, Makefile target, or CI gate. Because the empty-charge_id forge ('upcoming__date' must never 200), the real lower lease/missing-column unavailable path, and the actual-PG NULL/empty-identity boundary are exercised only by those skippable tests, a worker can pass all 29 fast tests while the actual-PG contract is never run. This must be revised to add a fail-not-skip guard and/or a committed selection gate before the input can be accepted as a complete gate.",
-    "trivial_pass": "Trivial-pass attack: the adapter ignores the opaque key and returns a hard-coded {item_id: rows} map, or issues whole-source SELECT * / WHERE 1=1 / scalar-only and filters in Python. The frozen contract REJECTS this: test_lookup_binds_complete_key_at_source_before_limit and test_stale_identity_probe_does_not_fetch_source_data monkeypatch the store methods, replay the real SQL against real data, and require (a) item_id present as a bound parameter and absent from the SQL text, (b) a WHERE clause carrying a placeholder, (c) no LIMIT before WHERE, (d) every observed row's source_key equals item_id, and (e) any scalar probe be SELECT 1/COUNT/EXISTS ... IS NULL with at most one row. A hard-coded map observes no source query and fails; a fetch-all or false-WHERE fails (b)/(d) because competing identities exist in the same relation. A separate trivial pass the frozen file does NOT reject is the silent-skip path: the three real-PG tests are deselected by `-m \"not slow\"` and running_postgres_container() pytest.skip()s without Docker, so the actual-PG contract can be 'passed' by never exercising it.",
+    "verdict": "accept",
+    "reason": "Independent read-only review against canonical commit 30c0caf confirms the source prerequisite is genuinely landed and complete: packages/domains/overview/pipelines/attention_records.py defines AttentionRecordNotFoundError(KeyError) and AttentionRecordUnavailableError(RuntimeError) plus get_attention_record, exposed publicly as ReportingService.get_attention_record (reporting_service.py:880). It binds the whole opaque key in one parameterized equality ('prefix_' || identity || ... = ?/%s) against each of the four source relations, never splits or falls back, and treats NULL/empty identity via an 'is null' probe that raises Unavailable rather than fabricating a 200. The four public row models (TransactionAnomaliesRow, ContractReviewCandidatesRow, ContractRenewalWatchlistRow, UpcomingFixedCostsRow) already exist in report_routes.py and match the test's ROW_MODELS. The existing _reports_read_permission in auth_policies.py extracts the first '/reports/' path segment, so the new nested /reports/{segment}/records/{item_id} routes automatically inherit reports.read.publication.<segment> with no new policy registration, matching the frozen auth assertions. WarehouseBusyError->503/Retry-After remains global (warehouse_access.py), so a correct route must catch only the two specific attention exceptions and leave RuntimeError programming errors as 500. The frozen 1173-line test is not trivially passable: its source-query observer monkeypatches the store and replays the real SQL/bindings, requiring the full opaque item_id as a bound parameter, a WHERE with placeholder, no LIMIT-before-WHERE, and every returned row to satisfy source_key==item_id, while permitting only the scalar 'is null' probe; dynamic CURRENT_DATE seeding defeats hard-coding. The new stdlib gate test_attention_record_pg_gate.py runs the exact three named slow cases via subprocess pytest --junitxml and validates the report strictly (exactly three testcases, correct names and classname, no skipped/failure/error child elements, suite counts tests=3 skipped=0 failures=0 errors=0), failing closed on absent/malformed/incomplete/duplicate/wrong-name/failed/skipped/errored evidence and on non-zero pytest exit codes, which closes the original skip-success defect rather than hiding a behavior gap. The three commands are coherent: command 1 runs fast non-slow tests (addopts -m 'not slow'), command 2 overrides the marker to select only the three PG cases, and command 3 executes the gate's __main__ branch. Canonical source fails on the genuinely missing HTTP feature (404 on the records routes), not on imports/fixtures/setup. No defect warranting revision was found.",
+    "trivial_pass": "A candidate implementation could try to satisfy the four record endpoints by fetching the entire source relation (SELECT * with no WHERE) and then filtering rows by item_id in Python. The contract rejects this: the source-query observer replays the actual SQL and bindings and asserts (a) the complete opaque item_id is present as a bound parameter (item_id in params), (b) it is not inlined into the SQL text (item_id not in sql), (c) a WHERE clause with a ?/%s placeholder exists, (d) there is no LIMIT before the WHERE, and (e) every row that query returns satisfies source_key(item_type, row) == item_id. A whole-source fetch yields empty params and mixed identity keys, failing (a) and (e), and the endpoint response is also re-checked with assert all(source_key == item_id) and canon(rows) == canon(expected). It is rejected.",
     "checks": [
-      "Canonical source contract present: packages/domains/overview/pipelines/attention_records.py defines get_attention_record plus public AttentionRecordNotFoundError(KeyError) and AttentionRecordUnavailableError(RuntimeError), and packages/pipelines/reporting_service.py exposes get_attention_record/get_open_attention_items as public delegating methods (lines 877-881).",
-      "Source reader binds the complete opaque key in real SQL ('prefix_' || identity || ... = ?/%s) and never splits or matches an equal-looking prefix; the four _ATTENTION_KINDS map anomaly/contract_review/contract_renewal/upcoming_cost to their source relations and identity columns.",
-      "Busy/programming-error preservation is correct in the source: get_attention_record catches only (psycopg.Error, duckdb.Error), so WarehouseBusyError(RuntimeError) and unrelated RuntimeError propagate unchanged, and install_warehouse_access maps WarehouseBusyError to 503 with Retry-After and retry_after_seconds (shape {\"error\", \"retry_after_seconds\"}, not {\"detail\"}), which the frozen file correctly does not conflate with the detail-only 404/503.",
-      "All four routes, segments, and row models are present and correct: SEGMENTS maps to transaction-anomalies/contract-review-candidates/contract-renewal-watchlist/upcoming-fixed-costs, and ROW_MODELS names match the existing report_routes.py Pydantic row models (TransactionAnomaliesRow, ContractReviewCandidatesRow, ContractRenewalWatchlistRow, UpcomingFixedCostsRow).",
-      "Own-source authorization is enforced through the existing path policy: _reports_read_permission maps /reports/{first_segment}/... to publication_read_permission(first_segment), so /reports/transaction-anomalies/records/{item_id} requires reports.read.publication.transaction-anomalies, not the attention-items permission; test_source_publication_permission_reads_only_its_own_segment and test_attention_only_permission_never_exposes_source_records assert 403 cross-segment and attention-only.",
-      "Encoded-slash routing and prefix-of-each-other identities are exercised: record_path uses quote(item_id, safe='') and _build asserts '/' is present in contract_review and contract_renewal keys, while grid/north vs grid vs grid_north distinguish slash/underscore prefixes.",
-      "No-fallback/current-publication authority is enforced: test_published_reads_never_fall_back_to_the_warehouse, test_unpublished_source_relation_is_unavailable, and test_strict_published_without_store_is_unavailable_without_warehouse_reads (via _observe_warehouse_reads asserting calls == []) forbid warehouse reads in PUBLISHED mode.",
-      "NULL/empty identity vs unsupported mutation is covered: NULL charge_id and partial NULL yield 503 (not 404), missing charge_id column yields 503 without warehouse reads, empty charge_id ('upcoming__date') never resolves 200, and the literal string 'None' remains a valid nonempty identity (404 as provably absent, not 503 as fabricated).",
-      "Detail-only 404/503 shape is enforced: assert_not_resolved requires set(body) == {'detail'} and bans stored fields (SOURCE_NAMES, charge_ids, contract/date/amount secrets); because _register_exception_handlers maps KeyError to {\"error\": ...}, the adapter must explicitly catch AttentionRecordNotFoundError/AttentionRecordUnavailableError and raise HTTPException to satisfy the {\"detail\"} contract.",
-      "OpenAPI/TypeScript contract generation for all four endpoints is checked against the live app.openapi() and apps/web/frontend/generated/openapi.json and api.d.ts, including path params == ['item_id'] and rows items resolving to the exact existing Pydantic row-model schemas.",
-      "Genuine-missing-feature failure confirmed: every frozen-file import (create_app, AccountTransactionService, subscription_charge_id, MockOidcIssuer, running_postgres_container, to_jsonable, MART_UPCOMING_FIXED_COSTS_30D_COLUMNS, UPCOMING_FIXED_COSTS_ROW_MODEL, etc.) exists in the canonical tree, so running against 30c0caf fails at the unregistered route (404 then assert status_code == 200), not at import/fixture/setup time.",
-      "DEFICIENCY (mechanical enforcement): pytest.ini sets addopts = -ra -m \"not slow\", silently deselecting the three @pytest.mark.integration + @pytest.mark.slow PG tests, and running_postgres_container() pytest.skip()s when Docker is absent; the frozen file lacks the fail-not-skip required_postgres() guard that the landed source-level test uses, so the outcome's 'explicit integration-and-slow selection, with no skips' is unenforced prose.",
-      "Coverage gap noted: the canonical WarehouseBusyError 503 Retry-After response and unrelated-programming-error-remains-500 behavior are not asserted by the frozen file (deferred to worker regression tests), so the frozen gate alone does not verify that the adapter fails to sanitize those into availability responses."
+      "Verified the source contract is genuinely landed at 30c0caf: AttentionRecordNotFoundError/UnavailableError and get_attention_record exist in packages/domains/overview/pipelines/attention_records.py and are exposed via ReportingService.get_attention_record, matching the overview-seam contract.",
+      "Verified the four source row models (TransactionAnomaliesRow, ContractReviewCandidatesRow, ContractRenewalWatchlistRow, UpcomingFixedCostsRow) already exist in report_routes.py via build_row_model over PUBLICATION_RELATIONS and match the test's ROW_MODELS names and the four SEGMENTS.",
+      "Verified _reports_read_permission derives reports.read.publication.<first-segment> so the new nested record routes automatically require the per-segment permission, making attention-only denial (403 with '<segment> permission required.') consistent with the frozen auth tests.",
+      "Verified WarehouseBusyError is handled globally as 503 with Retry-After and retry_after_seconds in warehouse_access.py, so the route contract must not broaden-catch RuntimeError/Exception and sanitize programming errors into availability responses.",
+      "Verified the frozen test's source-query observer (_observe_source_queries/_assert_observed_selection) blocks whole-source fetch, false-WHERE (1=1), inlined-literal, LIMIT-first, and scalar-only bypasses by requiring the bound opaque key, a WHERE placeholder, and full-column matching rows all equal to item_id.",
+      "Verified NULL/empty identity admission is exercised: stale/partial-NULL and empty charge_id cases assert 503 (never 200) and a forged 'upcoming__<date>' cannot resolve, while literal 'None' remains a valid opaque component (invalid_cond only matches IS NULL or '').",
+      "Verified the source never falls back in PUBLISHED mode (_resolve_source raises Unavailable when the publication store/table is absent) and the frozen test asserts warehouse reads are zero in strict-published and missing-column cases.",
+      "Verified the PG gate test_attention_record_pg_gate.py fails closed on skip-success: it selects exactly the three named slow cases, writes --junitxml to a temp dir, and rejects missing/malformed/duplicate/wrong-name/failed/skipped/errored evidence plus non-zero pytest exit codes.",
+      "Verified the gate's integration-marked non-slow wrapper is inert on import/collection (only defines a test) and requires real Docker/PG only when executed, and that command 2's -m 'integration and slow' selects only the three API cases (the wrapper lives in a separate file and is not slow-marked).",
+      "Verified the three mandatory commands are internally consistent with pytest.ini addopts (-m 'not slow'), and that canonical source fails on the genuinely missing record routes (404) rather than import/fixture/setup errors, since all frozen-test imports (create_app, to_jsonable, MockOidcIssuer, running_postgres_container, PostgresReportingStore, subscription_charge_id, MART_UPCOMING_FIXED_COSTS_30D_COLUMNS) resolve."
     ]
   },
   "author_model": "gpt-6.1-terra",
   "reviewer_model": "opencode-go/deepseek-v4-pro",
-  "intent_digest": "ea1ed67b1c9f0098d1cdfbf77e3748cda6f0a30e554419518cf232fdabfb5f39",
-  "recorded_at": "2026-11-14T08:06:50.210778+00:00",
-  "lint_problems": [
-    "adversarial review requests revision"
-  ],
+  "intent_digest": "dda41fc1857e633948040e4203bdcc738d8f3abfaa1b3ab3bb3a70b5dd769e85",
+  "recorded_at": "2026-11-14T08:51:41.489110+00:00",
+  "lint_problems": [],
   "usage": {
     "author": null,
     "reviewer": {
-      "input_tokens": 134653,
-      "output_tokens": 7171,
-      "reasoning_tokens": 29420,
-      "cache_read_tokens": 2267904,
+      "input_tokens": 128342,
+      "output_tokens": 7467,
+      "reasoning_tokens": 44536,
+      "cache_read_tokens": 2211072,
       "cache_write_tokens": 0,
       "cost_usd": 0.0,
-      "steps": 36
+      "steps": 34
     }
   },
   "mandatory_acceptance_commands": [
     "uv run --no-sync python -m pytest -q -p no:cacheprovider tests/test_attention_record_api.py",
-    "uv run --no-sync python -m pytest -q -p no:cacheprovider -m 'integration and slow' tests/test_attention_record_api.py"
+    "uv run --no-sync python -m pytest -q -p no:cacheprovider -m 'integration and slow' tests/test_attention_record_api.py",
+    "uv run --no-sync python tests/test_attention_record_pg_gate.py"
   ],
-  "prior_specification_sha256": "3e8910364f220d35c0c84e8cd1e02d31a3c3afa86ac4062dfe9a4bed7c89bbac",
+  "prior_specification_sha256": "c135d81d7a0525b15d9bf836e152d644ef30e764ea97d35f64eef7db99faacc9",
   "scope_revision": {
     "model_requested": "gpt-6.1-terra",
     "harness": "first-party API planner agent",
     "task": "/root/source_r3_qualification",
-    "proposal_sha256": "b540dc5491e4d23d69d1a79b67d716aab7675e5b620df263c47072a3c250c452",
+    "proposal_sha256": "d436cb23e893b6667b81aeea1c8549b1489017a83b20f746e8fb1c7335cf4093",
     "frozen_input_unchanged": true,
     "frozen_input_sha256": "34da78c8cb79c5ecc6d38e740c6b2ee90433dc000e6633cb3bf853aff6bb3abb",
+    "new_pg_guard_sha256": "7cc1222151c01559ef58b9ff473f73a13d0b99800ac111ca5674930e25098aad",
+    "augmentation": "first-party planner fail-closed mandatory PG gate after actual revise",
     "new_author_invocation_for_frozen_tests": false,
     "canonical_source": "30c0caf6c78d257ff5db79f42cca0b56a0f934b9",
     "original_full_api_scope_preserved": true,
     "unaccepted_reference_is_not_implementation_approval": true
   },
-  "diagnostics_root": "/tmp/lanectl-hla-api-r4-review",
+  "diagnostics_root": "/tmp/lanectl-hla-api-r4-review-r3",
   "invocation": "official specification._invoke unchanged"
 }

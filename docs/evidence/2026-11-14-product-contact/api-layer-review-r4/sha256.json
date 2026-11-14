@@ -13,7 +13,7 @@
   "gate-collection.log": "fc7dd0dd515558aebd68cca816a94452c72d0ae59b8c8d28cb9b2edfda111ec8",
   "review2-proposal.json": "084bdcf9e8a401a453e125180a21a3edafeb525e43bfce4ea2b2c512945cd6c5",
   "persistent-review-driver.py": "744888d46d39a1aae80e229d6443d7909427fa0d205c97e41430e330b3d5fc91",
-  "README.md": "5f5fefc83d20c5b1d34b7983a5e614aad5aa2c935b0632cf7d775bbe38084479",
+  "README.md": "381b7864852d5ab252cd63c52e798c1c6e465d088e28e8c563cc4522a40db3d0",
   "review2-cancelled-native-status.json": "65c7660fe0e98891df97e8471521b6f24fd08d9d50d6449759bf5ef1099348f2",
   "review2-cancelled-retention.json": "ad1ed6243ea081e7d97d9e7bf7443870a40e1ea693c6c7fb4a35354451f1de93",
   "review2-cancellation.json": "ae6f02f5b27c3ba21f6f0c4419ccae0d278c65c21082a87d753a8107fc2b348d",
@@ -30,5 +30,12 @@
   "review3-driver.py": "e349e8603c61b37e44a22e571f319d857f7bf5b5b41cb4de9165800b70d8249e",
   "ui-preparation.json": "4ed77dcd99f60158499dc11ce628ac9570f265a6b14f4bd63d7bbf1b813b6be2",
   "candidate-qualification-plan.json": "87e256cf93bbb3dcc2eed1443b369ebdb4682c25bac45ce011b891519e11fb13",
-  "guarded-publish-and-run-prepared.py": "5550c616973f1f5c64238d716ee0f8d8f73417cfaeacb5e069d996eaba1228df"
+  "guarded-publish-and-run-prepared.py": "5550c616973f1f5c64238d716ee0f8d8f73417cfaeacb5e069d996eaba1228df",
+  "review3-response-and-usage.json": "eed51bec13d41fb956e8db4b0c9b30f59ab1f61ff4650e832d1b42a922c0513c",
+  "review3-native-status.json": "41bffb92df5011321d10fc93818bf5ecaf4ccb0b027830a0b286f9f269b0603d",
+  "review3-retention.json": "ad1ed6243ea081e7d97d9e7bf7443870a40e1ea693c6c7fb4a35354451f1de93",
+  "guarded-publish-and-run-current.py": "e4f95a9b5003ab3f9d6a9ec91ea29596e00a85c3bcef8ff31a49477555aeb670",
+  "review3-specification.json": "d106e4dc1e46b7d17e9f0137da22860b3eebe3ec274e60492b0d265ddc7eb106",
+  "review3-complete-driver.log": "55bf8af13aa31df772d74a82c06b6b7123fec17a4c8f43aad7f27796257307e6",
+  "canonical-doc-advance-review.json": "f482f1281b58c7b193f107d4a6e875151c2652b796959e266e48a2c2622f6a22"
 }
