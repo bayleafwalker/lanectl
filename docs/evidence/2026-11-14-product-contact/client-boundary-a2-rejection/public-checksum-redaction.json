@@ -1,0 +1,55 @@
+{
+  "reason": "All8guardfindings were the exact hash of the public planner-frozen baseline.tokens.json. Verified each before replacing only that public checksum. No credential value/guard bypass/allowlist.",
+  "placeholder": "<public-frozen-baseline-sha256-omitted>",
+  "reconstruction": "SHA256 the bytes of ../ui-stage-contracts/baseline.tokens.json; replace placeholder bytes in redacted files and verify original_sha256. Raw originals remain under /tmp/hla-boundary-candidate-qualification-20261114. Reconstruct worker diff before applying.",
+  "records": [
+    {
+      "path": "god-class-file-size.prompt.redacted.txt",
+      "original_sha256": "3b8459b92f862f4fb646e3e39e9cd634d47523bc1860ead948b5bdfc4d10a530",
+      "redacted_sha256": "c30020e1b6b96b1ecf3eb8ef7aed85457e4c47dc803df75ddadc10372b41d89c",
+      "occurrences": 1
+    },
+    {
+      "path": "pack-boundary.prompt.redacted.txt",
+      "original_sha256": "ec6f7a22a529e490fbbb4ace30d1319b1fe344632db59f17e107539a29e90179",
+      "redacted_sha256": "ff8f96d53784c252ab2ba47d2550b3ee969f074eafaebc981fb37143a98c64ff",
+      "occurrences": 1
+    },
+    {
+      "path": "repetition-vs-abstraction.prompt.redacted.txt",
+      "original_sha256": "ee3b56173f328a27df38bf6bc481a397f86d68d0256d01afae09bd492b8d1a7c",
+      "redacted_sha256": "b8e2041ec264925c6c3e8642ed259b487a97d767d7c179c3f3ae72ea39d2470a",
+      "occurrences": 1
+    },
+    {
+      "path": "semantic-ownership.prompt.redacted.txt",
+      "original_sha256": "53623a9e7acded341e22350cfbb174eca33da400b876751296950ef1e1268dda",
+      "redacted_sha256": "21d2f15baef46e665e2e1df05e0a36d64bfe98eb387b036ea3a5a7b5992d37e7",
+      "occurrences": 1
+    },
+    {
+      "path": "stratum-coherence.prompt.redacted.txt",
+      "original_sha256": "1db800dba682197da647c8733b8374d5420c8805c45e6f3c62c73e80f5dd99ea",
+      "redacted_sha256": "1d05e8438f35355e72345dc5cae85d15b1cffe997f38aca21c76bf39cfd49925",
+      "occurrences": 1
+    },
+    {
+      "path": "suppression-drift.prompt.redacted.txt",
+      "original_sha256": "e95ff2ea7252dea6fd4c205500c680a5141940d04f393b41e05416f50fef04fe",
+      "redacted_sha256": "6ecbc73c64c4d230fd5fc4bf63cee7dbcf8448323ee81c348bb3509c10cf8e31",
+      "occurrences": 1
+    },
+    {
+      "path": "test-quality.prompt.redacted.txt",
+      "original_sha256": "daed1a4130b30555541a354efa843f95bd3ab18acb8f12830202be3a8b182f04",
+      "redacted_sha256": "77a5e95760db64fd4bf846742596ab3748a9eb9ea603fa81f99eec50815d66bf",
+      "occurrences": 1
+    },
+    {
+      "path": "worker.redacted.diff",
+      "original_sha256": "b0cf6457243ca4c69c7799c55e81cf5207ab93dc960c3e26a5d125c75900cb68",
+      "redacted_sha256": "90bfaec8c453acd9bc3b75c2144ac8cc180b027a4c502ba20f9e5c14d9897de6",
+      "occurrences": 1
+    }
+  ]
+}

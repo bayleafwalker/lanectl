@@ -1,0 +1,75 @@
+[
+  {
+    "data": {
+      "attempt_id": "hla-attention-client-boundary-a2",
+      "base_sha": "b2d0fe393ac0971e906cce275e91f45e94422593",
+      "branch": "lane/hla-attention-client-boundary-a2",
+      "lane": "implement",
+      "lane_digest": "sha256:7bd3d1f327b84636",
+      "lane_revision": 3,
+      "model": "opencode-go/deepseek-v4.1-flash",
+      "release_revision": 2,
+      "runner_process": {
+        "boot_id": "bd59e4fd-e182-4b3a-aa2e-b78ebef31fa6",
+        "host": "workstation",
+        "machine_id": "e681b85141f226386e176a1de00fcc3ab4546197d3aa937aad606d73ce133a5b",
+        "pid": 1606087,
+        "start_ticks": "4046575"
+      },
+      "worker": "opencode",
+      "worker_unit": "lanectl-attempt-f136cdc07779b091d28d8088.service"
+    },
+    "item_id": "hla-attention-client-boundary",
+    "schema": "lanectl.event/v1",
+    "ts": "2026-11-14T17:09:36Z",
+    "type": "item.claimed"
+  },
+  {
+    "data": {
+      "attempt_id": "hla-attention-client-boundary-a2",
+      "elapsed_s": 747.2,
+      "escalation_reason": null,
+      "exit_code": 0,
+      "final_tail": "dation.\n- `apps/web/frontend/lib/attention-record.ts` \u2014 typed per-kind record reader using `backendRequest`, literal generated record paths, pre-request kind/key validation, status mapping, redirect outside catch, sanitized failures, and strict public-row envelope/field validation with order/duplicate/partial/null preservation.\n- `apps/web/frontend/ui-contracts/attention-current-report/` \u2014 copied frozen style triplet unchanged (84 lines, hashes verified: `fb195a7c\u2026`, `ce1a7d8a\u2026`, `603153cf\u2026`).\n- `tests/test_attention_record_client_boundary.py` \u2014 independent compiled in-process regression harness covering codec edge cases, invalid no-fetch behavior, exact paths, success preservation, status/retry mapping, redirect propagation, and sanitized failures; plus frozen-triplet hash checks.\n- `docs/notes/attention-record-client-boundary.md` \u2014 boundary scope, non-goals, and frozen-style provenance.\n\n`backend.ts` and all out-of-scope paths are untouched.\n\n## Verification\n- `uv run --no-sync python tests/test_attention_record_boundary_acceptance.py` \u2192 8 passed, no skips.\n- Worker regression tests \u2192 2 passed.\n- `tsc --noEmit` \u2192 passed.\n- `make web-codegen-check web-token-check web-contracts-check web-typecheck` \u2192 passed.\n- `make web-build` \u2192 passed.\n- Ruff check/format on the new Python test \u2192 passed.\n\n## Line budget\n`git diff HEAD --shortstat`: **663 insertions, 0 deletions** \u2014 under the 700 limit with a 37-line margin, including the 84 frozen contract lines.\n\nDISPATCH_OUTCOME: COMPLETED",
+      "head_sha": "eff30fe4f4d832eb48f2eb96f619037d21c5c414",
+      "isolation_breach": false,
+      "main_changed": false,
+      "outcome": "done",
+      "seed_sha": "d25fbe193f35a33d097f0c90776bd28ce578caaa"
+    },
+    "item_id": "hla-attention-client-boundary",
+    "schema": "lanectl.event/v1",
+    "ts": "2026-11-14T17:22:05Z",
+    "type": "attempt.finished"
+  },
+  {
+    "data": {
+      "attempt_id": "hla-attention-client-boundary-a2",
+      "by": "gates",
+      "decision": "candidate",
+      "reasons": [
+        "all gates passed"
+      ],
+      "rules_revision": "decision-rules/v3"
+    },
+    "item_id": "hla-attention-client-boundary",
+    "schema": "lanectl.event/v1",
+    "ts": "2026-11-14T17:22:39Z",
+    "type": "decision.recorded"
+  },
+  {
+    "data": {
+      "attempt_id": "hla-attention-client-boundary-a2",
+      "by": "integrator",
+      "decision": "parked",
+      "reasons": [
+        "MODEL-ERROR: Whole UTF-8 identity violated. Exact eff30 Node20 and Chromium probes: U+FEFF+a encodes 77u_YQ but decodes a; U+FEFF-only encodes 77u_ but decodes null. Preserve the leading BOM as data. Node/browser evidence is retained; criteria, revision2 and M700/max2/2700 are unchanged. Park while repairing the measured missing-retry-feedback path; no source adoption or integrator class relabel."
+      ],
+      "rules_revision": "integrator"
+    },
+    "item_id": "hla-attention-client-boundary",
+    "schema": "lanectl.event/v1",
+    "ts": "2026-11-14T17:34:25Z",
+    "type": "decision.recorded"
+  }
+]

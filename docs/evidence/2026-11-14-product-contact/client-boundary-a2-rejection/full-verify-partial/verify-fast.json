@@ -1,0 +1,10 @@
+{
+  "source_sha": "eff30fe4f4d832eb48f2eb96f619037d21c5c414",
+  "isolation": "namespace",
+  "command": "PATH=/nix/store/71c91xjkcj07khl9imgmgji5wzrxwy65-gnumake-4.4.1/bin:/projects/dev/homelab-analytics/.tooling/node-v20.20.1-linux-x64/bin:\"$PATH\" XDG_RUNTIME_DIR=/run/user/1000 DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus PW_TEST_CONNECT_WS_ENDPOINT=ws://127.0.0.1:34283/ make verify-fast",
+  "elapsed_s": 254.23,
+  "returncode": 0,
+  "stdout": ".venv/bin/python -m ruff check .\nAll checks passed!\n.venv/bin/python -m mypy apps packages\nSuccess: no issues found in 402 source files\n.venv/bin/python -m pytest -q -m \"not slow\"\n........................................................................ [  2%]\n........................................................................ [  5%]\n........................................................................ [  7%]\n........................................................................ [ 10%]\n................................................................................................ [ 13%]\n........................................................................ [ 16%]\n........................................................................ [ 19%]\n........................................................................ [ 21%]\n......................................",
+  "stderr": "make: *** [Makefile:86: test-fast] Terminated\n",
+  "browser": "Playwright1.59.1 Ubuntu noble, unchanged snapshots/tolerances"
+}

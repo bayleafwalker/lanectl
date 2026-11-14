@@ -1,0 +1,739 @@
+Independently review ONLY the immutable worker diff below (seed d25fbe193f35a33d097f0c90776bd28ce578caaa, candidate eff30fe4f4d832eb48f2eb96f619037d21c5c414). Planner acceptance is in seed and is not worker diff. This is a public frontend typed reader/codec prerequisite, not the four-kind UI. Requirements: exact UTF-8 canonical key, authorized four generated API row contracts, status before error body, strict envelope/field scalar validation, no warehouse fallback, invented fields, decimal coercion, or suppressed auth. Full UI remains required. Product intention: docs/product/core-household-operating-picture.md and docs/plans/kotona-operating-picture-brief.md. Follow the selected specialist prompt exactly. Review source and references with Read/Grep/Glob as useful. Output ONLY a JSON array of findings with severity (blocker/advisory/watchlist), file, line, finding, evidence, recommendation, blocker (boolean). Return [] if none. State any missing evidence in a finding. Do not modify files or run commands.
+
+SELECTED SPECIALIST PROMPT:
+---
+specialist: repetition-vs-abstraction
+---
+
+## Scope
+
+Identify duplicated behavior that should become a shared helper. Prioritize parallel
+SQLite/PostgreSQL adapter implementations under `packages/storage/`, additions to the
+legacy `packages/pipelines/` re-export facade, and copy-pasted blocks of ten or more
+lines across product packs or surface modules.
+
+## References
+
+- `docs/architecture/pipeline-ambiguity-classification.md`
+- Existing helpers in `packages/shared/` and `packages/platform/`
+
+Structural import tests do not detect behavioral duplication. Flag new near-identical
+backend methods without a backend-agnostic extraction, new star re-exports, or imports
+from a legacy re-export rather than a canonical implementation path.
+
+## Severity guidance
+
+- `blocker`: a new `from ... import *  # noqa: F403` in the facade cluster, or
+  new code depends on a known re-export path.
+- `advisory`: a parallel backend pair grows without extraction, or duplicate logic
+  crosses pack boundaries.
+- `watchlist`: unchanged pre-existing duplication.
+
+Return `[]` when no findings apply.
+
+WORKER DIFF:
+diff --git a/apps/web/frontend/lib/attention-key.ts b/apps/web/frontend/lib/attention-key.ts
+new file mode 100644
+index 0000000..353ef9d
+--- /dev/null
++++ b/apps/web/frontend/lib/attention-key.ts
+@@ -0,0 +1,135 @@
++// Attention item route-key codec.
++//
++// This module is intentionally dependency-free: the same module must run in Next
++// server code, the browser, and a bare Node 20 process. The key is the
++// canonical unpadded base64url encoding of every UTF-8 byte of the whole
++// attention item identity. There is no prefix, split, separator, or case
++// folding; callers must not infer identity from the key.
++
++export const ATTENTION_RECORD_KINDS: readonly [
++  "anomaly",
++  "upcoming_cost",
++  "contract_review",
++  "contract_renewal"
++] = ["anomaly", "upcoming_cost", "contract_review", "contract_renewal"];
++
++export type AttentionRecordKind = (typeof ATTENTION_RECORD_KINDS)[number];
++
++const ALPHABET =
++  "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
++
++export function isAttentionRecordKind(
++  value: unknown
++): value is AttentionRecordKind {
++  return (
++    typeof value === "string" &&
++    (ATTENTION_RECORD_KINDS as readonly string[]).includes(value)
++  );
++}
++
++function assertEncodableText(value: unknown): asserts value is string {
++  if (typeof value !== "string") {
++    throw new TypeError("Attention key input must be a string");
++  }
++  if (value.length === 0) {
++    throw new TypeError("Attention key input must not be empty");
++  }
++  for (let index = 0; index < value.length; index += 1) {
++    const unit = value.charCodeAt(index);
++    if (unit >= 0xd800 && unit <= 0xdbff) {
++      const next = value.charCodeAt(index + 1);
++      if (!(next >= 0xdc00 && next <= 0xdfff)) {
++        throw new TypeError("Attention key input contains an unpaired surrogate");
++      }
++      index += 1;
++    } else if (unit >= 0xdc00 && unit <= 0xdfff) {
++      throw new TypeError("Attention key input contains an unpaired surrogate");
++    }
++  }
++}
++
++function encodeBytes(bytes: Uint8Array): string {
++  let output = "";
++  for (let index = 0; index < bytes.length; index += 3) {
++    const first = bytes[index] as number;
++    const second = bytes[index + 1];
++    const third = bytes[index + 2];
++    output += ALPHABET.charAt(first >> 2);
++    if (second === undefined) {
++      output += ALPHABET.charAt((first & 3) << 4);
++      break;
++    }
++    output += ALPHABET.charAt(((first & 3) << 4) | (second >> 4));
++    if (third === undefined) {
++      output += ALPHABET.charAt((second & 15) << 2);
++      break;
++    }
++    output += ALPHABET.charAt(((second & 15) << 2) | (third >> 6));
++    output += ALPHABET.charAt(third & 63);
++  }
++  return output;
++}
++
++function sextet(character: string): number {
++  return ALPHABET.indexOf(character);
++}
++
++export function encodeAttentionKey(itemId: string): string {
++  assertEncodableText(itemId);
++  const bytes = new TextEncoder().encode(itemId);
++  return encodeBytes(bytes);
++}
++
++function decodeBytes(key: string): Uint8Array | null {
++  const remainder = key.length % 4;
++  if (remainder === 1) {
++    return null;
++  }
++  const bytes: number[] = [];
++  let index = 0;
++  while (index + 4 <= key.length) {
++    const a = sextet(key.charAt(index));
++    const b = sextet(key.charAt(index + 1));
++    const c = sextet(key.charAt(index + 2));
++    const d = sextet(key.charAt(index + 3));
++    if (a < 0 || b < 0 || c < 0 || d < 0) {
++      return null;
++    }
++    bytes.push((a << 2) | (b >> 4), ((b & 15) << 4) | (c >> 2), ((c & 3) << 6) | d);
++    index += 4;
++  }
++  if (remainder === 2) {
++    const a = sextet(key.charAt(index));
++    const b = sextet(key.charAt(index + 1));
++    if (a < 0 || b < 0 || (b & 15) !== 0) {
++      return null;
++    }
++    bytes.push((a << 2) | (b >> 4));
++  } else if (remainder === 3) {
++    const a = sextet(key.charAt(index));
++    const b = sextet(key.charAt(index + 1));
++    const c = sextet(key.charAt(index + 2));
++    if (a < 0 || b < 0 || c < 0 || (c & 3) !== 0) {
++      return null;
++    }
++    bytes.push((a << 2) | (b >> 4), ((b & 15) << 4) | (c >> 2));
++  }
++  return Uint8Array.from(bytes);
++}
++
++export function decodeAttentionKey(key: unknown): string | null {
++  if (typeof key !== "string" || key.length === 0) {
++    return null;
++  }
++  const bytes = decodeBytes(key);
++  if (bytes === null) {
++    return null;
++  }
++  let decoded: string;
++  try {
++    decoded = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
++  } catch {
++    return null;
++  }
++  return decoded.length === 0 ? null : decoded;
++}
+diff --git a/apps/web/frontend/lib/attention-record.ts b/apps/web/frontend/lib/attention-record.ts
+new file mode 100644
+index 0000000..9c44ce7
+--- /dev/null
++++ b/apps/web/frontend/lib/attention-record.ts
+@@ -0,0 +1,249 @@
++// Authenticated per-record client for the four household attention kinds.
++//
++// This module is the transport boundary only: it validates the route key,
++// issues exactly one source-authorized GET, maps status codes to a small
++// discriminated result, and validates the public row envelope. It does not
++// render, rank, aggregate, or derive prices, currencies, or recommendations.
++
++import { redirect } from "next/navigation";
++
++import type { components } from "../generated/api";
++import {
++  decodeAttentionKey,
++  isAttentionRecordKind,
++  type AttentionRecordKind
++} from "./attention-key";
++import { backendRequest } from "./backend";
++
++export type AttentionPublicRows = {
++  anomaly: components["schemas"]["TransactionAnomaliesRow"];
++  upcoming_cost: components["schemas"]["UpcomingFixedCostsRow"];
++  contract_review: components["schemas"]["ContractReviewCandidatesRow"];
++  contract_renewal: components["schemas"]["ContractRenewalWatchlistRow"];
++};
++
++export type AttentionSafeRow<T> = { [P in keyof T]?: T[P] | null };
++
++export type AttentionRecordResult<
++  K extends AttentionRecordKind = AttentionRecordKind
++> =
++  | {
++      [P in K]: {
++        status: "ok";
++        kind: P;
++        item_id: string;
++        rows: AttentionSafeRow<AttentionPublicRows[P]>[];
++      };
++    }[K]
++  | { status: "invalid" | "denied" | "not_found" }
++  | { status: "unavailable"; retryAfter: string | null };
++
++type Failure =
++  | { status: "invalid" | "denied" | "not_found" }
++  | { status: "unavailable"; retryAfter: string | null };
++
++type ReadOutcome<T> =
++  | { status: "ok"; rows: AttentionSafeRow<T>[] }
++  | Failure;
++
++type FieldKind = "string" | "number";
++type RowShape<T> = { readonly [P in keyof Required<T>]: FieldKind };
++
++const SHAPES: { readonly [K in AttentionRecordKind]: RowShape<AttentionPublicRows[K]> } = {
++  anomaly: {
++    amount: "string",
++    anomaly_reason: "string",
++    anomaly_type: "string",
++    booking_date: "string",
++    counterparty_name: "string",
++    direction: "string",
++    transaction_id: "string"
++  },
++  upcoming_cost: {
++    charge_id: "string",
++    confidence: "string",
++    contract_name: "string",
++    currency: "string",
++    expected_amount: "string",
++    expected_date: "string",
++    frequency: "string",
++    provider: "string"
++  },
++  contract_review: {
++    contract_id: "string",
++    currency: "string",
++    current_price: "string",
++    market_reference: "string",
++    provider: "string",
++    reason: "string",
++    score: "number",
++    utility_type: "string"
++  },
++  contract_renewal: {
++    contract_duration_days: "number",
++    contract_id: "string",
++    contract_name: "string",
++    currency: "string",
++    current_price: "string",
++    days_until_renewal: "number",
++    provider: "string",
++    renewal_date: "string",
++    utility_type: "string"
++  }
++};
++
++const HTTP_DATE =
++  /^(Mon|Tue|Wed|Thu|Fri|Sat|Sun), \d{2} (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) \d{4} \d{2}:\d{2}:\d{2} GMT$/;
++
++function protocolError(): Error {
++  return new Error("Attention record response was not valid");
++}
++
++function isRecord(value: unknown): value is Record<string, unknown> {
++  return typeof value === "object" && value !== null && !Array.isArray(value);
++}
++
++function isSafeRow<T>(
++  value: unknown,
++  shape: RowShape<T>
++): value is AttentionSafeRow<T> {
++  if (!isRecord(value)) {
++    return false;
++  }
++  const fields = shape as Readonly<Record<string, FieldKind>>;
++  for (const [field, raw] of Object.entries(value)) {
++    if (!Object.prototype.hasOwnProperty.call(fields, field)) {
++      return false;
++    }
++    if (raw === null) {
++      continue;
++    }
++    if (typeof raw !== fields[field]) {
++      return false;
++    }
++  }
++  return true;
++}
++
++function retryAfterHeader(response: Response): string | null {
++  const value = response.headers.get("retry-after");
++  if (value === null) {
++    return null;
++  }
++  if (/^[0-9]+$/.test(value)) {
++    return value;
++  }
++  if (HTTP_DATE.test(value) && !Number.isNaN(Date.parse(value))) {
++    return value;
++  }
++  return null;
++}
++
++async function parseRows<T>(
++  response: Response,
++  itemId: string,
++  shape: RowShape<T>
++): Promise<AttentionSafeRow<T>[]> {
++  let payload: unknown;
++  try {
++    payload = await response.json();
++  } catch {
++    throw protocolError();
++  }
++  if (!isRecord(payload)) {
++    throw protocolError();
++  }
++  const keys = Object.keys(payload);
++  if (
++    keys.length !== 2 ||
++    !Object.prototype.hasOwnProperty.call(payload, "item_id") ||
++    !Object.prototype.hasOwnProperty.call(payload, "rows")
++  ) {
++    throw protocolError();
++  }
++  if (payload.item_id !== itemId || !Array.isArray(payload.rows)) {
++    throw protocolError();
++  }
++  for (const row of payload.rows) {
++    if (!isSafeRow<T>(row, shape)) {
++      throw protocolError();
++    }
++  }
++  return payload.rows as AttentionSafeRow<T>[];
++}
++
++async function settle<T>(
++  request: () => Promise<Response>,
++  itemId: string,
++  shape: RowShape<T>
++): Promise<ReadOutcome<T>> {
++  let response: Response;
++  try {
++    response = await request();
++  } catch {
++    throw protocolError();
++  }
++  if (response.status === 401) {
++    redirect("/login");
++  }
++  if (response.status === 403) {
++    return { status: "denied" };
++  }
++  if (response.status === 404) {
++    return { status: "not_found" };
++  }
++  if (response.status === 503) {
++    return { status: "unavailable", retryAfter: retryAfterHeader(response) };
++  }
++  if (response.status !== 200) {
++    throw protocolError();
++  }
++  return { status: "ok", rows: await parseRows<T>(response, itemId, shape) };
++}
++
++async function readAttentionRecord(
++  kind: AttentionRecordKind,
++  itemId: string
++): Promise<AttentionRecordResult> {
++  const params = { params: { path: { item_id: itemId } } };
++  switch (kind) {
++    case "anomaly": {
++      const o = await settle(() => backendRequest("get", "/reports/transaction-anomalies/records/{item_id}", params), itemId, SHAPES.anomaly);
++      return o.status === "ok" ? { status: "ok", kind, item_id: itemId, rows: o.rows } : o;
++    }
++    case "upcoming_cost": {
++      const o = await settle(() => backendRequest("get", "/reports/upcoming-fixed-costs/records/{item_id}", params), itemId, SHAPES.upcoming_cost);
++      return o.status === "ok" ? { status: "ok", kind, item_id: itemId, rows: o.rows } : o;
++    }
++    case "contract_review": {
++      const o = await settle(() => backendRequest("get", "/reports/contract-review-candidates/records/{item_id}", params), itemId, SHAPES.contract_review);
++      return o.status === "ok" ? { status: "ok", kind, item_id: itemId, rows: o.rows } : o;
++    }
++    case "contract_renewal": {
++      const o = await settle(() => backendRequest("get", "/reports/contract-renewal-watchlist/records/{item_id}", params), itemId, SHAPES.contract_renewal);
++      return o.status === "ok" ? { status: "ok", kind, item_id: itemId, rows: o.rows } : o;
++    }
++  }
++}
++
++export function getAttentionRecord<K extends AttentionRecordKind>(
++  kind: K,
++  routeKey: string
++): Promise<AttentionRecordResult<K>>;
++export function getAttentionRecord(
++  kind: unknown,
++  routeKey: unknown
++): Promise<AttentionRecordResult>;
++export async function getAttentionRecord(
++  kind: unknown,
++  routeKey: unknown
++): Promise<AttentionRecordResult> {
++  if (!isAttentionRecordKind(kind)) {
++    return { status: "invalid" };
++  }
++  const itemId = decodeAttentionKey(routeKey);
++  if (itemId === null) {
++    return { status: "invalid" };
++  }
++  return readAttentionRecord(kind, itemId);
++}
+diff --git a/apps/web/frontend/ui-contracts/attention-current-report/baseline.tokens.json b/apps/web/frontend/ui-contracts/attention-current-report/baseline.tokens.json
+new file mode 100644
+index 0000000..2c2903e
+--- /dev/null
++++ b/apps/web/frontend/ui-contracts/attention-current-report/baseline.tokens.json
+@@ -0,0 +1,43 @@
++{
++  "metadata": {
++    "name": "attention-current-report-existing-default-shell",
++    "status": "frozen-existing-canonical-style-reuse; no-new-human-approval-claimed",
++    "source": "apps/web/frontend/ui-contracts/default-shell/baseline.tokens.json",
++    "runtime": "apps/web/frontend/app/generated/ui-tokens.css and app/globals.css"
++  },
++  "reuse": {
++    "colors": [
++      "--bg",
++      "--paper",
++      "--ink",
++      "--muted",
++      "--line",
++      "--line-strong",
++      "--accent",
++      "--accent-warm",
++      "--accent-cool",
++      "--ok",
++      "--warn"
++    ],
++    "typography": [
++      "--font-sans",
++      "--font-serif",
++      "--font-display",
++      "--type-scale-1",
++      "--type-scale-2",
++      "--type-scale-3",
++      "--type-scale-4",
++      "--type-scale-5",
++      "--type-scale-6"
++    ],
++    "shape": [
++      "--radius-panel",
++      "--radius-pill",
++      "--shadow"
++    ],
++    "existingAttentionMetadataFont": "--retro-font-mono is used by actual attentionIndex and attentionDomain; this does not select retro shell colors",
++    "layout": "existing panel section, sectionHeader, attentionList and attentionRow: 32px 1fr auto, 14px gap and vertical padding, line border; adapt narrow widths using existing responsive conventions",
++    "motion": "existing 120ms ease interactive transitions and prefers-reduced-motion rule",
++    "values": "The referenced tracked default-shell baseline is the value authority; no duplicate token definitions or alternate retro palette."
++  }
++}
+diff --git a/apps/web/frontend/ui-contracts/attention-current-report/intent.md b/apps/web/frontend/ui-contracts/attention-current-report/intent.md
+new file mode 100644
+index 0000000..80ee402
+--- /dev/null
++++ b/apps/web/frontend/ui-contracts/attention-current-report/intent.md
+@@ -0,0 +1,9 @@
++# Operating Picture: current attention records
++
++Status: frozen existing-style contract, derived from the operator's accepted HLA #1593 intent; not a claim of new human review or approval. Tracked and frozen under existing root-owned work; native implementation copies these contracts to the application repository first. Canonical prerequisite: `b2d0fe393ac0971e906cce275e91f45e94422593`, after all four PR85 CI jobs passed.
++
++A household operator needs to find the most urgent current finance and utility matters, open one distinct record, and understand the facts the authorized source publication actually provides. The queue is compact (eight records), calm and information-dense, with a clear priority label and a direct, keyboard-operable destination. Detail uses the existing default Operating Picture shell and visual language: warm paper, restrained dividers, readable labels, and source facts grouped into rows. Preserve the existing typography, spacing and motion; do not introduce an alternate visual direction, font, dependency, icons, or a shell redesign.
++
++Label queue and detail “Current report”; the cashflow month refers to cashflow alone. A current report is not a claim of today's observation, freshness, or history. Do not imply a recommendation, savings, aggregated component price, invented currency, or deletion. Missing values say “Unknown”. Status messages distinguish access denied, absent from the current report, and temporarily unavailable. Existing login redirect is preserved. Each source row remains visible, even when identities coincide. The queue may say no items only when a successful feed is empty; unavailable is never all clear.
++
++A malformed or missing feed rows array is an error, not a successful empty report. Valid JSON unknown-severity scenarios and pure-transform NaN controls remain distinct.
+diff --git a/apps/web/frontend/ui-contracts/attention-current-report/ui-contract.yaml b/apps/web/frontend/ui-contracts/attention-current-report/ui-contract.yaml
+new file mode 100644
+index 0000000..c9a8611
+--- /dev/null
++++ b/apps/web/frontend/ui-contracts/attention-current-report/ui-contract.yaml
+@@ -0,0 +1,32 @@
++version: 1
++status: frozen-existing-style-reuse
++intent: intent.md
++baseline: baseline.tokens.json
++surface: Operating Picture current report and individual record
++primitives:
++  AttentionQueue:
++    inputs: current attention rows with whole item_id, item_type, severity, title, detail, source_domain
++    behavior: stable severity 3 urgent, 2 soon, 1 watch, all other values unknown neutral; rank before limiting to eight
++    semantics: heading and ordered list; each supported row has a descriptive, keyboard-focusable link to its own detail
++    styling: existing panel section, attentionRow, Pill and inlineLink; no new palette
++  AttentionRecord:
++    inputs: kind and typed item_id plus all public source rows
++    behavior: render every returned row independently, preserving per-row prices and null as Unknown
++    semantics: heading, labeled facts and a return link; no color-only state
++    styling: AppShell, existing panels, typography and status primitives
++  RecordState:
++    states: [loading, denied, absent-from-current-report, unavailable, unexpected-error]
++    behavior: 401 redirects to login; 403, 404, 503 have distinct safe copy; 500 reaches generic error handling; no fallback source read
++    semantics: accessible heading and readable explanation without source facts
++scenarios:
++  - mixed unsorted more-than-eight valid JSON rows, stable ties, all valid priorities and unknown severities, correct top eight; NaN only at pure-transform boundary
++  - same-kind distinct records and slash/underscore whole keys, click and direct load through Next and real API
++  - all four kinds, every public component row and nullable facts, no invented labels or aggregation
++  - successful valid empty feed; unavailable and malformed/missing/non-array rows are not empty
++  - authenticated denied, unknown same and cross kind, source unavailable, busy 503 Retry-After, unauthenticated, unexpected 500
++  - long and unusual text, overflow, narrow mobile, keyboard navigation, reduced motion, screen-reader names
++validation:
++  - independent frozen pytest-compatible behavior suite plus actual Next and real backend positive tests
++  - controlled server-side transport for ranking and error branches, recorded separately from real-backend evidence
++  - Storybook states, browser accessibility and visual regression, existing 55 checks with matched Ubuntu Playwright 1.59.1
++  - targeted tests, typecheck and make verify-fast; exercise negative controls
+diff --git a/docs/notes/attention-record-client-boundary.md b/docs/notes/attention-record-client-boundary.md
+new file mode 100644
+index 0000000..11f629a
+--- /dev/null
++++ b/docs/notes/attention-record-client-boundary.md
+@@ -0,0 +1,11 @@
++# Attention Record Client Boundary
++
++**Status:** Prerequisite implemented; full UI #1593 remains open.
++
++`lib/attention-key.ts` is a dependency-free route-key codec: canonical unpadded base64url over the complete UTF-8 bytes of a whole attention item identity. Empty, non-string, unpaired-surrogate, padding, impossible-length, noncanonical tail-bit, and invalid-UTF-8 inputs are rejected; decoded keys return the exact original string.
++
++`lib/attention-record.ts` reads one authenticated record for each of the four kinds (`anomaly`, `upcoming_cost`, `contract_review`, `contract_renewal`). It validates kind and key before any request, so invalid values return `invalid` with zero fetches. Each kind uses exactly one generated literal record GET path. Status mapping is fixed: 401 redirects to `/login`, 403 `denied`, 404 `not_found`, 503 `unavailable` with a validated `retryAfter` (nonnegative delta-seconds or HTTP-date, otherwise null), and any other status or transport failure a sanitized thrown error. Error bodies are never read or copied.
++
++A 200 envelope must contain exactly `item_id` and `rows`, with the returned ID equal to the decoded whole ID and every row limited to the generated public row fields and scalar types. Missing and null fields pass through; extra fields, wrong scalar types, malformed JSON, and wrong IDs fail closed. Row order, duplicates, and declared fields are preserved; `rows: []` passes through and is not evidence of existence beyond API authority.
++
++Non-goals: feed, ranking, aggregation, currency/savings derivation, recommendation, detail page, fallback source, generic endpoint, or auth bypass. `backend.ts`, API routes, generated contracts, and reporting service are unchanged. The copied `ui-contracts/attention-current-report/` triplet is frozen existing-style reuse for the future UI, not new human approval.
+diff --git a/tests/test_attention_record_client_boundary.py b/tests/test_attention_record_client_boundary.py
+new file mode 100644
+index 0000000..2a39279
+--- /dev/null
++++ b/tests/test_attention_record_client_boundary.py
+@@ -0,0 +1,184 @@
++"""Independent worker regressions for the attention record client boundary.
++
++These exercise the real TypeScript modules through a compiled in-process
++harness. Transport is synthetic here; the planner acceptance file owns the
++real Next/API integration, so this file stays a fast contract regression.
++"""
++
++from __future__ import annotations
++
++import hashlib
++import os
++import shutil
++import subprocess
++from pathlib import Path
++
++ROOT = Path(__file__).resolve().parents[1]
++WEB = ROOT / "apps/web/frontend"
++SOURCES = (WEB / "lib/attention-key.ts", WEB / "lib/attention-record.ts")
++TSC_FLAGS = (
++    "--target ES2022 --module commonjs --moduleResolution node --lib ES2022,DOM "
++    "--types node --skipLibCheck --strict --outDir out"
++).split()
++FROZEN = {
++    "intent.md": "fb195a7c65517da1c0b4781759f1f89fb636f759e90b7befca55f788e9cb1f85",
++    "baseline.tokens.json": "<public-frozen-baseline-sha256-omitted>",
++    "ui-contract.yaml": "603153cffbf78388d003a30387d4a2db63a3e4289da0e18a96fa934bc6392ee1",
++}
++
++
++def test_frozen_style_triplet_is_unchanged():
++    directory = WEB / "ui-contracts/attention-current-report"
++    for name, digest in FROZEN.items():
++        assert hashlib.sha256((directory / name).read_bytes()).hexdigest() == digest
++
++
++def node_dir() -> Path:
++    node = shutil.which("node")
++    if node:
++        return Path(node).parent
++    candidates = sorted((ROOT / ".tooling").glob("node-v20*/bin/node"))
++    assert candidates, "Node 20 is required for the client boundary regression"
++    return candidates[-1].parent
++
++
++def modules(tmp_path: Path) -> Path:
++    if (WEB / "node_modules/.bin/tsc").is_file():
++        return WEB / "node_modules"
++    deps = tmp_path / "deps"
++    deps.mkdir()
++    for name in ("package.json", "package-lock.json"):
++        shutil.copy2(WEB / name, deps / name)
++    env = dict(os.environ, PATH=str(node_dir()) + ":" + os.environ.get("PATH", ""))
++    subprocess.run(
++        ["npm", "ci", "--no-audit", "--no-fund"], cwd=deps, env=env, check=True, timeout=300
++    )
++    return deps / "node_modules"
++
++
++BACKEND = """export const state: { replies: any[]; calls: any[] } = { replies: [], calls: [] };
++export function backendRequest(_method: string, path: string, init: any): Promise<Response> {
++  state.calls.push({ path, itemId: init.params.path.item_id });
++  const reply = state.replies.shift();
++  if (!reply) return Promise.reject(new Error("no synthetic reply queued"));
++  if (reply.error) return Promise.reject(new Error("synthetic transport failure"));
++  return Promise.resolve(new Response(JSON.stringify(reply.body), { status: reply.status,
++    headers: new Headers(reply.headers || {}) }));
++}
++"""
++
++NAVIGATION_JS = """exports.redirect = (url) => {
++  const error = new Error("NEXT_REDIRECT");
++  error.digest = "NEXT_REDIRECT;replace;" + url + ";";
++  throw error;
++};
++"""
++NAVIGATION_TYPES = "export declare function redirect(url: string): never;\n"
++
++DRIVER = r"""const assert = require("node:assert/strict");
++const codec = require("./out/attention-key.js");
++const record = require("./out/attention-record.js");
++const backend = require("./out/backend.js");
++const key = (value) => Buffer.from(value, "utf8").toString("base64url");
++
++(async () => {
++  for (const value of ["x", "review_whole/雪_%", "a+b c", "\u0000é😀", "e\u0301"]) {
++    const encoded = codec.encodeAttentionKey(value);
++    assert.match(encoded, /^[A-Za-z0-9_-]+$/);
++    assert.equal(encoded, key(value));
++    assert.equal(codec.decodeAttentionKey(encoded), value);
++  }
++  for (const bad of ["", "YQ==", "YR", "a", "bad+", "_w", "wK8", "AAAA=", "A"]) {
++    assert.equal(codec.decodeAttentionKey(bad), null, bad);
++  }
++  for (const bad of ["", 7, null, {}, [], "\ud800", "\udc00", "x\ud800"]) {
++    assert.throws(() => codec.encodeAttentionKey(bad), TypeError);
++  }
++  assert.deepEqual(codec.ATTENTION_RECORD_KINDS,
++    ["anomaly", "upcoming_cost", "contract_review", "contract_renewal"]);
++  assert.equal(codec.isAttentionRecordKind("contract_review"), true);
++  assert.equal(codec.isAttentionRecordKind("other"), false);
++
++  for (const [kind, routeKey] of [["other", key("id")], ["anomaly", "YR"], [null, key("id")], ["anomaly", undefined]]) {
++    const result = await record.getAttentionRecord(kind, routeKey);
++    assert.deepEqual(result, { status: "invalid" });
++  }
++  assert.equal(backend.state.calls.length, 0);
++
++  const item = "contract_/雪_%_id";
++  const row = { contract_id: "c1", provider: "P", utility_type: "power", reason: "r",
++    current_price: "1.25", currency: "EUR", market_reference: null, score: 3 };
++  backend.state.replies = [{ status: 200, body: { item_id: item, rows: [row, row, { provider: null }] } }];
++  const ok = await record.getAttentionRecord("contract_review", key(item));
++  assert.deepEqual(ok, { status: "ok", kind: "contract_review", item_id: item, rows: [row, row, { provider: null }] });
++  assert.deepEqual(backend.state.calls, [{ path: "/reports/contract-review-candidates/records/{item_id}", itemId: item }]);
++
++  for (const [status, retry, expected] of [[403, null, { status: "denied" }], [404, null, { status: "not_found" }],
++    [503, "9", { status: "unavailable", retryAfter: "9" }],
++    [503, "Wed, 21 Oct 2015 07:28:00 GMT", { status: "unavailable", retryAfter: "Wed, 21 Oct 2015 07:28:00 GMT" }],
++    [503, "-1", { status: "unavailable", retryAfter: null }], [503, "soon", { status: "unavailable", retryAfter: null }]]) {
++    backend.state.replies = [{ status, body: { detail: "LEAK" }, headers: retry === null ? {} : { "Retry-After": retry } }];
++    assert.deepEqual(await record.getAttentionRecord("contract_review", key(item)), expected);
++  }
++
++  backend.state.replies = [{ status: 401, body: { detail: "LEAK" } }];
++  await assert.rejects(record.getAttentionRecord("contract_review", key(item)),
++    (error) => String(error.digest).endsWith("/login;"));
++
++  for (const reply of [{ status: 500, body: { detail: "LEAK" } }, { error: true },
++    { status: 200, body: { item_id: "other", rows: [] } },
++    { status: 200, body: { item_id: item, rows: [{ ...row, score: "3" }] } },
++    { status: 200, body: { item_id: item, rows: [{ ...row, extra: "LEAK" }] } },
++    { status: 200, body: { item_id: item, rows: [], extra: true } }]) {
++    backend.state.replies = [reply];
++    await assert.rejects(record.getAttentionRecord("contract_review", key(item)), (error) => {
++      assert.equal(error.message.includes("LEAK"), false);
++      assert.equal(error.message.includes(item), false);
++      return true;
++    });
++  }
++  console.log("client boundary regression ok");
++})().catch((error) => { console.error(error); process.exit(1); });
++"""
++
++
++def test_attention_boundary_codec_and_reader(tmp_path):
++    for source in SOURCES:
++        assert source.is_file(), source
++    deps = modules(tmp_path)
++    (tmp_path / "lib").mkdir()
++    (tmp_path / "generated").mkdir()
++    (tmp_path / "node_modules/next/navigation").mkdir(parents=True)
++    for source in SOURCES:
++        shutil.copy2(source, tmp_path / "lib" / source.name)
++    shutil.copy2(WEB / "generated/api.d.ts", tmp_path / "generated/api.d.ts")
++    (tmp_path / "lib/backend.ts").write_text(BACKEND)
++    (tmp_path / "node_modules/next/navigation/index.d.ts").write_text(NAVIGATION_TYPES)
++    (tmp_path / "node_modules/next/navigation/index.js").write_text(NAVIGATION_JS)
++    env = dict(os.environ, PATH=str(node_dir()) + ":" + os.environ.get("PATH", ""))
++    build = subprocess.run(
++        [
++            str(deps / ".bin/tsc"),
++            "lib/attention-key.ts",
++            "lib/attention-record.ts",
++            "--typeRoots",
++            str(deps / "@types"),
++            *TSC_FLAGS,
++        ],
++        cwd=tmp_path,
++        env=env,
++        capture_output=True,
++        text=True,
++        timeout=90,
++    )
++    assert build.returncode == 0, build.stdout + build.stderr
++    (tmp_path / "driver.cjs").write_text(DRIVER)
++    run = subprocess.run(
++        ["node", "driver.cjs"],
++        cwd=tmp_path,
++        env=dict(env, NODE_PATH=str(tmp_path / "node_modules")),
++        capture_output=True,
++        text=True,
++        timeout=60,
++    )
++    assert run.returncode == 0 and run.stdout.strip().endswith("ok"), run.stdout + run.stderr

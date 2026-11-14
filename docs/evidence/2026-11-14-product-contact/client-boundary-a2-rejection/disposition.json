@@ -1,0 +1,21 @@
+{
+  "head": "eff30fe4f4d832eb48f2eb96f619037d21c5c414",
+  "seed": "d25fbe193f35a33d097f0c90776bd28ce578caaa",
+  "worker_lines": 663,
+  "native_result": "done0; allnormalgatespassed",
+  "independent_acceptance": "8/8 no skips",
+  "supplement_statusbody": "10/10 no skips,1310trackedpaths invariant",
+  "native_selected_reviews": {
+    "count": 7,
+    "requested_model": "claude-sonnet-5-5",
+    "process_exits": 0,
+    "permission_denials": 0,
+    "blockers_found_by_those_reviewers": 0
+  },
+  "actual_blocker": "Node20 and matched Ubuntu browser actualcodec dropsleadingU+FEFF; BOM+a->a, BOM-only->null. ExactwholeUTF8identity violated.",
+  "judgment": "MODEL-ERROR; integrator parkedinvalidcandidate; no sourceadoption orclassrelabel",
+  "full_verify": "INTENTIONALLYCANCELLED at test-fast about21%; Ruff andmypy402passed, fullverify NOTpassed evenwrappercode0",
+  "cleanup": "Ownedbrowsercontainer removed/absenceverified anddetachedcheckoutremoved; no train/deploy/PR/merge",
+  "review_disposition": "Fourliteralpathbranches preservegeneratedtypecorrelation; duplicatehelperadvisorynonblocking. Worker tests3kindcoveragegaps supplementedbyfrozenall4realAPI andstatusbodycases; BOMgap remainedandisactualblocker. Frozenstylehashesindependentlymatchedrootoriginals, notworkerunanchoredspec. Rejectadvice toskipmissingdeps: mandatorynoskipsunchanged. Legacybackend/styleswatchlistunchanged.",
+  "next": "Retry-feedbacksourcegap#2901 beingfixedbeforelastnormalR2retry; sameR2criteria/M700/max2perrevision/2700. Existingrootfailurecontrol testmustpassnewactualheadNodeandbrowser."
+}

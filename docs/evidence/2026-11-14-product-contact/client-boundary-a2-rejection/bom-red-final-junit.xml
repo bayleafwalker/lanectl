@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="2" skipped="0" tests="2" time="5.437" timestamp="2026-11-14T19:32:07.871374+02:00" hostname="workstation"><testcase classname="test_bom_roundtrip" name="test_node_roundtrip" time="0.474"><failure message="AssertionError: assert {'decoded': [..._YQ', '77u_']} == {'decoded': [..._YQ', '77u_']}&#10;  &#10;  Omitting 1 identical items, use -vv to show&#10;  Differing items:&#10;  {'decoded': ['a', None]} != {'decoded': ['\ufeffa', '\ufeff']}&#10;  Use -v to get more diff">tmp_path = PosixPath('/tmp/pytest-of-bayleaf/pytest-15193/test_node_roundtrip0')
+
+    def test_node_roundtrip(tmp_path):
+        src=tmp_path/'src'; src.mkdir(); (src/'node_modules').symlink_to(f.PINNED_MODULES, target_is_directory=True)
+        import shutil
+        shutil.copy2(f.WEB/'lib/attention-key.ts',src/'attention-key.ts')
+        env=dict(os.environ,PATH=f.NODE+':'+os.environ.get('PATH',''))
+        r=subprocess.run([str(f.PINNED_MODULES/'.bin/tsc'),str(src/'attention-key.ts'),'--target','ES2022','--module','commonjs','--moduleResolution','node','--lib','ES2022,DOM','--types','node','--skipLibCheck','--outDir',str(tmp_path/'out')],cwd=src,env=env,capture_output=True,text=True)
+        assert r.returncode==0,r.stdout+r.stderr
+        js='const m=require(process.argv[1]); const v=JSON.parse(process.argv[2]); console.log(JSON.stringify({encoded:v.map(x=&gt;m.encodeAttentionKey(x)),decoded:v.map(x=&gt;m.decodeAttentionKey(m.encodeAttentionKey(x)))}))'
+        r=subprocess.run(['node','-e',js,str(tmp_path/'out/attention-key.js'),json.dumps(VALUES)],env=env,capture_output=True,text=True)
+        assert r.returncode==0,r.stderr
+        actual=json.loads(r.stdout);print('actual Node',json.dumps(actual,ensure_ascii=True),flush=True)
+&gt;       assert actual=={k:EXPECTED[k] for k in ('encoded','decoded')}
+E       AssertionError: assert {'decoded': [..._YQ', '77u_']} == {'decoded': [..._YQ', '77u_']}
+E         
+E         Omitting 1 identical items, use -vv to show
+E         Differing items:
+E         {'decoded': ['a', None]} != {'decoded': ['\ufeffa', '\ufeff']}
+E         Use -v to get more diff
+
+/tmp/hla-boundary-candidate-qualification-20261114/test_bom_roundtrip.py:32: AssertionError</failure></testcase><testcase classname="test_bom_roundtrip" name="test_browser_roundtrip" time="4.924"><failure message="AssertionError">tmp_path = PosixPath('/tmp/pytest-of-bayleaf/pytest-15193/test_browser_roundtrip0')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7a0e35f4f100&gt;
+
+    def test_browser_roundtrip(tmp_path, monkeypatch):
+        original = subprocess.run
+        def capture(*args, **kwargs):
+            result = original(*args, **kwargs)
+            command = args[0]
+            if isinstance(command, list) and len(command)&gt;1 and str(command[1]).endswith('browser.cjs'):
+                print('actual browser', result.stdout.strip(), flush=True)
+            return result
+        monkeypatch.setattr(f.subprocess, 'run', capture)
+&gt;       f.browser_codec(tmp_path, INPUTS, EXPECTED)
+
+/tmp/hla-boundary-candidate-qualification-20261114/test_bom_roundtrip.py:43: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+tmp_path = PosixPath('/tmp/pytest-of-bayleaf/pytest-15193/test_browser_roundtrip0')
+inputs = {'invalid': [], 'kinds': [], 'values': ['\ufeffa', '\ufeff']}
+expected = {'decoded': ['\ufeffa', '\ufeff'], 'encoded': ['77u_YQ', '77u_'], 'invalid': [], 'kinds': []}
+
+    def browser_codec(tmp_path, inputs, expected):
+        assert json.loads((PINNED_MODULES / 'playwright/package.json').read_text())['version'] == '1.59.1'
+        with Lab(tmp_path / 'browser-lab') as lab:
+            js = tmp_path / 'browser.cjs'
+            js.write_text('''const {chromium}=require('playwright');(async()=&gt;{const b=process.argv[2]==='local'?await chromium.launch({headless:true}):await chromium.connect(process.argv[2]);const p=await b.newPage();try{await p.goto(process.argv[3]);await p.waitForFunction(()=&gt;!!window.attentionBoundaryCodec);const r=await p.evaluate(v=&gt;{const m=window.attentionBoundaryCodec;const o={encoded:v.values.map(x=&gt;m.encodeAttentionKey(x)),decoded:v.values.map(x=&gt;m.decodeAttentionKey(m.encodeAttentionKey(x))),invalid:v.invalid.map(x=&gt;m.decodeAttentionKey(x)),kinds:v.kinds.map(x=&gt;m.isAttentionRecordKind(x))};for(const x of ["",42,null,{},[],"\\ud800","\\udc00"]){try{m.encodeAttentionKey(x);o.reject=false}catch(e){if(!(e instanceof TypeError))throw e;}}return o},JSON.parse(process.argv[4]));console.log(JSON.stringify(r));}finally{await b.close()}})().catch(e=&gt;{console.error(e);process.exit(1)});''')
+            env = dict(os.environ, PATH=NODE + ':' + os.environ.get('PATH', ''), NODE_PATH=str(PINNED_MODULES))
+            endpoint = os.environ.get('HLA_BOUNDARY_PLAYWRIGHT_WS')
+            if not endpoint:
+                preflight = subprocess.run(['node', '-e', "const {chromium}=require('playwright');chromium.launch({headless:true}).then(async b=&gt;{await b.close()}).catch(e=&gt;{console.error(e);process.exit(1)})"], env=env, text=True, capture_output=True, timeout=45)
+                if preflight.returncode == 0:
+                    endpoint = 'local'
+                else:
+                    (tmp_path / 'local-browser-preflight.log').write_text(preflight.stdout + preflight.stderr)
+            if endpoint:
+                result = subprocess.run(['node', str(js), endpoint, lab.url('/acceptance-codec'), json.dumps(inputs)], env=env, text=True, capture_output=True, timeout=60)
+                assert result.returncode == 0, result.stderr
+                assert json.loads(result.stdout) == expected
+                return
+            image = subprocess.run(['docker', 'image', 'inspect', IMAGE], capture_output=True, text=True, timeout=20)
+            assert image.returncode == 0, 'local Chromium and matched browser image unavailable'
+            browser_port = port()
+            owner = uuid.uuid4().hex
+            name = 'hla-boundary-accept-' + owner[:12]
+            cidfile = tmp_path / 'browser.cid'
+            cid = None
+            try:
+                launch = subprocess.run(['docker', 'run', '-d', '--cidfile', str(cidfile), '--name', name,
+                                         '--label', 'hla-boundary.owner=' + owner, '--network', 'host', '--ipc=host', '-v', str(PINNED_MODULES) + ':/opt/node_modules:ro',
+                                         IMAGE, 'node', '/opt/node_modules/playwright/cli.js', 'run-server',
+                                         '--host', '127.0.0.1', '--port', str(browser_port)], capture_output=True, text=True, timeout=45)
+                (tmp_path / 'browser-launch.log').write_text(launch.stdout + launch.stderr)
+                if cidfile.exists():
+                    cid = cidfile.read_text().strip()
+                assert launch.returncode == 0 and cid == launch.stdout.strip(), 'browser failed to start'
+                for _ in range(40):
+                    logs = subprocess.run(['docker', 'logs', cid], capture_output=True, text=True, timeout=20)
+                    (tmp_path / 'browser-start.log').write_text(logs.stdout + logs.stderr)
+                    if 'Listening on' in logs.stdout + logs.stderr:
+                        break
+                    time.sleep(.5)
+                else:
+                    raise AssertionError('browser startup failed')
+                env = dict(os.environ, PATH=NODE + ':' + os.environ.get('PATH', ''), NODE_PATH=str(PINNED_MODULES))
+                result = subprocess.run(['node', str(js), f'ws://127.0.0.1:{browser_port}/', lab.url('/acceptance-codec'), json.dumps(inputs)], env=env, text=True, capture_output=True, timeout=60)
+                assert result.returncode == 0, result.stderr
+&gt;               assert json.loads(result.stdout) == expected
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E               AssertionError
+
+_wt/hla-boundary-qualification-20261114/tests/test_attention_record_boundary_acceptance.py:345: AssertionError</failure></testcase></testsuite></testsuites>
