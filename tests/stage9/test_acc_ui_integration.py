@@ -66,13 +66,13 @@ def test_owner_acceptance_uses_existing_protocol_not_completed_resolution():
 def test_claim_path_never_falls_back_to_native_when_coordination_disappears(monkeypatch):
     from lanectl import runner, coordination
     calls = []
-    monkeypatch.setattr(coordination, "configured", lambda *args: None)
-    monkeypatch.setattr(runner, "_coordination_park", lambda *args: "coordination refused")
+    monkeypatch.setattr(coordination, "configured", lambda *args: calls.append("configured"))
+    monkeypatch.setattr(runner, "_coordination_park", lambda c, log, exc: str(exc))
     wrapped = runner._coordinate_execution(lambda *args: calls.append("native"))
     claim = SimpleNamespace(repo=SimpleNamespace(name="lanectl"))
     log = SimpleNamespace(read=lambda: [])
     result = wrapped(claim, log, require_coordination=True)
-    assert calls == [] and "refused" in result
+    assert calls == ["configured"] and "not configured" in result
 
 
 def test_owner_read_clock_does_not_make_a_preview_impossible_to_execute(monkeypatch):
