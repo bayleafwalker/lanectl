@@ -1,0 +1,16 @@
+{
+  "proposal.json": "3b1125d465a519b85ecb28432b475e4a5444b9d9a29afa3756d5f2ab2d7ef141",
+  "base-cli-final.log": "5cbbdb5fe0d413b295d62d56d8fce495a1c8f1d816cec7f64587e2a99ba5976c",
+  "browser-cancel-child.log": "694d98d11047313c49b3ea2178f9b114fa2ec53371e6e6faf8dfdd5a5e32f965",
+  "browser-cancel-control-final.log": "1df74fe9f7ae0afb21d3f36835131f6c22be335495f9bc893d7f9814c770ce94",
+  "browser-cancel-control.py": "4f8f466082211bdb17f69d81115f45a4734350d50560cfcb615422b76a901171",
+  "browser-cancel-ledger.json": "5b1a86d09482ea8bc70362d56a526c6fab9b2a677b092b9b968690460b3caf27",
+  "check_error_controls.py": "e1e4862c62007c37c321080956794ff235968f05ecea06c607cae85d51af59e2",
+  "check_navigation_controls.py": "96910ee627b81e36aaf3cd5639bcb13258f0a48a071c91ffb1a1c1ba396e41fa",
+  "error-controls.log": "5c3273f1cf6c5a6bd5a2f71d02e8362971ae8eae33ea357365defd3b91b358d3",
+  "force_skip.py": "0c8c0b6136836f83d12c0c360098b59dbdede6a00e424ecbd9930f3541d87069",
+  "forced-skip.log": "dd58838857a31c96f36f95b966059d45ffe28905c4debe3ca28ab72ebb22b8e1",
+  "navigation-controls.log": "b89cb53a70e6d6e11f883933d5ad1e356b192d9f5c71885a84073c51bc5fa1e9",
+  "README.md": "aa5c81c39ee75ae0353dd4dc4e73a790daab44505a3bc19af96ce914a37dc76d",
+  "files/tests/test_attention_current_ui_acceptance.py": "c87da92dfc488c8533a68e00a85c3e2575940dad75ed4cf22bc4004b3f1467e1"
+}

@@ -1,0 +1,23 @@
+stdout:
+received forced cancellation
+
+stderr:
+Traceback (most recent call last):
+  File "<string>", line 30, in <module>
+    next(generator)
+    ~~~~^^^^^^^^^^^
+  File "/tmp/hla-ui-portable-observer-preparation/base/tests/test_attention_current_ui_acceptance.py", line 234, in lab
+    launch = subprocess.run(['docker', 'run', '-d', '--cidfile', str(cidfile), '--name', name,
+                             '--label', 'hla-ui.owner=' + owner, '--network', 'host', '--ipc=host',
+                             '-v', str(modules) + ':/opt/node_modules:ro', IMAGE, 'node',
+                             '/opt/node_modules/playwright/cli.js', 'run-server', '--host', '127.0.0.1',
+                             '--port', str(browser_port)], capture_output=True, text=True, timeout=45)
+  File "<string>", line 20, in run
+    while True: time.sleep(1)
+                ~~~~~~~~~~^^^
+  File "/tmp/hla-ui-portable-observer-preparation/base/tests/test_attention_current_ui_acceptance.py", line 203, in <lambda>
+    signal.signal(sig, lambda _number, _frame: (_ for _ in ()).throw(KeyboardInterrupt()))
+                                               ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/hla-ui-portable-observer-preparation/base/tests/test_attention_current_ui_acceptance.py", line 203, in <genexpr>
+    signal.signal(sig, lambda _number, _frame: (_ for _ in ()).throw(KeyboardInterrupt()))
+KeyboardInterrupt

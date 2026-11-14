@@ -1,0 +1,2 @@
+{"cid": "f79c310f7889fdf4279733bd13a16172433bdd383b765a5de0f93a1d238bf00e", "control_birth": "3805873", "control_pgid": 1413283, "control_pid": 1413283, "label": "hla-ui.owner=6fd878a3843e42fca0c0a306718ee218", "name": "hla-attention-accept-6fd878a3843e", "next_birth": "3807874", "next_pid": 1414892}
+SIGTERM nonzero; exact CID and name absent from Docker inventory; recorded Next group absent
