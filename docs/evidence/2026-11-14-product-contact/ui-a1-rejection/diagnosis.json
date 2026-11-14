@@ -1,0 +1,25 @@
+{
+  "schema": "hla-ui-rejected-source-diagnosis/v1",
+  "recorded_at": "2026-11-14T14:49:18.781076+00:00",
+  "reviewer": "/root/hla_source_manual_review; isolated exact rejected source3685c389f5aa888a506f109d1ed01ae08b2ba898",
+  "result": "2 failed,7 deselected; no acceptance/candidate claimed",
+  "observations": [
+    "Keyboard Enter navigation raced immediate waitForLoadState(networkidle) and reload, causing netERR_ABORTED in isolated reproduction. This proves a navigation observation race, not an incorrect key and not necessarily the exact cause in the original unretained native gate output.",
+    "A real backend500 propagated Unexpected error loading attention record500 into existing generic Next app/error.js. Its safe This page could not load / Something went wrong copy can have HTTP200, while old frozen predicate requires status>=500 or error/problem/unexpected words.",
+    "A separate author comparison also observed stale report-request contamination after the premature reload; final observer fixes are being prepared only in scratch."
+  ],
+  "ownership": "Reviewer reports fixture teardown and separately verified exact captured owned browser absent from successful daemon inventory; no a2 access or product modifications.",
+  "initial_setup_attempt": "Initial sandboxed reproduction could not access Docker; escalated retry executed actual assertions. No absence inference from the first attempt.",
+  "scope": "Acceptance observer/error-copy defects do not erase native124 or776>M700. No oldsource adoption, no cap/revision/try reset; normal a2 proceeds untouched.",
+  "artifacts": [
+    {
+      "path": "diagnosis.log",
+      "sha256": "38739690af196b5bd63d3128611cb57b1831f3ce362087c87810c2f550395c9f"
+    },
+    {
+      "path": "diagnosis-junit.xml",
+      "sha256": "9027823b4b46e1f59a1e052a0bd47243b92a51e98ce9f5c261dc4b018744cdb9"
+    }
+  ],
+  "unretained_detail": "Reviewer observed the temporary Next log at /tmp/pytest-of-bayleaf/pytest-15086/attention-browser0/next.log, but it was no longer present when root archived results. Only the listed pytest log and JUnit bytes are retained; do not claim the original Next log is available."
+}
