@@ -1,0 +1,6 @@
+apps.api.app: /tmp/hla-api-a7-qualification/apps/api/app.py
+apps.api.routes.attention_record_routes: /tmp/hla-api-a7-qualification/apps/api/routes/attention_record_routes.py
+packages.domains.overview.pipelines.attention_records: /tmp/hla-api-a7-qualification/packages/domains/overview/pipelines/attention_records.py
+packages.pipelines.warehouse_session: /tmp/hla-api-a7-qualification/packages/pipelines/warehouse_session.py
+tests.test_attention_record_api: /tmp/hla-api-a7-qualification/tests/test_attention_record_api.py
+Docker + synthetic PostgreSQL SELECT 1 passed; context exited

@@ -1,0 +1,6 @@
+Traceback (most recent call last):
+  File "/tmp/hla-api-a7-full-verify.py", line 57, in <module>
+    assert 'Listening on ws://127.0.0.1:34155/' in logs, logs
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Error response from daemon: No such container: 9c72e47dc154bf2bcb4011cc071cc1149545f2d0e845629187d14611f500661e
+

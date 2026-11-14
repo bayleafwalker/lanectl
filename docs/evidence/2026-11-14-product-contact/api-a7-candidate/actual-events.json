@@ -1,0 +1,192 @@
+[
+  {
+    "data": {
+      "attempt_id": "hla-attention-records-r5-a7",
+      "base_sha": "30c0caf6c78d257ff5db79f42cca0b56a0f934b9",
+      "branch": "lane/hla-attention-records-r5-a7",
+      "lane": "implement",
+      "lane_digest": "sha256:7bd3d1f327b84636",
+      "lane_revision": 3,
+      "model": "opencode-go/deepseek-v4-pro",
+      "release_revision": 4,
+      "runner_process": {
+        "boot_id": "bd59e4fd-e182-4b3a-aa2e-b78ebef31fa6",
+        "host": "workstation",
+        "machine_id": "e681b85141f226386e176a1de00fcc3ab4546197d3aa937aad606d73ce133a5b",
+        "pid": 461785,
+        "start_ticks": "1081255"
+      },
+      "worker": "opencode",
+      "worker_unit": "lanectl-attempt-17989ac4960965a867e1e7d1.service"
+    },
+    "item_id": "hla-attention-records-r5",
+    "schema": "lanectl.event/v1",
+    "ts": "2026-11-14T08:55:22Z",
+    "type": "item.claimed"
+  },
+  {
+    "data": {
+      "amount": 11693.709090909091,
+      "attempt_id": "hla-attention-records-r5-a7",
+      "pool": "opencode-go:default",
+      "provider": "opencode",
+      "reservation_id": "res-hla-attention-records-r5-a7",
+      "unit": "output_tokens"
+    },
+    "item_id": "hla-attention-records-r5",
+    "schema": "lanectl.event/v1",
+    "ts": "2026-11-14T08:55:22Z",
+    "type": "capacity.reserved"
+  },
+  {
+    "data": {
+      "attempt_id": "hla-attention-records-r5-a7",
+      "elapsed_s": 1548.5,
+      "escalation_reason": null,
+      "exit_code": 0,
+      "final_tail": "itized). It patches `duckdb_store.connect_with_lock_retry`, never the removed `attention_records.run_on_warehouse` name.\n\n**Regenerated contracts** \u2014 `openapi.json` (+240) and `api.d.ts` (+220), in sync via `contract-export-check` and `web-codegen-check`.\n\n## Verification (all green, no skips)\n\n| Check | Result |\n|---|---|\n| Acceptance cmd 1 (`test_attention_record_api.py`) | 29 passed, 3 deselected |\n| Acceptance cmd 2 (`-m 'integration and slow'`) | 3 passed (real Docker Postgres) |\n| Acceptance cmd 3 (`test_attention_record_pg_gate.py`) | all three named cases passed without skips |\n| Docker/Postgres preflight | available + connectivity (PostgreSQL 16.15) |\n| Worker HTTP regression | 1 passed |\n| `ruff check .`, `mypy` (app.py + route), `test_architecture_contract`, `test_agent_guidance`, `test_reporting_api_app`, `test_api_warehouse_sessions`, source reader test | all pass |\n| `contract-export-check`, `web-codegen-check`, `web-contracts-check`, `web-typecheck` | all pass |\n\nFrozen files `tests/test_attention_record_api.py` and `tests/test_attention_record_pg_gate.py` are byte-for-byte unchanged. Source reader, `ReportingService`, and `report_routes.py` are untouched. No new dependencies, no skips/xfails, no auth/grants/migration changes.\n\n**Diff size:** 685 additions, 0 deletions (\u2264 M700). Temp Postgres containers cleaned up.\n\nImports were confirmed to resolve from this candidate checkout (`/projects/dev/_wt/lanes/hla-attention-records-r5-a7`), not the canonical checkout.",
+      "head_sha": "01733b1024f6b6f779282a9b1181b646c1e27db6",
+      "isolation_breach": false,
+      "main_changed": false,
+      "outcome": "done",
+      "seed_sha": "f854c21b12a1f4766a00448e188cabd07df7506d"
+    },
+    "item_id": "hla-attention-records-r5",
+    "schema": "lanectl.event/v1",
+    "ts": "2026-11-14T09:21:13Z",
+    "type": "attempt.finished"
+  },
+  {
+    "data": {
+      "attempt_id": "hla-attention-records-r5-a7",
+      "model": "opencode-go/deepseek-v4-pro",
+      "provider": "opencode",
+      "source": "adapter",
+      "units": {
+        "cache_read_tokens": 15685120,
+        "cache_write_tokens": 0,
+        "cost_usd": 0.5718741899999997,
+        "input_tokens": 267908,
+        "output_tokens": 15111,
+        "reasoning_tokens": 58971,
+        "steps": 104
+      }
+    },
+    "item_id": "hla-attention-records-r5",
+    "schema": "lanectl.event/v1",
+    "ts": "2026-11-14T09:21:13Z",
+    "type": "usage.recorded"
+  },
+  {
+    "data": {
+      "attempt_id": "hla-attention-records-r5-a7",
+      "gate": "diff-policy",
+      "passed": true,
+      "violations": []
+    },
+    "item_id": "hla-attention-records-r5",
+    "schema": "lanectl.event/v1",
+    "ts": "2026-11-14T09:24:59Z",
+    "type": "gate.result"
+  },
+  {
+    "data": {
+      "attempt_id": "hla-attention-records-r5-a7",
+      "gate": "fail-on-base",
+      "passed": true,
+      "violations": []
+    },
+    "item_id": "hla-attention-records-r5",
+    "schema": "lanectl.event/v1",
+    "ts": "2026-11-14T09:24:59Z",
+    "type": "gate.result"
+  },
+  {
+    "data": {
+      "attempt_id": "hla-attention-records-r5-a7",
+      "gate": "acceptance-on-base",
+      "passed": true,
+      "violations": []
+    },
+    "item_id": "hla-attention-records-r5",
+    "schema": "lanectl.event/v1",
+    "ts": "2026-11-14T09:24:59Z",
+    "type": "gate.result"
+  },
+  {
+    "data": {
+      "attempt_id": "hla-attention-records-r5-a7",
+      "gate": "acceptance",
+      "passed": true,
+      "violations": []
+    },
+    "item_id": "hla-attention-records-r5",
+    "schema": "lanectl.event/v1",
+    "ts": "2026-11-14T09:24:59Z",
+    "type": "gate.result"
+  },
+  {
+    "data": {
+      "attempt_id": "hla-attention-records-r5-a7",
+      "gate": "job:ruff",
+      "passed": true,
+      "violations": []
+    },
+    "item_id": "hla-attention-records-r5",
+    "schema": "lanectl.event/v1",
+    "ts": "2026-11-14T09:24:59Z",
+    "type": "gate.result"
+  },
+  {
+    "data": {
+      "attempt_id": "hla-attention-records-r5-a7",
+      "by": "gates",
+      "decision": "candidate",
+      "reasons": [
+        "all gates passed"
+      ],
+      "rules_revision": "decision-rules/v3"
+    },
+    "item_id": "hla-attention-records-r5",
+    "schema": "lanectl.event/v1",
+    "ts": "2026-11-14T09:24:59Z",
+    "type": "decision.recorded"
+  },
+  {
+    "data": {
+      "attempt_id": "hla-attention-records-r5-a7",
+      "evaluator": "rules",
+      "features": {
+        "changed_lines": 685,
+        "changed_lines_ratio": 0.9785714285714285,
+        "files_touched": 5,
+        "new_test_files": 1
+      },
+      "reasons": [],
+      "rules_revision": "evaluator/v2",
+      "verdict": "accept"
+    },
+    "item_id": "hla-attention-records-r5",
+    "schema": "lanectl.event/v1",
+    "ts": "2026-11-14T09:24:59Z",
+    "type": "evaluation.recorded"
+  },
+  {
+    "data": {
+      "attempt_id": "hla-attention-records-r5-a7",
+      "decision": "candidate",
+      "elapsed_s": 1548.5,
+      "gates_failed": [],
+      "lane_revision": 3,
+      "model": "opencode-go/deepseek-v4-pro",
+      "rules_revision": "decision-rules/v3",
+      "size": "M",
+      "task_class": "product-api",
+      "worker": "opencode"
+    },
+    "item_id": "hla-attention-records-r5",
+    "schema": "lanectl.event/v1",
+    "ts": "2026-11-14T09:24:59Z",
+    "type": "experiment.recorded"
+  }
+]

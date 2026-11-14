@@ -1,0 +1,863 @@
+diff --git a/apps/api/app.py b/apps/api/app.py
+index ec72d38..bd85709 100755
+--- a/apps/api/app.py
++++ b/apps/api/app.py
+@@ -27,6 +27,7 @@ from apps.api.routes.agent_routes import (
+     register_agent_routes,
+ )
+ from apps.api.routes.assistant_routes import register_assistant_routes
++from apps.api.routes.attention_record_routes import register_attention_record_routes
+ from apps.api.routes.auth_routes import register_auth_routes
+ from apps.api.routes.briefing_routes import register_briefing_routes
+ from apps.api.routes.category_routes import register_category_routes
+@@ -755,6 +756,11 @@ def create_app(
+         to_jsonable=to_jsonable,
+         household_timezone=resolved_household_timezone,
+     )
++    register_attention_record_routes(
++        app,
++        resolved_reporting_service=reporting_service,
++        to_jsonable=to_jsonable,
++    )
+     register_assistant_routes(
+         app,
+         capability_packs=container.capability_packs,
+diff --git a/apps/api/routes/attention_record_routes.py b/apps/api/routes/attention_record_routes.py
+new file mode 100644
+index 0000000..763e363
+--- /dev/null
++++ b/apps/api/routes/attention_record_routes.py
+@@ -0,0 +1,107 @@
++"""HTTP adapter for the four attention-record source reads.
++
++Each attention item groups one or more rows of a single source publication by
++an opaque whole-key identity (for example ``review_grid/north_above_market_average``,
++which contains a slash). These routes resolve that key through the reporting
++service's ``get_attention_record`` facade — the same source contract the
++attention UI already lists — and never re-derive identities, authority or SQL
++here.
++
++The whole key is a single path segment captured with the ``path`` converter so
++an encoded slash is carried through to the source reader intact, rather than
++being split at the first ``/`` or matched against an equal-looking prefix.
++"""
++
++from __future__ import annotations
++
++from typing import Any, Callable
++
++from fastapi import FastAPI, HTTPException
++from pydantic import BaseModel
++
++from apps.api.response_models import build_object_response_model
++from apps.api.routes.report_routes import (
++    CONTRACT_RENEWAL_WATCHLIST_ROW_MODEL,
++    CONTRACT_REVIEW_CANDIDATES_ROW_MODEL,
++    TRANSACTION_ANOMALIES_ROW_MODEL,
++    UPCOMING_FIXED_COSTS_ROW_MODEL,
++)
++from packages.domains.overview.pipelines.attention_records import (
++    AttentionRecordNotFoundError,
++    AttentionRecordUnavailableError,
++)
++from packages.pipelines.reporting_service import ReportingService
++
++
++def _record_response_model(model_name: str, row_model: Any) -> type[BaseModel]:
++    return build_object_response_model(
++        model_name,
++        {
++            "item_id": (str, ...),
++            "rows": (list[row_model], ...),
++        },
++    )
++
++
++TRANSACTION_ANOMALIES_RECORD_RESPONSE_MODEL = _record_response_model(
++    "TransactionAnomaliesRecordResponse", TRANSACTION_ANOMALIES_ROW_MODEL
++)
++CONTRACT_REVIEW_CANDIDATES_RECORD_RESPONSE_MODEL = _record_response_model(
++    "ContractReviewCandidatesRecordResponse", CONTRACT_REVIEW_CANDIDATES_ROW_MODEL
++)
++CONTRACT_RENEWAL_WATCHLIST_RECORD_RESPONSE_MODEL = _record_response_model(
++    "ContractRenewalWatchlistRecordResponse", CONTRACT_RENEWAL_WATCHLIST_ROW_MODEL
++)
++UPCOMING_FIXED_COSTS_RECORD_RESPONSE_MODEL = _record_response_model(
++    "UpcomingFixedCostsRecordResponse", UPCOMING_FIXED_COSTS_ROW_MODEL
++)
++
++
++def register_attention_record_routes(
++    app: FastAPI,
++    *,
++    resolved_reporting_service: ReportingService | None,
++    to_jsonable: Callable[[Any], Any],
++) -> None:
++    def _record(item_type: str, item_id: str) -> dict[str, Any]:
++        if resolved_reporting_service is None:
++            raise HTTPException(
++                status_code=404, detail="Attention record reads require a reporting service."
++            )
++        try:
++            rows = resolved_reporting_service.get_attention_record(item_type, item_id)
++        except AttentionRecordNotFoundError:
++            raise HTTPException(status_code=404, detail="Attention record not found.") from None
++        except AttentionRecordUnavailableError:
++            raise HTTPException(
++                status_code=503, detail="Attention record source is unavailable."
++            ) from None
++        return {"item_id": item_id, "rows": to_jsonable(rows)}
++
++    @app.get(
++        "/reports/transaction-anomalies/records/{item_id:path}",
++        response_model=TRANSACTION_ANOMALIES_RECORD_RESPONSE_MODEL,
++    )
++    async def get_transaction_anomaly_record(item_id: str) -> dict[str, Any]:
++        return _record("anomaly", item_id)
++
++    @app.get(
++        "/reports/contract-review-candidates/records/{item_id:path}",
++        response_model=CONTRACT_REVIEW_CANDIDATES_RECORD_RESPONSE_MODEL,
++    )
++    async def get_contract_review_candidate_record(item_id: str) -> dict[str, Any]:
++        return _record("contract_review", item_id)
++
++    @app.get(
++        "/reports/contract-renewal-watchlist/records/{item_id:path}",
++        response_model=CONTRACT_RENEWAL_WATCHLIST_RECORD_RESPONSE_MODEL,
++    )
++    async def get_contract_renewal_watchlist_record(item_id: str) -> dict[str, Any]:
++        return _record("contract_renewal", item_id)
++
++    @app.get(
++        "/reports/upcoming-fixed-costs/records/{item_id:path}",
++        response_model=UPCOMING_FIXED_COSTS_RECORD_RESPONSE_MODEL,
++    )
++    async def get_upcoming_fixed_cost_record(item_id: str) -> dict[str, Any]:
++        return _record("upcoming_cost", item_id)
+diff --git a/apps/web/frontend/generated/api.d.ts b/apps/web/frontend/generated/api.d.ts
+index fe7d8d2..3330973 100755
+--- a/apps/web/frontend/generated/api.d.ts
++++ b/apps/web/frontend/generated/api.d.ts
+@@ -3237,6 +3237,23 @@ export interface paths {
+         patch?: never;
+         trace?: never;
+     };
++    "/reports/contract-renewal-watchlist/records/{item_id}": {
++        parameters: {
++            query?: never;
++            header?: never;
++            path?: never;
++            cookie?: never;
++        };
++        /** Get Contract Renewal Watchlist Record */
++        get: operations["get_contract_renewal_watchlist_record_reports_contract_renewal_watchlist_records__item_id__get"];
++        put?: never;
++        post?: never;
++        delete?: never;
++        options?: never;
++        head?: never;
++        patch?: never;
++        trace?: never;
++    };
+     "/reports/contract-review-candidates": {
+         parameters: {
+             query?: never;
+@@ -3254,6 +3271,23 @@ export interface paths {
+         patch?: never;
+         trace?: never;
+     };
++    "/reports/contract-review-candidates/records/{item_id}": {
++        parameters: {
++            query?: never;
++            header?: never;
++            path?: never;
++            cookie?: never;
++        };
++        /** Get Contract Review Candidate Record */
++        get: operations["get_contract_review_candidate_record_reports_contract_review_candidates_records__item_id__get"];
++        put?: never;
++        post?: never;
++        delete?: never;
++        options?: never;
++        head?: never;
++        patch?: never;
++        trace?: never;
++    };
+     "/reports/cost-trend": {
+         parameters: {
+             query?: never;
+@@ -3577,6 +3611,23 @@ export interface paths {
+         patch?: never;
+         trace?: never;
+     };
++    "/reports/transaction-anomalies/records/{item_id}": {
++        parameters: {
++            query?: never;
++            header?: never;
++            path?: never;
++            cookie?: never;
++        };
++        /** Get Transaction Anomaly Record */
++        get: operations["get_transaction_anomaly_record_reports_transaction_anomalies_records__item_id__get"];
++        put?: never;
++        post?: never;
++        delete?: never;
++        options?: never;
++        head?: never;
++        patch?: never;
++        trace?: never;
++    };
+     "/reports/upcoming-fixed-costs": {
+         parameters: {
+             query?: never;
+@@ -3594,6 +3645,23 @@ export interface paths {
+         patch?: never;
+         trace?: never;
+     };
++    "/reports/upcoming-fixed-costs/records/{item_id}": {
++        parameters: {
++            query?: never;
++            header?: never;
++            path?: never;
++            cookie?: never;
++        };
++        /** Get Upcoming Fixed Cost Record */
++        get: operations["get_upcoming_fixed_cost_record_reports_upcoming_fixed_costs_records__item_id__get"];
++        put?: never;
++        post?: never;
++        delete?: never;
++        options?: never;
++        head?: never;
++        patch?: never;
++        trace?: never;
++    };
+     "/reports/usage-vs-price": {
+         parameters: {
+             query?: never;
+@@ -4893,6 +4961,13 @@ export interface components {
+             /** Valid To */
+             valid_to?: string | null;
+         };
++        /** ContractRenewalWatchlistRecordResponse */
++        ContractRenewalWatchlistRecordResponse: {
++            /** Item Id */
++            item_id: string;
++            /** Rows */
++            rows: components["schemas"]["ContractRenewalWatchlistRow"][];
++        };
+         /** ContractRenewalWatchlistResponse */
+         ContractRenewalWatchlistResponse: {
+             /** Rows */
+@@ -4919,6 +4994,13 @@ export interface components {
+             /** Utility Type */
+             utility_type: string;
+         };
++        /** ContractReviewCandidatesRecordResponse */
++        ContractReviewCandidatesRecordResponse: {
++            /** Item Id */
++            item_id: string;
++            /** Rows */
++            rows: components["schemas"]["ContractReviewCandidatesRow"][];
++        };
+         /** ContractReviewCandidatesResponse */
+         ContractReviewCandidatesResponse: {
+             /** Rows */
+@@ -7546,6 +7628,13 @@ export interface components {
+         TerminalExecutionResponseModel: {
+             execution: components["schemas"]["TerminalExecutionModel"];
+         };
++        /** TransactionAnomaliesRecordResponse */
++        TransactionAnomaliesRecordResponse: {
++            /** Item Id */
++            item_id: string;
++            /** Rows */
++            rows: components["schemas"]["TransactionAnomaliesRow"][];
++        };
+         /** TransactionAnomaliesResponse */
+         TransactionAnomaliesResponse: {
+             /** Rows */
+@@ -7637,6 +7726,13 @@ export interface components {
+             /** Ui Descriptors */
+             ui_descriptors: components["schemas"]["UiDescriptorContractModel"][];
+         };
++        /** UpcomingFixedCostsRecordResponse */
++        UpcomingFixedCostsRecordResponse: {
++            /** Item Id */
++            item_id: string;
++            /** Rows */
++            rows: components["schemas"]["UpcomingFixedCostsRow"][];
++        };
+         /** UpcomingFixedCostsResponse */
+         UpcomingFixedCostsResponse: {
+             /** Rows */
+@@ -14296,6 +14392,37 @@ export interface operations {
+             };
+         };
+     };
++    get_contract_renewal_watchlist_record_reports_contract_renewal_watchlist_records__item_id__get: {
++        parameters: {
++            query?: never;
++            header?: never;
++            path: {
++                item_id: string;
++            };
++            cookie?: never;
++        };
++        requestBody?: never;
++        responses: {
++            /** @description Successful Response */
++            200: {
++                headers: {
++                    [name: string]: unknown;
++                };
++                content: {
++                    "application/json": components["schemas"]["ContractRenewalWatchlistRecordResponse"];
++                };
++            };
++            /** @description Validation Error */
++            422: {
++                headers: {
++                    [name: string]: unknown;
++                };
++                content: {
++                    "application/json": components["schemas"]["HTTPValidationError"];
++                };
++            };
++        };
++    };
+     get_contract_review_candidates_reports_contract_review_candidates_get: {
+         parameters: {
+             query?: never;
+@@ -14316,6 +14443,37 @@ export interface operations {
+             };
+         };
+     };
++    get_contract_review_candidate_record_reports_contract_review_candidates_records__item_id__get: {
++        parameters: {
++            query?: never;
++            header?: never;
++            path: {
++                item_id: string;
++            };
++            cookie?: never;
++        };
++        requestBody?: never;
++        responses: {
++            /** @description Successful Response */
++            200: {
++                headers: {
++                    [name: string]: unknown;
++                };
++                content: {
++                    "application/json": components["schemas"]["ContractReviewCandidatesRecordResponse"];
++                };
++            };
++            /** @description Validation Error */
++            422: {
++                headers: {
++                    [name: string]: unknown;
++                };
++                content: {
++                    "application/json": components["schemas"]["HTTPValidationError"];
++                };
++            };
++        };
++    };
+     get_cost_trend_reports_cost_trend_get: {
+         parameters: {
+             query?: never;
+@@ -14842,6 +15000,37 @@ export interface operations {
+             };
+         };
+     };
++    get_transaction_anomaly_record_reports_transaction_anomalies_records__item_id__get: {
++        parameters: {
++            query?: never;
++            header?: never;
++            path: {
++                item_id: string;
++            };
++            cookie?: never;
++        };
++        requestBody?: never;
++        responses: {
++            /** @description Successful Response */
++            200: {
++                headers: {
++                    [name: string]: unknown;
++                };
++                content: {
++                    "application/json": components["schemas"]["TransactionAnomaliesRecordResponse"];
++                };
++            };
++            /** @description Validation Error */
++            422: {
++                headers: {
++                    [name: string]: unknown;
++                };
++                content: {
++                    "application/json": components["schemas"]["HTTPValidationError"];
++                };
++            };
++        };
++    };
+     get_upcoming_fixed_costs_reports_upcoming_fixed_costs_get: {
+         parameters: {
+             query?: never;
+@@ -14862,6 +15051,37 @@ export interface operations {
+             };
+         };
+     };
++    get_upcoming_fixed_cost_record_reports_upcoming_fixed_costs_records__item_id__get: {
++        parameters: {
++            query?: never;
++            header?: never;
++            path: {
++                item_id: string;
++            };
++            cookie?: never;
++        };
++        requestBody?: never;
++        responses: {
++            /** @description Successful Response */
++            200: {
++                headers: {
++                    [name: string]: unknown;
++                };
++                content: {
++                    "application/json": components["schemas"]["UpcomingFixedCostsRecordResponse"];
++                };
++            };
++            /** @description Validation Error */
++            422: {
++                headers: {
++                    [name: string]: unknown;
++                };
++                content: {
++                    "application/json": components["schemas"]["HTTPValidationError"];
++                };
++            };
++        };
++    };
+     get_usage_vs_price_reports_usage_vs_price_get: {
+         parameters: {
+             query?: {
+diff --git a/apps/web/frontend/generated/openapi.json b/apps/web/frontend/generated/openapi.json
+index a840ec3..176dc91 100755
+--- a/apps/web/frontend/generated/openapi.json
++++ b/apps/web/frontend/generated/openapi.json
+@@ -3482,6 +3482,27 @@
+         "title": "ContractPriceCurrentRow",
+         "type": "object"
+       },
++      "ContractRenewalWatchlistRecordResponse": {
++        "properties": {
++          "item_id": {
++            "title": "Item Id",
++            "type": "string"
++          },
++          "rows": {
++            "items": {
++              "$ref": "#/components/schemas/ContractRenewalWatchlistRow"
++            },
++            "title": "Rows",
++            "type": "array"
++          }
++        },
++        "required": [
++          "item_id",
++          "rows"
++        ],
++        "title": "ContractRenewalWatchlistRecordResponse",
++        "type": "object"
++      },
+       "ContractRenewalWatchlistResponse": {
+         "properties": {
+           "rows": {
+@@ -3557,6 +3578,27 @@
+         "title": "ContractRenewalWatchlistRow",
+         "type": "object"
+       },
++      "ContractReviewCandidatesRecordResponse": {
++        "properties": {
++          "item_id": {
++            "title": "Item Id",
++            "type": "string"
++          },
++          "rows": {
++            "items": {
++              "$ref": "#/components/schemas/ContractReviewCandidatesRow"
++            },
++            "title": "Rows",
++            "type": "array"
++          }
++        },
++        "required": [
++          "item_id",
++          "rows"
++        ],
++        "title": "ContractReviewCandidatesRecordResponse",
++        "type": "object"
++      },
+       "ContractReviewCandidatesResponse": {
+         "properties": {
+           "rows": {
+@@ -12124,6 +12166,27 @@
+         "title": "TerminalExecutionResponseModel",
+         "type": "object"
+       },
++      "TransactionAnomaliesRecordResponse": {
++        "properties": {
++          "item_id": {
++            "title": "Item Id",
++            "type": "string"
++          },
++          "rows": {
++            "items": {
++              "$ref": "#/components/schemas/TransactionAnomaliesRow"
++            },
++            "title": "Rows",
++            "type": "array"
++          }
++        },
++        "required": [
++          "item_id",
++          "rows"
++        ],
++        "title": "TransactionAnomaliesRecordResponse",
++        "type": "object"
++      },
+       "TransactionAnomaliesResponse": {
+         "properties": {
+           "rows": {
+@@ -12395,6 +12458,27 @@
+         "title": "UiDescriptorsResponse",
+         "type": "object"
+       },
++      "UpcomingFixedCostsRecordResponse": {
++        "properties": {
++          "item_id": {
++            "title": "Item Id",
++            "type": "string"
++          },
++          "rows": {
++            "items": {
++              "$ref": "#/components/schemas/UpcomingFixedCostsRow"
++            },
++            "title": "Rows",
++            "type": "array"
++          }
++        },
++        "required": [
++          "item_id",
++          "rows"
++        ],
++        "title": "UpcomingFixedCostsRecordResponse",
++        "type": "object"
++      },
+       "UpcomingFixedCostsResponse": {
+         "properties": {
+           "rows": {
+@@ -21612,6 +21696,45 @@
+         "summary": "Get Contract Renewal Watchlist"
+       }
+     },
++    "/reports/contract-renewal-watchlist/records/{item_id}": {
++      "get": {
++        "operationId": "get_contract_renewal_watchlist_record_reports_contract_renewal_watchlist_records__item_id__get",
++        "parameters": [
++          {
++            "in": "path",
++            "name": "item_id",
++            "required": true,
++            "schema": {
++              "title": "Item Id",
++              "type": "string"
++            }
++          }
++        ],
++        "responses": {
++          "200": {
++            "content": {
++              "application/json": {
++                "schema": {
++                  "$ref": "#/components/schemas/ContractRenewalWatchlistRecordResponse"
++                }
++              }
++            },
++            "description": "Successful Response"
++          },
++          "422": {
++            "content": {
++              "application/json": {
++                "schema": {
++                  "$ref": "#/components/schemas/HTTPValidationError"
++                }
++              }
++            },
++            "description": "Validation Error"
++          }
++        },
++        "summary": "Get Contract Renewal Watchlist Record"
++      }
++    },
+     "/reports/contract-review-candidates": {
+       "get": {
+         "operationId": "get_contract_review_candidates_reports_contract_review_candidates_get",
+@@ -21630,6 +21753,45 @@
+         "summary": "Get Contract Review Candidates"
+       }
+     },
++    "/reports/contract-review-candidates/records/{item_id}": {
++      "get": {
++        "operationId": "get_contract_review_candidate_record_reports_contract_review_candidates_records__item_id__get",
++        "parameters": [
++          {
++            "in": "path",
++            "name": "item_id",
++            "required": true,
++            "schema": {
++              "title": "Item Id",
++              "type": "string"
++            }
++          }
++        ],
++        "responses": {
++          "200": {
++            "content": {
++              "application/json": {
++                "schema": {
++                  "$ref": "#/components/schemas/ContractReviewCandidatesRecordResponse"
++                }
++              }
++            },
++            "description": "Successful Response"
++          },
++          "422": {
++            "content": {
++              "application/json": {
++                "schema": {
++                  "$ref": "#/components/schemas/HTTPValidationError"
++                }
++              }
++            },
++            "description": "Validation Error"
++          }
++        },
++        "summary": "Get Contract Review Candidate Record"
++      }
++    },
+     "/reports/cost-trend": {
+       "get": {
+         "operationId": "get_cost_trend_reports_cost_trend_get",
+@@ -22457,6 +22619,45 @@
+         "summary": "Get Transaction Anomalies"
+       }
+     },
++    "/reports/transaction-anomalies/records/{item_id}": {
++      "get": {
++        "operationId": "get_transaction_anomaly_record_reports_transaction_anomalies_records__item_id__get",
++        "parameters": [
++          {
++            "in": "path",
++            "name": "item_id",
++            "required": true,
++            "schema": {
++              "title": "Item Id",
++              "type": "string"
++            }
++          }
++        ],
++        "responses": {
++          "200": {
++            "content": {
++              "application/json": {
++                "schema": {
++                  "$ref": "#/components/schemas/TransactionAnomaliesRecordResponse"
++                }
++              }
++            },
++            "description": "Successful Response"
++          },
++          "422": {
++            "content": {
++              "application/json": {
++                "schema": {
++                  "$ref": "#/components/schemas/HTTPValidationError"
++                }
++              }
++            },
++            "description": "Validation Error"
++          }
++        },
++        "summary": "Get Transaction Anomaly Record"
++      }
++    },
+     "/reports/upcoming-fixed-costs": {
+       "get": {
+         "operationId": "get_upcoming_fixed_costs_reports_upcoming_fixed_costs_get",
+@@ -22475,6 +22676,45 @@
+         "summary": "Get Upcoming Fixed Costs"
+       }
+     },
++    "/reports/upcoming-fixed-costs/records/{item_id}": {
++      "get": {
++        "operationId": "get_upcoming_fixed_cost_record_reports_upcoming_fixed_costs_records__item_id__get",
++        "parameters": [
++          {
++            "in": "path",
++            "name": "item_id",
++            "required": true,
++            "schema": {
++              "title": "Item Id",
++              "type": "string"
++            }
++          }
++        ],
++        "responses": {
++          "200": {
++            "content": {
++              "application/json": {
++                "schema": {
++                  "$ref": "#/components/schemas/UpcomingFixedCostsRecordResponse"
++                }
++              }
++            },
++            "description": "Successful Response"
++          },
++          "422": {
++            "content": {
++              "application/json": {
++                "schema": {
++                  "$ref": "#/components/schemas/HTTPValidationError"
++                }
++              }
++            },
++            "description": "Validation Error"
++          }
++        },
++        "summary": "Get Upcoming Fixed Cost Record"
++      }
++    },
+     "/reports/usage-vs-price": {
+       "get": {
+         "operationId": "get_usage_vs_price_reports_usage_vs_price_get",
+diff --git a/tests/test_attention_record_http.py b/tests/test_attention_record_http.py
+new file mode 100644
+index 0000000..17b9144
+--- /dev/null
++++ b/tests/test_attention_record_http.py
+@@ -0,0 +1,112 @@
++"""HTTP regression tests for the attention-record adapter at the warehouse boundary.
++
++The frozen ``tests/test_attention_record_api.py`` covers the public 200/404/503
++contract. These tests exercise the same endpoints through the real
++``WarehouseSessionManager`` lease/acquisition boundary, proving that a synthetic
++driver failure is sanitized into an availability 503, a ``WarehouseBusyError``
++keeps its established 503 with ``Retry-After``, and an unrelated programming
++error stays a server error rather than being misreported as unavailable.
++"""
++
++from __future__ import annotations
++
++from pathlib import Path
++from typing import Any
++from urllib.parse import quote
++
++import duckdb
++import pytest
++from fastapi.testclient import TestClient
++
++import packages.storage.duckdb_store as duckdb_store
++from apps.api.app import create_app
++from packages.domains.finance.pipelines.account_transaction_service import AccountTransactionService
++from packages.pipelines.reporting_service import ReportingAccessMode, ReportingService
++from packages.pipelines.transformation_service import TransformationService
++from packages.pipelines.warehouse_session import (
++    WarehouseSessionManager,
++    WarehouseSessionTransformationService,
++    _ReadOnlyTransformationService,
++)
++from packages.storage.duckdb_store import DuckDBStore, WarehouseBusyError
++from packages.storage.run_metadata import RunMetadataRepository
++from tests.test_attention_record_api import REFRESH_KEYS, seed, source_key
++
++
++def _seed_warehouse(tmp_path: Path) -> tuple[Path, str]:
++    path = tmp_path / "warehouse.duckdb"
++    store = DuckDBStore.open(str(path))
++    try:
++        ts = TransformationService(store)
++        seed(ts)
++        ts.refresh_publications(REFRESH_KEYS)
++        rows = store.fetchall_dicts("SELECT * FROM mart_transaction_anomalies_current")
++        assert rows
++        item_id = source_key("anomaly", rows[0])
++    finally:
++        store.close()
++    return path, item_id
++
++
++def _client(tmp_path: Path, path: Path) -> tuple[TestClient, WarehouseSessionManager]:
++    def build(leased_store: Any, read_only: bool) -> TransformationService:
++        if read_only:
++            return _ReadOnlyTransformationService(leased_store)
++        return TransformationService(leased_store)
++
++    manager = WarehouseSessionManager(path, build, idle_timeout_seconds=0)
++    session_ts = WarehouseSessionTransformationService(manager)
++    reporting = ReportingService(session_ts, access_mode=ReportingAccessMode.WAREHOUSE)
++    service = AccountTransactionService(
++        landing_root=tmp_path / "landing",
++        metadata_repository=RunMetadataRepository(tmp_path / "runs.db"),
++    )
++    client = TestClient(
++        create_app(service, transformation_service=session_ts, reporting_service=reporting),
++        raise_server_exceptions=False,
++    )
++    return client, manager
++
++
++def _raise(exc: BaseException) -> Any:
++    def fail(*args: Any, **kwargs: Any) -> Any:
++        raise exc
++
++    return fail
++
++
++def test_record_warehouse_acquisition_boundary(
++    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
++) -> None:
++    path, item_id = _seed_warehouse(tmp_path)
++    client, manager = _client(tmp_path, path)
++    url = "/reports/transaction-anomalies/records/" + quote(item_id, safe="")
++    marker = "synthetic-private-acquisition-marker"
++    failures = {
++        "driver": duckdb.IOException(marker),
++        "busy": WarehouseBusyError("synthetic", 1, RuntimeError("held")),
++        "program": RuntimeError(marker),
++    }
++    try:
++        assert client.get(url).status_code == 200
++        assert manager.mode is None
++        for kind, failure in failures.items():
++            with monkeypatch.context() as patch:
++                patch.setattr(duckdb_store, "connect_with_lock_retry", _raise(failure))
++                response = client.get(url)
++            assert manager.mode is None
++            if kind == "driver":
++                assert response.status_code == 503, response.text
++                assert set(response.json()) == {"detail"}
++                assert marker not in response.text
++            elif kind == "busy":
++                assert response.status_code == 503, response.text
++                body = response.json()
++                assert set(body) == {"error", "retry_after_seconds"}
++                assert response.headers.get("retry-after") == str(body["retry_after_seconds"])
++            else:
++                assert response.status_code == 500, response.text
++            assert client.get(url).status_code == 200
++            assert manager.mode is None
++    finally:
++        manager.stop()

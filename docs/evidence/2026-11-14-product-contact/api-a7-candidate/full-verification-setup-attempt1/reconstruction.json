@@ -1,0 +1,18 @@
+{
+  "id": "a1063d4489a23087dc1d0f2a61dddaea3e7a1ba67d7b562a909e163a7c892407",
+  "state": {
+    "Status": "exited",
+    "Running": false,
+    "Paused": false,
+    "Restarting": false,
+    "OOMKilled": false,
+    "Dead": false,
+    "Pid": 0,
+    "ExitCode": 1,
+    "Error": "",
+    "StartedAt": "2026-11-14T09:32:26.923352196Z",
+    "FinishedAt": "2026-11-14T09:32:27.048637485Z"
+  },
+  "logs": "node:internal/modules/cjs/loader:1459\n  throw err;\n  ^\n\nError: Cannot find module 'playwright-core/lib/bootstrap'\nRequire stack:\n- /opt/hla-node-modules/playwright/lib/program.js\n- /opt/hla-node-modules/playwright/cli.js\n    at Module._resolveFilename (node:internal/modules/cjs/loader:1456:15)\n    at defaultResolveImpl (node:internal/modules/cjs/loader:1066:19)\n    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1071:22)\n    at Module._load (node:internal/modules/cjs/loader:1242:25)\n    at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)\n    at Module.require (node:internal/modules/cjs/loader:1556:12)\n    at require (node:internal/modules/helpers:152:16)\n    at Object.<anonymous> (/opt/hla-node-modules/playwright/lib/program.js:34:24)\n    at Module._compile (node:internal/modules/cjs/loader:1812:14)\n    at Object..js (node:internal/modules/cjs/loader:1943:10) {\n  code: 'MODULE_NOT_FOUND',\n  requireStack: [\n    '/opt/hla-node-modules/playwright/lib/program.js',\n    '/opt/hla-node-modules/playwright/cli.js'\n  ]\n}\n\nNode.js v24.14.1\n",
+  "scope": "reconstruction of identical browser command without automatic removal; first original stderr was not retained"
+}

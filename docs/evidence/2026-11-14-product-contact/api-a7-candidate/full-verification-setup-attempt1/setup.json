@@ -1,0 +1,6 @@
+{
+  "command": "uv sync -q --extra dev",
+  "returncode": 0,
+  "stdout": "",
+  "stderr": ""
+}

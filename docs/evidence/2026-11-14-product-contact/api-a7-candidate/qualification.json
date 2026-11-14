@@ -1,0 +1,55 @@
+{
+  "schema": "hla-api-a7-qualified-candidate/v1",
+  "recorded_at": "2026-11-14T09:39:39.267779+00:00",
+  "candidate": "01733b1024f6b6f779282a9b1181b646c1e27db6",
+  "acceptance_seed": "f854c21b12a1f4766a00448e188cabd07df7506d",
+  "native": {
+    "outcome": "done",
+    "exit_code": 0,
+    "elapsed_s": 1548.5
+  },
+  "all_five_lane_gates_passed": true,
+  "worker_diff": {
+    "added": 685,
+    "deleted": 0,
+    "cap": 700,
+    "frozen_input_lines_excluded": 1247
+  },
+  "independent_qualification": {
+    "frozen_fast_plus_worker_http": 30,
+    "frozen_slow_pg": 3,
+    "strict_pg_cases": 3,
+    "auth_and_session": 29,
+    "no_skips": true,
+    "real_warehouse_driver_safe503": true,
+    "busy503_retry_after5": true,
+    "program_error500": true,
+    "factory_calls_each": 1,
+    "same200_before_after": true,
+    "real_pg_connect_driver_safe503_no_warehouse_fallback": true,
+    "pg_program_error500": true,
+    "observer_unfiltered_read_falsifier": "failed intended binding assertion",
+    "generated_contract_checks": "pass",
+    "temporary_postgres_cleanup": "observed empty owned-name filter"
+  },
+  "independent_manual_review": {
+    "fallback": "tracked architecture+manual seven specialist concerns; no native Sonnet/fanout claim",
+    "verdict": "pass",
+    "blockers": [],
+    "advisories": [],
+    "architecture_tests": 101,
+    "watchlist": "preexisting app composition file over600 gains only minimalregistration; oldreport_routes unchanged"
+  },
+  "pending": {
+    "full_make_verify_fast": "running ownedunit lanectl-hla-api-a7-full-verify-r2; output /tmp/hla-api-a7-full-verify-r2",
+    "current_main_train": "running ownedunit lanectl-hla-api-a7-train; log /tmp/hla-api-a7-train.log",
+    "runtime_record_http_smoke": "not executed",
+    "canonical_delivery": false,
+    "whole_hla1593_complete": false
+  },
+  "review_record_provenance": {
+    "raw_review_sha256": "8e85ce9c7a3f9e3c1f931fd30cf25b76d0376572004ec08579e0d011395d8171",
+    "body_unchanged": true,
+    "heading_edit": "API review heading renamed to avoid generic-api-key false positive on independently verified Git commit object; no scanner suppression or policy edit"
+  }
+}

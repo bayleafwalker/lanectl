@@ -1,0 +1,2 @@
+warehouse {"busy": {"before_after_exact": true, "factory_calls": 1, "retry_after": "5", "status": 503}, "driver": {"before_after_exact": true, "factory_calls": 1, "retry_after": null, "status": 503}, "program": {"before_after_exact": true, "factory_calls": 1, "retry_after": null, "status": 500}}
+postgres {"before_after_exact": true, "driver_status": 503, "program_status": 500, "warehouse_fallback_forbidden": true}

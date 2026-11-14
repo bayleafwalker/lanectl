@@ -1,0 +1,54 @@
+F
+=================================== FAILURES ===================================
+___ test_lookup_binds_complete_key_at_source_before_limit[warehouse-anomaly] ___
+
+world = World(client=<starlette.testclient.TestClient object at 0x75c4a6317e00>, ts=<packages.pipelines.transformation_service...), 'charge_ids': ['14c37d134aa82300', '8d1e2f620e1c9cfb'], 'd10': '2026-11-24', 'd20': '2026-12-04'}, mode='warehouse')
+item_type = 'anomaly'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x75c49e5323f0>
+
+    @pytest.mark.parametrize('item_type', list(SEGMENTS))
+    def test_lookup_binds_complete_key_at_source_before_limit(
+        world: World, item_type: str, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        expected = expected_records(world.client)
+        ids = attention_by_type(world.client)[item_type]
+        item_id = next((key for key in ids if '/' in key), ids[-1])
+        relation = dict(zip(SEGMENTS, SOURCE_RELATIONS))[item_type]
+        # Confirm there are competing source identities in the observed relation.
+        assert len({key for kind, key in expected if kind == item_type}) > 1
+        calls = _observe_source_queries(world, monkeypatch)
+        assert_resolves(world.client, item_type, item_id, expected[(item_type, item_id)])
+>       _assert_observed_selection(calls, relation, item_type, item_id, positive=True)
+
+tests/test_attention_record_api.py:1035: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+calls = [('select * from mart_transaction_anomalies_current', [], ['transaction_id', 'booking_date', 'counterparty_name', 'amo...1 from mart_transaction_anomalies_current where transaction_id is null or transaction_id = '' limit 1", [], ['1'], [])]
+relation = 'mart_transaction_anomalies_current', item_type = 'anomaly'
+item_id = 'anomaly_b4b09fb255ce95bb'
+
+    def _assert_observed_selection(
+        calls: list[Any], relation: str, item_type: str, item_id: str, *, positive: bool
+    ) -> None:
+        source = [call for call in calls if relation in call[0]]
+        assert source, calls
+        identity_columns = {
+            'anomaly': {'transaction_id'},
+            'contract_review': {'contract_id', 'reason'},
+            'contract_renewal': {'contract_id', 'renewal_date'},
+            'upcoming_cost': {'charge_id', 'expected_date'},
+        }[item_type]
+        selected = []
+        for sql, params, columns, rows in source:
+            if identity_columns <= set(columns):
+                # This is observed before application code receives any rows. A
+                # tautology or fetch-all cannot hide behind later Python filtering.
+>               assert item_id in params, (sql, params)
+E               AssertionError: ('select * from mart_transaction_anomalies_current', [])
+E               assert 'anomaly_b4b09fb255ce95bb' in []
+
+tests/test_attention_record_api.py:1006: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_attention_record_api.py::test_lookup_binds_complete_key_at_source_before_limit[warehouse-anomaly]
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 24 deselected in 3.35s
