@@ -78,5 +78,32 @@
   "launcher": {
     "path": "/nix/store/sv6rr6451k6kjj3rh5kv5pkm08rmjrlr-launcher.py",
     "sha256": "526956f9cd67511f4b47cc01c965f00b418d55a56b3940b30eefcc7eec4b447e"
+  },
+  "post_owned_cancel_reset": {
+    "measured_at": "2026-11-14T08:41:42.843812+00:00",
+    "commands": [
+      {
+        "argv": [
+          "systemctl",
+          "--failed",
+          "--no-legend"
+        ],
+        "exit": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "argv": [
+          "systemctl",
+          "--user",
+          "--failed",
+          "--no-legend"
+        ],
+        "exit": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    ],
+    "scope": "Only lanectl-hla-api-r4-review-r2.service retained failure reset; original failed143 status and error preserved in api-layer-review-r4. Native unit already terminal."
   }
 }

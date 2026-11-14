@@ -1,0 +1,93 @@
+{
+  "schema": "hla-api-independent-qualification-plan/v1",
+  "status": "prepared-not-executed-awaiting-successful-native-candidate",
+  "base": "30c0caf6c78d257ff5db79f42cca0b56a0f934b9",
+  "author": "first-party independent qualification",
+  "constraints": [
+    "Public synthetic data only; no private vuoro-cloud.",
+    "No candidate or acceptance modification; no tests before native terminal candidate and recorded gates.",
+    "No deployed-runtime use or database writes are authorized by this preparation.",
+    "No use of mutable implementation as accepted evidence; root remains integrator."
+  ],
+  "bindings": {
+    "candidate": "Obtain actual full candidate SHA and native terminal/gate evidence from root; confirm git HEAD and clean disposable checkout, and ancestry from base. Capture git diff --stat and --numstat; require permitted scope and <=700 worker additions+deletions excluding frozen acceptance inputs, without narrowing.",
+    "frozen_api": "tests/test_attention_record_api.py, SHA256 34da78c8cb79c5ecc6d38e740c6b2ee90433dc000e6633cb3bf853aff6bb3abb; 1173 lines",
+    "gate": "tests/test_attention_record_pg_gate.py, SHA256 7cc1222151c01559ef58b9ff473f73a13d0b99800ac111ca5674930e25098aad, unless review changes it; bind to final published packet bytes and SHA, not this prediction.",
+    "imports": "Before tests import apps.api.app, candidate route module, packages.domains.overview.pipelines.attention_records, packages.pipelines.warehouse_session, tests.test_attention_record_api and assert each resolved __file__ is under the candidate checkout. Capture full path. Do not let editable canonical install shadow checkout.",
+    "preflight": "Use test support running_postgres_container with docker_is_available check; assert actual SELECT 1 via psycopg; fail rather than skip and verify the owned container removed. Use escalated host/Docker execution. Retain no secrets in evidence."
+  },
+  "commands": [
+    {
+      "name": "frozen-fast",
+      "cwd": "<candidate>",
+      "command": "uv run --no-sync python -m pytest -q -p no:cacheprovider -m \"not slow\" tests/test_attention_record_api.py",
+      "expect": "29 passed, 3 deselected, zero skips; counts must be observed anew and compared, not assumed."
+    },
+    {
+      "name": "frozen-explicit-slow",
+      "cwd": "<candidate>",
+      "command": "uv run --no-sync python -m pytest -q -p no:cacheprovider -m \"integration and slow\" tests/test_attention_record_api.py",
+      "expect": "3 passed, 29 deselected, zero skips; retain output and require actual SELECT 1 preflight."
+    },
+    {
+      "name": "strict-postgres-gate",
+      "cwd": "<candidate>",
+      "command": "uv run --no-sync python tests/test_attention_record_pg_gate.py",
+      "expect": "exit 0, exactly the three named frozen cases executed and successful, no skip/failure/error; gate uses disposable JUnit."
+    },
+    {
+      "name": "declared-three",
+      "cwd": "<candidate>",
+      "command": "Run each literal acceptance.exec command from the finally published release without edits; capture exit and output.",
+      "expect": "All recorded gates pass; the published packet is authoritative if review changed it."
+    },
+    {
+      "name": "related-regressions",
+      "cwd": "<candidate>",
+      "command": "uv run --no-sync python -m pytest -q -p no:cacheprovider tests/test_api_auth.py tests/test_api_warehouse_sessions.py tests/test_architecture_contract.py",
+      "expect": "All selected tests pass; record actual count/skips; add actual candidate HTTP regression files after inspecting candidate diff."
+    },
+    {
+      "name": "contracts",
+      "cwd": "<candidate>",
+      "command": "uv run --no-sync python -m apps.api.contract_artifacts export-check && npm --prefix apps/web/frontend run codegen:check && npm --prefix apps/web/frontend run contracts:check",
+      "expect": "Pass with locked repo Node20 toolchain and installed matching dependencies; independently record environment and exact source HEAD."
+    }
+  ],
+  "independent_controls": [
+    {
+      "case": "all kinds and full key",
+      "method": "For each of anomaly, contract_review, contract_renewal, upcoming_cost exercise positive authenticated HTTP using fixture synthetic records; compare exact full row groups to independent parameter-bound source SQL/oracle after JSON normalization. Include multi-row group, distinct equal-looking identities and out-of-first-page anomaly; require encoded-slash opaque key reached whole and unchanged. Frozen tests already contain relevant cases; confirm candidate runs rather than infer."
+    },
+    {
+      "case": "unknown forbidden unavailable",
+      "method": "In isolated fixture TestClient/public synthetic stores require provably unknown 404, no or invalid auth 401, unauthorized source segment 403, attention-only cannot disclose details, strict missing/invalid publication 503 with no warehouse fetch. Verify detail-only and no stored-field or private marker leakage, except Busy has its established distinct response. Check each segment; actual auth policy/fixture determines usable accounts."
+    },
+    {
+      "case": "published connection driver vs program",
+      "method": "With actual candidate imports and a disposable PostgreSQL publication, record 200 before and after; patch actual PostgresReportingStore._connect to raise unique synthetic psycopg.OperationalError, assert 503 and marker absent/no fallback; separately inject same RuntimeError instance and assert HTTP 500 with raise_server_exceptions=False and source exception not reclassified. Never modify deployed database."
+    },
+    {
+      "case": "real warehouse acquisition driver busy program",
+      "method": "Build synthetic on-disk DuckDB and real WarehouseSessionManager plus WarehouseSessionTransformationService; close idle handle, assert exact HTTP 200 before/after. At packages.storage.duckdb_store.connect_with_lock_retry raise duckdb.IOException with synthetic marker, WarehouseBusyError instance, and RuntimeError instance in separate trials. Assert factory call count and actual lower lease path; driver produces safe 503 without marker, Busy yields canonical 503 Retry-After 5/retry_after_seconds 5, programming error remains 500; separately direct source control confirms Busy/program same exception identity. Baseline source probe /tmp/hla-source-r3-a3-real-lease-probe.py and HTTP Busy probe /tmp/hla-api-source7134-busy-probe.py illustrate path but are session-local, tied to old preview, and must be rebound/reviewed against candidate."
+    },
+    {
+      "case": "observer falsifier",
+      "method": "Independent temporary pytest plugin injects an unfiltered store.fetchall_dicts read before real _read_group; frozen lookup test must fail binding assertion. No production source or frozen test edits; retain output. Confirm candidate positive without plugin first."
+    }
+  ],
+  "built_api_smoke": {
+    "status": "future only: requires separately authorized controlled dev deployment, actual checked train/receipt and newly reviewed harness adaptation; not performed now",
+    "harness": "/projects/dev/lanectl/docs/evidence/2026-11-14-product-contact/source-dev-smoke-passed/harness",
+    "reuse": "record_absence.py, guard.py, orchestrate.py and inside_publish.py plus seed referenced by smoke configuration are existing baseline; preserve exact receipt/image/code hashes, train/source identity, dedicated fresh volume absence proof, network/DNS/client/schema checks, exclusive per-container and PUBLISH_ATTEMPTED markers, wrong-image refusal with unchanged snapshot, one publication attempt and nonempty re-entry refusal. Never retry after marker on error.",
+    "extension": "In a separate temporary copy extend inside_verify.py after existing publication to make actual HTTP requests to all four candidate record endpoints for each synthetic item; independently query exact expected rows using existing SOURCES parameter-bound SQL and compare normalized public response shape and complete group; quote full IDs with slash encoded, prove a slash-bearing item exists or add synthetic seed only before first publication and requalify fixture. Capture HTTP statuses for own-source permitted, other-segment/attention-only forbidden, unknown and unavailable where reproducibly testable without mutating published DB. Current inside_verify proves direct service groups and HTTP attention list only, not record endpoints.",
+    "safety": "Snapshot seven relations before and after HTTP; fail on mutation. Keep all original guard, snapshot and single-attempt falsifiers; run harness dry tests and add focused HTTP adapter tests before any separately authorized controlled run. Preserve owned resource IDs and evidence on failure; root controls cleanup. Do not claim live production or broader HLA delivery.",
+    "uncertainties": [
+      "Current seed may not contain a slash-bearing key or multi-row group; inspect and prove before claim.",
+      "Existing harness logs in with one example admin, not multiple source-scoped identities; minimally provision synthetic test accounts in an isolated fresh environment, or leave narrower auth unproven. Exact supported auth setup must be measured.",
+      "A no-fallback proof in built HTTP runtime cannot be inferred solely from the direct-service FailClosedWarehouse: use independently instrumented isolated test control or report limitation.",
+      "A 503 availability mutation is not authorized against the deployed train DB; prove in disposable local fixture or separate fresh runtime, not by altering the smoke publication."
+    ]
+  },
+  "outputs": "Write command logs, import paths, candidate SHA and fixture hashes, real PG count and no skips, false-positive controls, container cleanup, matched browser/verify-fast evidence where integration owner requires. /tmp evidence is session-local; root decides cross-host replicated evidence."
+}

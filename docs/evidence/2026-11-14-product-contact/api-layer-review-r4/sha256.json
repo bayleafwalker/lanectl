@@ -28,5 +28,7 @@
   "gate-final-wrapper-collection.log": "080cd045e521b9f8686e3dc1f519b03e245617af2111f8889209df26d0b144cd",
   "review3-proposal.json": "d436cb23e893b6667b81aeea1c8549b1489017a83b20f746e8fb1c7335cf4093",
   "review3-driver.py": "e349e8603c61b37e44a22e571f319d857f7bf5b5b41cb4de9165800b70d8249e",
-  "ui-preparation.json": "4ed77dcd99f60158499dc11ce628ac9570f265a6b14f4bd63d7bbf1b813b6be2"
+  "ui-preparation.json": "4ed77dcd99f60158499dc11ce628ac9570f265a6b14f4bd63d7bbf1b813b6be2",
+  "candidate-qualification-plan.json": "87e256cf93bbb3dcc2eed1443b369ebdb4682c25bac45ce011b891519e11fb13",
+  "guarded-publish-and-run-prepared.py": "5550c616973f1f5c64238d716ee0f8d8f73417cfaeacb5e069d996eaba1228df"
 }
