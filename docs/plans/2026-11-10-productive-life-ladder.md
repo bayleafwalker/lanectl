@@ -112,7 +112,7 @@ went red after it (fixed). Not yet modelled: V4 Pro's own $15/month limit as a s
 The strict-root host fence is applied and qualified; served #2889 is done.
 Canonical lanectl `ac4c4dd` promotes only Sovite to its ownership-compatible
 `systemd` mode after matching its full baseline. The earlier environment-only
-status above is historical. The installed client is0.2.10, including reviewed
+status above is historical. The installed client is0.2.11, including reviewed
 retry routing, cleanup and truthful publication evidence corrections.
 
 Product contact continues under HLA1593. Identity PR82 and source-reader PR83
@@ -177,9 +177,23 @@ lowercase redirect header, while the test had converted case-insensitive HTTP
 headers to a plain dictionary. Its 621-line source remains unadopted.
 The [minimal two-line repair](../evidence/2026-11-14-product-contact/client-boundary-header-repair/)
 passed independent reproduction, retains wrong-status and wrong-destination
-falsifiers, and leaves all four-kind behavior unchanged. A fresh native review
-of finalized scratch revision2 is underway. The original packet and escalation
-remain intact; no candidate or canonical prerequisite is claimed yet.
+falsifiers, and leaves all four-kind behavior unchanged. Fresh native review
+accepted revision2; guarded publication at `6049fec` started its normal run.
+The 663-line a2 candidate passed normal gates, independent eight-case and
+ten-case checks, and seven native specialist reviews. A further actual Node
+and browser probe found that its decoder drops a leading Unicode BOM, violating
+whole-ID identity. It was rejected and not adopted; full verification was
+intentionally stopped, not passed. The
+[rejection evidence](../evidence/2026-11-14-product-contact/client-boundary-a2-rejection/disposition.json)
+retains that result.
+
+Served `lanectl#2901` repaired the missing ordinary retry-feedback path. Native
+review blocked its first patch on legacy replay compatibility; the corrected
+source passed 1107 tests and independent rereview, then landed and was installed
+as v0.2.11. All 62 runtime files match the tag. The final normal R2 retry, Pro a3,
+started at 18:05:20 UTC with the actual BOM observations in its input. The same
+criteria, revision and per-revision limits remain. No canonical prerequisite
+or whole UI completion is claimed.
 
 The [portable repaired full-UI observer](../evidence/2026-11-14-product-contact/ui-portable-observer-preparation/)
 is preparation only. Its base run has six missing-feature failures, three

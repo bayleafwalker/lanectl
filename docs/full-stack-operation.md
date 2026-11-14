@@ -44,6 +44,13 @@ effects without relanding. Lost tracker-note acknowledgements can still
 duplicate notes because the existing note API has no idempotency key; terminal
 status reconciliation converges independently.
 
+Since 0.2.11, new claims pass up to three bounded prior integrator rejection
+observations to a retry of the same item and release revision. The observations
+do not change its outcome, scope, tests, routing or attempt budget. The exact
+rendered prompt is shared by the owner profile digest and native adapter.
+Legacy claims keep their original prompt bytes. Replaying a marked claim with
+feedback under an older client fails closed on its existing owner binding.
+
 ## Unattended integration
 
 `lanectl integrate` and the existing `tick` execute only task classes listed in
