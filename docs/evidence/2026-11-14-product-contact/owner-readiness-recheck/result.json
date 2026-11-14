@@ -1,0 +1,14 @@
+{
+  "measured_at": "2026-11-14T09:13:23.844068+00:00",
+  "operation": "work.public.list-v1",
+  "discovery": "observed-public-not-auth-proof",
+  "authorized_ready_work": "unknown",
+  "refusal": {
+    "code": "identity-required",
+    "http": 401
+  },
+  "catalog_revision": "7b73e270744a349d59f4fc65c458e60ff160e10cb522cbf856f392758fcafc19",
+  "credential_handling": "existing enrolled runner loaded by systemd; no value emitted, no substituted/admin credential",
+  "effects": "read-only; no claim, enrollment, hosted activation or event-authority switch",
+  "scope": "Process exit0 describes probe execution only, not authorized owner-read success. Initial transient property using %h was refused by systemd before execution; retry used measured absolute existing path."
+}

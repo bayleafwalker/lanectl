@@ -1,0 +1,25 @@
+{
+  "schema": "hla-api-dev-smoke-root-review/v1",
+  "reviewed_at": "2026-11-14T09:13:23.843846+00:00",
+  "author_requested_model": "gpt-6.1-terra",
+  "author_task": "/root/api_dev_http_smoke",
+  "reviewer": "first-party root integration owner",
+  "verdict": "pass-for-offline-preparation",
+  "checks": [
+    "Read complete new HTTP verifier, container wrapper and orchestrator delta",
+    "All declared file hashes and Python ASTs matched",
+    "Original guard, publisher and synthetic seed byte-for-byte unchanged",
+    "Independent root run:30 offline unittest cases passed, zero skips",
+    "Root verified canonical401detail shape in packages/platform/auth/middleware_authorization.py and DECIMAL public serialization contract in apps/api/response_models.py",
+    "Full quoted opaque IDs, per-kind paths, exact item_id+rows, duplicate multiplicity and bound SQL compare all source groups",
+    "Snapshot comparison in finally executes on verifier failure; subprocess diagnostics retain commands/output/exit before raises",
+    "Original wrong-image/nonempty/single-attempt/receipt/source-image/defaultschema guards retained"
+  ],
+  "limits": [
+    "No Docker/deployed runtime/database publication executed",
+    "Offline HTTP fakes do not qualify built API",
+    "Expected public row serialization uses existing public row models; underlying row selection is independent SQL",
+    "No built HTTP403/503/no-fallback or out-of-first-page claim",
+    "Future runtime requires actual successful candidate/current-main checkedtrain, fresh receipt-boundowneddev and empty-volume proof; never replay failed publisher"
+  ]
+}

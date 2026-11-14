@@ -1,0 +1,7 @@
+Running as unit: lanectl-owner-readiness-20261114-0905.service
+{"advertised_work_reads": ["work.public.item-v1", "work.public.list-v1"], "catalog_revision": "7b73e270744a349d59f4fc65c458e60ff160e10cb522cbf856f392758fcafc19", "endpoint": "https://vuoro-shared.apps.kotona.app", "environment": "vuoro-shared", "ready_count": null, "ready_state": "unknown", "ready_work_ids": null, "refusal": {"code": "identity-required", "http": 401}}
+          Finished with result: success
+Main processes terminated with: code=exited, status=0/SUCCESS
+               Service runtime: 322ms
+             CPU time consumed: 80ms
+                   Memory peak: 20.6M (swap: 0B)

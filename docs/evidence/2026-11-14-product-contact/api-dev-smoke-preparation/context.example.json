@@ -1,0 +1,17 @@
+{
+  "train_id": "train-REPLACE",
+  "project": "lane-dev-train-REPLACE",
+  "repo": "REPLACE_WITH_LANECTL_REPO_NAME",
+  "source_path": "/projects/dev/_wt/lanes/REPLACE",
+  "sha": "REPLACE_40_HEX_CHECKED_SHA",
+  "event_log": "/ABSOLUTE/PATH/TO/ACTUAL/LANECTL/events.jsonl",
+  "api_id": "REPLACE_FULL_64_HEX_CONTAINER_ID",
+  "pg_id": "REPLACE_FULL_64_HEX_CONTAINER_ID",
+  "api_image": "sha256:REPLACE_FULL_64_HEX_IMAGE_ID",
+  "network_id": "REPLACE_FULL_64_HEX_NETWORK_ID",
+  "volume": "REPLACE_EXACT_POSTGRES_VOLUME_NAME",
+  "network_members": ["REPLACE_ALL_FULL_CONTAINER_IDS_ON_NETWORK"],
+  "project_containers": ["REPLACE_ALL_FULL_RUNNING_PROJECT_CONTAINER_IDS"],
+  "predeploy_volume_proof": "/tmp/hla-volume-absence-TRAIN.json",
+  "no_concurrent_operator_writes": true
+}

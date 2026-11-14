@@ -1,0 +1,70 @@
+{
+  "schema": "hla-api-dev-smoke-preparation/v1",
+  "classification": "session-local; first-party; offline only",
+  "tests": {
+    "command": "python -m unittest -v test_guard test_orchestrate test_http_verify",
+    "baseline_pass": 20,
+    "extension_pass": 10,
+    "skips": 0
+  },
+  "controls": [
+    "wrong rows",
+    "missing rows",
+    "wrong item_id",
+    "wrong kind path",
+    "error status",
+    "missing kind fixture",
+    "feed ID mismatch",
+    "unknown control mismatch",
+    "HTTP snapshot mutation",
+    "correct rows and parameter binding"
+  ],
+  "historical_source_observation": {
+    "groups": 8,
+    "kind_counts": {
+      "anomaly": 1,
+      "contract_renewal": 3,
+      "contract_review": 2,
+      "upcoming_cost": 2
+    },
+    "slash_ids": 3,
+    "multirow_group_sizes": [
+      2,
+      3
+    ],
+    "distinct_upcoming_ids": 2,
+    "evidence": "/projects/dev/lanectl/docs/evidence/2026-11-14-product-contact/source-dev-smoke-passed/verification.json"
+  },
+  "limits": [
+    "No built API execution or deployed HTTP claims",
+    "No built HTTP no-fallback, 403 or 503 proof",
+    "No out-of-first-page anomaly coverage",
+    "Root controls runtime and cleanup"
+  ],
+  "seed_original_sha256": "d2516b1ea87c5dd08d0c5f96dd7fcd7d31315efd61317a6aeb5e03daca06fdcb",
+  "baseline_hashes": {
+    "README.md": "6210fc357c09e8a7ea4d96c90e392769f626b24ef827d4cfb12a98ae39eb7d69",
+    "context.example.json": "da5f263e962bc7574f37a8d79aee43f98c9adbf04f247342ee60647909cedd24",
+    "guard.py": "544531c330a8f2df5c061a875951ec5d74dd1ba6cb1796c91d9492986d65df58",
+    "inside_publish.py": "9db9f5e7ca23174c7152562942da5cc507507649c4947fd5be4f010c21e952b2",
+    "inside_verify.py": "53c84d480fc596838ebc8c5c8f50dffcaa05768fc66fffc0057783fe75b67696",
+    "orchestrate.py": "74c04c6d2156e9f4e13939a06edba33d8485bf1f7e240c871146310a92437c8b",
+    "record_absence.py": "6a08eb6279fe0313bf0a915cdef543a869c3897bdf7dca19eb4b939206a9b7e6",
+    "test_guard.py": "111ccc908db0538b81b1b16e0503fa62c45711860747b644216d909ad410ec5b",
+    "test_orchestrate.py": "5c48874ba87f3b0ad4b9ef5f0c37bee66681743312e786c31aa74ab72a118402"
+  },
+  "files_sha256": {
+    "README.md": "800dd921361c2e2a676270daea49cf470ac64090bd274e4e1de151853eee1d1d",
+    "context.example.json": "da5f263e962bc7574f37a8d79aee43f98c9adbf04f247342ee60647909cedd24",
+    "guard.py": "544531c330a8f2df5c061a875951ec5d74dd1ba6cb1796c91d9492986d65df58",
+    "http_verify.py": "9c85207c1ddb603bef1847d0a259db67169740ad61900552f0a441a908a4535e",
+    "inside_publish.py": "9db9f5e7ca23174c7152562942da5cc507507649c4947fd5be4f010c21e952b2",
+    "inside_verify.py": "8672e7ae458598b1403fd0c810b612f9536547f19ff52f2eb75dfb0eb6df9f7d",
+    "orchestrate.py": "9132c382c68f7d87f420e761583c6d636868373e3579319857c50352abb096be",
+    "record_absence.py": "6a08eb6279fe0313bf0a915cdef543a869c3897bdf7dca19eb4b939206a9b7e6",
+    "seed.py": "d2516b1ea87c5dd08d0c5f96dd7fcd7d31315efd61317a6aeb5e03daca06fdcb",
+    "test_guard.py": "111ccc908db0538b81b1b16e0503fa62c45711860747b644216d909ad410ec5b",
+    "test_http_verify.py": "7bacf8a846d9f3f41689e531cf2ec2397e44068848abb89e16c0f4c06123fa07",
+    "test_orchestrate.py": "5c48874ba87f3b0ad4b9ef5f0c37bee66681743312e786c31aa74ab72a118402"
+  }
+}

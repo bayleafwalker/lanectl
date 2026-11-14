@@ -1,0 +1,35 @@
+test_api_client_allowed (test_guard.GuardEvidenceTests.test_api_client_allowed) ... ok
+test_duplicate_alias_rejected (test_guard.GuardEvidenceTests.test_duplicate_alias_rejected) ... ok
+test_fresh_volume (test_guard.GuardEvidenceTests.test_fresh_volume) ... ok
+test_old_empty_volume_rejected (test_guard.GuardEvidenceTests.test_old_empty_volume_rejected) ... ok
+test_unexpected_local_client_rejected (test_guard.GuardEvidenceTests.test_unexpected_local_client_rejected) ... ok
+test_valid_dns (test_guard.GuardEvidenceTests.test_valid_dns) ... ok
+test_volume_after_receipt_rejected (test_guard.GuardEvidenceTests.test_volume_after_receipt_rejected) ... ok
+test_volume_in_inventory_rejected (test_guard.GuardEvidenceTests.test_volume_in_inventory_rejected) ... ok
+test_wrong_dns_rejected (test_guard.GuardEvidenceTests.test_wrong_dns_rejected) ... ok
+test_schema_override_refuses (test_guard.GuardTests.test_schema_override_refuses) ... ok
+test_unexpected_network_member_refuses (test_guard.GuardTests.test_unexpected_network_member_refuses) ... ok
+test_valid (test_guard.GuardTests.test_valid) ... ok
+test_wrong_image_refuses (test_guard.GuardTests.test_wrong_image_refuses) ... ok
+test_failure_is_persisted_before_raise_with_private_permissions (test_orchestrate.DiagnosticsTests.test_failure_is_persisted_before_raise_with_private_permissions) ... ok
+test_changed_data_rejected (test_orchestrate.FalsifierTests.test_changed_data_rejected) ... ok
+test_wrong_image_guard_unexpected_success_rejected (test_orchestrate.FalsifierTests.test_wrong_image_guard_unexpected_success_rejected) ... ok
+test_wrong_image_refusal_with_unchanged_snapshot (test_orchestrate.FalsifierTests.test_wrong_image_refusal_with_unchanged_snapshot) ... ok
+test_matching (test_orchestrate.ReceiptTests.test_matching) ... ok
+test_torn_down (test_orchestrate.ReceiptTests.test_torn_down) ... ok
+test_wrong_sha (test_orchestrate.ReceiptTests.test_wrong_sha) ... ok
+test_correct_and_parameter_binding (test_http_verify.HttpTests.test_correct_and_parameter_binding) ... ok
+test_error_status (test_http_verify.HttpTests.test_error_status) ... ok
+test_feed_ids_wrong (test_http_verify.HttpTests.test_feed_ids_wrong) ... ok
+test_missing_kind_fixture (test_http_verify.HttpTests.test_missing_kind_fixture) ... ok
+test_missing_rows (test_http_verify.HttpTests.test_missing_rows) ... ok
+test_no_http_write_control (test_http_verify.HttpTests.test_no_http_write_control) ... ok
+test_unknown_control_fails (test_http_verify.HttpTests.test_unknown_control_fails) ... ok
+test_wrong_item_id (test_http_verify.HttpTests.test_wrong_item_id) ... ok
+test_wrong_kind_path (test_http_verify.HttpTests.test_wrong_kind_path) ... ok
+test_wrong_rows (test_http_verify.HttpTests.test_wrong_rows) ... ok
+
+----------------------------------------------------------------------
+Ran 30 tests in 0.016s
+
+OK
