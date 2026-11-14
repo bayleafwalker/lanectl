@@ -1,0 +1,35 @@
+  ▲ Next.js 14.2.35
+  - Local:        http://127.0.0.1:41463
+  - Network:      http://127.0.0.1:41463
+
+ ✓ Starting...
+ ✓ Ready in 991ms
+ ○ Compiling /acceptance-onboarding ...
+Browserslist: caniuse-lite is outdated. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+ ✓ Compiled /acceptance-onboarding in 1243ms (530 modules)
+ GET /acceptance-onboarding 200 in 1320ms
+ GET /acceptance-onboarding 200 in 20ms
+ GET /acceptance-onboarding 200 in 22ms
+ GET /acceptance-onboarding 200 in 29ms
+ GET /acceptance-onboarding 200 in 15ms
+ GET /acceptance-onboarding 200 in 13ms
+ GET /acceptance-onboarding 200 in 13ms
+ GET /acceptance-onboarding 200 in 13ms
+ GET /acceptance-onboarding 200 in 14ms
+ GET /acceptance-onboarding 200 in 12ms
+ GET /acceptance-onboarding 200 in 13ms
+ GET /acceptance-onboarding 200 in 13ms
+ GET /acceptance-onboarding 200 in 12ms
+ GET /acceptance-onboarding 200 in 13ms
+ GET /acceptance-onboarding 200 in 13ms
+ GET /acceptance-onboarding 200 in 13ms
+ GET /acceptance-onboarding 200 in 14ms
+ GET /acceptance-onboarding 200 in 12ms
+ GET /acceptance-onboarding 200 in 15ms
+ GET /acceptance-onboarding 200 in 13ms
+ GET /acceptance-onboarding 200 in 13ms
+ GET /acceptance-onboarding 200 in 13ms
+ GET /acceptance-onboarding 200 in 13ms
+[?25h

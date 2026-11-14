@@ -1,0 +1,17 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+________________________________ test_runs_node ________________________________
+
+    def test_runs_node():
+        root=Path(__file__).resolve().parents[1]; env=dict(os.environ,HLA_HELPER_PATH=str(root/'apps/web/frontend/lib/onboarding-checklist-state.mjs'))
+        r=subprocess.run([os.environ.get('HLA_NODE','node'),'/tmp/hla-onboarding-acceptance-draft-20261114/onboarding-unit-contract.test.mjs'],capture_output=True,text=True,env=env)
+>       assert r.returncode==0, r.stdout+r.stderr
+E       AssertionError: NODE_SHIM_REACHED
+E         
+E       assert 91 == 0
+E        +  where 91 = CompletedProcess(args=['/tmp/hla-node-shim-a2l97fso/node', '/tmp/hla-onboarding-acceptance-draft-20261114/onboarding-unit-contract.test.mjs'], returncode=91, stdout='', stderr='NODE_SHIM_REACHED\n').returncode
+
+tests/test_wrapper.py:7: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_wrapper.py::test_runs_node - AssertionError: NODE_SHIM_REACHED
+1 failed in 0.01s
