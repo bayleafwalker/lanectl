@@ -1,0 +1,60 @@
+{
+  "schema": "hla-ui-specification-root-disposition/v1",
+  "recorded_at": "2026-11-14T13:43:39.863096+00:00",
+  "native_review": "Actual official specification._invoke unchanged, DONE0/accept; full retention complete",
+  "native_started": "2026-11-14T13:29:26Z",
+  "native_ended": "2026-11-14T13:40:41Z",
+  "base_lint": [],
+  "publication_validator": [],
+  "release_digest": "e2362c147f5a82275e50d003c13d918a580aa7d71ecf93624a3dc0028ca2d16e",
+  "root_decision": "Eligible for guarded publication and normal bounded implementation. Native acceptance is not final candidate or product qualification.",
+  "independent_read_only_audit": "/root/hla_source_manual_review; actual native findings traced against exact frozen acceptance; no reviewer runtime/test execution claimed",
+  "mandatory_candidate_obligations": [
+    "Show a real non-null market reference accurately; frozen fixture nulls every value and does not establish this behavior. Add independent positive and deliberately wrong/missing-value failure controls before final qualification.",
+    "Verify semantic labels match their values, with no invented component labels; value presence alone is insufficient. Exercise swapped/made-up label failure control.",
+    "Keep all four kinds, complete rows, real Next rank/click/deeplink/status paths and full final delivery unchanged; independently authored product regression tests remain worker delta in M700."
+  ],
+  "optional_or_corrected_claims": [
+    "Distinct Busy retry hint is optional; required safe unavailable behavior is covered. Any displayed retry hint must be generic and accurate.",
+    "The native review claim that bad string exercises literal NaN is unsupported. No literal NaN proof is claimed. It is invalid JSON; exercise at a genuine JS boundary if one exists/required.",
+    "The native reviewer mandatory command exited2 because the frozen file was not materialized in its review clone; this is not passing acceptance evidence. Actual official base lint completed separately with[]."
+  ],
+  "policy": {
+    "size_M_lines": 700,
+    "max_attempts": 2,
+    "lane_timeout_s": 2700,
+    "review_timeout_s": 1800,
+    "author_excluded_from_implementation": true
+  },
+  "publication": "not yet executed at recording",
+  "artifacts": [
+    {
+      "path": "native-request.json",
+      "sha256": "9130cc77469f9dfb50a2e9c99897f4cfeb49e66b89d573b177add1b7edd678b8"
+    },
+    {
+      "path": "native-return.json",
+      "sha256": "847cc0f3844556193bf6c58b5b27ad28171fcdd837433480d6fddbf775f82a73"
+    },
+    {
+      "path": "native-status.json",
+      "sha256": "ff3cd5a00affa926554a03cd9550d2f7aaccbd8ad4a6f86fb224411bffc91733"
+    },
+    {
+      "path": "retention.json",
+      "sha256": "ad1ed6243ea081e7d97d9e7bf7443870a40e1ea693c6c7fb4a35354451f1de93"
+    },
+    {
+      "path": "native-raw.json",
+      "sha256": "847cc0f3844556193bf6c58b5b27ad28171fcdd837433480d6fddbf775f82a73"
+    },
+    {
+      "path": "driver.log",
+      "sha256": "def419d045121377d43dab6bf1790d0e5ecc8ef09f6d9044b4a992dee27b4e94"
+    },
+    {
+      "path": "specification.json",
+      "sha256": "34b2770e979a2eb1e72cfc57bf963d0fd4cde192a9a727556eb78843a4c61330"
+    }
+  ]
+}

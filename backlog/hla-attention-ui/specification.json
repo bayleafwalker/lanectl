@@ -1,0 +1,69 @@
+{
+  "schema": "lanectl-specification/v1",
+  "release_digest": "e2362c147f5a82275e50d003c13d918a580aa7d71ecf93624a3dc0028ca2d16e",
+  "review": {
+    "verdict": "accept",
+    "reason": "The frozen acceptance is a genuine, non-vacuous gate for the FULL new UI, not a narrowed type-section-link substitute. It drives a real Playwright 1.59.1 browser against a production Next build, uses a generic route-based HTTP producer for rank/error branches, and separately boots a real ASGI app over disposable Postgres whose expected records are COMPUTED from live source lookups (frozen.seed/refresh/publish/expected_records), then re-drives clicks and deep links through the browser-proxy so the acceptance is not direct-API priming or exact-answer stubs. Its ranking assertion (3>2>1, stable ties, unknown neutral/last, rank-before-top-8) provably fails against the current ascending //review page (current top-8 is [0,3,7,2,5,8,10,1] vs required [1,4,6,9,2,5,8,10]), so it cannot be trivially passed. Strict whole-key base64url decode is enforced by an exact single-record request-path oracle that also rejects fallback, wrong identity and double encoding; all four kinds, distinct same-kind records, slash/underscore IDs, two multirow groups, null market reference and precision-preserving facts are exercised, and error states (401->/login, 403 no facts/no fallback, 404 'current report', 503 unavailable+busy safe, 500 not sanitized, no secret leak) are asserted. Non-blocking gaps remain and are acceptable because they are permissive ('may') or deferrable to independently authored worker tests: positive market_reference rendering (all rows nulled), a distinct Busy retry-hint, direct label-correctness/no-fabricated-label assertions, and a literal NaN case (which cannot be HTTP JSON and is already exercised internally via the nonnumeric-string coercion path).",
+    "trivial_pass": "Attack: make the frozen CLI report green without running the expensive real-API/Postgres case by deselecting it (pytest -k 'not test_real_api') or by returning a JUnit that omits it. Rejected: main() invokes `pytest <module>` with no -k/collection filter, and validate_report requires exactly the nine EXPECTED_CASES names with tests==9, skipped==0, failures==0, errors==0 and no <skipped>/<failure>/<error> elements, so any deselection or skip is a malformed report and exits 1; equivalently, the lab fixture asserts Node 20, npm ci, Playwright 1.59.1, the pinned browser image and Docker/Postgres as hard failures, and running_postgres_container's pytest.skip is converted to pytest.fail, so the expensive real path cannot be silently skipped.",
+    "checks": [
+      "Ranking: verified the frozen test drives >8 unsorted mixed-domain rows (12 rows, severity 1/3/2/1/3/2/3/1/2/3/2/None), asserts 3>2>1 stable-tie order [1,4,6,9,2,5,8,10] with tone warn/warm and top-8-before-slice, and mutates input order to prove output is not hard-coded; I confirmed this assertion would FAIL against the current ascending //review page.",
+      "Unknown severities: verified missing/null/numeric-string/nonnumeric/unsupported are all exercised via valid JSON (None/'3'/8/'bad'/missing-severity) and asserted neutral+last in input order, which catches naive Number() coercion (null->0, '3'->3, 8); literal NaN is correctly excluded from HTTP JSON and its internal NaN path is covered by the 'bad' nonnumeric string.",
+      "Route identity/encoding: verified distinct same-kind records produce distinct unpadded base64url keys, both click and direct deep-link are exercised, and strict whole-UTF-8-key decode is enforced by the request-path oracle which also rejects double-encoding, fallback and wrong identity (meta-test test_request_oracle_...).",
+      "Four kinds + facts: verified the real-API test reuses frozen.seed/refresh/publish over disposable Postgres and computes expected_records from live API list responses (not stubs), exercising all four kinds, two multirow groups, slash IDs, null market reference, precision-preserving decimal matching, no anomaly currency, and absence of savings/recommendation phrases.",
+      "Error states: verified 401 redirects to /login, 403 shows no source facts and makes exactly one record request (no list/fallback), 404 uses 'current report' copy, 503 unavailable+busy render safe 'unavailable' with no secret leak or all-clear, and 500 is not sanitized to 404/availability (error/unexpected text required, synthetic_secret absent).",
+      "Fixture authenticity: verified the synthetic backend is a generic route-based HTTP producer that logs requests and returns typed contracts for rank/error branches only, while a separate positive path boots real ASGI+Postgres and drives real source lookups and Next clicks through the browser-proxy; request logs (state['requests']) capture only actual Next reads, not the direct urlopen preflight selfchecks.",
+      "No-fallback/no-leak: verified assert_only_exact_record filters all /reports/ paths and requires exactly the one record path, so any alternate report or query-list fallback on denied/unavailable detail is rejected, and sentinel/synthetic_secret leakage is asserted absent.",
+      "Tool/setup/no-skip: verified Node 20, npm ci, Playwright 1.59.1, the pinned browser image digest, and Docker/Postgres are hard asserts (explicit failures, not skips), and pytest.skip from the Postgres helper is converted to pytest.fail.",
+      "Cleanup integrity: verified the lab fixture and required_postgres context verify owned browser container, synthetic backend, Next process and Postgres container removal after execution.",
+      "JUnit vacuousness: verified validate_report requires a single testsuite with exactly the nine named cases, tests==9 skipped==0 failures==0 errors==0, correct classname, and rejects any skipped/failure/error element, so normal pytest collection is inert and deselection/skip cannot pass.",
+      "Contracts: verified the three frozen artifacts' SHA256 match the pinned digests (intent.md fb195a7c..., baseline.tokens.json ce1a7d8a..., ui-contract.yaml 603153cf...).",
+      "Mandatory command: ran `uv run --no-sync python tests/test_attention_current_ui_acceptance.py`; it exits 2 because the frozen test file is present only as planner bytes in proposal.json and not yet materialized at tests/test_attention_current_ui_acceptance.py (pre-implementation state), not a test-soundness defect."
+    ]
+  },
+  "author_model": "gpt-6.1-terra",
+  "reviewer_model": "opencode-go/deepseek-v4-pro",
+  "intent_digest": "9c069425698682921ecef822c6e39c7f539c9480daf8ba6430491c1e467f6a74",
+  "recorded_at": "2026-11-14T13:41:51.421630+00:00",
+  "lint_problems": [],
+  "usage": {
+    "author": null,
+    "reviewer": {
+      "input_tokens": 108068,
+      "output_tokens": 4989,
+      "reasoning_tokens": 45572,
+      "cache_read_tokens": 1262592,
+      "cache_write_tokens": 0,
+      "cost_usd": 0.19921269,
+      "steps": 27
+    }
+  },
+  "mandatory_acceptance_commands": [
+    "uv run --no-sync python tests/test_attention_current_ui_acceptance.py"
+  ],
+  "prior_specification_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "author_provenance": {
+    "requested_model": "gpt-6.1-terra",
+    "kind": "first-party acceptance author",
+    "task": "/root/source_r3_qualification",
+    "exact_runtime_variant_independently_attested": false,
+    "native_author_invocation_claimed": false,
+    "proposal_sha256": "f0b12356e5724c56a603b442bc77ca36ebec9d8e3f1c6ec398fe059abb321d5a",
+    "main_input_sha256": "57c9e9eef945a90d133a7a0f2b29194b1d9df7cd6a0007c52a50672b1fc02bf5"
+  },
+  "frozen_contracts": [
+    {
+      "path": "intent.md",
+      "digest": "fb195a7c65517da1c0b4781759f1f89fb636f759e90b7befca55f788e9cb1f85"
+    },
+    {
+      "path": "baseline.tokens.json",
+      "digest": "ce1a7d8a48cf483519994f5d37872b49fe8472950bc6ef89a4451970c4f9c862"
+    },
+    {
+      "path": "ui-contract.yaml",
+      "digest": "603153cffbf78388d003a30387d4a2db63a3e4289da0e18a96fa934bc6392ee1"
+    }
+  ],
+  "diagnostics_root": "/tmp/lanectl-hla-ui-spec-r1-review",
+  "invocation": "official specification._invoke unchanged"
+}
