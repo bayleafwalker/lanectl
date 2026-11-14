@@ -119,11 +119,28 @@ Product contact continues under HLA1593. Identity PR82 and source-reader PR83
 are canonical; PR83 passed the real train/deploy/land path, all four canonical
 CI jobs and fresh ancestry verification at merge `30c0caf`. Real default-schema
 image smoke checked seven publications and all four complete attention source
-groups. The four-kind HTTP adapter remains draft during independent acceptance
-review, and meaningful ranked individual UI and final delivery remain open.
-These prerequisites do not constitute whole1593 completion or the ladder's
-about20 ruled-item exit. Detailed evidence is in
-`../evidence/2026-11-14-product-contact/`.
+groups. The four-kind HTTP adapter and generated contracts are also canonical:
+[PR85 delivery evidence](../evidence/2026-11-14-product-contact/api-a7-delivery/canonical-pr85.json)
+records merge `b2d0fe3` after the checked train, declared dev HTTP smoke, normal
+land and teardown, all four CI jobs and fresh ancestry verification. The dev
+smoke matched all eight complete groups against independent SQL, including
+slash identifiers and multiple component rows.
+
+The full ranked individual UI acceptance is now a qualified draft over that
+canonical API base. Its unchanged-base run reaches real Next and API fixtures
+and reports six missing-UI failures with three passing controls and no skips.
+Forced skips and incomplete JUnit results are rejected. The
+[draft qualification](../evidence/2026-11-14-product-contact/ui-acceptance-draft/qualification.json)
+binds the proposal and test bytes. The independent native review has not run:
+automatic approval review rejected transmission of this public UI payload to
+OpenCode Go DeepSeek V4 Pro, and specific approval is pending. No UI release
+has been published or implemented. Meaningful views for all four record kinds,
+production ranking and navigation, independent qualification, and complete
+UI train/dev/CI delivery remain required.
+
+These prerequisites do not constitute whole HLA1593 completion or the ladder's
+about 20 ruled-item exit. Neither source/API prerequisites nor acceptance
+authoring are counted here as additional completed product items.
 
 The timer is active and its latest tick succeeded. No week-long autonomous
 class exit is claimed. Hosted discovery still does not establish authorized
