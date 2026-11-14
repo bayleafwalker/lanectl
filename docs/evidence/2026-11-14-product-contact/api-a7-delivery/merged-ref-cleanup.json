@@ -1,0 +1,22 @@
+{
+  "retired_merged_owned_refs": [
+    {
+      "local": "lane/hla-attention-records-r5-a7",
+      "head": "01733b1024f6b6f779282a9b1181b646c1e27db6"
+    },
+    {
+      "local": "train/train-20261114093455",
+      "head": "c90eb864df4cda647a41d839000f1e1e5a6a74b8"
+    },
+    {
+      "local": "lane/hla-attention-source-reader-a3",
+      "head": "78bf4f4ca15fe2fbe7086d1018f5533930cb8af4"
+    },
+    {
+      "local": "train/train-20261114064740",
+      "head": "713402007fd31fd5537f45945af557a7393682f8"
+    }
+  ],
+  "canonical_ancestry_checked_before_each": true,
+  "scope": "Exact successful source-a3/API-a7 refs only; user/failed/historical uncommitted attempts untouched"
+}
