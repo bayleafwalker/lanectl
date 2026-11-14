@@ -1,0 +1,60 @@
+test_bad_label (test_compare.Controls.test_bad_label) ... ok
+test_baseline (test_compare.Controls.test_baseline) ... ok
+test_collapsed (test_compare.Controls.test_collapsed) ... ok
+test_disjoint (test_compare.Controls.test_disjoint) ... ok
+test_false_history (test_compare.Controls.test_false_history) ... ok
+test_invented_currency (test_compare.Controls.test_invented_currency) ... ok
+test_missing (test_compare.Controls.test_missing) ... ok
+test_missing_current (test_compare.Controls.test_missing_current) ... ok
+test_stale (test_compare.Controls.test_stale) ... ok
+test_wrong_link (test_compare.Controls.test_wrong_link) ... ok
+test_wrong_rank (test_compare.Controls.test_wrong_rank) ... ok
+test_decimal_equivalence_and_non_numeric (test_compare.NumericControls.test_decimal_equivalence_and_non_numeric) ... ok
+test_numeric_requires_whole_token (test_compare.NumericControls.test_numeric_requires_whole_token) ... ok
+test_wrong_precise_row_cannot_pass (test_compare.NumericControls.test_wrong_precise_row_cannot_pass) ... ok
+test_good_synthetic (test_binding.BindingTests.test_good_synthetic) ... ok
+test_unobserved_build (test_binding.BindingTests.test_unobserved_build) ... ok
+test_unproven_port (test_binding.BindingTests.test_unproven_port) ... ok
+test_wrong_backend (test_binding.BindingTests.test_wrong_backend) ... ok
+test_wrong_context (test_binding.BindingTests.test_wrong_context) ... ok
+test_wrong_network (test_binding.BindingTests.test_wrong_network) ... ok
+test_wrong_source (test_binding.BindingTests.test_wrong_source) ... ok
+test_wrong_web_image (test_binding.BindingTests.test_wrong_web_image) ... ok
+test_wrong_web_url (test_binding.BindingTests.test_wrong_web_url) ... ok
+test_changed_context_digest (test_observer.ObserverTests.test_changed_context_digest) ... ok
+test_nonzero_preserved (test_observer.ObserverTests.test_nonzero_preserved) ... ok
+test_other_docker_passthrough (test_observer.ObserverTests.test_other_docker_passthrough) ... ok
+test_record_failure_preserves_exit_but_no_evidence (test_observer.ObserverTests.test_record_failure_preserves_exit_but_no_evidence) ... ok
+test_success_and_arg_cwd_stream (test_observer.ObserverTests.test_success_and_arg_cwd_stream) ... ok
+test_wrong_working_directory_refused (test_observer.ObserverTests.test_wrong_working_directory_refused) ... ok
+test_bad_output (test_build_records.BuildRecords.test_bad_output) ... ok
+test_extra (test_build_records.BuildRecords.test_extra) ... ok
+test_failure (test_build_records.BuildRecords.test_failure) ... ok
+test_missing (test_build_records.BuildRecords.test_missing) ... ok
+test_positive (test_build_records.BuildRecords.test_positive) ... ok
+test_receipt_window_accepts (test_build_records.BuildRecords.test_receipt_window_accepts) ... ok
+test_receipt_window_rejects_stale (test_build_records.BuildRecords.test_receipt_window_rejects_stale) ... ok
+test_wrong_command (test_build_records.BuildRecords.test_wrong_command) ... ok
+test_wrong_context (test_build_records.BuildRecords.test_wrong_context) ... ok
+test_wrong_cwd (test_build_records.BuildRecords.test_wrong_cwd) ... ok
+test_inspect_failure_removes_and_inventories (test_run.BrowserCleanupControls.test_inspect_failure_removes_and_inventories) ... ok
+test_inventory_failure_never_claims_absence (test_run.BrowserCleanupControls.test_inventory_failure_never_claims_absence) ... ok
+test_log_write_failure_removes_and_inventories (test_run.BrowserCleanupControls.test_log_write_failure_removes_and_inventories) ... ok
+test_primary_error_preserved_with_cleanup_diagnostics (test_run.BrowserCleanupControls.test_primary_error_preserved_with_cleanup_diagnostics) ... ok
+test_removal_failure_remains_failure (test_run.BrowserCleanupControls.test_removal_failure_remains_failure) ... ok
+test_still_present_never_claims_absence (test_run.BrowserCleanupControls.test_still_present_never_claims_absence) ... ok
+test_wrong_web_image_stops_before_browser_or_publication (test_run.OrchestrationControls.test_wrong_web_image_stops_before_browser_or_publication) ... evidence: /tmp/hla-ui-dev-smoke-preparation/run-0374361b70104fdc9e2df917d903ed4d
+ok
+test_bound_url (test_run.RuntimeGuards.test_bound_url) ... ok
+test_browser_bad_id_never_cleanup (test_run.RuntimeGuards.test_browser_bad_id_never_cleanup) ... ok
+test_facts_collector_has_no_publisher_call (test_run.RuntimeGuards.test_facts_collector_has_no_publisher_call) ... ok
+test_wrong_backend (test_run.RuntimeGuards.test_wrong_backend) ... ok
+test_wrong_image (test_run.RuntimeGuards.test_wrong_image) ... ok
+test_wrong_network (test_run.RuntimeGuards.test_wrong_network) ... ok
+test_wrong_port (test_run.RuntimeGuards.test_wrong_port) ... ok
+test_wrong_project (test_run.RuntimeGuards.test_wrong_project) ... ok
+
+----------------------------------------------------------------------
+Ran 54 tests in 0.198s
+
+OK

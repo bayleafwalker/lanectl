@@ -1,0 +1,121 @@
+{
+  "schema": "hla-built-next-smoke-preparation/v1",
+  "recorded_at": "2026-11-14T13:50:33.944920+00:00",
+  "author": "/root/hla_attention_ui_plan; first-party workflow preparation",
+  "root_checks": {
+    "command": "python3 -m unittest -q test_compare test_binding test_observer test_build_records test_run",
+    "result": "54 passed",
+    "Node20_syntax": [
+      "observe.cjs passed",
+      "disjoint.cjs passed"
+    ]
+  },
+  "author_controls": "54 synthetic/mocked controls; actual network-disabled matched Ubuntu Chromium disjoint predicate control and exact owned cleanup/inventory. Host Chromium libglib setup failure retained separately.",
+  "root_findings_and_repairs": [
+    "Numeric substring falsepass (7.1 in17.1 and1in10) repaired with exact decimal-token equality and negative controls",
+    "Nested DOM aliases could count identical source row twice; overlapping groups now rejected on click and direct navigation",
+    "Inspection/logging failure could skip owned browser removal; independent cleanup attempts and daemon-inventory checks now required"
+  ],
+  "independent_review": {
+    "reviewer": "/root/hla_source_manual_review",
+    "result": "No blocker for stated positive-smoke scope; source audit only, no tests/Docker/deploy/UI smoke run by reviewer",
+    "limits": [
+      "Comparator matches source values within a row, not semantic field-label associations",
+      "Only null market reference is required by this fixture; mandatory separate non-null qualification remains",
+      "Failure during a postcheck can prevent later checks; never infer those later checks ran",
+      "Actual future candidate/receipt/image/source binding remains unproved until runtime execution"
+    ]
+  },
+  "execution_status": "No actual product UI smoke, deployment, SQL/API runtime or publication performed by preparation. Existing API publisher must run at most once in its controlled actual future train context; this observer never invokes it.",
+  "rematerialization": "Original runnable preparation root is /tmp/hla-ui-dev-smoke-preparation. Archived copies retain original absolute paths; restore/review paths with digest checks before future use. Do not execute retained synthetic run directories as evidence.",
+  "artifacts": [
+    {
+      "path": "binding.py",
+      "sha256": "42939fe51c7bc90b8e377c8655ab479f6dbd7f970d91b219ebcfbe35f62a0879"
+    },
+    {
+      "path": "build_records.py",
+      "sha256": "0ea1a141b305dfa08644643cc06be86e1e51a4b58e840694a4dd61da68dd5efb"
+    },
+    {
+      "path": "compare.py",
+      "sha256": "501a57bdb700103752b3830ce16ace4ebf1163343156e0eafdf8f98c17340a4d"
+    },
+    {
+      "path": "disjoint.cjs",
+      "sha256": "2d5e0391605681da8ccb1fb0554884c27d1df01a2e6801df43ba05fb39d991ba"
+    },
+    {
+      "path": "docker_observe.py",
+      "sha256": "3ae9cd4ac6b0bbb3dee3027e8adf7c711510c66c66d9db6fc16e77b0030b2f19"
+    },
+    {
+      "path": "inside_facts.py",
+      "sha256": "a5893313849ba021ebf3fdc65710b37388687266bee029d82d5165c0c9d0aeb8"
+    },
+    {
+      "path": "observe.cjs",
+      "sha256": "375349f33d33b1f08dea44a84353024ca998d0d0eac2e270bdbbbc64fdd7ca53"
+    },
+    {
+      "path": "prepare_shim.py",
+      "sha256": "8d5560c0b53923e731876f8ca94600e948e4b1ae98ba9eeef984738c76e0de8c"
+    },
+    {
+      "path": "run.py",
+      "sha256": "58e332c98235622d1cf5ac5d1b09a104771439c694c5e50c471155cdb44a0ae1"
+    },
+    {
+      "path": "test_binding.py",
+      "sha256": "b450392bd597115ba79deec34a3f7168858e09a8c88ae1217357a3135b3ead54"
+    },
+    {
+      "path": "test_build_records.py",
+      "sha256": "3836b8933a21f91674a821d522c3db6decc28a8b190384ce81596625d3bb83e3"
+    },
+    {
+      "path": "test_compare.py",
+      "sha256": "746b56a1cb6a6682fb09782ea7abeabc8c699fec9d6d59d8c6f07eaa33ce9e9a"
+    },
+    {
+      "path": "test_disjoint.cjs",
+      "sha256": "91cd9d7afa9ee7eefcfef9ebf2e8968deb56025dbd669efa64f34cfbcc53f05b"
+    },
+    {
+      "path": "test_disjoint_browser.cjs",
+      "sha256": "b455cddee472949f79131b76e1034e02d97826ce80c5a15eeb0262ffe81ab9ee"
+    },
+    {
+      "path": "test_observer.py",
+      "sha256": "cd91c21316a9b439755b00479653b0fb9a16fea32ac8b194c0f4e4781eff6a18"
+    },
+    {
+      "path": "test_run.py",
+      "sha256": "ab8e2686f96fcef0b61cb9ad8a05e716e85747238421c6fbfc807e64d3afb90e"
+    },
+    {
+      "path": "README.md",
+      "sha256": "d6abe67df2358eb2957f2de61995a4ec064e4b531e77a0467425ba769ece6d5d"
+    },
+    {
+      "path": "offline.log",
+      "sha256": "93ecf8a41669e3227a06964d773769a0504b967a4881ccc5052caec31da1a357"
+    },
+    {
+      "path": "browser-expression.log",
+      "sha256": "970669780b67b49dd5008b327bc50c73815ae8b00079eae1753d9bd85319c0c2"
+    },
+    {
+      "path": "container-expression.log",
+      "sha256": "135301ecc2b7b1edabfda76c758f438013e09ac45754cb7f2b512aaa197c1da7"
+    },
+    {
+      "path": "container-expression-inspect.json",
+      "sha256": "8adff89c8fb61fd353d49a88b029d8f423137a9b462ee5a32ab2bac2bddedf70"
+    },
+    {
+      "path": "container-expression-inventory.json",
+      "sha256": "1182510f370423787a3526164e2e2517f0d39fcc23f29dba9c2bdc1bb0e1cb7a"
+    }
+  ]
+}
