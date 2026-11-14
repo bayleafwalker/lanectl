@@ -1,0 +1,19 @@
+{
+  "schema": "provider-authorization-record/v1",
+  "recorded_at": "2026-11-14T13:30:51.733362+00:00",
+  "source": "operator messages in session01a1d0d7-890b-7cd0-931f-0a9994d9308b",
+  "specific_ui_review_approved": true,
+  "standing_authorization": "I approve any and all work completed for opencode and claude, including these reviews but also full implementation stacks. I have already used these services for months.",
+  "interpretation": "OpenCode and Claude review and implementation within requested work are authorized without repeated provider permission questions. Repository scope, data classification, credentials, protected paths, gates and effect authority still apply.",
+  "native_review": {
+    "driver_unit": "lanectl-hla-ui-spec-r1-review.service",
+    "native_unit": "lanectl-attempt-c412ddba804ccde0e36276be.service",
+    "driver_pid": 920437,
+    "native_pid": 920565,
+    "model": "opencode-go/deepseek-v4-pro",
+    "diagnostics": "/tmp/lanectl-hla-ui-spec-r1-review",
+    "proposal_digest": "f0b12356e5724c56a603b442bc77ca36ebec9d8e3f1c6ec398fe059abb321d5a",
+    "test_digest": "57c9e9eef945a90d133a7a0f2b29194b1d9df7cd6a0007c52a50672b1fc02bf5",
+    "state_at_recording": "running; no verdict claimed"
+  }
+}
