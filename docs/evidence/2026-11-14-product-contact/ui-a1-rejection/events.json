@@ -1,0 +1,170 @@
+[
+  {
+    "data": {
+      "attempt_id": "hla-attention-ui-a1",
+      "base_sha": "b2d0fe393ac0971e906cce275e91f45e94422593",
+      "branch": "lane/hla-attention-ui-a1",
+      "lane": "implement",
+      "lane_digest": "sha256:7bd3d1f327b84636",
+      "lane_revision": 3,
+      "model": "opencode-go/deepseek-v4-pro",
+      "release_revision": 1,
+      "runner_process": {
+        "boot_id": "bd59e4fd-e182-4b3a-aa2e-b78ebef31fa6",
+        "host": "workstation",
+        "machine_id": "e681b85141f226386e176a1de00fcc3ab4546197d3aa937aad606d73ce133a5b",
+        "pid": 950765,
+        "start_ticks": "2820033"
+      },
+      "worker": "opencode",
+      "worker_unit": "lanectl-attempt-4a55b731de81aaf6d07ea619.service"
+    },
+    "item_id": "hla-attention-ui",
+    "schema": "lanectl.event/v1",
+    "ts": "2026-11-14T13:45:10Z",
+    "type": "item.claimed"
+  },
+  {
+    "data": {
+      "amount": 11754.732142857143,
+      "attempt_id": "hla-attention-ui-a1",
+      "pool": "opencode-go:default",
+      "provider": "opencode",
+      "reservation_id": "res-hla-attention-ui-a1",
+      "unit": "output_tokens"
+    },
+    "item_id": "hla-attention-ui",
+    "schema": "lanectl.event/v1",
+    "ts": "2026-11-14T13:45:10Z",
+    "type": "capacity.reserved"
+  },
+  {
+    "data": {
+      "attempt_id": "hla-attention-ui-a1",
+      "elapsed_s": 2700.1,
+      "escalation_reason": null,
+      "exit_code": 124,
+      "final_tail": "",
+      "head_sha": "3685c389f5aa888a506f109d1ed01ae08b2ba898",
+      "isolation_breach": false,
+      "main_changed": false,
+      "outcome": "failed",
+      "seed_sha": "76b211c3b0c59996c5bbf1100a0d7113e1c72b31"
+    },
+    "item_id": "hla-attention-ui",
+    "schema": "lanectl.event/v1",
+    "ts": "2026-11-14T14:30:12Z",
+    "type": "attempt.finished"
+  },
+  {
+    "data": {
+      "attempt_id": "hla-attention-ui-a1",
+      "model": "opencode-go/deepseek-v4-pro",
+      "provider": "opencode",
+      "source": "adapter",
+      "units": {
+        "cache_read_tokens": 20847360,
+        "cache_write_tokens": 0,
+        "cost_usd": 1.0463454699999997,
+        "input_tokens": 388377,
+        "output_tokens": 25243,
+        "reasoning_tokens": 142118,
+        "steps": 117
+      }
+    },
+    "item_id": "hla-attention-ui",
+    "schema": "lanectl.event/v1",
+    "ts": "2026-11-14T14:30:12Z",
+    "type": "usage.recorded"
+  },
+  {
+    "data": {
+      "attempt_id": "hla-attention-ui-a1",
+      "gate": "diff-policy",
+      "passed": false,
+      "violations": [
+        "size-budget: 776 changed lines > 700 for size M"
+      ]
+    },
+    "item_id": "hla-attention-ui",
+    "schema": "lanectl.event/v1",
+    "ts": "2026-11-14T14:32:39Z",
+    "type": "gate.result"
+  },
+  {
+    "data": {
+      "attempt_id": "hla-attention-ui-a1",
+      "gate": "fail-on-base",
+      "passed": true,
+      "violations": []
+    },
+    "item_id": "hla-attention-ui",
+    "schema": "lanectl.event/v1",
+    "ts": "2026-11-14T14:32:39Z",
+    "type": "gate.result"
+  },
+  {
+    "data": {
+      "attempt_id": "hla-attention-ui-a1",
+      "gate": "acceptance-on-base",
+      "passed": true,
+      "violations": []
+    },
+    "item_id": "hla-attention-ui",
+    "schema": "lanectl.event/v1",
+    "ts": "2026-11-14T14:32:39Z",
+    "type": "gate.result"
+  },
+  {
+    "data": {
+      "attempt_id": "hla-attention-ui-a1",
+      "gate": "acceptance",
+      "passed": false,
+      "violations": [
+        "exit 1: uv run --no-sync python tests/test_attention_current_ui_acceptance.py :: orn/protocols/websockets/websockets_impl.py:17: DeprecationWarning: websockets.server.WebSocketServerProtocol is deprecated\n    from websockets.server import WebSocketServerProtocol\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n=========================== short test summary info ============================\nFAILED tests/test_attention_current_ui_acceptance.py::test_distinct_links_encode_whole_key_and_lookup\nFAILED tests/test_attention_current_ui_acceptance.py::test_detail_error_statuses_do_not_fetch_fallback_or_leak\n2 failed, 7 passed, 2 warnings in 76.60s (0:01:16)\n"
+      ]
+    },
+    "item_id": "hla-attention-ui",
+    "schema": "lanectl.event/v1",
+    "ts": "2026-11-14T14:32:39Z",
+    "type": "gate.result"
+  },
+  {
+    "data": {
+      "attempt_id": "hla-attention-ui-a1",
+      "by": "gates",
+      "decision": "rejected",
+      "reasons": [
+        "diff-policy: size-budget: 776 changed lines > 700 for size M",
+        "acceptance: exit 1: uv run --no-sync python tests/test_attention_current_ui_acceptance.py :: orn/protocols/websockets/websockets_impl.py:17: DeprecationWarning: websockets.server.WebSocketServerProtocol is deprecated\n    from websockets.server import WebSocketServerProtocol\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n=========================== short test summary info ============================\nFAILED tests/test_attention_current_ui_acceptance.py::test_distinct_links_encode_whole_key_and_lookup\nFAILED tests/test_attention_current_ui_acceptance.py::test_detail_error_statuses_do_not_fetch_fallback_or_leak\n2 failed, 7 passed, 2 warnings in 76.60s (0:01:16)\n",
+        "worker outcome failed"
+      ],
+      "rules_revision": "decision-rules/v3"
+    },
+    "item_id": "hla-attention-ui",
+    "schema": "lanectl.event/v1",
+    "ts": "2026-11-14T14:32:39Z",
+    "type": "decision.recorded"
+  },
+  {
+    "data": {
+      "attempt_id": "hla-attention-ui-a1",
+      "decision": "rejected",
+      "elapsed_s": 2700.1,
+      "gates_failed": [
+        "acceptance",
+        "diff-policy"
+      ],
+      "lane_revision": 3,
+      "model": "opencode-go/deepseek-v4-pro",
+      "rules_revision": "decision-rules/v3",
+      "size": "M",
+      "task_class": "product-ui",
+      "worker": "opencode"
+    },
+    "item_id": "hla-attention-ui",
+    "schema": "lanectl.event/v1",
+    "ts": "2026-11-14T14:32:39Z",
+    "type": "experiment.recorded"
+  }
+]

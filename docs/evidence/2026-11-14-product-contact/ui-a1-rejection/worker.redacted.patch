@@ -1,0 +1,995 @@
+diff --git a/apps/web/frontend/app/globals.css b/apps/web/frontend/app/globals.css
+index c4ccb2d..16ca038 100755
+--- a/apps/web/frontend/app/globals.css
++++ b/apps/web/frontend/app/globals.css
+@@ -935,6 +935,39 @@ th {
+   margin-top: 2px;
+ }
+ 
++/* Operating Picture v2 — current-report record facts */
++.recordFacts {
++  display: grid;
++  grid-template-columns: minmax(0, 1fr);
++  gap: 10px;
++  margin: 0;
++  padding: 14px 0;
++  border-top: 1px solid var(--line);
++}
++
++.recordFacts:first-child {
++  border-top: none;
++}
++
++.recordFacts dt {
++  font-size: 0.68rem;
++  font-weight: 700;
++  letter-spacing: 0.04em;
++  text-transform: uppercase;
++  color: var(--muted);
++}
++
++.recordFacts dd {
++  margin: 0 0 6px;
++  font-size: 0.92rem;
++  line-height: 1.4;
++  overflow-wrap: anywhere;
++}
++
++.recordFacts dd:last-of-type {
++  margin-bottom: 0;
++}
++
+ /* Operating Picture v2 — right rail (ratios + categories) */
+ .ratioList {
+   display: grid;
+diff --git a/apps/web/frontend/app/operating-picture/attention/[kind]/[key]/page.js b/apps/web/frontend/app/operating-picture/attention/[kind]/[key]/page.js
+new file mode 100644
+index 0000000..54843aa
+--- /dev/null
++++ b/apps/web/frontend/app/operating-picture/attention/[kind]/[key]/page.js
+@@ -0,0 +1,47 @@
++import { AppShell } from "@/components/app-shell";
++import { AttentionRecordView } from "@/components/attention-record-view";
++import { StatePanel } from "@/components/state-panel";
++import { getAttentionRecord, getCurrentUser } from "@/lib/backend";
++import { ATTENTION_KINDS, decodeAttentionKey } from "@/lib/attention";
++
++// Invalid kinds and non-canonical keys are a current-report not-found: safe
++// copy, no backend lookup, never routed to the source reader.
++function CurrentReportNotFound() {
++  return (
++    <main className="standalonePage" id="main-content">
++      <a href="/" className="wordmark">
++        Kotona
++      </a>
++      <StatePanel tone="empty" title="Not found in the current report">
++        <p>This record is not part of the current report.</p>
++      </StatePanel>
++    </main>
++  );
++}
++
++// Individual current-report record. The kind is allowlisted and the route key
++// is decoded strictly/canonically before any backend read.
++export default async function AttentionRecordPage({ params }) {
++  const { kind, key } = params;
++  const itemId = Object.prototype.hasOwnProperty.call(ATTENTION_KINDS, kind)
++    ? decodeAttentionKey(key)
++    : null;
++  if (itemId === null) {
++    return <CurrentReportNotFound />;
++  }
++
++  const user = await getCurrentUser();
++  const record = await getAttentionRecord(kind, itemId);
++
++  return (
++    <AppShell
++      currentPath="/operating-picture"
++      user={user}
++      title="Current report"
++      eyebrow="Operating picture"
++      lede="One attention record from the current report."
++    >
++      <AttentionRecordView kind={kind} record={record} />
++    </AppShell>
++  );
++}
+diff --git a/apps/web/frontend/app/operating-picture/page.js b/apps/web/frontend/app/operating-picture/page.js
+index 4d391bc..6f03258 100755
+--- a/apps/web/frontend/app/operating-picture/page.js
++++ b/apps/web/frontend/app/operating-picture/page.js
+@@ -1,9 +1,10 @@
+ import { AppShell } from "@/components/app-shell";
+ import { OperatingPictureView } from "@/components/operating-picture-view";
+ import { formatMoney, formatMonth } from "@/lib/format";
++import { rankAttentionItems } from "@/lib/attention";
+ import {
+   getAffordabilityRatios,
+-  getAttentionItems,
++  getAttentionFeed,
+   getCurrentUser,
+   getMonthlyCashflow,
+   getRecentChanges,
+@@ -152,7 +153,7 @@ export default async function OperatingPicturePage() {
+     cashflowRows,
+     recurringBaseline,
+     affordabilityRatios,
+-    attentionItems,
++    attentionFeed,
+     recentChanges,
+     subscriptions,
+     utilityTrend,
+@@ -163,7 +164,7 @@ export default async function OperatingPicturePage() {
+     getMonthlyCashflow(),
+     getRecurringCostBaseline(),
+     getAffordabilityRatios(),
+-    getAttentionItems(),
++    getAttentionFeed(),
+     getRecentChanges(),
+     getSubscriptionSummary(),
+     getUtilityCostTrend(undefined),
+@@ -208,8 +209,12 @@ export default async function OperatingPicturePage() {
+   // Horizon strip: next 7 days
+   const horizonDays = buildHorizonDays(upcomingFixedCosts);
+ 
+-  // Urgency-ranked attention queue
+-  const rankedAttention = [...attentionItems].sort((a, b) => (a.severity ?? 9) - (b.severity ?? 9));
++  // Urgency-ranked attention queue: strictly numeric 3/2/1 first (stable for
++  // ties), every other severity unknown/last. Ranking happens before the
++  // view's top-eight slice; a malformed/unavailable feed is never all clear.
++  const attentionState = attentionFeed.status;
++  const rankedAttention =
++    attentionFeed.status === "ok" ? rankAttentionItems(attentionFeed.rows) : [];
+ 
+   // Right rail: ratios + top categories
+   const topCategories = buildTopCategories(categorySpend);
+@@ -231,6 +236,7 @@ export default async function OperatingPicturePage() {
+         freshnessDomains={freshnessDomains}
+         horizonDays={horizonDays}
+         rankedAttention={rankedAttention}
++        attentionState={attentionState}
+         affordabilityRatios={affordabilityRatios}
+         topCategories={topCategories}
+         recentChanges={recentChanges}
+diff --git a/apps/web/frontend/components/app-shell.js b/apps/web/frontend/components/app-shell.js
+index 276100b..bfcf251 100755
+--- a/apps/web/frontend/components/app-shell.js
++++ b/apps/web/frontend/components/app-shell.js
+@@ -16,7 +16,7 @@ export function AppShell({ currentPath, user, title, eyebrow, lede, children })
+         Skip to content
+       </a>
+       <header className="rail" id={RAIL_ID} data-open="false">
+-        <Link href="/" className="wordmark" aria-label="Kotona home">
++        <Link href="/" className="wordmark" aria-label="Kotona home" prefetch={false}>
+           Kotona
+         </Link>
+         <CommandPalette entries={paletteEntries} currentPath={currentPath} />
+@@ -36,6 +36,7 @@ export function AppShell({ currentPath, user, title, eyebrow, lede, children })
+                         className="navLink"
+                         data-active={active}
+                         aria-current={active ? "page" : undefined}
++                        prefetch={false}
+                       >
+                         {item.label}
+                       </Link>
+@@ -52,7 +53,7 @@ export function AppShell({ currentPath, user, title, eyebrow, lede, children })
+               {user.username} / {user.role}
+             </span>
+             <div className="railFooterActions">
+-              <Link className="ghostButton" href="/retro">
++              <Link className="ghostButton" href="/retro" prefetch={false}>
+                 Retro
+               </Link>
+               <form action="/auth/logout" method="post">
+@@ -66,7 +67,7 @@ export function AppShell({ currentPath, user, title, eyebrow, lede, children })
+       </header>
+       <main className="page shellMain" id="main-content" tabIndex={-1}>
+         <div className="mobileBar">
+-          <Link href="/" className="wordmark">
++          <Link href="/" className="wordmark" prefetch={false}>
+             Kotona
+           </Link>
+           <NavToggle controls={RAIL_ID} />
+diff --git a/apps/web/frontend/components/attention-record-view.js b/apps/web/frontend/components/attention-record-view.js
+new file mode 100644
+index 0000000..54b5908
+--- /dev/null
++++ b/apps/web/frontend/components/attention-record-view.js
+@@ -0,0 +1,121 @@
++import React from "react";
++
++import { Eyebrow } from "./eyebrow";
++import { StatePanel } from "./state-panel";
++import { formatDay } from "../lib/format";
++
++const KIND_LABELS = {
++  anomaly: "Anomaly",
++  upcoming_cost: "Upcoming cost",
++  contract_review: "Contract review",
++  contract_renewal: "Contract renewal",
++};
++
++// Required public facts per kind, drawn only from the source row model. Values
++// are rendered verbatim (no invented currency, labels, savings or aggregation);
++// a null or missing value renders as "Unknown".
++const KIND_FACTS = {
++  anomaly: [
++    { field: "counterparty_name", label: "Counterparty" },
++    { field: "booking_date", label: "Booking date", type: "date" },
++    { field: "amount", label: "Amount", type: "number" },
++    { field: "direction", label: "Direction" },
++    { field: "anomaly_reason", label: "Anomaly reason" },
++  ],
++  upcoming_cost: [
++    { field: "contract_name", label: "Contract" },
++    { field: "provider", label: "Provider" },
++    { field: "expected_amount", label: "Expected amount", type: "number" },
++    { field: "currency", label: "Currency" },
++    { field: "frequency", label: "Frequency" },
++    { field: "expected_date", label: "Expected date", type: "date" },
++    { field: "confidence", label: "Confidence" },
++  ],
++  contract_review: [
++    { field: "provider", label: "Provider" },
++    { field: "utility_type", label: "Utility type" },
++    { field: "reason", label: "Reason" },
++    { field: "current_price", label: "Current price", type: "number" },
++    { field: "currency", label: "Currency" },
++    { field: "market_reference", label: "Market reference", type: "number" },
++  ],
++  contract_renewal: [
++    { field: "contract_name", label: "Contract" },
++    { field: "provider", label: "Provider" },
++    { field: "renewal_date", label: "Renewal date", type: "date" },
++    { field: "days_until_renewal", label: "Days until renewal" },
++    { field: "current_price", label: "Current price", type: "number" },
++    { field: "currency", label: "Currency" },
++  ],
++};
++
++function factValue(spec, row) {
++  const raw = row[spec.field];
++  if (raw === null || raw === undefined || raw === "") return "Unknown";
++  if (spec.type === "date") return formatDay(raw);
++  return String(raw);
++}
++
++function RecordFacts({ kind, rows }) {
++  const facts = KIND_FACTS[kind] || [];
++  return (
++    <div className="stack compactStack">
++      {rows.map((row, index) => (
++        <dl className="recordFacts" key={index} data-record-row>
++          {facts.map((spec) => (
++            <React.Fragment key={spec.field}>
++              <dt>{spec.label}</dt>
++              <dd>{factValue(spec, row)}</dd>
++            </React.Fragment>
++          ))}
++        </dl>
++      ))}
++    </div>
++  );
++}
++
++// Presentational view for one current-report attention record. `record` is the
++// discriminated result of the narrow transport: ok carries source rows, and
++// the four non-happy states map to distinct safe copy without any source facts.
++export function AttentionRecordView({ kind, record }) {
++  return (
++    <section className="stack">
++      <article className="panel section">
++        <div className="sectionHeader">
++          <div>
++            <Eyebrow>Current report</Eyebrow>
++            <h2>{KIND_LABELS[kind] || "Record"}</h2>
++          </div>
++          <a className="inlineLink" href="/operating-picture">
++            Back to operating picture →
++          </a>
++        </div>
++
++        {record.status === "ok" ? (
++          record.rows.length > 0 ? (
++            <RecordFacts kind={kind} rows={record.rows} />
++          ) : (
++            <StatePanel tone="empty" title="No record rows">
++              <p>This record has no source rows in the current report.</p>
++            </StatePanel>
++          )
++        ) : record.status === "denied" ? (
++          <StatePanel tone="error" title="Access denied">
++            <p>Your account does not have access to this record.</p>
++          </StatePanel>
++        ) : record.status === "not_found" ? (
++          <StatePanel tone="empty" title="Not found in the current report">
++            <p>This record is not part of the current report.</p>
++          </StatePanel>
++        ) : (
++          <StatePanel tone="error" title="Source unavailable">
++            <p>
++              The source for this record is temporarily unavailable.
++              {record.retryAfter ? " Try again shortly." : ""}
++            </p>
++          </StatePanel>
++        )}
++      </article>
++    </section>
++  );
++}
+diff --git a/apps/web/frontend/components/operating-picture-view.js b/apps/web/frontend/components/operating-picture-view.js
+index ef9b8ba..51e523f 100644
+--- a/apps/web/frontend/components/operating-picture-view.js
++++ b/apps/web/frontend/components/operating-picture-view.js
+@@ -7,16 +7,13 @@ import { HorizonStrip } from "./horizon-strip";
+ import { NumMono } from "./num-mono";
+ import { Pill } from "./pill";
+ import { Spark } from "./spark";
++import { StatePanel } from "./state-panel";
+ import { stateIndicatorBadge } from "../lib/state-indicators";
+ import { formatMoney } from "../lib/format";
++import { attentionSeverityMeta, encodeAttentionKey } from "../lib/attention";
+ 
+-const ATTENTION_TONE = {
+-  1: { tone: "warn", label: "urgent" },
+-  2: { tone: "warm", label: "soon" },
+-};
+-
+-function attentionMeta(severity) {
+-  return ATTENTION_TONE[severity] || { tone: "neutral", label: "watch" };
++function attentionHref(item) {
++  return `/operating-picture/attention/${item.item_type}/${encodeAttentionKey(item.item_id)}`;
+ }
+ 
+ // Pure, presentational view for the Operating Picture v2 layout. Page.js
+@@ -32,6 +29,7 @@ export function OperatingPictureView({
+   freshnessDomains,
+   horizonDays,
+   rankedAttention,
++  attentionState = "ok",
+   affordabilityRatios,
+   topCategories,
+   recentChanges,
+@@ -93,19 +91,23 @@ export function OperatingPictureView({
+         <article className="panel section">
+           <div className="sectionHeader">
+             <div>
+-              <Eyebrow>Attention queue</Eyebrow>
+-              <h2>Decisions pending</h2>
++              <Eyebrow>Operating picture</Eyebrow>
++              <h2>Current report</h2>
+             </div>
+             <Link className="inlineLink" href="/review">
+               See all →
+             </Link>
+           </div>
+-          {rankedAttention.length === 0 ? (
++          {attentionState !== "ok" ? (
++            <StatePanel tone="error" title="Current report unavailable" compact>
++              <p>The attention source did not return a usable current report. Try again shortly.</p>
++            </StatePanel>
++          ) : rankedAttention.length === 0 ? (
+             <div className="empty">No attention items. All clear.</div>
+           ) : (
+             <div className="attentionList">
+               {rankedAttention.slice(0, 8).map((item, i) => {
+-                const meta = attentionMeta(item.severity);
++                const meta = attentionSeverityMeta(item.severity);
+                 return (
+                   <div className="attentionRow" key={item.item_id ?? i}>
+                     <div className="attentionIndex">{String(i + 1).padStart(2, "0")}</div>
+@@ -119,9 +121,9 @@ export function OperatingPictureView({
+                       <div className="attentionTitle">{item.title}</div>
+                       {item.detail && <div className="muted attentionDetail">{item.detail}</div>}
+                     </div>
+-                    <Link className="inlineLink" href="/review">
+-                      Review →
+-                    </Link>
++                    <a className="inlineLink" href={attentionHref(item)}>
++                      Open →
++                    </a>
+                   </div>
+                 );
+               })}
+diff --git a/apps/web/frontend/lib/attention.js b/apps/web/frontend/lib/attention.js
+new file mode 100644
+index 0000000..fb90d13
+--- /dev/null
++++ b/apps/web/frontend/lib/attention.js
+@@ -0,0 +1,103 @@
++// Pure helpers for the Operating Picture current-report attention surface.
++//
++// Kept free of Next.js and backend imports so the view component renders in
++// Storybook (browser) and the ranking/encoding logic is testable in isolation.
++// The whole item_id is a single opaque UTF-8 key; routes carry it as unpadded
++// base64url and decode it strictly and canonically on the server.
++
++export const ATTENTION_KINDS = Object.freeze({
++  anomaly: "transaction-anomalies",
++  upcoming_cost: "upcoming-fixed-costs",
++  contract_review: "contract-review-candidates",
++  contract_renewal: "contract-renewal-watchlist",
++});
++
++const B64URL = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
++
++function bytesToBase64Url(bytes) {
++  let acc = 0;
++  let bits = 0;
++  let out = "";
++  for (let i = 0; i < bytes.length; i += 1) {
++    acc = (acc << 8) | bytes[i];
++    bits += 8;
++    while (bits >= 6) {
++      bits -= 6;
++      out += B64URL[(acc >> bits) & 63];
++    }
++    acc &= (1 << bits) - 1;
++  }
++  if (bits > 0) {
++    out += B64URL[(acc << (6 - bits)) & 63];
++  }
++  return out;
++}
++
++function base64UrlToBytes(value) {
++  let acc = 0;
++  let bits = 0;
++  const bytes = [];
++  for (let i = 0; i < value.length; i += 1) {
++    const code = B64URL.indexOf(value[i]);
++    if (code === -1) return null;
++    acc = (acc << 6) | code;
++    bits += 6;
++    if (bits >= 8) {
++      bits -= 8;
++      bytes.push((acc >> bits) & 0xff);
++      acc &= (1 << bits) - 1;
++    }
++  }
++  return bytes;
++}
++
++// Whole UTF-8 item_id -> unpadded base64url route key.
++export function encodeAttentionKey(itemId) {
++  return bytesToBase64Url(new TextEncoder().encode(String(itemId)));
++}
++
++// Strict, canonical decode: valid unpadded base64url that round-trips and is
++// valid UTF-8. Rejects padding, unknown characters, and non-canonical tail
++// bits (for example "YR" for "a") so nothing reaches the source lookup.
++export function decodeAttentionKey(key) {
++  if (typeof key !== "string" || key.length === 0) return null;
++  if (!/^[A-Za-z0-9_-]+$/.test(key)) return null;
++  if (key.length % 4 === 1) return null;
++  const bytes = base64UrlToBytes(key);
++  if (!bytes) return null;
++  if (bytesToBase64Url(bytes) !== key) return null;
++  try {
++    return new TextDecoder("utf-8", { fatal: true }).decode(new Uint8Array(bytes));
++  } catch {
++    return null;
++  }
++}
++
++// 3 urgent (warn), 2 soon (warm), 1 watch (neutral); anything else — missing,
++// null, numeric strings, nonnumeric, unsupported numbers — is Unknown/neutral.
++export function attentionSeverityMeta(severity) {
++  if (severity === 3) return { tone: "warn", label: "urgent" };
++  if (severity === 2) return { tone: "warm", label: "soon" };
++  if (severity === 1) return { tone: "neutral", label: "watch" };
++  return { tone: "neutral", label: "unknown" };
++}
++
++function severityRank(severity) {
++  if (severity === 3) return 0;
++  if (severity === 2) return 1;
++  if (severity === 1) return 2;
++  return 3;
++}
++
++// Stable descending priority (3, 2, 1) with original input order preserved for
++// ties; every unsupported value ranks last in input order.
++export function rankAttentionItems(items) {
++  return items
++    .map((item, index) => ({ item, index }))
++    .sort(
++      (a, b) =>
++        severityRank(a.item.severity) - severityRank(b.item.severity) ||
++        a.index - b.index
++    )
++    .map(({ item }) => item);
++}
+diff --git a/apps/web/frontend/lib/backend.ts b/apps/web/frontend/lib/backend.ts
+index 0a230a2..9d91783 100755
+--- a/apps/web/frontend/lib/backend.ts
++++ b/apps/web/frontend/lib/backend.ts
+@@ -627,6 +627,81 @@ export async function getAttentionItems() {
+   const payload = await backendGet("/reports/attention-items");
+   return getResponseArray(payload, "rows");
+ }
++
++// Current-report attention feed read. Unlike getAttentionItems, this keeps the
++// raw rows-array shape so the Operating Picture can tell a successful empty
++// feed apart from a missing/null/non-array (malformed) or failed (unavailable)
++// response; none of those may be coerced to "all clear".
++export type AttentionFeedResult =
++  | { status: "ok"; rows: Array<{ item_id?: unknown } & Record<string, unknown>> }
++  | { status: "unavailable" }
++  | { status: "malformed" };
++
++export async function getAttentionFeed(): Promise<AttentionFeedResult> {
++  const { response, data } = await backendJsonRequest("get", "/reports/attention-items");
++  if (response.status === 401) {
++    redirect("/login");
++  }
++  if (!response.ok) {
++    return { status: "unavailable" };
++  }
++  if (!data || !Array.isArray(data.rows)) {
++    return { status: "malformed" };
++  }
++  return { status: "ok", rows: data.rows };
++}
++
++const ATTENTION_RECORD_PATHS = {
++  anomaly: "/reports/transaction-anomalies/records/{item_id}",
++  upcoming_cost: "/reports/upcoming-fixed-costs/records/{item_id}",
++  contract_review: "/reports/contract-review-candidates/records/{item_id}",
++  contract_renewal: "/reports/contract-renewal-watchlist/records/{item_id}",
++} as const;
++
++export type AttentionRecordKind = keyof typeof ATTENTION_RECORD_PATHS;
++
++export type AttentionRecordResult =
++  | { status: "ok"; itemId: string; rows: unknown[] }
++  | { status: "denied" }
++  | { status: "not_found" }
++  | { status: "unavailable"; retryAfter: string | null };
++
++// Narrow, kind-dispatched record read on the existing authenticated client.
++// 401 redirects to login, 403/404/503 resolve to controlled states, and any
++// other failure (including 500) throws so the route's error boundary renders.
++// The decoded whole item_id is sent once as a typed path parameter.
++export async function getAttentionRecord(
++  kind: AttentionRecordKind,
++  itemId: string
++): Promise<AttentionRecordResult> {
++  const path = ATTENTION_RECORD_PATHS[kind];
++  const { response, data } = await backendJsonRequest("get", path, {
++    params: { path: { item_id: itemId } },
++  });
++  if (response.status === 401) {
++    redirect("/login");
++  }
++  if (response.status === 403) {
++    return { status: "denied" };
++  }
++  if (response.status === 404) {
++    return { status: "not_found" };
++  }
++  if (response.status === 503) {
++    return { status: "unavailable", retryAfter: response.headers.get("retry-after") };
++  }
++  if (!response.ok) {
++    throw new Error(
++      `Unexpected error loading attention record ${path}: ${response.status}`
++    );
++  }
++  const body = data as { item_id?: string; rows?: unknown[] } | null;
++  return {
++    status: "ok",
++    itemId: body?.item_id ?? itemId,
++    rows: Array.isArray(body?.rows) ? body.rows : [],
++  };
++}
+ export async function getRecentChanges() {
+   const payload = await backendGet("/reports/recent-changes");
+   return getResponseArray(payload, "rows");
+diff --git a/apps/web/frontend/middleware.js b/apps/web/frontend/middleware.js
+new file mode 100644
+index 0000000..6c42291
+--- /dev/null
++++ b/apps/web/frontend/middleware.js
+@@ -0,0 +1,19 @@
++import { NextResponse } from "next/server";
++
++// Intercept attention record routes whose URL carries a raw, malformed
++// percent-encoding. Next's router rejects those with a bare 400 before the
++// page runs; a current-report not-found is the correct public answer and
++// must never reach the source reader.
++export function middleware(request) {
++  const raw = request.url.split("?")[0];
++  if (/\/operating-picture\/attention\//.test(raw) && /%(?![0-9a-fA-F]{2})/.test(raw)) {
++    return NextResponse.rewrite(
++      new URL("/operating-picture/attention/not-a-kind/invalid", request.url)
++    );
++  }
++  return NextResponse.next();
++}
++
++export const config = {
++  matcher: ["/operating-picture/attention/:path*"],
++};
+diff --git a/apps/web/frontend/scripts/attention-worker-check.mjs b/apps/web/frontend/scripts/attention-worker-check.mjs
+new file mode 100644
+index 0000000..ddf4ffe
+--- /dev/null
++++ b/apps/web/frontend/scripts/attention-worker-check.mjs
+@@ -0,0 +1,72 @@
++// Pure-logic self-check for the current-report attention helpers. Run under
++// Node by tests/test_attention_ui_worker.py; loads lib/attention.js as-is and
++// asserts ranking, severity metadata and strict base64url key handling. This is
++// the pure-transform boundary where NaN may be exercised (it is not valid JSON
++// and never reaches an HTTP fixture).
++import { readFileSync } from "node:fs";
++import { fileURLToPath } from "node:url";
++import { dirname, resolve } from "node:path";
++import { strict as assert } from "node:assert";
++
++const here = dirname(fileURLToPath(import.meta.url));
++const source = readFileSync(resolve(here, "../lib/attention.js"), "utf8");
++const commonJs = source.replace(/^export /gm, "");
++const factory = new Function(
++  "TextEncoder",
++  "TextDecoder",
++  commonJs +
++    "\nreturn { ATTENTION_KINDS, encodeAttentionKey, decodeAttentionKey, attentionSeverityMeta, rankAttentionItems };"
++);
++const api = factory(TextEncoder, TextDecoder);
++
++// Whole-key encoding must match Node's unpadded base64url exactly (the same
++// bytes the acceptance oracle derives from urlsafe_b64encode without padding).
++for (const value of [
++  "review_grid/north_above_market_average",
++  "anomaly_opaque/1_ä",
++  "contract_opaque/雪_underscore",
++  "upcoming_charge-42_2026-05-07",
++]) {
++  assert.equal(api.encodeAttentionKey(value), Buffer.from(value, "utf8").toString("base64url"));
++  assert.equal(api.decodeAttentionKey(api.encodeAttentionKey(value)), value);
++}
++
++// Strict/canonical decode rejects padding, non-canonical tail bits, invalid
++// characters, empty input and non-UTF-8 bytes.
++assert.equal(api.decodeAttentionKey("YQ"), "a");
++assert.equal(api.decodeAttentionKey("YQ=="), null);
++assert.equal(api.decodeAttentionKey("YR"), null);
++assert.equal(api.decodeAttentionKey("%%%"), null);
++assert.equal(api.decodeAttentionKey(""), null);
++assert.equal(api.decodeAttentionKey(Buffer.from([0xff, 0xfe]).toString("base64url")), null);
++
++// Severity metadata: 3 urgent/warn, 2 soon/warm, 1 watch/neutral; everything
++// else (missing, null, numeric strings, nonnumeric, unsupported numbers, NaN)
++// is Unknown/neutral.
++assert.deepEqual(api.attentionSeverityMeta(3), { tone: "warn", label: "urgent" });
++assert.deepEqual(api.attentionSeverityMeta(2), { tone: "warm", label: "soon" });
++assert.deepEqual(api.attentionSeverityMeta(1), { tone: "neutral", label: "watch" });
++for (const unknown of [null, "3", 8, "bad", NaN, undefined, 0, -1, 1.5]) {
++  assert.deepEqual(api.attentionSeverityMeta(unknown), { tone: "neutral", label: "unknown" });
++}
++
++// Stable descending rank, ties in input order, unknown last in input order.
++const mixed = [1, 3, 2, 1, 3, 2, 3, 1, 2, 3, 2, null].map((severity, i) => ({ i, severity }));
++assert.deepEqual(api.rankAttentionItems(mixed).map((r) => r.i), [1, 4, 6, 9, 2, 5, 8, 10, 0, 3, 7, 11]);
++
++const unknowns = [
++  { i: 100, severity: null },
++  { i: 101, severity: "3" },
++  { i: 102, severity: 8 },
++  { i: 103, severity: 1 },
++  { i: 104, severity: "bad" },
++  { i: 105 },
++];
++assert.deepEqual(api.rankAttentionItems(unknowns).map((r) => r.i), [103, 100, 101, 102, 104, 105]);
++
++// NaN is only ever a pure-transform control: it ranks Unknown and never
++// changes the known labels.
++assert.deepEqual(api.attentionSeverityMeta(NaN).label, "unknown");
++assert.equal(api.rankAttentionItems([{ i: 0, severity: NaN }, { i: 1, severity: 3 }])[0].i, 1);
++
++console.log("attention worker self-check OK");
+diff --git a/apps/web/frontend/stories/attention-record-view.stories.jsx b/apps/web/frontend/stories/attention-record-view.stories.jsx
+new file mode 100644
+index 0000000..aba9263
+--- /dev/null
++++ b/apps/web/frontend/stories/attention-record-view.stories.jsx
+@@ -0,0 +1,91 @@
++import React from "react";
++
++import { AttentionRecordView } from "../components/attention-record-view";
++
++const meta = {
++  title: "OperatingPicture/AttentionRecord",
++  component: AttentionRecordView,
++  parameters: { layout: "padded" },
++};
++
++export default meta;
++
++function Frame({ children }) {
++  return <main style={{ maxWidth: 680, margin: "0 auto" }}>{children}</main>;
++}
++
++const anomalyRow = {
++  counterparty_name: "NorthPower",
++  booking_date: "2026-01-02",
++  amount: "7.1250",
++  direction: "outflow",
++  anomaly_reason: "large",
++};
++
++const upcomingRow = {
++  contract_name: "Grid Plan",
++  provider: "NorthPower",
++  expected_amount: "17.2500",
++  currency: "EUR",
++  frequency: "monthly",
++  expected_date: "2026-01-02",
++  confidence: "high",
++};
++
++const reviewRow = {
++  provider: "NorthPower",
++  utility_type: "electricity",
++  reason: "above_market_average",
++  current_price: "2.0000",
++  currency: "EUR",
++  market_reference: null,
++};
++
++const renewalRow = {
++  contract_name: "Grid Plan",
++  provider: "NorthPower",
++  renewal_date: "2026-01-02",
++  days_until_renewal: 4,
++  current_price: "1.0000",
++  currency: "EUR",
++};
++
++function ok(kind, rows) {
++  return { status: "ok", itemId: "x", rows };
++}
++
++export const Anomaly = { render: () => <Frame><AttentionRecordView kind="anomaly" record={ok("anomaly", [anomalyRow])} /></Frame> };
++export const UpcomingCost = { render: () => <Frame><AttentionRecordView kind="upcoming_cost" record={ok("upcoming_cost", [upcomingRow])} /></Frame> };
++export const ContractReview = { render: () => <Frame><AttentionRecordView kind="contract_review" record={ok("contract_review", [reviewRow])} /></Frame> };
++export const ContractRenewal = { render: () => <Frame><AttentionRecordView kind="contract_renewal" record={ok("contract_renewal", [renewalRow])} /></Frame> };
++
++export const MultiRow = {
++  render: () => (
++    <Frame>
++      <AttentionRecordView
++        kind="contract_review"
++        record={ok("contract_review", [
++          reviewRow,
++          { ...reviewRow, current_price: "3.0000", reason: "above_market_average" },
++        ])}
++      />
++    </Frame>
++  ),
++};
++
++export const Nulls = {
++  render: () => (
++    <Frame>
++      <AttentionRecordView
++        kind="upcoming_cost"
++        record={ok("upcoming_cost", [{ contract_name: null, provider: "NorthPower", expected_amount: null, currency: null, frequency: null, expected_date: null, confidence: null }])}
++      />
++    </Frame>
++  ),
++};
++
++export const EmptyRows = { render: () => <Frame><AttentionRecordView kind="anomaly" record={ok("anomaly", [])} /></Frame> };
++export const Denied = { render: () => <Frame><AttentionRecordView kind="anomaly" record={{ status: "denied" }} /></Frame> };
++export const NotFound = { render: () => <Frame><AttentionRecordView kind="anomaly" record={{ status: "not_found" }} /></Frame> };
++export const Unavailable = { render: () => <Frame><AttentionRecordView kind="anomaly" record={{ status: "unavailable", retryAfter: null }} /></Frame> };
++export const UnavailableBusy = { render: () => <Frame><AttentionRecordView kind="anomaly" record={{ status: "unavailable", retryAfter: "5" }} /></Frame> };
+diff --git a/apps/web/frontend/stories/support/fixtures.jsx b/apps/web/frontend/stories/support/fixtures.jsx
+index b8acc63..410ab58 100755
+--- a/apps/web/frontend/stories/support/fixtures.jsx
++++ b/apps/web/frontend/stories/support/fixtures.jsx
+@@ -50,26 +50,29 @@ export const horizonDays = [
+ 
+ export const rankedAttentionItems = [
+   {
+-    item_id: "a-1",
+-    severity: 1,
++    item_id: "anomaly_tx-901",
++    item_type: "anomaly",
++    severity: 3,
++    title: "Account import 9 days stale",
++    source_domain: "sources",
++    detail: "op_account · last landed 16 Apr",
++  },
++  {
++    item_id: "upcoming_charge-42_2026-05-07",
++    item_type: "upcoming_cost",
++    severity: 2,
+     title: "Energy contract renewal in 12 days",
+     source_domain: "utilities",
+     detail: "Current fixed price expires 07 May; market index +14% YoY",
+   },
+   {
+-    item_id: "a-2",
+-    severity: 2,
++    item_id: "review_grid/north_above_market_average",
++    item_type: "contract_review",
++    severity: 1,
+     title: "Mortgage rate review window opens",
+     source_domain: "loans",
+     detail: "Bank offer letter received 22 Apr · 4 wk window",
+   },
+-  {
+-    item_id: "a-3",
+-    severity: 3,
+-    title: "Account import 9 days stale",
+-    source_domain: "sources",
+-    detail: "op_account · last landed 16 Apr",
+-  },
+ ];
+ 
+ export const affordabilityRatioFixtures = [
+diff --git a/apps/web/frontend/ui-contracts/attention-current-report/baseline.tokens.json b/apps/web/frontend/ui-contracts/attention-current-report/baseline.tokens.json
+new file mode 100644
+index 0000000..2c2903e
+--- /dev/null
++++ b/apps/web/frontend/ui-contracts/attention-current-report/baseline.tokens.json
+@@ -0,0 +1,43 @@
++{
++  "metadata": {
++    "name": "attention-current-report-existing-default-shell",
++    "status": "frozen-existing-canonical-style-reuse; no-new-human-approval-claimed",
++    "source": "apps/web/frontend/ui-contracts/default-shell/baseline.tokens.json",
++    "runtime": "apps/web/frontend/app/generated/ui-tokens.css and app/globals.css"
++  },
++  "reuse": {
++    "colors": [
++      "--bg",
++      "--paper",
++      "--ink",
++      "--muted",
++      "--line",
++      "--line-strong",
++      "--accent",
++      "--accent-warm",
++      "--accent-cool",
++      "--ok",
++      "--warn"
++    ],
++    "typography": [
++      "--font-sans",
++      "--font-serif",
++      "--font-display",
++      "--type-scale-1",
++      "--type-scale-2",
++      "--type-scale-3",
++      "--type-scale-4",
++      "--type-scale-5",
++      "--type-scale-6"
++    ],
++    "shape": [
++      "--radius-panel",
++      "--radius-pill",
++      "--shadow"
++    ],
++    "existingAttentionMetadataFont": "--retro-font-mono is used by actual attentionIndex and attentionDomain; this does not select retro shell colors",
++    "layout": "existing panel section, sectionHeader, attentionList and attentionRow: 32px 1fr auto, 14px gap and vertical padding, line border; adapt narrow widths using existing responsive conventions",
++    "motion": "existing 120ms ease interactive transitions and prefers-reduced-motion rule",
++    "values": "The referenced tracked default-shell baseline is the value authority; no duplicate token definitions or alternate retro palette."
++  }
++}
+diff --git a/apps/web/frontend/ui-contracts/attention-current-report/intent.md b/apps/web/frontend/ui-contracts/attention-current-report/intent.md
+new file mode 100644
+index 0000000..80ee402
+--- /dev/null
++++ b/apps/web/frontend/ui-contracts/attention-current-report/intent.md
+@@ -0,0 +1,9 @@
++# Operating Picture: current attention records
++
++Status: frozen existing-style contract, derived from the operator's accepted HLA #1593 intent; not a claim of new human review or approval. Tracked and frozen under existing root-owned work; native implementation copies these contracts to the application repository first. Canonical prerequisite: `b2d0fe393ac0971e906cce275e91f45e94422593`, after all four PR85 CI jobs passed.
++
++A household operator needs to find the most urgent current finance and utility matters, open one distinct record, and understand the facts the authorized source publication actually provides. The queue is compact (eight records), calm and information-dense, with a clear priority label and a direct, keyboard-operable destination. Detail uses the existing default Operating Picture shell and visual language: warm paper, restrained dividers, readable labels, and source facts grouped into rows. Preserve the existing typography, spacing and motion; do not introduce an alternate visual direction, font, dependency, icons, or a shell redesign.
++
++Label queue and detail “Current report”; the cashflow month refers to cashflow alone. A current report is not a claim of today's observation, freshness, or history. Do not imply a recommendation, savings, aggregated component price, invented currency, or deletion. Missing values say “Unknown”. Status messages distinguish access denied, absent from the current report, and temporarily unavailable. Existing login redirect is preserved. Each source row remains visible, even when identities coincide. The queue may say no items only when a successful feed is empty; unavailable is never all clear.
++
++A malformed or missing feed rows array is an error, not a successful empty report. Valid JSON unknown-severity scenarios and pure-transform NaN controls remain distinct.
+diff --git a/apps/web/frontend/ui-contracts/attention-current-report/ui-contract.yaml b/apps/web/frontend/ui-contracts/attention-current-report/ui-contract.yaml
+new file mode 100644
+index 0000000..c9a8611
+--- /dev/null
++++ b/apps/web/frontend/ui-contracts/attention-current-report/ui-contract.yaml
+@@ -0,0 +1,32 @@
++version: 1
++status: frozen-existing-style-reuse
++intent: intent.md
++baseline: baseline.tokens.json
++surface: Operating Picture current report and individual record
++primitives:
++  AttentionQueue:
++    inputs: current attention rows with whole item_id, item_type, severity, title, detail, source_domain
++    behavior: stable severity 3 urgent, 2 soon, 1 watch, all other values unknown neutral; rank before limiting to eight
++    semantics: heading and ordered list; each supported row has a descriptive, keyboard-focusable link to its own detail
++    styling: existing panel section, attentionRow, Pill and inlineLink; no new palette
++  AttentionRecord:
++    inputs: kind and typed item_id plus all public source rows
++    behavior: render every returned row independently, preserving per-row prices and null as Unknown
++    semantics: heading, labeled facts and a return link; no color-only state
++    styling: AppShell, existing panels, typography and status primitives
++  RecordState:
++    states: [loading, denied, absent-from-current-report, unavailable, unexpected-error]
++    behavior: 401 redirects to login; 403, 404, 503 have distinct safe copy; 500 reaches generic error handling; no fallback source read
++    semantics: accessible heading and readable explanation without source facts
++scenarios:
++  - mixed unsorted more-than-eight valid JSON rows, stable ties, all valid priorities and unknown severities, correct top eight; NaN only at pure-transform boundary
++  - same-kind distinct records and slash/underscore whole keys, click and direct load through Next and real API
++  - all four kinds, every public component row and nullable facts, no invented labels or aggregation
++  - successful valid empty feed; unavailable and malformed/missing/non-array rows are not empty
++  - authenticated denied, unknown same and cross kind, source unavailable, busy 503 Retry-After, unauthenticated, unexpected 500
++  - long and unusual text, overflow, narrow mobile, keyboard navigation, reduced motion, screen-reader names
++validation:
++  - independent frozen pytest-compatible behavior suite plus actual Next and real backend positive tests
++  - controlled server-side transport for ranking and error branches, recorded separately from real-backend evidence
++  - Storybook states, browser accessibility and visual regression, existing 55 checks with matched Ubuntu Playwright 1.59.1
++  - targeted tests, typecheck and make verify-fast; exercise negative controls
+diff --git a/tests/test_attention_ui_worker.py b/tests/test_attention_ui_worker.py
+new file mode 100644
+index 0000000..b992909
+--- /dev/null
++++ b/tests/test_attention_ui_worker.py
+@@ -0,0 +1,53 @@
++"""Worker tests for the current-report attention frontend helpers.
++
++These exercise the pure transform boundary (ranking, severity metadata and
++strict base64url key encoding) by running the actual ``lib/attention.js`` under
++Node, so the tests fail if the frontend helpers are absent or wrong. The
++planner-owned browser acceptance stays in test_attention_current_ui_acceptance.py.
++"""
++from __future__ import annotations
++
++import shutil
++import subprocess
++from pathlib import Path
++
++import pytest
++
++ROOT = Path(__file__).resolve().parents[1]
++SCRIPT = ROOT / "apps" / "web" / "frontend" / "scripts" / "attention-worker-check.mjs"
++
++
++def _node_bin() -> str:
++    node = shutil.which("node")
++    if node is not None:
++        return node
++    pytest.fail("node is required to run the attention worker self-check; no skip")
++
++
++def test_attention_helpers_rank_and_encode_keys_canonically() -> None:
++    assert SCRIPT.is_file(), f"missing self-check script: {SCRIPT}"
++    result = subprocess.run(
++        [_node_bin(), str(SCRIPT)],
++        capture_output=True,
++        text=True,
++        timeout=60,
++    )
++    assert result.returncode == 0, (
++        f"attention worker self-check failed: {result.stderr or result.stdout}"
++    )
++    assert "attention worker self-check OK" in result.stdout
++
++
++def test_attention_ui_contracts_are_frozen_verbatim() -> None:
++    import hashlib
++
++    expected = {
++        "intent.md": "fb195a7c65517da1c0b4781759f1f89fb636f759e90b7befca55f788e9cb1f85",
++        "baseline.tokens.json": "[verified public file checksum omitted; see patch-redaction.json]",
++        "ui-contract.yaml": "603153cffbf78388d003a30387d4a2db63a3e4289da0e18a96fa934bc6392ee1",
++    }
++    contract_dir = ROOT / "apps" / "web" / "frontend" / "ui-contracts" / "attention-current-report"
++    for name, digest in expected.items():
++        path = contract_dir / name
++        assert path.is_file(), f"missing frozen contract artifact: {path}"
++        assert hashlib.sha256(path.read_bytes()).hexdigest() == digest, name

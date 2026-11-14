@@ -1,0 +1,16 @@
+33	0	apps/web/frontend/app/globals.css
+47	0	apps/web/frontend/app/operating-picture/attention/[kind]/[key]/page.js
+11	5	apps/web/frontend/app/operating-picture/page.js
+4	3	apps/web/frontend/components/app-shell.js
+121	0	apps/web/frontend/components/attention-record-view.js
+16	14	apps/web/frontend/components/operating-picture-view.js
+103	0	apps/web/frontend/lib/attention.js
+75	0	apps/web/frontend/lib/backend.ts
+19	0	apps/web/frontend/middleware.js
+72	0	apps/web/frontend/scripts/attention-worker-check.mjs
+91	0	apps/web/frontend/stories/attention-record-view.stories.jsx
+14	11	apps/web/frontend/stories/support/fixtures.jsx
+43	0	apps/web/frontend/ui-contracts/attention-current-report/baseline.tokens.json
+9	0	apps/web/frontend/ui-contracts/attention-current-report/intent.md
+32	0	apps/web/frontend/ui-contracts/attention-current-report/ui-contract.yaml
+53	0	tests/test_attention_ui_worker.py

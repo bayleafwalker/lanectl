@@ -1,0 +1,20 @@
+{
+  "schema": "hla-ui-native-attempt-rejection/v1",
+  "recorded_at": "2026-11-14T14:34:06.281077+00:00",
+  "head_sha": "3685c389f5aa888a506f109d1ed01ae08b2ba898",
+  "seed_sha": "76b211c3b0c59996c5bbf1100a0d7113e1c72b31",
+  "native_outcome": "failed",
+  "native_exit": 124,
+  "elapsed_s": 2700.1,
+  "changed_lines": 776,
+  "size_M_limit": 700,
+  "decision": "rejected",
+  "acceptance": "2 failed,7 passed; distinct link/source lookup and denied/unavailable/no-leak cases failed; full raw assertion output not retained by normal runner, only recorded gate tail",
+  "limitations": [
+    "Unaccepted source is not a candidate or UI completion",
+    "Native final message tail empty; no full native JSONL retained by adapter",
+    "No scope/cap/revision adjustment; normal max2 runner selected next model"
+  ],
+  "normal_retry": "hla-attention-ui-a2 opencode-go/deepseek-v4.1-flash",
+  "source_patch": "worker.redacted.patch is inspection-only; original exact source identity and lossless checksum reconstruction are recorded in patch-redaction.json"
+}
