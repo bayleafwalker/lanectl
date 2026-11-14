@@ -2,7 +2,9 @@
 
 Only draft 2020-12, the keywords below, and their documented JSON value
 semantics are supported. Unrecognized constraints invalidate the entire schema,
-including unused branches. Bounded recursion rejects excessively deep data.
+including unused branches. Patterns are restricted to ASCII literals with optional
+anchors and five exact catalog expressions; other patterns fail closed. Bounded
+recursion rejects excessively deep data.
 """
 import math
 import re
@@ -145,7 +147,12 @@ def _matches(value, schema):
         if "items" in schema and any(not _matches(v, schema["items"]) for v in value): return False
     if type(value) is str:
         if len(value) < schema.get("minLength", 0) or len(value) > schema.get("maxLength", math.inf): return False
-        if "pattern" in schema and re.search(schema["pattern"], value) is None: return False
+        if "pattern" in schema:
+            pattern = schema["pattern"]
+            # Without multiline mode, ECMA's $ requires the actual end;
+            # Python's $ also matches before a final newline.
+            if pattern.endswith("$"): pattern = pattern[:-1] + r"\Z"
+            if re.search(pattern, value) is None: return False
     if type(value) in (int, float):
         if value < schema.get("minimum", -math.inf) or value > schema.get("maximum", math.inf): return False
     return True

@@ -110,3 +110,11 @@ def test_captured_lease_non_null_branch_checks_nested_constraints():
 ])
 def test_divergent_or_oversized_patterns_fail_closed(pattern, value):
     assert not _valid(value, {"type": "string", "pattern": pattern})
+
+
+@pytest.mark.parametrize("suffix", ["\r", "\n", "\u2028", "\u2029"])
+def test_pattern_end_anchor_rejects_final_line_terminators(suffix):
+    assert not _valid("x" + suffix, {"type": "string", "pattern": "^x$"})
+    schema = SCHEMAS["work.run.resolve-v1"]["input_schema"]["properties"]["run_id"]
+    assert not _valid(RUN + suffix, schema)
+    assert not _valid("prefix" + RUN, schema)
