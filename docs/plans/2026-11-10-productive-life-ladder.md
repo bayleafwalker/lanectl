@@ -153,6 +153,41 @@ about 20 ruled-item exit. Neither source/API prerequisites nor acceptance
 authoring are counted here as additional completed product items.
 
 The timer is active and its latest tick succeeded. No week-long autonomous
-class exit is claimed. Hosted discovery still does not establish authorized
-owner reads; the last credential-loaded probe returned identity-required401.
-There is no hosted-flow completion or event-authority switch.
+class exit is claimed. There is no hosted-flow completion or event-authority
+switch.
+
+### Later November 14 reconciliation
+
+Both full-UI R1 attempts were rejected and the release is parked: Pro timed
+out at 2700 seconds with 776 changed lines; Flash also timed out with 728.
+The Flash test gates passed, but neither source met the native-success and
+M700 requirements. Neither source was adopted and no attempt budget was reset.
+The [second rejection](../evidence/2026-11-14-product-contact/ui-a2-rejection/)
+preserves that distinction.
+
+A genuine prerequisite now separates the strict whole-ID codec and typed,
+authenticated four-kind record reader from the remaining UI. It leaves the
+existing backend and all pages unchanged. Its
+[independent native acceptance review](../evidence/2026-11-14-product-contact/client-boundary-spec-r1/)
+accepted the exact proposal; official base lint and publication validation
+returned no problems. Guarded publication at `f44076e` started a normal bounded
+Flash attempt, with M700, two attempts and the 2700-second timeout unchanged.
+It is running; no candidate or canonical prerequisite is claimed yet.
+
+The [portable repaired full-UI observer](../evidence/2026-11-14-product-contact/ui-portable-observer-preparation/)
+is preparation only. Its base run has six missing-feature failures, three
+passing controls and no skips. It still needs revalidation and fresh native
+review on the eventual canonical prerequisite head. All four record views,
+ranking, complete facts, independent qualification and built-product delivery
+remain required. These steps add no completed product-item count.
+
+Specific approved owner diagnosis established that the enrolled runner's
+issuer is `https://api.vuoro.cloud`. The earlier direct shared-service 401 is
+historical evidence from the wrong destination. An actual read at the issuer
+authenticated, correlated and returned an empty ready list. Installed lanectl
+still reports that result as unknown because its catalog-schema validator
+rejects valid literal constraints. Served `lanectl#2900` tracks the repair.
+The first fix passed its suite but independent review and actual catalog
+inspection found broader compatibility gaps; it remains unmerged and
+uninstalled while remediation proceeds. No claim, grant, profile, deployment
+or event-authority change was made.
