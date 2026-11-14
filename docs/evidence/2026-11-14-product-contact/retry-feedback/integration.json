@@ -1,0 +1,14 @@
+{
+  "reviewed_source": "59610c56d7137df879ea4cc4f2881d10bda87d4f",
+  "source_byte_identical": true,
+  "native_rereview": "clear, no blockers; static no tests run byreviewer",
+  "final_worker_suite_passed": 1107,
+  "integration_suite_passed": 1107,
+  "project_editable_restored_to": "/projects/dev/lanectl/src",
+  "release_version": "0.2.11",
+  "installed_at_record": "0.2.10",
+  "gates_contracts_sandbox_policy_changed": false,
+  "claim_payload_change": "optional prompt_feedback_version1; legacy unmarked byte-identical0.2.10",
+  "data_scope": "Only sameitem/revision typedcontrolownedrejectionobservations; currentHLApublicBOMdata acceptableunderexistingpublicproviderapproval. Privatefloorstillapplies.",
+  "source_downgrade_note": "Marked in-flight feedback claims cannot be silently replayed under0.2.10; existing owner profile rejects mismatch."
+}

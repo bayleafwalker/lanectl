@@ -1,0 +1,13 @@
+# Bounded integrator feedback in ordinary retries
+
+Served work lanectl#2901 fixes a measured gap: integrator rejection reasons were stored but absent from the next native prompt. The HLA boundary's actual leading-BOM model error therefore needed an ordinary versioned feedback path, without changing frozen criteria, revision, caps, routing or adopting its invalid candidate.
+
+Initial source a5f3fa0 passed1099 tests but independent native Claude review blocked replay-incompatible default bytes, premature prompt rendering, insufficient payload typing and an unwrapped fallback. A test-only follow-up ceb0ed1 added last-three/parked/cutoff guards (1101 tests); a deliberate removal of the three-observation limit failed. The initial patch was not installed.
+
+Remediated source59610c56d7137df879ea4cc4f2881d10bda87d4f passed1107 tests after actual red-before-fix upgrade/error-path regressions. Independent read-only native Claude rereview cleared it without blockers. Reviewer did not execute tests. New admissions add optional prompt_feedback_version1 to the existing item.claimed payload; no event-contract, gate, sandbox or policy changes. Legacy unmarked claims preserve exact0.2.10 prompt bytes and owner digest, including when prior integrator rejections exist.
+
+Feedback includes only typed earlier integrator reject/park observations for the same item and release revision before the current claim. It is deduplicated, clipped and limited to three entries, labelled observations rather than authority. One rendered string is reused for owner profile SHA and actual adapter. Missing claim/unsupported marker/malformed observation context fails closed to no feedback. Existing release data classification and routing still apply: the immediate HLA observations are public synthetic Unicode-identity evidence, and private releases retain their first-party floor. Credentials or private data do not belong in public integrator reasons.
+
+Residual notes accepted: torn logs can retain the existing coordination-availability failure wording; malformed observation data is silently ignored; dedup keeps first identical occurrence. A downgrade to0.2.10 cannot replay a marked in-flight claim with nonempty feedback under the same owner profile and will fail closed; this release does not rebind it. No live hosted claim flow or first-party runtime-variant attestation is claimed by these tests/reviews.
+
+The worker's initial uv run inadvertently repointed only the shared project .venv editable path to its isolated worktree. The installed tool remained0.2.10 and separate. Root will restore project provenance during integration sync before removing that worktree; installation of the reviewed release waits for inactive native attempts/trains/tick.

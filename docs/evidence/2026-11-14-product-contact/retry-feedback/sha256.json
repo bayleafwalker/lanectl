@@ -1,0 +1,32 @@
+{
+  "artifacts": [
+    {
+      "path": "README.md",
+      "sha256": "5d20c414ba86afe53876b18db02e0b77a828099f1d2208c637c7abfafd6ac44e"
+    },
+    {
+      "path": "full-remediation-suite.log",
+      "sha256": "3b42bd105e2ffc9823d73732ec02e115ae135fb3cf291846d3cc33ce75fe0d74"
+    },
+    {
+      "path": "integration-suite.log",
+      "sha256": "4ce9d31355da4dd070d65314b42da0b749edc50fb989dad764540a2f5f4eee10"
+    },
+    {
+      "path": "integration.json",
+      "sha256": "6e0cfe9f1bed8c8ccea975313e9382702d5ae89efaf23d76b44dae8a5c048055"
+    },
+    {
+      "path": "native-review-r1.md",
+      "sha256": "40b8f5843e175e017104a351b596a16b7ba09cb7b91e661f7a3627f5da8ca23b"
+    },
+    {
+      "path": "native-review-r2.md",
+      "sha256": "7d89d737a43b2b6ab0059c983b2e4a4db169fb4a09c9ec3d74852f407683f41b"
+    },
+    {
+      "path": "test-guard-suite.log",
+      "sha256": "b43600f8f5188a14255ee1600c4686871ffb7c2eec31c676669f424d97c85bf4"
+    }
+  ]
+}
