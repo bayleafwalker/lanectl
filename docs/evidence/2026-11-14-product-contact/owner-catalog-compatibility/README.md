@@ -1,0 +1,15 @@
+# Actual owner catalog compatibility
+
+The operator approved private read-only diagnosis, refresh of the existing CLI login, and use of the existing runner for read-only readiness at its verified issuer, https://api.vuoro.cloud. The authenticated registry matched the existing runner to that issuer and the relevant repositories. The raw registry record, bearer and refreshed credentials are excluded from this public evidence. No grant, claim, profile, deployment or authority change occurred.
+
+An actual issuer invocation was accepted and correlated, with state ok, authority sprintctl and no items. Installed lanectl 0.2.9 still marked it unknown: its small validator required a type and rejected valid const/enum schemas. The initial fix 974e694 passed 1059 tests but native Claude review blocked its broader keyword rejection. An actual catalog inspection confirmed that all five lifecycle input/result schemas needed additional measured constraints. That first candidate was not installed.
+
+Revised source 7dcb22d90ddbefa7d29a70437f719ffe8b738cf8 uses a stdlib validator for the measured draft 2020-12 subset, with unsupported validation constraints rejected even in unused branches. It handles literal constraints, nullable types, anyOf, closed/open objects, array items and bounds, numeric/string bounds and conservative patterns. Patterns are limited to bounded literal ASCII with optional anchors and five exact catalog expressions; arbitrary regex compatibility is not claimed. Root forced the CR/dot and oversized-repeat failures, and author forced the terminal-newline anchor failure before repair.
+
+The revised source passed 1091 tests, including 90 focused tests, with the actual host user bus environment. Native Claude's static read-only rereview found no blockers and cleared source integration. It did not execute tests or independently verify the runtime checkout SHA; root bound the worktree to that exact commit. Its remaining nested-data/input/depth test advisories are being closed separately with tests only; redundant checks and defensive pattern-compilation handling are nonblocking.
+
+The exact candidate source then read the issuer: every captured lifecycle input/result schema was supported and ready_work returned observed with count 0. This proves this read through candidate source. The installed package remains 0.2.9 at this checkpoint, so no installed-client pass or hosted claim-to-outcome flow is claimed. Hosted activation and event authority remain separate.
+
+The first compatibility probe lacked SSL_CERT_FILE and failed certificate-chain verification. Retrying with /etc/ssl/certs/ca-certificates.crt succeeded with TLS verification enabled. Only its exact terminal failed-unit flag was cleared after recording the result. Failed source checks are evidence; process exit 0 alone never establishes authentication or readiness.
+
+Served work is lanectl#2900, execution reservation 499 for this session. Raw log whitespace is intentionally retained. Git publication makes this selected evidence cross-host-replicated; /tmp originals remain ephemeral.

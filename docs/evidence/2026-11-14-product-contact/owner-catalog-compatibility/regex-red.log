@@ -1,0 +1,222 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+_________ test_divergent_or_oversized_patterns_fail_closed[^a.b$-a\rb] _________
+
+pattern = '^a.b$', value = 'a\rb'
+
+    @pytest.mark.parametrize("pattern,value", [
+        ("^a.b$", "a\rb"),
+        ("x{999999999999999999999999}", "x"),
+    ])
+    def test_divergent_or_oversized_patterns_fail_closed(pattern, value):
+>       assert not _valid(value, {"type": "string", "pattern": pattern})
+E       AssertionError: assert not True
+E        +  where True = _valid('a\rb', {'type': 'string', 'pattern': '^a.b$'})
+
+tests/stage9/test_catalog_schema.py:112: AssertionError
+_ test_divergent_or_oversized_patterns_fail_closed[x{999999999999999999999999}-x] _
+
+pattern = 'x{999999999999999999999999}', value = 'x'
+
+    @pytest.mark.parametrize("pattern,value", [
+        ("^a.b$", "a\rb"),
+        ("x{999999999999999999999999}", "x"),
+    ])
+    def test_divergent_or_oversized_patterns_fail_closed(pattern, value):
+>       assert not _valid(value, {"type": "string", "pattern": pattern})
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/stage9/test_catalog_schema.py:112: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/lanectl/catalog_schema.py:147: in valid
+    return _supported(schema) and _json(value) and _matches(value, schema)
+           ^^^^^^^^^^^^^^^^^^
+src/lanectl/catalog_schema.py:95: in _supported
+    re.compile(pattern)
+/home/bayleaf/.local/share/uv/python/cpython-3.13.16-linux-x86_64-gnu/lib/python3.13/re/__init__.py:289: in compile
+    return _compile(pattern, flags)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+/home/bayleaf/.local/share/uv/python/cpython-3.13.16-linux-x86_64-gnu/lib/python3.13/re/__init__.py:350: in _compile
+    p = _compiler.compile(pattern, flags)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/home/bayleaf/.local/share/uv/python/cpython-3.13.16-linux-x86_64-gnu/lib/python3.13/re/_compiler.py:748: in compile
+    p = _parser.parse(p, flags)
+        ^^^^^^^^^^^^^^^^^^^^^^^
+/home/bayleaf/.local/share/uv/python/cpython-3.13.16-linux-x86_64-gnu/lib/python3.13/re/_parser.py:980: in parse
+    p = _parse_sub(source, state, flags & SRE_FLAG_VERBOSE, 0)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/home/bayleaf/.local/share/uv/python/cpython-3.13.16-linux-x86_64-gnu/lib/python3.13/re/_parser.py:459: in _parse_sub
+    itemsappend(_parse(source, state, verbose, nested + 1,
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+source = <re._parser.Tokenizer object at 0x75020497e740>
+state = <re._parser.State object at 0x750204998150>, verbose = 0, nested = 1
+first = True
+
+    def _parse(source, state, verbose, nested, first=False):
+        # parse a simple pattern
+        subpattern = SubPattern(state)
+    
+        # precompute constants into local variables
+        subpatternappend = subpattern.append
+        sourceget = source.get
+        sourcematch = source.match
+        _len = len
+        _ord = ord
+    
+        while True:
+    
+            this = source.next
+            if this is None:
+                break # end of pattern
+            if this in "|)":
+                break # end of subpattern
+            sourceget()
+    
+            if verbose:
+                # skip whitespace and comments
+                if this in WHITESPACE:
+                    continue
+                if this == "#":
+                    while True:
+                        this = sourceget()
+                        if this is None or this == "\n":
+                            break
+                    continue
+    
+            if this[0] == "\\":
+                code = _escape(source, this, state)
+                subpatternappend(code)
+    
+            elif this not in SPECIAL_CHARS:
+                subpatternappend((LITERAL, _ord(this)))
+    
+            elif this == "[":
+                here = source.tell() - 1
+                # character set
+                set = []
+                setappend = set.append
+    ##          if sourcematch(":"):
+    ##              pass # handle character classes
+                if source.next == '[':
+                    import warnings
+                    warnings.warn(
+                        'Possible nested set at position %d' % source.tell(),
+                        FutureWarning, stacklevel=nested + 6
+                    )
+                negate = sourcematch("^")
+                # check remaining characters
+                while True:
+                    this = sourceget()
+                    if this is None:
+                        raise source.error("unterminated character set",
+                                           source.tell() - here)
+                    if this == "]" and set:
+                        break
+                    elif this[0] == "\\":
+                        code1 = _class_escape(source, this)
+                    else:
+                        if set and this in '-&~|' and source.next == this:
+                            import warnings
+                            warnings.warn(
+                                'Possible set %s at position %d' % (
+                                    'difference' if this == '-' else
+                                    'intersection' if this == '&' else
+                                    'symmetric difference' if this == '~' else
+                                    'union',
+                                    source.tell() - 1),
+                                FutureWarning, stacklevel=nested + 6
+                            )
+                        code1 = LITERAL, _ord(this)
+                    if sourcematch("-"):
+                        # potential range
+                        that = sourceget()
+                        if that is None:
+                            raise source.error("unterminated character set",
+                                               source.tell() - here)
+                        if that == "]":
+                            if code1[0] is IN:
+                                code1 = code1[1][0]
+                            setappend(code1)
+                            setappend((LITERAL, _ord("-")))
+                            break
+                        if that[0] == "\\":
+                            code2 = _class_escape(source, that)
+                        else:
+                            if that == '-':
+                                import warnings
+                                warnings.warn(
+                                    'Possible set difference at position %d' % (
+                                        source.tell() - 2),
+                                    FutureWarning, stacklevel=nested + 6
+                                )
+                            code2 = LITERAL, _ord(that)
+                        if code1[0] != LITERAL or code2[0] != LITERAL:
+                            msg = "bad character range %s-%s" % (this, that)
+                            raise source.error(msg, len(this) + 1 + len(that))
+                        lo = code1[1]
+                        hi = code2[1]
+                        if hi < lo:
+                            msg = "bad character range %s-%s" % (this, that)
+                            raise source.error(msg, len(this) + 1 + len(that))
+                        setappend((RANGE, (lo, hi)))
+                    else:
+                        if code1[0] is IN:
+                            code1 = code1[1][0]
+                        setappend(code1)
+    
+                set = _uniq(set)
+                # XXX: <fl> should move set optimization to compiler!
+                if _len(set) == 1 and set[0][0] is LITERAL:
+                    # optimization
+                    if negate:
+                        subpatternappend((NOT_LITERAL, set[0][1]))
+                    else:
+                        subpatternappend(set[0])
+                else:
+                    if negate:
+                        set.insert(0, (NEGATE, None))
+                    # charmap optimization can't be added here because
+                    # global flags still are not known
+                    subpatternappend((IN, set))
+    
+            elif this in REPEAT_CHARS:
+                # repeat previous item
+                here = source.tell()
+                if this == "?":
+                    min, max = 0, 1
+                elif this == "*":
+                    min, max = 0, MAXREPEAT
+    
+                elif this == "+":
+                    min, max = 1, MAXREPEAT
+                elif this == "{":
+                    if source.next == "}":
+                        subpatternappend((LITERAL, _ord(this)))
+                        continue
+    
+                    min, max = 0, MAXREPEAT
+                    lo = hi = ""
+                    while source.next in DIGITS:
+                        lo += sourceget()
+                    if sourcematch(","):
+                        while source.next in DIGITS:
+                            hi += sourceget()
+                    else:
+                        hi = lo
+                    if not sourcematch("}"):
+                        subpatternappend((LITERAL, _ord(this)))
+                        source.seek(here)
+                        continue
+    
+                    if lo:
+                        min = int(lo)
+                        if min >= MAXREPEAT:
+>                           raise OverflowError("the repetition number is too large")
+E                           OverflowError: the repetition number is too large
+
+/home/bayleaf/.local/share/uv/python/cpython-3.13.16-linux-x86_64-gnu/lib/python3.13/re/_parser.py:670: OverflowError
+=========================== short test summary info ============================
+FAILED tests/stage9/test_catalog_schema.py::test_divergent_or_oversized_patterns_fail_closed[^a.b$-a\rb]
+FAILED tests/stage9/test_catalog_schema.py::test_divergent_or_oversized_patterns_fail_closed[x{999999999999999999999999}-x]
+2 failed, 26 deselected in 0.11s

@@ -1,0 +1,12 @@
+{
+  "initial-native-review.md": "7f11e5c8d4ed0f9cc28cadacad36d94d1983920dff80af941a78f459e9f27bc5",
+  "final-source-native-review.md": "ff7fbceee548d74768101156173dda9ebf83b62a1f920448d0b542dbf8cf4e01",
+  "candidate-ready-read.log": "ebc605767ddd8e694456bd20107049f3ebc857808bc239b7aa6b0e53b0870844",
+  "candidate-read.py": "96da0e8a395219e8ba927c007bf578e16c71a2a2782eefb76eaee86c82fcfe01",
+  "initial-literal-mismatch.log": "cbbd1e38df8797da66078d245339ad63ed875ca25d2bc5edaee624a20783fdd9",
+  "initial-result-validation.log": "af1ebc4f3c41e075e4f2a483ee5ef711211e8cfb7bc84d3f02113f73d3930ab3",
+  "full-source-suite.log": "a83747e825d8059e6a037dca75b560133c93b4d6aef9e4841f020a48ab641fc3",
+  "regex-red.log": "8f4e0d380cc605ce98e99d427e79dbef2f59a6b137e0a29b5759b886bf345b84",
+  "anchor-red.log": "cc8333f173f3b8f3168d934b44f8de424e0bc175d3d35e89955f028adc57eb04",
+  "README.md": "396fdf1b46a1ae7d7c473bf690a957accf4b3b749d7c3f1d3cc5aa38f1eef7aa"
+}

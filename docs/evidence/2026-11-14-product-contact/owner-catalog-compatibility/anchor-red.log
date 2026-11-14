@@ -1,0 +1,13 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_________ test_pattern_end_anchor_does_not_match_before_final_newline __________
+
+    def test_pattern_end_anchor_does_not_match_before_final_newline():
+>       assert not _valid("x\n", {"type": "string", "pattern": "^x$"})
+E       AssertionError: assert not True
+E        +  where True = _valid('x\n', {'type': 'string', 'pattern': '^x$'})
+
+tests/stage9/test_catalog_schema.py:116: AssertionError
+=========================== short test summary info ============================
+FAILED tests/stage9/test_catalog_schema.py::test_pattern_end_anchor_does_not_match_before_final_newline
+1 failed, 28 deselected in 0.09s

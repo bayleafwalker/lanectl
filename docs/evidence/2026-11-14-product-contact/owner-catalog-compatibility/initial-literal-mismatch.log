@@ -1,0 +1,1 @@
+{"catalog_revision": "4230516fcb775d72e14dfa774c8395a9f50ad5b640ccd9134648a8c659f22af3", "result_schema_type": "object", "properties": {"authority": {"const": "sprintctl"}, "state": {"enum": ["ok", "unavailable"]}, "as_of": {"type": "string"}}}
