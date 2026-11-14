@@ -1,0 +1,8 @@
+{
+  "distribution": "0.2.11",
+  "release_commit": "25b183b189c1f767fa1dd7ef250558fff280c687",
+  "runtime_files_equal": 62,
+  "project_editable_restored": true,
+  "native_review": "clear",
+  "full_integration_tests_passed": 1107
+}

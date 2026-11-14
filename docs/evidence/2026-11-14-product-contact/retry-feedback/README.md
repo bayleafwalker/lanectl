@@ -11,3 +11,7 @@ Feedback includes only typed earlier integrator reject/park observations for the
 Residual notes accepted: torn logs can retain the existing coordination-availability failure wording; malformed observation data is silently ignored; dedup keeps first identical occurrence. A downgrade to0.2.10 cannot replay a marked in-flight claim with nonempty feedback under the same owner profile and will fail closed; this release does not rebind it. No live hosted claim flow or first-party runtime-variant attestation is claimed by these tests/reviews.
 
 The worker's initial uv run inadvertently repointed only the shared project .venv editable path to its isolated worktree. The installed tool remained0.2.10 and separate. Root will restore project provenance during integration sync before removing that worktree; installation of the reviewed release waits for inactive native attempts/trains/tick.
+
+## Release and ordinary retry readback
+
+Canonical v0.2.11 is25b183b189c1f767fa1dd7ef250558fff280c687. The integrated release passed1107 tests, all62installedruntimefiles match the tag, and the project editable path is restored to canonical src. Installation waited for inactive native attempts, trains and tick. The ordinary final R2 retry then admitted a3 on DeepSeek Pro with marker1; a metadata-only /proc argv check proved the actual native input contained the bounded BOM observations. Its prompt hash is retained, not its full command line or credentials. This proves the normal feedback path, not the new model outcome or a live hosted coordination claim.

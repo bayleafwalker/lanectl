@@ -1,0 +1,13 @@
+{
+  "release": "v0.2.11",
+  "commit": "25b183b189c1f767fa1dd7ef250558fff280c687",
+  "runtime_files_equal": 62,
+  "integration_passed": 1107,
+  "native_rereview": "clear",
+  "legacy_prompt_byte_pin": "unchanged0.2.10",
+  "project_editable_restored": true,
+  "live_normal_retry_attempt": "hla-attention-client-boundary-a3",
+  "actual_native_prompt_contains_public_BOM_feedback": true,
+  "no_frozen_criteria_revision_caps_policy_change": true,
+  "hosted_claim_flow_claimed": false
+}

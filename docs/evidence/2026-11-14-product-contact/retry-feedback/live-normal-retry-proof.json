@@ -1,0 +1,14 @@
+{
+  "attempt_id": "hla-attention-client-boundary-a3",
+  "release_revision": 2,
+  "model": "opencode-go/deepseek-v4-pro",
+  "claimed_at": "2026-11-14T18:05:20Z",
+  "feedback_marker": 1,
+  "native_unit": "lanectl-attempt-7a4b617904d27d95bc3c5219.service",
+  "main_pid": 1845774,
+  "native_argv_has_feedback_section": true,
+  "native_argv_has_bom_observation": true,
+  "native_prompt_sha256": "a17022517484ad9cf10a44a3743a71c3002b89f2d3888c8316cabeea3e166bb8",
+  "runtime_release": "0.2.11",
+  "source_root_metadata_only": true
+}

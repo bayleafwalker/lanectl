@@ -2,11 +2,15 @@
   "artifacts": [
     {
       "path": "README.md",
-      "sha256": "5d20c414ba86afe53876b18db02e0b77a828099f1d2208c637c7abfafd6ac44e"
+      "sha256": "672a65fd2908ff6fda4e09e731b4880308e78d2de6e9527e562a3626945699ce"
     },
     {
       "path": "full-remediation-suite.log",
       "sha256": "3b42bd105e2ffc9823d73732ec02e115ae135fb3cf291846d3cc33ce75fe0d74"
+    },
+    {
+      "path": "installed-runtime.json",
+      "sha256": "8c1956e7ab68078f3868ca4185788b5048b0177f7a78f40d4c5251e22bdc07b7"
     },
     {
       "path": "integration-suite.log",
@@ -17,12 +21,20 @@
       "sha256": "6e0cfe9f1bed8c8ccea975313e9382702d5ae89efaf23d76b44dae8a5c048055"
     },
     {
+      "path": "live-normal-retry-proof.json",
+      "sha256": "bf7ad9aca27f382c911b1868917826339e38726d18df121e96273441397d98cb"
+    },
+    {
       "path": "native-review-r1.md",
       "sha256": "40b8f5843e175e017104a351b596a16b7ba09cb7b91e661f7a3627f5da8ca23b"
     },
     {
       "path": "native-review-r2.md",
       "sha256": "7d89d737a43b2b6ab0059c983b2e4a4db169fb4a09c9ec3d74852f407683f41b"
+    },
+    {
+      "path": "rollout.json",
+      "sha256": "8e79c4bdf478d893fc5cb0950de11f8ce19367eb17e3b141d38c4362883c8b7d"
     },
     {
       "path": "test-guard-suite.log",
