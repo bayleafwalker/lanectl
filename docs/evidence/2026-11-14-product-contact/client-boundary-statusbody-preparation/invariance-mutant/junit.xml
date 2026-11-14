@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="8" skipped="0" tests="10" time="6.138" timestamp="2026-11-14T19:13:12.161674+02:00" hostname="workstation"><testcase classname="tests.test_statusbody_supplement" name="test_status_before_body[-401-redirect-None]" time="5.487"><failure message="assert (500 in (303, 307, 308))">live = &lt;tests.test_attention_record_boundary_acceptance.Lab object at 0x72ab8a4dc830&gt;
+status = 401, expected = 'redirect', retry = None, body = b''
+
+    @pytest.mark.parametrize('status,expected,retry', [
+        (401, 'redirect', None), (403, 'denied', None), (404, 'not_found', None),
+        (503, 'unavailable', '12'), (500, 'throw', None),
+    ])
+    @pytest.mark.parametrize('body', [b'', b'SYNTHETIC_SECRET_invalid_json'])
+    def test_status_before_body(live, status, expected, retry, body):
+        item_id = 'review_status_body/雪_%_privatekey'
+        live.state.update(status=status, body=body, retry=retry)
+        live.state['hits'].clear()
+        code, headers, payload = fixture.outcome(live, 'contract_review', item_id)
+        assert b'SYNTHETIC_SECRET' not in payload and item_id.encode() not in payload
+        if expected == 'redirect':
+&gt;           assert code in (303, 307, 308) and urllib.parse.urlsplit(headers['Location']).path == '/login'
+E           assert (500 in (303, 307, 308))
+
+tests/test_statusbody_supplement.py:36: AssertionError</failure></testcase><testcase classname="tests.test_statusbody_supplement" name="test_status_before_body[-403-denied-None]" time="0.008"><failure message="assert 500 == 200">live = &lt;tests.test_attention_record_boundary_acceptance.Lab object at 0x72ab8a4dc830&gt;
+status = 403, expected = 'denied', retry = None, body = b''
+
+    @pytest.mark.parametrize('status,expected,retry', [
+        (401, 'redirect', None), (403, 'denied', None), (404, 'not_found', None),
+        (503, 'unavailable', '12'), (500, 'throw', None),
+    ])
+    @pytest.mark.parametrize('body', [b'', b'SYNTHETIC_SECRET_invalid_json'])
+    def test_status_before_body(live, status, expected, retry, body):
+        item_id = 'review_status_body/雪_%_privatekey'
+        live.state.update(status=status, body=body, retry=retry)
+        live.state['hits'].clear()
+        code, headers, payload = fixture.outcome(live, 'contract_review', item_id)
+        assert b'SYNTHETIC_SECRET' not in payload and item_id.encode() not in payload
+        if expected == 'redirect':
+            assert code in (303, 307, 308) and urllib.parse.urlsplit(headers['Location']).path == '/login'
+        elif expected == 'throw':
+            assert code == 500 and json.loads(payload).get('thrown') is True
+        else:
+&gt;           assert code == 200
+E           assert 500 == 200
+
+tests/test_statusbody_supplement.py:40: AssertionError</failure></testcase><testcase classname="tests.test_statusbody_supplement" name="test_status_before_body[-404-not_found-None]" time="0.006"><failure message="assert 500 == 200">live = &lt;tests.test_attention_record_boundary_acceptance.Lab object at 0x72ab8a4dc830&gt;
+status = 404, expected = 'not_found', retry = None, body = b''
+
+    @pytest.mark.parametrize('status,expected,retry', [
+        (401, 'redirect', None), (403, 'denied', None), (404, 'not_found', None),
+        (503, 'unavailable', '12'), (500, 'throw', None),
+    ])
+    @pytest.mark.parametrize('body', [b'', b'SYNTHETIC_SECRET_invalid_json'])
+    def test_status_before_body(live, status, expected, retry, body):
+        item_id = 'review_status_body/雪_%_privatekey'
+        live.state.update(status=status, body=body, retry=retry)
+        live.state['hits'].clear()
+        code, headers, payload = fixture.outcome(live, 'contract_review', item_id)
+        assert b'SYNTHETIC_SECRET' not in payload and item_id.encode() not in payload
+        if expected == 'redirect':
+            assert code in (303, 307, 308) and urllib.parse.urlsplit(headers['Location']).path == '/login'
+        elif expected == 'throw':
+            assert code == 500 and json.loads(payload).get('thrown') is True
+        else:
+&gt;           assert code == 200
+E           assert 500 == 200
+
+tests/test_statusbody_supplement.py:40: AssertionError</failure></testcase><testcase classname="tests.test_statusbody_supplement" name="test_status_before_body[-503-unavailable-12]" time="0.006"><failure message="assert 500 == 200">live = &lt;tests.test_attention_record_boundary_acceptance.Lab object at 0x72ab8a4dc830&gt;
+status = 503, expected = 'unavailable', retry = '12', body = b''
+
+    @pytest.mark.parametrize('status,expected,retry', [
+        (401, 'redirect', None), (403, 'denied', None), (404, 'not_found', None),
+        (503, 'unavailable', '12'), (500, 'throw', None),
+    ])
+    @pytest.mark.parametrize('body', [b'', b'SYNTHETIC_SECRET_invalid_json'])
+    def test_status_before_body(live, status, expected, retry, body):
+        item_id = 'review_status_body/雪_%_privatekey'
+        live.state.update(status=status, body=body, retry=retry)
+        live.state['hits'].clear()
+        code, headers, payload = fixture.outcome(live, 'contract_review', item_id)
+        assert b'SYNTHETIC_SECRET' not in payload and item_id.encode() not in payload
+        if expected == 'redirect':
+            assert code in (303, 307, 308) and urllib.parse.urlsplit(headers['Location']).path == '/login'
+        elif expected == 'throw':
+            assert code == 500 and json.loads(payload).get('thrown') is True
+        else:
+&gt;           assert code == 200
+E           assert 500 == 200
+
+tests/test_statusbody_supplement.py:40: AssertionError</failure></testcase><testcase classname="tests.test_statusbody_supplement" name="test_status_before_body[-500-throw-None]" time="0.007" /><testcase classname="tests.test_statusbody_supplement" name="test_status_before_body[SYNTHETIC_SECRET_invalid_json-401-redirect-None]" time="0.007"><failure message="assert (500 in (303, 307, 308))">live = &lt;tests.test_attention_record_boundary_acceptance.Lab object at 0x72ab8a4dc830&gt;
+status = 401, expected = 'redirect', retry = None
+body = b'SYNTHETIC_SECRET_invalid_json'
+
+    @pytest.mark.parametrize('status,expected,retry', [
+        (401, 'redirect', None), (403, 'denied', None), (404, 'not_found', None),
+        (503, 'unavailable', '12'), (500, 'throw', None),
+    ])
+    @pytest.mark.parametrize('body', [b'', b'SYNTHETIC_SECRET_invalid_json'])
+    def test_status_before_body(live, status, expected, retry, body):
+        item_id = 'review_status_body/雪_%_privatekey'
+        live.state.update(status=status, body=body, retry=retry)
+        live.state['hits'].clear()
+        code, headers, payload = fixture.outcome(live, 'contract_review', item_id)
+        assert b'SYNTHETIC_SECRET' not in payload and item_id.encode() not in payload
+        if expected == 'redirect':
+&gt;           assert code in (303, 307, 308) and urllib.parse.urlsplit(headers['Location']).path == '/login'
+E           assert (500 in (303, 307, 308))
+
+tests/test_statusbody_supplement.py:36: AssertionError</failure></testcase><testcase classname="tests.test_statusbody_supplement" name="test_status_before_body[SYNTHETIC_SECRET_invalid_json-403-denied-None]" time="0.007"><failure message="assert 500 == 200">live = &lt;tests.test_attention_record_boundary_acceptance.Lab object at 0x72ab8a4dc830&gt;
+status = 403, expected = 'denied', retry = None
+body = b'SYNTHETIC_SECRET_invalid_json'
+
+    @pytest.mark.parametrize('status,expected,retry', [
+        (401, 'redirect', None), (403, 'denied', None), (404, 'not_found', None),
+        (503, 'unavailable', '12'), (500, 'throw', None),
+    ])
+    @pytest.mark.parametrize('body', [b'', b'SYNTHETIC_SECRET_invalid_json'])
+    def test_status_before_body(live, status, expected, retry, body):
+        item_id = 'review_status_body/雪_%_privatekey'
+        live.state.update(status=status, body=body, retry=retry)
+        live.state['hits'].clear()
+        code, headers, payload = fixture.outcome(live, 'contract_review', item_id)
+        assert b'SYNTHETIC_SECRET' not in payload and item_id.encode() not in payload
+        if expected == 'redirect':
+            assert code in (303, 307, 308) and urllib.parse.urlsplit(headers['Location']).path == '/login'
+        elif expected == 'throw':
+            assert code == 500 and json.loads(payload).get('thrown') is True
+        else:
+&gt;           assert code == 200
+E           assert 500 == 200
+
+tests/test_statusbody_supplement.py:40: AssertionError</failure></testcase><testcase classname="tests.test_statusbody_supplement" name="test_status_before_body[SYNTHETIC_SECRET_invalid_json-404-not_found-None]" time="0.006"><failure message="assert 500 == 200">live = &lt;tests.test_attention_record_boundary_acceptance.Lab object at 0x72ab8a4dc830&gt;
+status = 404, expected = 'not_found', retry = None
+body = b'SYNTHETIC_SECRET_invalid_json'
+
+    @pytest.mark.parametrize('status,expected,retry', [
+        (401, 'redirect', None), (403, 'denied', None), (404, 'not_found', None),
+        (503, 'unavailable', '12'), (500, 'throw', None),
+    ])
+    @pytest.mark.parametrize('body', [b'', b'SYNTHETIC_SECRET_invalid_json'])
+    def test_status_before_body(live, status, expected, retry, body):
+        item_id = 'review_status_body/雪_%_privatekey'
+        live.state.update(status=status, body=body, retry=retry)
+        live.state['hits'].clear()
+        code, headers, payload = fixture.outcome(live, 'contract_review', item_id)
+        assert b'SYNTHETIC_SECRET' not in payload and item_id.encode() not in payload
+        if expected == 'redirect':
+            assert code in (303, 307, 308) and urllib.parse.urlsplit(headers['Location']).path == '/login'
+        elif expected == 'throw':
+            assert code == 500 and json.loads(payload).get('thrown') is True
+        else:
+&gt;           assert code == 200
+E           assert 500 == 200
+
+tests/test_statusbody_supplement.py:40: AssertionError</failure></testcase><testcase classname="tests.test_statusbody_supplement" name="test_status_before_body[SYNTHETIC_SECRET_invalid_json-503-unavailable-12]" time="0.007"><failure message="assert 500 == 200">live = &lt;tests.test_attention_record_boundary_acceptance.Lab object at 0x72ab8a4dc830&gt;
+status = 503, expected = 'unavailable', retry = '12'
+body = b'SYNTHETIC_SECRET_invalid_json'
+
+    @pytest.mark.parametrize('status,expected,retry', [
+        (401, 'redirect', None), (403, 'denied', None), (404, 'not_found', None),
+        (503, 'unavailable', '12'), (500, 'throw', None),
+    ])
+    @pytest.mark.parametrize('body', [b'', b'SYNTHETIC_SECRET_invalid_json'])
+    def test_status_before_body(live, status, expected, retry, body):
+        item_id = 'review_status_body/雪_%_privatekey'
+        live.state.update(status=status, body=body, retry=retry)
+        live.state['hits'].clear()
+        code, headers, payload = fixture.outcome(live, 'contract_review', item_id)
+        assert b'SYNTHETIC_SECRET' not in payload and item_id.encode() not in payload
+        if expected == 'redirect':
+            assert code in (303, 307, 308) and urllib.parse.urlsplit(headers['Location']).path == '/login'
+        elif expected == 'throw':
+            assert code == 500 and json.loads(payload).get('thrown') is True
+        else:
+&gt;           assert code == 200
+E           assert 500 == 200
+
+tests/test_statusbody_supplement.py:40: AssertionError</failure></testcase><testcase classname="tests.test_statusbody_supplement" name="test_status_before_body[SYNTHETIC_SECRET_invalid_json-500-throw-None]" time="0.506" /></testsuite></testsuites>

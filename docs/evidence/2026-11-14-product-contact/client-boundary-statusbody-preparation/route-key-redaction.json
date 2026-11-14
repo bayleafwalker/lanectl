@@ -1,0 +1,25 @@
+{
+  "reason": "Every one of30gitleaks findings is the exact base64url encoding of the unique public synthetic item_id AST literal in test_statusbody_supplement.py, inside a JSON-string query value, verified before redaction. No credential value.",
+  "placeholder": "<synthetic-route-key-omitted>",
+  "reconstruction": "Read unique item_id assignment AST literal in test_statusbody_supplement.py; UTF8 encode, urlsafe_b64encode and remove trailing =. Replace placeholder bytes with that value and verify original_sha256. Original /tmp logs unchanged.",
+  "records": [
+    {
+      "path": "invariance-falsifier/next.redacted.log",
+      "original_sha256": "fad421ec9f6a334be4e90574a52f64f124d6cc6d221846c53ea66f8da0153369",
+      "redacted_sha256": "833606d5bb5bccd4a577a33eeca979564ec743f2894daf7fab176f028b820e93",
+      "occurrences": 10
+    },
+    {
+      "path": "invariance-mutant/next.redacted.log",
+      "original_sha256": "26c28744ebb999847dcadac1a96170d25eb0f2c256ec8574af9fa6854e23608b",
+      "redacted_sha256": "94cfa06b65f2f5dc3f9fb58b7a6ba92f52b1c92f37432dc49e5518f4cf40477b",
+      "occurrences": 10
+    },
+    {
+      "path": "invariance-positive/next.redacted.log",
+      "original_sha256": "6c9d323a4dfb0601a2094ef8b570961c6ff19b32542223457c13ad1570514fa4",
+      "redacted_sha256": "1860a620ce3440134a6ce700a9fc8c38f4481eaa02f3c8575c6c044e9e1dea73",
+      "occurrences": 10
+    }
+  ]
+}

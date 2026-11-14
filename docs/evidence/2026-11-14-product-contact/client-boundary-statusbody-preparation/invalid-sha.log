@@ -1,0 +1,5 @@
+Traceback (most recent call last):
+  File "/tmp/hla-boundary-statusbody-qualification/run.py", line 22, in <module>
+    assert sha == args.sha and len(sha) == 40, 'provide exact full commit SHA'
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: provide exact full commit SHA

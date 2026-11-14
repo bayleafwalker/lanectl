@@ -1,0 +1,10 @@
+exact source 99253049d2b45643c0fca2ed55b34c1899596540 reader sha256 before ca4ec6683d01c94bd7d07eb03e52b436a25b3476ed55bd2c1388f0966858d601 after ca4ec6683d01c94bd7d07eb03e52b436a25b3476ed55bd2c1388f0966858d601 mutated False
+acceptance overlay sha256 c57154ceb6f60f1a01898ace9fa1ab9bfd9e222a6c06498648f6a0bdf09ea038 supplement sha256 4010034c45c78f7f7425fcedba8d2f5a21a6755a4f3ff438920c9d14f3b89724
+snapshot contains 1310 tracked paths after overlay and optional mutation
+..........owned Next process group 1616643 verified absent; no browser launched
+
+10 passed in 6.19s
+
+all 1310 tracked paths unchanged after test
+all 10 cases passed without skips
+owned temporary checkout removed

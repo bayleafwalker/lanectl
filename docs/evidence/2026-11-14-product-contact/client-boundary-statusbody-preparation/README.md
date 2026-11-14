@@ -1,0 +1,15 @@
+# Status-before-body supplementary qualification preparation
+
+The genuine native R2 acceptance reviewer accepted the two-line header correction but correctly found that all synthesized error bodies were valid JSON. Root therefore requires an additional actual-candidate probe for the existing status-before-body obligation. This supplement does not modify or replace frozen acceptance c571, reclassify worker regression lines, or waive a native result.
+
+The pinned runner accepts a full immutable source SHA, materializes its exact tracked tree and the pinned c571 test helper in a disposable checkout, then exercises the actual imported reader through real Next and authenticated synthetic producer transport. Empty and malformed non-JSON bodies cover 401 redirect, 403 denied, 404 not_found, 503 unavailable with Retry-After12 and sanitized500; each checks the exact single raw source request and no secret/key leak. JUnit requires all ten named cases with no skip/error/failure.
+
+Actual final preparation on preserved escalated source99253049d2b45643c0fca2ed55b34c1899596540 passed ten cases without skips. A scratch-only body-first insertion into that real reader failed the eight mapped-status cases, while500 controls passed. It is a falsifier, not a reference implementation or adoption of that source. No browser was used; owned Next groups were stopped and verified absent and temporary checkouts removed.
+
+After the explicit helper overlay and optional deliberate mutation, the final runner snapshots all tracked paths by type, mode, file hash or symlink target without following links. It compares them in finally after pytest. Both preparation runs retained all1310 tracked paths unchanged relative to their declared snapshots. A separate plugin changed tracked README.md: cases passed but the runner failed and identified README.md. This establishes the source-invariance guard can fail. It covers tracked paths, not every generated/untracked artifact.
+
+Independent first-party manual review /root/hla_source_manual_review found no blocker and closed its initial post-run-invariance advisory after inspecting the final guard and actual falsifier logs. It did not rerun tests or issue a native verdict. The final runner SHA is86fcf22eddb4f927481510888be350f08a953095d5d5218fe10be54aded2c9b8; the probe SHA is4010034c45c78f7f7425fcedba8d2f5a21a6755a4f3ff438920c9d14f3b89724.
+
+The new R2 candidate still MUST run this supplement at its own actual head after normal gates. These logs are preparation only. No whole UI, normal train/dev delivery or canonical candidate qualification is claimed. Raw JUnit/pytest whitespace is preserved.
+
+The guard flagged30 Next request-log occurrences of the exact base64url public synthetic item-id encoding as generic API keys. Root verified every finding against the test literal and parsed JSON-string query before replacing only that encoding in the three Next logs. route-key-redaction.json records original/redacted hashes and lossless reconstruction from the committed test literal. Original /tmp logs are unchanged; no bypass or allowlist was used.

@@ -1,0 +1,88 @@
+{
+  "artifacts": [
+    {
+      "path": "README.md",
+      "sha256": "fd833b425914692adf23a105894c988be1d8b8b44542e13f8f8b4fd322094c51"
+    },
+    {
+      "path": "invalid-sha.log",
+      "sha256": "30d72e6fe8a132c38bc822aefc4d3fb47516185c1908e063203c80e25a4da516"
+    },
+    {
+      "path": "invariance-falsifier/junit.xml",
+      "sha256": "776c5a7219edf002a6c2411f4d4f5eb16329702931013773d1c8f80ebd66f155"
+    },
+    {
+      "path": "invariance-falsifier/next.redacted.log",
+      "sha256": "833606d5bb5bccd4a577a33eeca979564ec743f2894daf7fab176f028b820e93"
+    },
+    {
+      "path": "invariance-falsifier/pytest.log",
+      "sha256": "73fa0caa57fc24517eb2d2e70357651e2078f8cbea66e8502d1e50b1947e740e"
+    },
+    {
+      "path": "invariance-falsifier/source-invariance.txt",
+      "sha256": "b335630551682c19a781afebcf4d07bf978fb1f8ac04c6bf87428ed5106870f5"
+    },
+    {
+      "path": "invariance-falsifier.log",
+      "sha256": "b35ea3bfadca9b90718809a21b014138f1ad9b0a11e14f20f8027a71ef68b789"
+    },
+    {
+      "path": "invariance-mutant/junit.xml",
+      "sha256": "10a902a8aa1c5f38ac3b26006c0c73ccc52e2592f7c5bd16991f59499e3770cf"
+    },
+    {
+      "path": "invariance-mutant/next.redacted.log",
+      "sha256": "94cfa06b65f2f5dc3f9fb58b7a6ba92f52b1c92f37432dc49e5518f4cf40477b"
+    },
+    {
+      "path": "invariance-mutant/pytest.log",
+      "sha256": "1dd2a8708fa3a0fd0877771c3d8c3ae219f859e305806d533aa5b987bb3a31e9"
+    },
+    {
+      "path": "invariance-mutant/source-invariance.txt",
+      "sha256": "5a426f10064d21941b0f4fda2bdf071208552774214bfa07e79fa6c7ba64a27a"
+    },
+    {
+      "path": "invariance-mutant.log",
+      "sha256": "89ada9ffd4eec918c124d74e8c349c46f036126ddbbf93a5bfafacd9e76e4385"
+    },
+    {
+      "path": "invariance-positive/junit.xml",
+      "sha256": "f886ca0e2124b35830d821795382c3113f2ea44489ed2ff2b040214e5f8c4bca"
+    },
+    {
+      "path": "invariance-positive/next.redacted.log",
+      "sha256": "1860a620ce3440134a6ce700a9fc8c38f4481eaa02f3c8575c6c044e9e1dea73"
+    },
+    {
+      "path": "invariance-positive/pytest.log",
+      "sha256": "b4469fef361c266a612dd654c85f0c4ed63bf2cf160c376feea8d65179df7ca1"
+    },
+    {
+      "path": "invariance-positive/source-invariance.txt",
+      "sha256": "5a426f10064d21941b0f4fda2bdf071208552774214bfa07e79fa6c7ba64a27a"
+    },
+    {
+      "path": "invariance-positive.log",
+      "sha256": "98a4662e70305017a2bbb8ca0cb5c0525c64a472531a42c822d2525f11dcd7ac"
+    },
+    {
+      "path": "mutate_tracked_plugin.py",
+      "sha256": "c250aacbbe214d0a3d9fa48d808ba421fba414dc9e39f0203f3cb5a5a8d26528"
+    },
+    {
+      "path": "route-key-redaction.json",
+      "sha256": "52ed9260cd751d3bb17aefb93cd3c48540c2632de77600e52a2f396d61e06e9b"
+    },
+    {
+      "path": "run.py",
+      "sha256": "86fcf22eddb4f927481510888be350f08a953095d5d5218fe10be54aded2c9b8"
+    },
+    {
+      "path": "test_statusbody_supplement.py",
+      "sha256": "4010034c45c78f7f7425fcedba8d2f5a21a6755a4f3ff438920c9d14f3b89724"
+    }
+  ]
+}
