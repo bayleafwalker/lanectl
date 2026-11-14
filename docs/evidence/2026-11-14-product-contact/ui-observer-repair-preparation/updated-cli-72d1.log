@@ -1,0 +1,13 @@
+.........                                                                [100%]
+=============================== warnings summary ===============================
+tests/test_attention_current_ui_acceptance.py::test_real_api_all_kinds_complete_rows_and_opaque_ids
+  /tmp/hla-ui-acceptance-observer-repair/updated/.venv/lib/python3.13/site-packages/websockets/legacy/__init__.py:6: DeprecationWarning: websockets.legacy is deprecated; see https://websockets.readthedocs.io/en/stable/howto/upgrade.html for upgrade instructions
+    warnings.warn(  # deprecated in 14.0 - 2024-11-09
+
+tests/test_attention_current_ui_acceptance.py::test_real_api_all_kinds_complete_rows_and_opaque_ids
+  /tmp/hla-ui-acceptance-observer-repair/updated/.venv/lib/python3.13/site-packages/uvicorn/protocols/websockets/websockets_impl.py:17: DeprecationWarning: websockets.server.WebSocketServerProtocol is deprecated
+    from websockets.server import WebSocketServerProtocol
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+9 passed, 2 warnings in 90.07s (0:01:30)
+UI acceptance: all nine named cases passed without skips

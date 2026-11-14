@@ -1,0 +1,13 @@
+existing_boundary accepted
+server_error accepted
+mapped_404 rejected
+masked_404 rejected
+mapped_503 rejected
+reference_503 accepted
+status_503 rejected
+reference_404 accepted
+masked_503 rejected
+empty_success rejected
+plain_success rejected
+body_leak rejected
+raw_body_leak rejected

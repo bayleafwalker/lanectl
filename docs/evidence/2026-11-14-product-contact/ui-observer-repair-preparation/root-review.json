@@ -1,0 +1,89 @@
+{
+  "schema": "hla-ui-acceptance-observer-repair-preparation/v1",
+  "recorded_at": "2026-11-14T15:01:54.634954+00:00",
+  "proposal_sha256": "c6f799e8096e475b077ebed708bd6afd19453dab14e9a189ccac033c0a8dc736",
+  "test_sha256": "72d1f08fe54a33873dca030deb597ea9dd2689768f4b52f6f494e9dd30428d4f",
+  "base_sha": "b2d0fe393ac0971e906cce275e91f45e94422593",
+  "full_outcome_unchanged": true,
+  "published_r1_unchanged": true,
+  "publication_performed": false,
+  "native_review_performed": false,
+  "candidate_adoption": false,
+  "changes": [
+    "Wait for exact actual keyboard/click navigation and network completion before observing; no forced reload; client-side click statusnull is not treated as success",
+    "Accept existing safe generic Next error boundary on unexpected500 without sanitizing to404/unavailable or allowingfallback/leaks/priorfacts/allclear",
+    "Remove an overbroad rawbody numeric404/503 ban; actual status/semantic misclassification guards retained"
+  ],
+  "author_proofs": [
+    "Actual literal declaredCLI exits0 with9passed/no skips/strictguard on isolated rejected3685source",
+    "Canonicalb2 exactfinalbytes6namedmissingUI failures,3passes,0skips; actualrealAPIpreflightreached",
+    "Unchangedofficial_base_lint600 returns[] on scratch-only tempdraft",
+    "Only observerfile differs across1313trackedfailedsourcefiles; no productsourcechange",
+    "Browsernavigationcontrolsrejectwrong/nonavigation; exactfinalerror-controls-final.logaccepts unrelatednumericreferencesandrejectswrongstatuses/states/leaks"
+  ],
+  "root_checks": [
+    "Proposal validation, exactfinaltestbody hash, unchangedfulloutcome/published57c andcanonicalRuff passed"
+  ],
+  "independent_read_only_review": {
+    "reviewer": "/root/hla_source_manual_review",
+    "result": "PASS narrow closure final72d1 after removing raw numeric-body false-negative; source/log inspection only",
+    "native_verdict_claimed": false
+  },
+  "limits": [
+    "A1 remains failed124/776>M700; repaired-testpassdoesnotadoptit",
+    "A2 and publishedR1 were not edited; normalmax2running",
+    "Later publication requires exact finalmetadata/base binding and fresh native independentreview, not a revision change merely to resetattempts",
+    "Extra candidate non-nullmarketreference/semanticlabel checks and fulltrain/dev/CI remainmandatory",
+    "error-controls.log is historical and doesnotrepresentfinalnumeric-referencebehavior; retained finalwitnessiserror-controls-final.log"
+  ],
+  "artifacts": [
+    {
+      "path": "proposal.json",
+      "sha256": "c6f799e8096e475b077ebed708bd6afd19453dab14e9a189ccac033c0a8dc736"
+    },
+    {
+      "path": "README.md",
+      "sha256": "09bf3807a213774bf6337503487e2515bf406124562d00806f71da539772a7bc"
+    },
+    {
+      "path": "updated-cli-72d1.log",
+      "sha256": "30cba235869ecf423249768da9db11996b1989bb4694508d883dbddf8908ebec"
+    },
+    {
+      "path": "temp-draft-base-lint-72d1.log",
+      "sha256": "1509627a4b5df40e56c8f58f70f6d88e17d5ac119bbbe52b2ea237c8d00b007c"
+    },
+    {
+      "path": "base-72d1.log",
+      "sha256": "6d3285590fd94598d5fe33f0467e89ed2e296eb2cc21ae264716262b9ba02e7b"
+    },
+    {
+      "path": "base-72d1.xml",
+      "sha256": "fb77e1240674f26167da7df8036c15f4d9f2db0f45602c6631805c167f55779a"
+    },
+    {
+      "path": "original-two.log",
+      "sha256": "5d644240b0dd7eac5842f446fb3b601928e2d8d6c090c36aca9ee1e3b579b74c"
+    },
+    {
+      "path": "original-two.xml",
+      "sha256": "c687565cdf7a6562d6edbd73709c52faeaaa35f92809b694772dfb02b2cf219f"
+    },
+    {
+      "path": "navigation-controls.log",
+      "sha256": "b89cb53a70e6d6e11f883933d5ad1e356b192d9f5c71885a84073c51bc5fa1e9"
+    },
+    {
+      "path": "error-controls-final.log",
+      "sha256": "5c3273f1cf6c5a6bd5a2f71d02e8362971ae8eae33ea357365defd3b91b358d3"
+    },
+    {
+      "path": "check_navigation_controls.py",
+      "sha256": "c0e3a2a2c22d7c0e9587296d62c6543f36a5a42de8a4cb1ece967e40b2cb261a"
+    },
+    {
+      "path": "check_error_controls.py",
+      "sha256": "6afba00629f9fa04da0dd4623dc0b0b8c5d50757dc6c4f5e22cded00a2961096"
+    }
+  ]
+}

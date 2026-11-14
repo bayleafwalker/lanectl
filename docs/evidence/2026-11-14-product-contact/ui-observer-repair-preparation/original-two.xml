@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="2" skipped="0" tests="2" time="24.310" timestamp="2026-11-14T16:43:22.012475+02:00" hostname="workstation"><testcase classname="tests.test_attention_current_ui_acceptance" name="test_distinct_links_encode_whole_key_and_lookup" time="22.211"><failure message="AssertionError: browser failed: page.reload: net::ERR_ABORTED; maybe frame was detached?&#10;  Call log:&#10;  #x1B[2m  - waiting for navigation until &quot;networkidle&quot;#x1B[22m&#10;  &#10;      at /tmp/pytest-of-bayleaf/pytest-15089/attention-browser0/browser.cjs:4:304 {&#10;    name: 'Error'&#10;  }&#10;  &#10;assert 1 == 0&#10; +  where 1 = CompletedProcess(args=['node', '/tmp/pytest-of-bayleaf/pytest-15089/attention-browser0/browser.cjs', 'ws://127.0.0.1:4...\x1b[22m\n\n    at /tmp/pytest-of-bayleaf/pytest-15089/attention-browser0/browser.cjs:4:304 {\n  name: \'Error\'\n}\n').returncode">lab = ({'mode': 'normal', 'real_api': None, 'record': {'item_id': 'contract_review_opaque/201_ä', 'rows': [{'contract_id': '...s', '/reports/attention-items', '/reports/recent-changes', ...], ...}, &lt;function lab.&lt;locals&gt;.visit at 0x76bc90ace020&gt;)
+
+    def test_distinct_links_encode_whole_key_and_lookup(lab):
+        state, visit = lab
+        rows = [item(201, 3, 'contract_review'), item(202, 2, 'contract_review')]
+        state['rows'] = rows
+        page = visit('/operating-picture')
+        hrefs = [row['links'][0] for row in page['rows']]
+        assert len(set(hrefs)) == 2, f'distinct attention records share destination: {hrefs}'
+        for row, href in zip(rows, hrefs):
+            assert href == '/operating-picture/attention/' + row['item_type'] + '/' + key(row['item_id'])
+            provider = f'Synthetic Utility {row["title"]}'
+            state['record'] = {'item_id': row['item_id'], 'rows': [{'contract_id': row['item_id'], 'provider': provider, 'utility_type': 'electricity', 'reason': 'review_needed', 'current_price': '17.2500', 'currency': 'EUR', 'market_reference': None, 'score': 1}]}
+            state['requests'].clear()
+            detail = visit(href)
+            assert detail['status'] == 200, detail
+            requested = [urllib.parse.unquote(path) for path in state['requests'] if '/records/' in path]
+            assert requested == ['/reports/contract-review-candidates/records/' + row['item_id']], requested
+            state['requests'].clear()
+&gt;           clicked = visit('/operating-picture', row['title'])
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_attention_current_ui_acceptance.py:290: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+path = '/operating-picture', click_title = 'Synthetic item 201'
+click_href = None
+
+    def visit(path, click_title=None, click_href=None):
+        result = subprocess.run(['node', str(browser_script), f'ws://127.0.0.1:{browser_port}/',
+                                 f'http://127.0.0.1:{next_port}' + path, click_title or '', click_href or ''], cwd=WEB, env=env,
+                                text=True, capture_output=True, timeout=45)
+&gt;       assert result.returncode == 0, f'browser failed: {result.stderr}'
+E       AssertionError: browser failed: page.reload: net::ERR_ABORTED; maybe frame was detached?
+E         Call log:
+E         #x1B[2m  - waiting for navigation until "networkidle"#x1B[22m
+E         
+E             at /tmp/pytest-of-bayleaf/pytest-15089/attention-browser0/browser.cjs:4:304 {
+E           name: 'Error'
+E         }
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', '/tmp/pytest-of-bayleaf/pytest-15089/attention-browser0/browser.cjs', 'ws://127.0.0.1:4...\x1b[22m\n\n    at /tmp/pytest-of-bayleaf/pytest-15089/attention-browser0/browser.cjs:4:304 {\n  name: \'Error\'\n}\n').returncode
+
+tests/test_attention_current_ui_acceptance.py:204: AssertionError</failure></testcase><testcase classname="tests.test_attention_current_ui_acceptance" name="test_detail_error_statuses_do_not_fetch_fallback_or_leak" time="2.001"><failure message="AssertionError: (['/reports/spend-by-category-monthly', '/reports/transaction-anomalies/records/anomaly_opaque/301_ä'], '/reports/transaction-anomalies/records/anomaly_opaque/301_ä')&#10;assert ['/reports/sp...opaque/301_ä'] == ['/reports/tr...opaque/301_ä']&#10;  &#10;  At index 0 diff: '/reports/spend-by-category-monthly' != '/reports/transaction-anomalies/records/anomaly_opaque/301_ä'&#10;  Left contains one more item: '/reports/transaction-anomalies/records/anomaly_opaque/301_ä'&#10;  Use -v to get more diff">lab = ({'mode': 'denied', 'real_api': None, 'record': {'item_id': 'anomaly_opaque/301_ä', 'rows': [{'amount': '7.1250', 'ano...rts/transaction-anomalies/records/anomaly_opaque%2F301_%C3%A4'], ...}, &lt;function lab.&lt;locals&gt;.visit at 0x76bc90ace020&gt;)
+
+    def test_detail_error_statuses_do_not_fetch_fallback_or_leak(lab):
+        state, visit = lab
+        for kind in SEGMENTS:
+            row = item(301, 3, kind)
+            route = '/operating-picture/attention/' + kind + '/' + key(row['item_id'])
+            sentinel = 'StaleGuard-' + uuid.uuid4().hex[:12]
+            records = {
+                'anomaly': {'transaction_id': 'tx-1', 'counterparty_name': sentinel, 'booking_date': '2026-01-02', 'amount': '7.1250', 'direction': 'outflow', 'anomaly_reason': 'large', 'anomaly_type': 'amount'},
+                'upcoming_cost': {'charge_id': 'charge-1', 'contract_name': 'Fixture contract', 'provider': sentinel, 'expected_amount': '7.1250', 'currency': 'EUR', 'frequency': 'monthly', 'expected_date': '2026-01-02', 'confidence': 'high'},
+                'contract_review': {'contract_id': 'contract-1', 'provider': sentinel, 'utility_type': 'electricity', 'reason': 'review_needed', 'current_price': '7.1250', 'currency': 'EUR', 'market_reference': None, 'score': 1},
+                'contract_renewal': {'contract_id': 'contract-1', 'contract_name': 'Fixture contract', 'provider': sentinel, 'utility_type': 'electricity', 'renewal_date': '2026-01-02', 'days_until_renewal': 4, 'current_price': '7.1250', 'currency': 'EUR'},
+            }
+            state['mode'] = 'normal'
+            state['record'] = {'item_id': row['item_id'], 'rows': [records[kind]]}
+            positive = visit(route)
+            assert positive['status'] == 200 and sentinel in positive['body'], (kind, positive)
+            for mode, text in [('denied', 'denied'), ('absent', 'current report'),
+                               ('unavailable', 'unavailable'), ('busy', 'unavailable')]:
+                state['mode'] = mode
+                state['requests'].clear()
+                result = visit(route)
+                body = result['body'].lower()
+                assert text in body, (kind, mode, result)
+                assert 'synthetic_secret' not in body and sentinel.lower() not in body and 'all clear' not in body
+                if mode == 'absent':
+                    assert 'deleted' not in body
+&gt;               assert_only_exact_record(state['requests'], kind, row['item_id'])
+
+tests/test_attention_current_ui_acceptance.py:323: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+requests = ['/reports/spend-by-category-monthly', '/control/source-freshness', '/auth/me', '/reports/transaction-anomalies/records/anomaly_opaque%2F301_%C3%A4']
+kind = 'anomaly', item_id = 'anomaly_opaque/301_ä'
+
+    def assert_only_exact_record(requests, kind, item_id):
+        report_paths = [urllib.parse.unquote(path) for path in requests if path.startswith('/reports/')]
+        expected = '/reports/' + SEGMENTS[kind] + '/records/' + item_id
+&gt;       assert report_paths == [expected], (report_paths, expected)
+E       AssertionError: (['/reports/spend-by-category-monthly', '/reports/transaction-anomalies/records/anomaly_opaque/301_ä'], '/reports/transaction-anomalies/records/anomaly_opaque/301_ä')
+E       assert ['/reports/sp...opaque/301_ä'] == ['/reports/tr...opaque/301_ä']
+E         
+E         At index 0 diff: '/reports/spend-by-category-monthly' != '/reports/transaction-anomalies/records/anomaly_opaque/301_ä'
+E         Left contains one more item: '/reports/transaction-anomalies/records/anomaly_opaque/301_ä'
+E         Use -v to get more diff
+
+tests/test_attention_current_ui_acceptance.py:62: AssertionError</failure></testcase></testsuite></testsuites>
