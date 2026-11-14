@@ -172,7 +172,14 @@ existing backend and all pages unchanged. Its
 accepted the exact proposal; official base lint and publication validation
 returned no problems. Guarded publication at `f44076e` started a normal bounded
 Flash attempt, with M700, two attempts and the 2700-second timeout unchanged.
-It is running; no candidate or canonical prerequisite is claimed yet.
+That attempt escalated on a real acceptance-observer defect: Next returned a
+lowercase redirect header, while the test had converted case-insensitive HTTP
+headers to a plain dictionary. Its 621-line source remains unadopted.
+The [minimal two-line repair](../evidence/2026-11-14-product-contact/client-boundary-header-repair/)
+passed independent reproduction, retains wrong-status and wrong-destination
+falsifiers, and leaves all four-kind behavior unchanged. A fresh native review
+of finalized scratch revision2 is underway. The original packet and escalation
+remain intact; no candidate or canonical prerequisite is claimed yet.
 
 The [portable repaired full-UI observer](../evidence/2026-11-14-product-contact/ui-portable-observer-preparation/)
 is preparation only. Its base run has six missing-feature failures, three
