@@ -1,0 +1,7 @@
+Restricted diagnostics: /tmp/hla-source-diagnostics-b8k64q6f
+Attempt evidence: /tmp/hla-source-attempt-713372a73643b77d45b8a20174d199fb87a9be4355c0d4bc147d7cf39621cdd6
+{
+  "result": "pass",
+  "observations": "/tmp/hla-source-attempt-713372a73643b77d45b8a20174d199fb87a9be4355c0d4bc147d7cf39621cdd6",
+  "cleanup": "Only root may remove the exact receipt-owned train resources; preserve failed attempts."
+}

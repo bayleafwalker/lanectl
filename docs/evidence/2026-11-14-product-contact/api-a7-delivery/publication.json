@@ -1,0 +1,1 @@
+{"publish": "complete", "relations": ["mart_subscription_summary", "mart_upcoming_fixed_costs_30d", "mart_contract_price_current", "mart_contract_review_candidates", "mart_contract_renewal_watchlist", "mart_transaction_anomalies_current", "mart_open_attention_items"]}

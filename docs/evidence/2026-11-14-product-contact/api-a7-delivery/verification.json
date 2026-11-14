@@ -1,0 +1,143 @@
+{
+  "relations": {
+    "mart_subscription_summary": 2,
+    "mart_upcoming_fixed_costs_30d": 2,
+    "mart_contract_price_current": 4,
+    "mart_contract_review_candidates": 4,
+    "mart_contract_renewal_watchlist": 4,
+    "mart_transaction_anomalies_current": 1,
+    "mart_open_attention_items": 8
+  },
+  "source_groups": [
+    {
+      "type": "contract_renewal",
+      "id": "renewal_synthetic/utility_2026-11-24",
+      "rows": 2
+    },
+    {
+      "type": "contract_renewal",
+      "id": "renewal_synthetic-other_2026-11-24",
+      "rows": 1
+    },
+    {
+      "type": "anomaly",
+      "id": "anomaly_53a3891827f29dd2",
+      "rows": 1
+    },
+    {
+      "type": "contract_renewal",
+      "id": "renewal_synthetic/utility_2026-12-04",
+      "rows": 1
+    },
+    {
+      "type": "contract_review",
+      "id": "review_synthetic-other_multiple_contracts_same_type",
+      "rows": 1
+    },
+    {
+      "type": "contract_review",
+      "id": "review_synthetic/utility_multiple_contracts_same_type",
+      "rows": 3
+    },
+    {
+      "type": "upcoming_cost",
+      "id": "upcoming_f87283a0777b2be6_2026-11-14",
+      "rows": 1
+    },
+    {
+      "type": "upcoming_cost",
+      "id": "upcoming_997291bb96ee624b_2026-11-14",
+      "rows": 1
+    }
+  ],
+  "http": {
+    "http_ids": [
+      "anomaly_53a3891827f29dd2",
+      "renewal_synthetic-other_2026-11-24",
+      "renewal_synthetic/utility_2026-11-24",
+      "renewal_synthetic/utility_2026-12-04",
+      "review_synthetic-other_multiple_contracts_same_type",
+      "review_synthetic/utility_multiple_contracts_same_type",
+      "upcoming_997291bb96ee624b_2026-11-14",
+      "upcoming_f87283a0777b2be6_2026-11-14"
+    ],
+    "http_groups": [
+      {
+        "type": "contract_renewal",
+        "id": "renewal_synthetic/utility_2026-11-24",
+        "rows": 2
+      },
+      {
+        "type": "contract_renewal",
+        "id": "renewal_synthetic-other_2026-11-24",
+        "rows": 1
+      },
+      {
+        "type": "anomaly",
+        "id": "anomaly_53a3891827f29dd2",
+        "rows": 1
+      },
+      {
+        "type": "contract_renewal",
+        "id": "renewal_synthetic/utility_2026-12-04",
+        "rows": 1
+      },
+      {
+        "type": "contract_review",
+        "id": "review_synthetic-other_multiple_contracts_same_type",
+        "rows": 1
+      },
+      {
+        "type": "contract_review",
+        "id": "review_synthetic/utility_multiple_contracts_same_type",
+        "rows": 3
+      },
+      {
+        "type": "upcoming_cost",
+        "id": "upcoming_f87283a0777b2be6_2026-11-14",
+        "rows": 1
+      },
+      {
+        "type": "upcoming_cost",
+        "id": "upcoming_997291bb96ee624b_2026-11-14",
+        "rows": 1
+      }
+    ],
+    "slash_groups": [
+      {
+        "type": "contract_renewal",
+        "id": "renewal_synthetic/utility_2026-11-24",
+        "rows": 2
+      },
+      {
+        "type": "contract_renewal",
+        "id": "renewal_synthetic/utility_2026-12-04",
+        "rows": 1
+      },
+      {
+        "type": "contract_review",
+        "id": "review_synthetic/utility_multiple_contracts_same_type",
+        "rows": 3
+      }
+    ],
+    "multirow_groups": [
+      {
+        "type": "contract_renewal",
+        "id": "renewal_synthetic/utility_2026-11-24",
+        "rows": 2
+      },
+      {
+        "type": "contract_review",
+        "id": "review_synthetic/utility_multiple_contracts_same_type",
+        "rows": 3
+      }
+    ],
+    "unknown_404_kinds": [
+      "anomaly",
+      "contract_renewal",
+      "contract_review",
+      "upcoming_cost"
+    ],
+    "unauthenticated_401": true
+  }
+}

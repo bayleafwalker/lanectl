@@ -1,0 +1,7 @@
+{
+  "source_sha": "c90eb864df4cda647a41d839000f1e1e5a6a74b8",
+  "command": "/nix/store/71c91xjkcj07khl9imgmgji5wzrxwy65-gnumake-4.4.1/bin/make verify-docs",
+  "returncode": 0,
+  "stdout": ".venv/bin/python -m pytest -q tests/test_requirements_contract.py tests/test_repository_contract.py\n.....................                                                    [100%]\n21 passed in 0.05s\n",
+  "stderr": ""
+}

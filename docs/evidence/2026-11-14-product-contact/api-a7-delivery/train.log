@@ -1,0 +1,10 @@
+train-20261114093455: PASSED included=['hla-attention-records-r5-a7'] excluded=[]
+worktree: /projects/dev/_wt/lanes/train-20261114093455
+defers_duckdb_open
+tests/test_api_main.py::ApiMainTests::test_build_reporting_service_uses_published_mode_for_postgres_reporting
+  /projects/dev/_wt/lanes/train-20261114093455/packages/storage/runtime.py:105: RuntimeWarning: Control-plane backend is SQLite but HOMELAB_ANALYTICS_POSTGRES_DSN is set. The control plane will NOT use Postgres unless HOMELAB_ANALYTICS_CONTROL_PLANE_DSN is also set (HOMELAB_ANALYTICS_POSTGRES_DSN is shared with reporting only). Set HOMELAB_ANALYTICS_CONTROL_PLANE_BACKEND=postgres and HOMELAB_ANALYTICS_CONTROL_PLANE_DSN to use Postgres for the control plane.
+    backend = _resolve_control_plane_backend(settings)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+2755 passed, 35 deselected, 5 warnings, 120 subtests passed in 825.14s (0:13:45)
+

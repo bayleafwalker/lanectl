@@ -1,0 +1,6 @@
+{
+  "name": "hla-api-r4-a7-browser-r2",
+  "container_id": "55b2b9c92d07fd29fc61be37d469430575a7d101dd7cd77e9af4c5de3d5b8051",
+  "image": "sha256:b0ab6f3cb99aa7803adbc14d9027ec1785fc6e433b97e134e0f8fe61683b6b53",
+  "logs": "Listening on ws://127.0.0.1:34155/\n"
+}

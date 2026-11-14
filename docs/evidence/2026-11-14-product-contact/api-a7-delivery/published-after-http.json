@@ -1,0 +1,73 @@
+{
+  "objects": [
+    {
+      "relkind": "r",
+      "relname": "mart_contract_price_current"
+    },
+    {
+      "relkind": "r",
+      "relname": "mart_contract_renewal_watchlist"
+    },
+    {
+      "relkind": "r",
+      "relname": "mart_contract_review_candidates"
+    },
+    {
+      "relkind": "r",
+      "relname": "mart_open_attention_items"
+    },
+    {
+      "relkind": "r",
+      "relname": "mart_subscription_summary"
+    },
+    {
+      "relkind": "r",
+      "relname": "mart_transaction_anomalies_current"
+    },
+    {
+      "relkind": "r",
+      "relname": "mart_upcoming_fixed_costs_30d"
+    }
+  ],
+  "rows": {
+    "mart_contract_price_current": [
+      "{\"billing_cycle\": \"monthly\", \"contract_id\": \"synthetic-other\", \"contract_name\": \"Other\", \"contract_type\": \"electricity\", \"currency\": \"EUR\", \"price_component\": \"energy\", \"provider\": \"Demo Power\", \"quantity_unit\": \"kWh\", \"status\": \"active\", \"unit_price\": \"1.0000\", \"valid_from\": \"2025-10-10\", \"valid_to\": \"2026-11-24\"}",
+      "{\"billing_cycle\": \"monthly\", \"contract_id\": \"synthetic/utility\", \"contract_name\": \"Synthetic Electric\", \"contract_type\": \"electricity\", \"currency\": \"EUR\", \"price_component\": \"energy\", \"provider\": \"Demo Power\", \"quantity_unit\": \"kWh\", \"status\": \"active\", \"unit_price\": \"1.0000\", \"valid_from\": \"2025-10-10\", \"valid_to\": \"2026-11-24\"}",
+      "{\"billing_cycle\": \"monthly\", \"contract_id\": \"synthetic/utility\", \"contract_name\": \"Synthetic Electric\", \"contract_type\": \"electricity\", \"currency\": \"EUR\", \"price_component\": \"tax\", \"provider\": \"Demo Power\", \"quantity_unit\": \"kWh\", \"status\": \"active\", \"unit_price\": \"1.0000\", \"valid_from\": \"2025-10-10\", \"valid_to\": \"2026-12-04\"}",
+      "{\"billing_cycle\": \"monthly\", \"contract_id\": \"synthetic/utility\", \"contract_name\": \"Synthetic Electric\", \"contract_type\": \"electricity\", \"currency\": \"EUR\", \"price_component\": \"transfer\", \"provider\": \"Demo Power\", \"quantity_unit\": \"kWh\", \"status\": \"active\", \"unit_price\": \"1.0000\", \"valid_from\": \"2025-10-10\", \"valid_to\": \"2026-11-24\"}"
+    ],
+    "mart_contract_renewal_watchlist": [
+      "{\"contract_duration_days\": 410, \"contract_id\": \"synthetic-other\", \"contract_name\": \"Other\", \"currency\": \"EUR\", \"current_price\": \"1.0000\", \"days_until_renewal\": 10, \"provider\": \"Demo Power\", \"renewal_date\": \"2026-11-24\", \"utility_type\": \"electricity\"}",
+      "{\"contract_duration_days\": 410, \"contract_id\": \"synthetic/utility\", \"contract_name\": \"Synthetic Electric\", \"currency\": \"EUR\", \"current_price\": \"1.0000\", \"days_until_renewal\": 10, \"provider\": \"Demo Power\", \"renewal_date\": \"2026-11-24\", \"utility_type\": \"electricity\"}",
+      "{\"contract_duration_days\": 410, \"contract_id\": \"synthetic/utility\", \"contract_name\": \"Synthetic Electric\", \"currency\": \"EUR\", \"current_price\": \"1.0000\", \"days_until_renewal\": 10, \"provider\": \"Demo Power\", \"renewal_date\": \"2026-11-24\", \"utility_type\": \"electricity\"}",
+      "{\"contract_duration_days\": 420, \"contract_id\": \"synthetic/utility\", \"contract_name\": \"Synthetic Electric\", \"currency\": \"EUR\", \"current_price\": \"1.0000\", \"days_until_renewal\": 20, \"provider\": \"Demo Power\", \"renewal_date\": \"2026-12-04\", \"utility_type\": \"electricity\"}"
+    ],
+    "mart_contract_review_candidates": [
+      "{\"contract_id\": \"synthetic-other\", \"currency\": \"EUR\", \"current_price\": \"1.0000\", \"market_reference\": \"1.0000\", \"provider\": \"Demo Power\", \"reason\": \"multiple_contracts_same_type\", \"score\": 1, \"utility_type\": \"electricity\"}",
+      "{\"contract_id\": \"synthetic/utility\", \"currency\": \"EUR\", \"current_price\": \"1.0000\", \"market_reference\": \"1.0000\", \"provider\": \"Demo Power\", \"reason\": \"multiple_contracts_same_type\", \"score\": 1, \"utility_type\": \"electricity\"}",
+      "{\"contract_id\": \"synthetic/utility\", \"currency\": \"EUR\", \"current_price\": \"1.0000\", \"market_reference\": \"1.0000\", \"provider\": \"Demo Power\", \"reason\": \"multiple_contracts_same_type\", \"score\": 1, \"utility_type\": \"electricity\"}",
+      "{\"contract_id\": \"synthetic/utility\", \"currency\": \"EUR\", \"current_price\": \"1.0000\", \"market_reference\": \"1.0000\", \"provider\": \"Demo Power\", \"reason\": \"multiple_contracts_same_type\", \"score\": 1, \"utility_type\": \"electricity\"}"
+    ],
+    "mart_open_attention_items": [
+      "{\"detail\": \"Renews in 10 days on 2026-11-24\", \"item_id\": \"renewal_synthetic-other_2026-11-24\", \"item_type\": \"contract_renewal\", \"severity\": 3, \"source_domain\": \"utilities\", \"title\": \"Upcoming renewal: Demo Power\"}",
+      "{\"detail\": \"Renews in 10 days on 2026-11-24\", \"item_id\": \"renewal_synthetic/utility_2026-11-24\", \"item_type\": \"contract_renewal\", \"severity\": 3, \"source_domain\": \"utilities\", \"title\": \"Upcoming renewal: Demo Power\"}",
+      "{\"detail\": \"Renews in 20 days on 2026-12-04\", \"item_id\": \"renewal_synthetic/utility_2026-12-04\", \"item_type\": \"contract_renewal\", \"severity\": 2, \"source_domain\": \"utilities\", \"title\": \"Upcoming renewal: Demo Power\"}",
+      "{\"detail\": \"first_occurrence \\u2014 First transaction with this counterparty\", \"item_id\": \"anomaly_53a3891827f29dd2\", \"item_type\": \"anomaly\", \"severity\": 2, \"source_domain\": \"finance\", \"title\": \"Unusual transaction: New Vendor\"}",
+      "{\"detail\": \"multiple_contracts_same_type\", \"item_id\": \"review_synthetic-other_multiple_contracts_same_type\", \"item_type\": \"contract_review\", \"severity\": 1, \"source_domain\": \"utilities\", \"title\": \"Review contract: Demo Power\"}",
+      "{\"detail\": \"multiple_contracts_same_type\", \"item_id\": \"review_synthetic/utility_multiple_contracts_same_type\", \"item_type\": \"contract_review\", \"severity\": 1, \"source_domain\": \"utilities\", \"title\": \"Review contract: Demo Power\"}",
+      "{\"detail\": \"weekly charge of 10.0000 EUR on 2026-11-14\", \"item_id\": \"upcoming_997291bb96ee624b_2026-11-14\", \"item_type\": \"upcoming_cost\", \"severity\": 1, \"source_domain\": \"finance\", \"title\": \"Upcoming payment: Synthetic Same\"}",
+      "{\"detail\": \"weekly charge of 10.0000 EUR on 2026-11-14\", \"item_id\": \"upcoming_f87283a0777b2be6_2026-11-14\", \"item_type\": \"upcoming_cost\", \"severity\": 1, \"source_domain\": \"finance\", \"title\": \"Upcoming payment: Synthetic Same\"}"
+    ],
+    "mart_subscription_summary": [
+      "{\"amount\": \"10.0000\", \"billing_cycle\": \"weekly\", \"charge_id\": \"997291bb96ee624b\", \"contract_id\": \"synthetic-sub\", \"contract_name\": \"Synthetic Same\", \"currency\": \"EUR\", \"end_date\": null, \"monthly_equivalent\": \"43.3333\", \"provider\": \"Demo\", \"start_date\": \"2026-11-07\", \"status\": \"active\"}",
+      "{\"amount\": \"10.0000\", \"billing_cycle\": \"weekly\", \"charge_id\": \"f87283a0777b2be6\", \"contract_id\": \"synthetic-sub\", \"contract_name\": \"Synthetic Same\", \"currency\": \"EUR\", \"end_date\": null, \"monthly_equivalent\": \"43.3333\", \"provider\": \"Demo\", \"start_date\": \"2026-10-31\", \"status\": \"active\"}"
+    ],
+    "mart_transaction_anomalies_current": [
+      "{\"amount\": \"-1000.0000\", \"anomaly_reason\": \"First transaction with this counterparty\", \"anomaly_type\": \"first_occurrence\", \"booking_date\": \"2026-11-14\", \"counterparty_name\": \"New Vendor\", \"direction\": \"expense\", \"transaction_id\": \"53a3891827f29dd2\"}"
+    ],
+    "mart_upcoming_fixed_costs_30d": [
+      "{\"charge_id\": \"997291bb96ee624b\", \"confidence\": \"high\", \"contract_name\": \"Synthetic Same\", \"currency\": \"EUR\", \"expected_amount\": \"10.0000\", \"expected_date\": \"2026-11-14\", \"frequency\": \"weekly\", \"provider\": \"Demo\"}",
+      "{\"charge_id\": \"f87283a0777b2be6\", \"confidence\": \"high\", \"contract_name\": \"Synthetic Same\", \"currency\": \"EUR\", \"expected_amount\": \"10.0000\", \"expected_date\": \"2026-11-14\", \"frequency\": \"weekly\", \"provider\": \"Demo\"}"
+    ]
+  }
+}

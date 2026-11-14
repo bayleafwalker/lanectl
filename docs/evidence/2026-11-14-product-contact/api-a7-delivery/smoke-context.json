@@ -1,0 +1,27 @@
+{
+  "project": "lane-dev-train-20261114093455",
+  "train_id": "train-20261114093455",
+  "sha": "c90eb864df4cda647a41d839000f1e1e5a6a74b8",
+  "source_path": "/projects/dev/_wt/lanes/train-20261114093455",
+  "volume": "lane-dev-train-20261114093455_homelab_analytics_postgres",
+  "repo": "homelab-analytics",
+  "event_log": "/home/bayleaf/.local/state/lanectl/events.jsonl",
+  "api_id": "713372a73643b77d45b8a20174d199fb87a9be4355c0d4bc147d7cf39621cdd6",
+  "pg_id": "1650117bfa0c44d822f8f09d3b5be31370396edeb76edd06c86042fe57d82c39",
+  "api_image": "sha256:717e656dbf8308edf56e8a59f659f3adfabfc608dc7838266da2f20f7f86debf",
+  "network_id": "8d6d2fcb2a60ad413cb522b87bd61b5360aaec3b5641b40b958047cecc4a6933",
+  "network_members": [
+    "1650117bfa0c44d822f8f09d3b5be31370396edeb76edd06c86042fe57d82c39",
+    "27be8e88e7484a61fd9b0d461ad5c43e76c255ca97dd2abfd8d39b9d39f592d6",
+    "713372a73643b77d45b8a20174d199fb87a9be4355c0d4bc147d7cf39621cdd6",
+    "cb5cb8a941e486f6b7308b543bd51f4a32423c231be8910353e8ae8c112bbf1e"
+  ],
+  "project_containers": [
+    "cb5cb8a941e486f6b7308b543bd51f4a32423c231be8910353e8ae8c112bbf1e",
+    "713372a73643b77d45b8a20174d199fb87a9be4355c0d4bc147d7cf39621cdd6",
+    "1650117bfa0c44d822f8f09d3b5be31370396edeb76edd06c86042fe57d82c39",
+    "27be8e88e7484a61fd9b0d461ad5c43e76c255ca97dd2abfd8d39b9d39f592d6"
+  ],
+  "predeploy_volume_proof": "/tmp/hla-api-a7-volume-absence.json",
+  "no_concurrent_operator_writes": true
+}
