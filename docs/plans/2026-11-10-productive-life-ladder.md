@@ -266,3 +266,19 @@ Its [frozen preparation packet](../evidence/2026-11-14-product-contact/onboardin
 passed independent gate review and actual base proof11controls/5semantic failures,
 no skips/errors. Native adversarial review and all candidate/product delivery
 proof remain pending; this adds no completed product item or boundary retry.
+
+
+### 14November base evidence and ordinary onboarding implementation
+
+Actual fresh-clone qualification exposed16setuperrors that the old base classifier
+accepted as expected. Lanectl2905 fixed setup AssertionError phase handling,
+released and installed0.2.13 after1127tests and independent native review;62runtime
+files and all3public assets were byte-verified. [Proof](../evidence/2026-11-14-product-contact/base-lint-setup-phase/README.md)
+retains real red/publication controls and conservative classification limits.
+
+The separately repaired onboarding acceptance received renewed nativeGoProaccept.
+Ordinary base and publication runs each show11controlsPASS/5semanticExpandFAIL,
+no errors or skips. HLA2904 releaseR1 is guarded-published; first nativeProattempt
+is running, with no candidate or product completion claimed. [Packet](../evidence/2026-11-14-product-contact/onboarding-portability-r2/README.md).
+PolicyPR7 remains a prepared standing model-error proposal; canonicalauthorityv1
+and empty autonomous classes are unchanged. This adds no evidence-clock exit.
