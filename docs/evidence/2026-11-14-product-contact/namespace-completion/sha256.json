@@ -64,12 +64,14 @@
   "experiments/lanectl-stopped-audit-retained-20261114/stopped.journal": "d0c71738bb4131e03da2a2156daf7dd3682c786fe99408b8cf0812a6f9fdf179",
   "final-suite.log": "570c266cc1fcae21ed7f888a83cd967b73701052439dce15fb24a124e1810c1a",
   "full-suite.log": "86a309d1dcdac501ac4c5712156b5f123e613390b92d9afdceffcba5441c68a6",
+  "installed-probe.py": "2f0507befbf7ac544e5943a1c3e67e7726c0f0a6634505e49ce7a463e07140af",
+  "installed-runtime.json": "306fd6a57741e264ee9a7f0c988a14d7d3120d423101c15df996ccd1bcf8f36e",
   "native-review-prompt.txt": "d939850eeb8dda292819c212b5d48a5c7e5c4f29cb2af6a6ab87b04832ddaf4e",
   "native-review.exit": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
   "native-review.json": "05a4fd064e3789d5aa6a4c234eda865feb354a0a2263f9fa95b37f465e21910f",
   "native-review.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
   "old-source-red.log": "24b667e1f63467df546efd57d54e2f9d77180e8208e87a67a6f9d3d4a1c5ae77",
   "review-runtime-equivalence.json": "6e0dafc94e11710e1576a75ff1d1d36a3b5b52c39567f91414693701d5c2cdba",
-  "status.json": "20374700aebc3acd140eccfd07f7f43984b6b5d61583eadd614c31f5ed2d0d37",
+  "status.json": "1bb9092438c1cbf650b0168353ccbe1c00697ba392d836db0edc9d771695d06f",
   "targeted-green.log": "d5e285dc7e0722e343604be92e1644994e6a6718ee19fe4e37de3d81d3e7e8bd"
 }

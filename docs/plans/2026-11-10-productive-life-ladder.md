@@ -112,7 +112,7 @@ went red after it (fixed). Not yet modelled: V4 Pro's own $15/month limit as a s
 The strict-root host fence is applied and qualified; served #2889 is done.
 Canonical lanectl `ac4c4dd` promotes only Sovite to its ownership-compatible
 `systemd` mode after matching its full baseline. The earlier environment-only
-status above is historical. The installed client is0.2.11, including reviewed
+status above is historical. The installed client is0.2.12, including reviewed
 retry routing, cleanup and truthful publication evidence corrections.
 
 Product contact continues under HLA1593. Identity PR82 and source-reader PR83
@@ -194,6 +194,27 @@ as v0.2.11. All 62 runtime files match the tag. The final normal R2 retry, Pro a
 started at 18:05:20 UTC with the actual BOM observations in its input. The same
 criteria, revision and per-revision limits remain. No canonical prerequisite
 or whole UI completion is claimed.
+
+Served `lanectl#2902` then repaired a measured namespace completion defect:
+stopping an unfinished check could return zero and create a false train pass.
+The actual build, recheck and historical-landing red controls failed before the
+repair. Native Sonnet review cleared the source; the final suite passed 1120
+tests. Released and installed v0.2.12 matches all 62 runtime files. An actual
+installed check whose child traps TERM to zero now returns 125 after its exact
+unit is stopped, with its completion marker absent. The
+[bounded lifecycle evidence](../evidence/2026-11-14-product-contact/namespace-completion/)
+retains failed alternatives, startup, timeout, TERM-ignoring process cleanup and
+normal output controls. This does not establish arbitrary hostile same-UID
+isolation or manager-loss cleanup.
+
+The actual boundary R2 Pro a3 candidate `94ecb4c` has 643 worker changed lines.
+Independent frozen CLI 8/8, status/body 10/10, BOM 2/2 and seven native specialist
+reviews passed. Its first full Make failed without retained stdout because of
+a harness error; a narrow reproduction found Storybook's cache pointed into
+read-only canonical dependencies. An owned dependency copy passed all 55 matched
+browser checks without lockfile, baseline or tolerance changes. Final full Make
+has resumed under installed v0.2.12. Normal train, dev and canonical delivery
+remain pending; no prerequisite or whole UI completion is claimed.
 
 The [portable repaired full-UI observer](../evidence/2026-11-14-product-contact/ui-portable-observer-preparation/)
 is preparation only. Its base run has six missing-feature failures, three

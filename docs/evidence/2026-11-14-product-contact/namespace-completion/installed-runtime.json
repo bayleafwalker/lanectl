@@ -1,0 +1,13 @@
+{
+  "distribution": "0.2.12",
+  "release_commit": "b56f9cf4a7d9741069436f83e298f5dbde7e687b",
+  "runtime_files_equal": 62,
+  "installed_path": "/home/bayleaf/.local/share/uv/tools/lanectl/lib/python3.13/site-packages/lanectl",
+  "stop_acknowledged": 0,
+  "stopped_check_exit": 125,
+  "incomplete_marker_absent": true,
+  "positive_exit": 0,
+  "positive_stdout": "installed-completion-ok",
+  "systemd_version": "262",
+  "scope": "namespace completion; no credential, grant, policy or strict receipt changes"
+}

@@ -26,7 +26,7 @@
     "reviewed_commit": "7842494392aef12e2a263252ef1dc36239ba821f",
     "lows_addressed": "Added committed TERM-ignoring stop regression, 30s deadline with early-stop assertion, corrected docstring and outer-timeout comment. Full suite rerunning; no runtime behavior changed after reviewed source."
   },
-  "durability": "cross-host-replicated only after canonical push; /tmp originals ephemeral",
+  "durability": "cross-host-replicated canonical Git evidence; served item durable-authoritative; /tmp originals ephemeral",
   "actual_candidate": {
     "source_commit": "7842494392aef12e2a263252ef1dc36239ba821f",
     "sandbox_sha256": "ab6b459271d3be5c57c537ef8f12f0ee825b0ad8d3e31fb0e0e229b4e93a493c",
@@ -44,5 +44,13 @@
     "passed": 1120,
     "seconds": 139.61
   },
-  "release": "v0.2.12 prepared; canonical push and install pending"
+  "release": {
+    "version": "v0.2.12",
+    "commit": "b56f9cf4a7d9741069436f83e298f5dbde7e687b",
+    "canonical_main_and_tag_pushed": true,
+    "installed": true,
+    "runtime_files_equal": 62,
+    "installed_stop_probe_exit": 125,
+    "installed_positive_exit": 0
+  }
 }
