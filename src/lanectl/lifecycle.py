@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 import json
+import math
 from pathlib import Path
 import sqlite3
 
@@ -98,20 +99,91 @@ def local_facts(events, *, item_id=None, attempt_id=None, run_id=None):
             "local.receipt": _event_fact("local.receipt", receipts)}
 
 
-def _valid(value, schema):
-    """Small, conservative JSON-schema validator for catalog result schemas."""
+def _json_value(value):
+    """Accept JSON values only, including finite numbers and string object keys."""
+    if value is None or isinstance(value, (str, bool, int)):
+        return True
+    if isinstance(value, float):
+        return math.isfinite(value)
+    if isinstance(value, list):
+        return all(_json_value(item) for item in value)
+    if isinstance(value, dict):
+        return all(isinstance(key, str) and _json_value(item) for key, item in value.items())
+    return False
+
+
+def _json_equal(left, right):
+    """JSON equality: numbers compare by value, but booleans are distinct."""
+    if isinstance(left, bool) or isinstance(right, bool):
+        return type(left) is type(right) and left == right
+    if isinstance(left, (int, float)) and isinstance(right, (int, float)):
+        return left == right
+    if isinstance(left, list) and isinstance(right, list):
+        return len(left) == len(right) and all(_json_equal(a, b) for a, b in zip(left, right))
+    if isinstance(left, dict) and isinstance(right, dict):
+        return left.keys() == right.keys() and all(_json_equal(left[k], right[k]) for k in left)
+    return type(left) is type(right) and left == right
+
+
+def _schema_supported(schema):
+    """Recognize only the implemented subset, even in unused nested schemas."""
     if not isinstance(schema, dict):
         return False
     kind = schema.get("type")
+    if kind not in (None, "object", "array", "string", "integer", "number", "boolean", "null"):
+        return False
+    if "type" in schema and kind is None:
+        return False
+    allowed = {"type", "const", "enum"}
     if kind == "object":
-        if not isinstance(value, dict):
+        allowed |= {"properties", "required"}
+    elif kind == "array":
+        allowed.add("items")
+    if not schema or schema.keys() - allowed or (kind is None and not ({"const", "enum"} & schema.keys())):
+        return False
+    if "const" in schema and not _json_value(schema["const"]):
+        return False
+    if "enum" in schema:
+        options = schema["enum"]
+        if not isinstance(options, list) or not options or not all(_json_value(x) for x in options):
             return False
-        if any(name not in value for name in schema.get("required", ())):
+        if any(_json_equal(x, y) for i, x in enumerate(options) for y in options[:i]):
             return False
-        return all(name not in schema.get("properties", {}) or _valid(item, schema["properties"][name])
-                   for name, item in value.items())
+    if kind == "object":
+        properties = schema.get("properties", {})
+        required = schema.get("required", [])
+        if (not isinstance(properties, dict) or not all(isinstance(k, str) and _schema_supported(v)
+                                                        for k, v in properties.items())
+                or not isinstance(required, list) or not all(isinstance(k, str) for k in required)
+                or len(set(required)) != len(required)):
+            return False
+    if kind == "array" and not _schema_supported(schema.get("items")):
+        return False
+    return True
+
+
+def _valid(value, schema):
+    """Validate the supported catalog subset; unknown constraints fail closed.
+
+    Supports single types, object properties/required, array items, and JSON
+    const/enum (also without type). Other schema keywords are not interpreted.
+    """
+    if not _schema_supported(schema) or not _json_value(value):
+        return False
+    if "const" in schema and not _json_equal(value, schema["const"]):
+        return False
+    if "enum" in schema and not any(_json_equal(value, option) for option in schema["enum"]):
+        return False
+    kind = schema.get("type")
+    if kind is None:
+        return True
+    if kind == "object":
+        return (isinstance(value, dict)
+                and all(name in value for name in schema.get("required", ()))
+                and all(name not in schema.get("properties", {}) or _valid(item, schema["properties"][name])
+                        for name, item in value.items()))
     if kind == "array":
-        return isinstance(value, list) and all(_valid(item, schema.get("items", {})) for item in value)
+        return isinstance(value, list) and all(_valid(item, schema["items"]) for item in value)
     if kind == "string":
         return isinstance(value, str)
     if kind == "integer":
@@ -120,9 +192,7 @@ def _valid(value, schema):
         return isinstance(value, (int, float)) and not isinstance(value, bool)
     if kind == "boolean":
         return isinstance(value, bool)
-    if kind == "null":
-        return value is None
-    return False
+    return value is None
 
 
 def _definition(catalog, operation):
