@@ -419,6 +419,19 @@ def _inspect(path, *, immutable=False):
     return {"counts": counts, "heads": heads}
 
 
+def _logical_rows_digest(path):
+    """Compare every stored value across header preparation, with bounded memory."""
+    digest = hashlib.sha256()
+    with closing(_connect(path, immutable=True)) as db:
+        for table in ("lane_events", "lane_batches"):
+            digest.update(table.encode() + b"\x00")
+            for row in db.execute("SELECT * FROM " + table + " ORDER BY 1,2,3,4,5"):
+                encoded = encode(row).encode()
+                digest.update(str(len(encoded)).encode() + b":")
+                digest.update(encoded)
+    return digest.hexdigest()
+
+
 def _backup_progress(status, remaining, total, started, page_size):
     if total * page_size > MAX_PAYLOAD or time.monotonic() - started > 300:
         raise RecoveryError("resource-limit: online backup deadline/pages")
@@ -733,6 +746,7 @@ def restore(artifact, destination):
                     raise RecoveryError(
                         "invalid-artifact: measured counts/heads mismatch"
                     )
+                verified_rows_digest = _logical_rows_digest(candidate)
                 _prepare_wal(candidate)
                 _no_candidate_sidecars(candidate)
                 # Immutable inspection proves all required data is present in
@@ -742,6 +756,8 @@ def restore(artifact, destination):
                 }:
                     raise RecoveryError("private-candidate-wal-state-mismatch")
                 _no_candidate_sidecars(candidate)
+                if _logical_rows_digest(candidate) != verified_rows_digest:
+                    raise RecoveryError("private-candidate-wal-content-changed")
                 restored_hash = _hash(candidate)
                 _sync_file(candidate)
                 _same_input(artifact, source_fd)

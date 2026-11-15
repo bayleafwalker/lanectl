@@ -213,7 +213,10 @@ publishing. Checksums detect corruption; they do not authenticate an artifact.
 Keep artifacts in trusted backup custody. The artifact SQLite payload is
 standalone. Restore validates it, explicitly prepares WAL on the private
 candidate, closes it, then verifies schema/data from the main file alone with
-immutable readonly inspection before publication. It never initializes or
+immutable readonly inspection before publication. A streamed digest of every
+stored row must match before and after WAL preparation, including principals
+and the complete idempotency records; matching counts and heads alone is
+insufficient. It never initializes or
 migrates an owner, changes source journal settings, or depends on unpublished
 WAL/SHM contents.
 

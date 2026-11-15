@@ -1077,3 +1077,26 @@ def test_private_wal_preparation_cannot_change_verified_owner_data(
         recovery.restore(artifact, destination)
     assert not destination.exists() and artifact.read_bytes() == original
     assert StreamStore(source).read("ws", "repo", "control")["revision"] == 1
+
+
+def test_private_wal_preparation_cannot_rewrite_consistent_principals(
+    owner, tmp_path, monkeypatch
+):
+    source, store = owner
+    store.append("ws", "repo", "control", "p", "batch-0001", 0, [event()])
+    artifact, destination = tmp_path / "snapshot.lane", tmp_path / "restored.sqlite"
+    recovery.backup(source, artifact)
+    original = artifact.read_bytes()
+    prepare = recovery._prepare_wal
+
+    def rewrite_consistent_data(path):
+        prepare(path)
+        with closing(sqlite3.connect(path)) as db:
+            db.execute("UPDATE lane_events SET principal='changed'")
+            db.execute("UPDATE lane_batches SET principal='changed'")
+            db.commit()
+
+    monkeypatch.setattr(recovery, "_prepare_wal", rewrite_consistent_data)
+    with pytest.raises(recovery.RecoveryError):
+        recovery.restore(artifact, destination)
+    assert not destination.exists() and artifact.read_bytes() == original
