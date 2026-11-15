@@ -311,3 +311,19 @@ tests, four helper faults, actual worker wrapper and its four semantic faults
 and Node-execution negative control. That does not qualify a new candidate.
 Full Make/55 visuals, real-page behavior, native specialist review, train/dev,
 PR/CI and canonical adoption remain required before product acceptance.
+
+The original intended backlog was then read from the served store. HLA1592's
+four-kind horizon still needs explicit contracts for approval deadlines and
+reader-safe due exports; dates cannot be invented from creation time or expected
+source arrival. The independent existing HLA1587 source-row upload item is now
+active under reservation505. [Discovery and planning evidence](../evidence/2026-11-15-product-contact/inline-upload-plan/README.md)
+retains its actual six-test backend baseline and the first native Opus plan.
+That draft needs correction because configured ingestion already accepts XLSX
+and JSON even when detection supplies no matching candidate. Native follow-up
+is refining the complete identity-safe outcome before frozen acceptance or any
+implementation release. No additional onboarding attempt was authorized.
+
+Both attempted served `sprintctl render` commands were refused as operation
+unavailable. No local database fallback was used; served work remains
+authoritative and the measured changes are retained in Git. This is a snapshot
+tooling gap, not product completion or a reason to widen authority.
