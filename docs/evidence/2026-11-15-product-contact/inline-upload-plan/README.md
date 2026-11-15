@@ -17,11 +17,14 @@ return no candidate or another primary while a valid pinned dry-run is ready.
 Both normalize via file_format.py then map and validate actual rows; readiness
 is not provenance, dedup, consistency/promotion or end-to-end ingest proof.
 The draft also misplaces root acceptance outside the byte-bound release and
-suggests cutting tests to fit the budget. A native planning follow-up is running
-to correct these issues, preserve supported formats, immutable row identity,
-explicit named-target action, full required coverage and frozen acceptance.
+suggests cutting tests to fit the budget. The native planning follow-up completed successfully and corrects supported
+formats, immutable row identity, explicit named-target action, full required
+coverage and frozen acceptance. ROOT-DISPOSITION.md resolves remaining lifecycle
+and mutation-uncertainty errors before any acceptance publication.
 The followup uses systemd-managed owned stdio files to retain native output even
-if the outer capture supervisor ends. See followup-live.json for its exact unit.
+if the outer capture supervisor ends. The recorded unit in followup-live.json is now terminal; it is historical
+invocation metadata, not a current liveness claim. A separate scratch-only
+bootstrap worker is preparing executable real-server base readiness proof.
 
 The unchanged existing backend target was actually run on host:
 make test-target TEST='tests/test_freshness_remediation_flow.py -x --tb=short'

@@ -318,10 +318,16 @@ reader-safe due exports; dates cannot be invented from creation time or expected
 source arrival. The independent existing HLA1587 source-row upload item is now
 active under reservation505. [Discovery and planning evidence](../evidence/2026-11-15-product-contact/inline-upload-plan/README.md)
 retains its actual six-test backend baseline and the first native Opus plan.
-That draft needs correction because configured ingestion already accepts XLSX
-and JSON even when detection supplies no matching candidate. Native follow-up
-is refining the complete identity-safe outcome before frozen acceptance or any
-implementation release. No additional onboarding attempt was authorized.
+The first draft needed correction because configured ingestion already accepts
+XLSX and JSON even when detection supplies no matching candidate. Native follow-up
+completed successfully; the owner disposition also corrects unsafe upstream
+messages and unsupported inference from latest-run snapshots. A private
+production-Next/real-API bootstrap exercised existing supported-format and role
+controls; its [partial readiness archive](../evidence/2026-11-15-product-contact/inline-upload-bootstrap/README.md)
+preserves all measured limits. Consolidated independent acceptance is still being
+qualified on the unchanged base before any implementation release. No additional
+onboarding attempt was authorized. A fresh live-ledger check found zero existing
+records for the proposed source-upload release; this is preparation, not admission.
 
 Both attempted served `sprintctl render` commands were refused as operation
 unavailable. No local database fallback was used; served work remains
