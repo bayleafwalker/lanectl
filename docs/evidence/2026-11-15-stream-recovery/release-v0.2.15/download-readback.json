@@ -1,0 +1,11 @@
+{
+  "version": "0.2.15",
+  "source_commit": "d64fb00b7bacdb36d35c7001decf03c3e01bec58",
+  "three_published_assets_byte_equal": true,
+  "assets": {
+    "lanectl-0.2.15-py3-none-any.whl": "457c5141762c32383e2c63b63a70e31db304c3706c4221c60e99aa435cf334f8",
+    "lanectl-0.2.15-artifact.json": "47412f633b606c856383f764374fde53898c36a5afa3287713d5131a2b1b34cd",
+    "SHA256SUMS": "8e1c58f30112d5634acbe1ed1971a659032e90c0b8fcc8afe013cbaf24b0fde6"
+  },
+  "url": "https://github.com/bayleafwalker/lanectl/releases/tag/v0.2.15"
+}

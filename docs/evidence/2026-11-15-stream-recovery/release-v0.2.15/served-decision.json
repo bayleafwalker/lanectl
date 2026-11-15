@@ -1,0 +1,10 @@
+{
+  "item": "lanectl#2910",
+  "status": "done",
+  "resolution": "accepted",
+  "decision_id": 489,
+  "release_digest": "a5324729185ff0a030eab52f2dc4a6eed37fbf9d28312782102e054278186564",
+  "evidence_digest": "1c589563340c4ef2697645f5ff23cc2f6c6dcf99363f3a761e51c9f7d30bf668",
+  "reservation512": "released2026-11-15T20:32:36Z",
+  "durability": "served durable-authoritative"
+}

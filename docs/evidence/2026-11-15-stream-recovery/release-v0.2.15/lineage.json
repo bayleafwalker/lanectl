@@ -1,0 +1,17 @@
+{
+  "original_session_local_sha256": {
+    "CLOSEOUT.json": "1c589563340c4ef2697645f5ff23cc2f6c6dcf99363f3a761e51c9f7d30bf668",
+    "lanectl-0.2.15-artifact.json": "47412f633b606c856383f764374fde53898c36a5afa3287713d5131a2b1b34cd",
+    "download-readback.json": "2898ce2723707145b2f30ae6626df1647141d2fada495845ce7fa07e2996b182",
+    "ubuntu-ci-proof.json": "99f410fb6fd7a6d3b799556e3df21d9a3fe42d42ca62ca88cadfb3dc6acbce5f",
+    "isolated-installed-proof.json": "28cb176b9b0bc7599efc7bb062965b680393f736297d7ff3549f17ed8bfe25ed",
+    "external-installed-proof.json": "28cb176b9b0bc7599efc7bb062965b680393f736297d7ff3549f17ed8bfe25ed",
+    "SHA256SUMS": "8e1c58f30112d5634acbe1ed1971a659032e90c0b8fcc8afe013cbaf24b0fde6",
+    "release-notes.md": "d9e1087e733a74bbb2207412dcb69bd56142223a8b47ca232b54a464092f9fcc",
+    "isolated-runtime-proof.json": "2155ec9ff0e10ff9e96e4dac74e69d9976b8dc6084a8a294ccaf79182ca2efbe",
+    "external-runtime-proof.json": "d80dd12119f906a4356bf64f4329127b2c9d52f75d8355f2c06553454914a8cd",
+    "build1.log": "5bb574fa333b187d83295f6868b6e82ab7f0c7a43143311db094ba532d4dcfd6",
+    "build2.log": "b78cd352575b54139adfb7c8282d56d4e617c7a2f39ea0d0eb8bcf95a6a68e46"
+  },
+  "normalization": "Runtimefixture prefixes and buildroot replaced with descriptive placeholders; no result changes."
+}

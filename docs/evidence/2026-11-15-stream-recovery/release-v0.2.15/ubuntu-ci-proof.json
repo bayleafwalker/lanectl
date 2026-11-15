@@ -1,0 +1,28 @@
+{
+  "schema": "lanectl.ubuntu-ci-proof/v1",
+  "run_id": 43758032552,
+  "job_id": 132946328805,
+  "head": "d64fb00b7bacdb36d35c7001decf03c3e01bec58",
+  "merge_preview": "6ae9ba617c17c22f75979bbb69ddfed39a6a7305",
+  "status": "completed",
+  "conclusion": "success",
+  "full_junit": {
+    "tests": "1217",
+    "failures": "0",
+    "errors": "0",
+    "skipped": "0",
+    "time": "139.719"
+  },
+  "artifact_id": 14179316930,
+  "artifact_zip_sha256": "58253ca1f021840f864944ead1bf1010c41e11937afc2d48f9c8266458657a56",
+  "junit_sha256": "cbe3b67dd74e72807d32063e3bc9b66572766c0a7842499b14b14fb34b7d9b22",
+  "actual_preflight": "real user systemd,RO/RW/hidden paths, nonpassing deadline/stop allpassed",
+  "version": "0.2.15",
+  "prior_run": {
+    "id": 43757100960,
+    "failed": 2,
+    "passed": 1215,
+    "cause": "dash echo JSON escapes; fixtures repaired withoutchangingassertions"
+  },
+  "url": "https://github.com/bayleafwalker/lanectl/actions/runs/43758032552"
+}

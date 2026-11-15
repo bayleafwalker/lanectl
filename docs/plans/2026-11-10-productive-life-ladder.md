@@ -431,3 +431,16 @@ the earlier unconfigured full-suite failure.
 This closes the public artifact-publication prerequisite. It proves no hosted
 deployment, tenant migration, lane persistence/restore or event-authority
 cutover. It adds no ruled product-class result or evidence-clock exit.
+
+
+### November 15 owner recovery tools released
+
+LANECTL2910 is accepted by served decision489. PR8 landed exact source `d64fb00` after actual Ubuntu CI passed all1,217 tests with zero failures, errors or skips and real systemd isolation, timeout and stop preflights. Version0.2.15 is published and installed: two clean offline wheels are byte-identical, all63 runtime files match source, three release asset readbacks match, and isolated/external installed-wheel CLI recovery proofs pass. The first Ubuntu run's two fake-provider shell failures and actual dash red/green correction are retained with unchanged assertions. [Release closeout](../evidence/2026-11-15-stream-recovery/release-v0.2.15/README.md).
+
+This closes the local owner-tool prerequisite. Exact-image service recovery in disposable storage remains the next integration proof; hosted volume recovery, backup custody, gateway flow and authority cutover remain unqualified.
+
+### November 15 overview priority review failure
+
+HLA2908 used both original attempts. A1 timed out after its681-line source passed all five gates. A2 completed with651lines and passed all five gates, all53 frozen acceptance cases, full Make and55 unchanged UI checks. Seven specialist reviews plus actual source execution then exposed a valid-row contract violation: Python orders fullwidth U+FF21 before emoji U+1F600, while the browser helper reverses them. The literal route-size blocker also remains unresolved. Raw briefing coercion failures were reproduced only through the data provider seam; ordinary typed INTEGER publication reachability is not claimed.
+
+The integrator parked A2, served2908 is blocked, and verification reservation510 is released. Both source bundles were independently restored from base-only repositories and retained with original passing checks, review findings and factual counterexamples. [Complete closeout](../evidence/2026-11-15-product-contact/overview-priority-closeout/README.md). No repair, third attempt, gate/spec/budget reset, train or adoption occurred. Canonical integrator revision1 grants no model-error repair authority; PR7 remains an unactivated draft. Original1590/1593 outcomes remain incomplete.

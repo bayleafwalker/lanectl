@@ -1,0 +1,116 @@
+{
+  "authority_state_absent": true,
+  "cli_backup_process": {
+    "artifact": "<owned-disposable-fixture>/snapshot.lane",
+    "artifact_sha256": "75c14f5e177e73be17081a79dce74f70823e379816a66504a90f7d7c03cd8867",
+    "authority_changed": false,
+    "counts": {
+      "lane_batches": 3,
+      "lane_events": 3
+    },
+    "heads": [
+      {
+        "repo": "repo-a",
+        "revision": 1,
+        "stream": "control",
+        "workspace": "ws-a"
+      },
+      {
+        "repo": "repo-b",
+        "revision": 1,
+        "stream": "other",
+        "workspace": "ws-a"
+      },
+      {
+        "repo": "repo-a",
+        "revision": 1,
+        "stream": "control",
+        "workspace": "ws-b"
+      }
+    ],
+    "ok": true,
+    "operation": "backup",
+    "owner_schema": 1,
+    "payload_sha256": "458da410336b8fadf33264e83811cc7d25a2b4881f3e314b0fa62a73363463e2",
+    "quiescence": "not-asserted",
+    "schema": "lanectl.stream-recovery-receipt/v1"
+  },
+  "cli_restore_process": {
+    "artifact": "<owned-disposable-fixture>/snapshot.lane",
+    "artifact_sha256": "75c14f5e177e73be17081a79dce74f70823e379816a66504a90f7d7c03cd8867",
+    "authority_changed": false,
+    "counts": {
+      "lane_batches": 3,
+      "lane_events": 3
+    },
+    "database": "<owned-disposable-fixture>/restored.sqlite",
+    "heads": [
+      {
+        "repo": "repo-a",
+        "revision": 1,
+        "stream": "control",
+        "workspace": "ws-a"
+      },
+      {
+        "repo": "repo-b",
+        "revision": 1,
+        "stream": "other",
+        "workspace": "ws-a"
+      },
+      {
+        "repo": "repo-a",
+        "revision": 1,
+        "stream": "control",
+        "workspace": "ws-b"
+      }
+    ],
+    "journal_mode": "wal",
+    "ok": true,
+    "operation": "restore",
+    "owner_schema": 1,
+    "payload_sha256": "458da410336b8fadf33264e83811cc7d25a2b4881f3e314b0fa62a73363463e2",
+    "quiescence": "not-asserted",
+    "restored_database_sha256": "42fc1332439cc7a160674431475c4580661052c4d7973d953b401585bd4f3ed7",
+    "schema": "lanectl.stream-recovery-receipt/v1"
+  },
+  "committed_uncheckpointed_wal": true,
+  "fixture": "<owned-disposable-fixture>",
+  "fixture_durability": "session-local",
+  "kernel_fault": {
+    "errno": 22,
+    "injection": "real kernel fsync(/dev/null) error",
+    "phase": "parent-fsync",
+    "published": "<owned-disposable-fixture>/parent-sync-failed.lane",
+    "success_receipt": false
+  },
+  "main-file-only-copy_falsified": true,
+  "original_artifact_usable_after_fault": true,
+  "owned_candidates_remaining": [],
+  "reopen_process": {
+    "all_rows_sha256": "b941cdc7726673876519ec2a209f4b454c0ea5482f91fc3e41f5a3284e58b844",
+    "changed_content_refusal": "idempotency-conflict",
+    "journal_mode_after": "wal",
+    "journal_mode_before": "wal",
+    "next_batch": {
+      "count": 1,
+      "previous_revision": 1,
+      "replayed": false,
+      "revision": 2
+    },
+    "replay": {
+      "count": 1,
+      "previous_revision": 0,
+      "replayed": true,
+      "revision": 1
+    },
+    "scoped_heads": [
+      2,
+      1,
+      1,
+      0
+    ]
+  },
+  "source_logical_sha256": "b941cdc7726673876519ec2a209f4b454c0ea5482f91fc3e41f5a3284e58b844",
+  "source_sha256": "bdfe3c71bea4ef2c64e69f554c4ba96f7d3707fe4e1dd76ec84662537cf5cf41",
+  "writer_process": true
+}

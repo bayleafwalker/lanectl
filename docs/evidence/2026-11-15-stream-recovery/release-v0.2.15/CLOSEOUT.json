@@ -1,0 +1,65 @@
+{
+  "schema": "lanectl.stream-recovery-release-closeout/v1",
+  "item": "lanectl#2910",
+  "release_digest": "a5324729185ff0a030eab52f2dc4a6eed37fbf9d28312782102e054278186564",
+  "canonical_source": "d64fb00b7bacdb36d35c7001decf03c3e01bec58",
+  "reviewed_implementation": "7cf63655b57ac8de757a533aa45a7074cae27065",
+  "implementation_helper_sha256": "bdfe3c71bea4ef2c64e69f554c4ba96f7d3707fe4e1dd76ec84662537cf5cf41",
+  "version": "0.2.15",
+  "tag": "v0.2.15",
+  "wheel_sha256": "457c5141762c32383e2c63b63a70e31db304c3706c4221c60e99aa435cf334f8",
+  "wheel_size_bytes": 234107,
+  "runtime_files_equal": 63,
+  "two_clean_offline_wheels_equal": true,
+  "published_three_assets_readback_equal": true,
+  "isolated_and_external_installed_bytes_equal": true,
+  "isolated_and_external_actual_cli_recovery_passed": true,
+  "ci": {
+    "schema": "lanectl.ubuntu-ci-proof/v1",
+    "run_id": 43758032552,
+    "job_id": 132946328805,
+    "head": "d64fb00b7bacdb36d35c7001decf03c3e01bec58",
+    "merge_preview": "6ae9ba617c17c22f75979bbb69ddfed39a6a7305",
+    "status": "completed",
+    "conclusion": "success",
+    "full_junit": {
+      "tests": "1217",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "139.719"
+    },
+    "artifact_id": 14179316930,
+    "artifact_zip_sha256": "58253ca1f021840f864944ead1bf1010c41e11937afc2d48f9c8266458657a56",
+    "junit_sha256": "cbe3b67dd74e72807d32063e3bc9b66572766c0a7842499b14b14fb34b7d9b22",
+    "actual_preflight": "real user systemd,RO/RW/hidden paths, nonpassing deadline/stop allpassed",
+    "version": "0.2.15",
+    "prior_run": {
+      "id": 43757100960,
+      "failed": 2,
+      "passed": 1215,
+      "cause": "dash echo JSON escapes; fixtures repaired withoutchangingassertions"
+    },
+    "url": "https://github.com/bayleafwalker/lanectl/actions/runs/43758032552"
+  },
+  "reviews": {
+    "firstparty": "CLEAR",
+    "native_sonnet_full_d4a": "CLEAR",
+    "native_sonnet_final_7cf": "CLEAR;27.34s;0permissiondenials",
+    "actual_falsifiers_and_prior_failures_retained": true
+  },
+  "scope_limits": [
+    "Owner source and native disposable qualification, not OCI service recovery or hosted qualification",
+    "No Cloud activation, backup custody, retention/RPO, gatewaychain or event-authority cutover",
+    "Canonical integratorrev1 and exhausted HLA scopes unchanged"
+  ],
+  "evidence": {
+    "lanectl-0.2.15-artifact.json": "47412f633b606c856383f764374fde53898c36a5afa3287713d5131a2b1b34cd",
+    "ubuntu-ci-proof.json": "99f410fb6fd7a6d3b799556e3df21d9a3fe42d42ca62ca88cadfb3dc6acbce5f",
+    "download-readback.json": "2898ce2723707145b2f30ae6626df1647141d2fada495845ce7fa07e2996b182",
+    "isolated-installed-proof.json": "28cb176b9b0bc7599efc7bb062965b680393f736297d7ff3549f17ed8bfe25ed",
+    "isolated-runtime-proof.json": "2155ec9ff0e10ff9e96e4dac74e69d9976b8dc6084a8a294ccaf79182ca2efbe",
+    "external-installed-proof.json": "28cb176b9b0bc7599efc7bb062965b680393f736297d7ff3549f17ed8bfe25ed",
+    "external-runtime-proof.json": "d80dd12119f906a4356bf64f4329127b2c9d52f75d8355f2c06553454914a8cd"
+  }
+}
