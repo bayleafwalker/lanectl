@@ -1,0 +1,27 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_____________________ test_onboarding_checklist_state_unit _____________________
+
+    def test_onboarding_checklist_state_unit():
+        node = _find_node()
+        assert node, "Node 20 is required but unavailable"
+        result = subprocess.run(
+            [node, str(UNIT_TEST)],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+        )
+        output = result.stdout + result.stderr
+>       assert result.returncode == 0, (
+            f"onboarding-checklist-state unit tests failed (exit {result.returncode}):\n{output}"
+        )
+E       AssertionError: onboarding-checklist-state unit tests failed (exit 91):
+E         NODE_SHIM_REACHED
+E         
+E       assert 91 == 0
+E        +  where 91 = CompletedProcess(args=['/tmp/hla-node-shim-b7yzjxd9/node', '/projects/dev/_wt/hla-onboarding-a1-audit-20261115/apps/web/frontend/unit/onboarding-checklist-state.test.mjs'], returncode=91, stdout='', stderr='NODE_SHIM_REACHED\n').returncode
+
+tests/test_onboarding_checklist_unit.py:41: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_onboarding_checklist_unit.py::test_onboarding_checklist_state_unit
+1 failed in 0.02s

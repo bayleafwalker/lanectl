@@ -1,0 +1,112 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_____________________ test_onboarding_checklist_state_unit _____________________
+
+    def test_onboarding_checklist_state_unit():
+        node = _find_node()
+        assert node, "Node 20 is required but unavailable"
+        result = subprocess.run(
+            [node, str(UNIT_TEST)],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+        )
+        output = result.stdout + result.stderr
+>       assert result.returncode == 0, (
+            f"onboarding-checklist-state unit tests failed (exit {result.returncode}):\n{output}"
+        )
+E       AssertionError: onboarding-checklist-state unit tests failed (exit 1):
+E         TAP version 13
+E         # Subtest: freshness strict 7-day boundary: equality and one millisecond either side
+E         ok 1 - freshness strict 7-day boundary: equality and one millisecond either side
+E           ---
+E           duration_ms: 1.032522
+E           ...
+E         # Subtest: freshness future timestamp is fresh
+E         ok 2 - freshness future timestamp is fresh
+E           ---
+E           duration_ms: 0.09241
+E           ...
+E         # Subtest: freshness invalid, null and empty timestamps are not fresh
+E         ok 3 - freshness invalid, null and empty timestamps are not fresh
+E           ---
+E           duration_ms: 0.463881
+E           ...
+E         # Subtest: freshness absent landed_at is not fresh
+E         ok 4 - freshness absent landed_at is not fresh
+E           ---
+E           duration_ms: 0.08726
+E           ...
+E         # Subtest: progress counts required versus optional and ignores duplicate names
+E         ok 5 - progress counts required versus optional and ignores duplicate names
+E           ---
+E           duration_ms: 0.13308
+E           ...
+E         # Subtest: progress with an empty fresh list yields zero active counts
+E         ok 6 - progress with an empty fresh list yields zero active counts
+E           ---
+E           duration_ms: 0.089911
+E           ...
+E         # Subtest: passive auto-collapse: all core active shows badge
+E         ok 7 - passive auto-collapse: all core active shows badge
+E           ---
+E           duration_ms: 0.13383
+E           ...
+E         # Subtest: manual compact without core shows badge
+E         ok 8 - manual compact without core shows badge
+E           ---
+E           duration_ms: 0.11196
+E           ...
+E         # Subtest: session expansion overrides auto-compact
+E         ok 9 - session expansion overrides auto-compact
+E           ---
+E           duration_ms: 0.128381
+E           ...
+E         # Subtest: dismissal wins over compact and expansion
+E         not ok 10 - dismissal wins over compact and expansion
+E           ---
+E           duration_ms: 0.820851
+E           location: '/tmp/hla-worker-mutation-1dj_78u5/checkout/apps/web/frontend/unit/onboarding-checklist-state.test.mjs:95:1'
+E           failureType: 'testCodeFailure'
+E           error: |-
+E             Expected values to be strictly equal:
+E             + actual - expected
+E             
+E             + 'full'
+E             - 'hidden'
+E           code: 'ERR_ASSERTION'
+E           name: 'AssertionError'
+E           expected: 'hidden'
+E           actual: 'full'
+E           operator: 'strictEqual'
+E           stack: |-
+E             TestContext.<anonymous> (file:///tmp/hla-worker-mutation-1dj_78u5/checkout/apps/web/frontend/unit/onboarding-checklist-state.test.mjs:96:10)
+E             Test.runInAsyncScope (node:async_hooks:206:9)
+E             Test.run (node:internal/test_runner/test:796:25)
+E             Test.processPendingSubtests (node:internal/test_runner/test:526:18)
+E             Test.postRun (node:internal/test_runner/test:889:19)
+E             Test.run (node:internal/test_runner/test:835:12)
+E             async Test.processPendingSubtests (node:internal/test_runner/test:526:7)
+E           ...
+E         # Subtest: no core, not compact, not expanded shows full
+E         ok 11 - no core, not compact, not expanded shows full
+E           ---
+E           duration_ms: 0.091881
+E           ...
+E         1..11
+E         # tests 11
+E         # suites 0
+E         # pass 10
+E         # fail 1
+E         # cancelled 0
+E         # skipped 0
+E         # todo 0
+E         # duration_ms 9.85791
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['/projects/dev/homelab-analytics/.tooling/node-v20.20.1-linux-x64/bin/node', '/tmp/hla-worker-m...# tests 11\n# suites 0\n# pass 10\n# fail 1\n# cancelled 0\n# skipped 0\n# todo 0\n# duration_ms 9.85791\n", stderr='').returncode
+
+/projects/dev/_wt/hla-onboarding-a1-audit-20261115/tests/test_onboarding_checklist_unit.py:41: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_onboarding_checklist_unit.py::test_onboarding_checklist_state_unit
+1 failed in 0.05s
