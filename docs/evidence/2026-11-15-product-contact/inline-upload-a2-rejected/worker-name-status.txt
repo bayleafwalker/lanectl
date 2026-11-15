@@ -1,0 +1,8 @@
+A	apps/web/frontend/app/sources/[sourceAssetId]/dry-run/route.js
+A	apps/web/frontend/app/sources/[sourceAssetId]/upload/route.js
+M	apps/web/frontend/app/sources/page.js
+A	apps/web/frontend/components/source-row-upload.js
+A	apps/web/frontend/lib/source-row-upload-model.mjs
+A	apps/web/frontend/lib/source-row-upload.js
+A	apps/web/frontend/unit/source-row-upload-model.test.mjs
+A	tests/test_hla1587_source_row_upload_unit.py

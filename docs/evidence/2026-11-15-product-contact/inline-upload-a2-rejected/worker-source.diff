@@ -1,0 +1,1038 @@
+diff --git a/apps/web/frontend/app/sources/[sourceAssetId]/dry-run/route.js b/apps/web/frontend/app/sources/[sourceAssetId]/dry-run/route.js
+new file mode 100644
+index 0000000..4e2c6cf
+--- /dev/null
++++ b/apps/web/frontend/app/sources/[sourceAssetId]/dry-run/route.js
+@@ -0,0 +1,5 @@
++import { handleSourceDryRun } from "@/lib/source-row-upload";
++
++export async function POST(request, { params }) {
++  return handleSourceDryRun(request, params.sourceAssetId);
++}
+diff --git a/apps/web/frontend/app/sources/[sourceAssetId]/upload/route.js b/apps/web/frontend/app/sources/[sourceAssetId]/upload/route.js
+new file mode 100644
+index 0000000..a4794ae
+--- /dev/null
++++ b/apps/web/frontend/app/sources/[sourceAssetId]/upload/route.js
+@@ -0,0 +1,5 @@
++import { handleSourceUpload } from "@/lib/source-row-upload";
++
++export async function POST(request, { params }) {
++  return handleSourceUpload(request, params.sourceAssetId);
++}
+diff --git a/apps/web/frontend/app/sources/page.js b/apps/web/frontend/app/sources/page.js
+index 9e53a01..3785cf5 100755
+--- a/apps/web/frontend/app/sources/page.js
++++ b/apps/web/frontend/app/sources/page.js
+@@ -3,7 +3,17 @@ import { redirect } from "next/navigation";
+ 
+ import { AppShell } from "@/components/app-shell";
+ import { ResponsiveTable } from "@/components/responsive-table";
+-import { getCurrentUser, getSourceFreshness, getRuns } from "@/lib/backend";
++import { SourceRowUpload } from "@/components/source-row-upload";
++import {
++  getColumnMappings,
++  getCurrentUser,
++  getDatasetContracts,
++  getRuns,
++  getSourceAssets,
++  getSourceFreshness,
++  getSourceSystems
++} from "@/lib/backend";
++import { resolveAvailability } from "@/lib/source-row-upload-model.mjs";
+ 
+ // Links land on the matching upload card on /upload; the /upload/<dataset>
+ // paths themselves are POST-only route handlers.
+@@ -31,18 +41,12 @@ function formatDatasetLabel(datasetName) {
+     .replace(/\b\w/g, (c) => c.toUpperCase());
+ }
+ 
+-function remediationActions(status, uploadPath) {
+-  const actions = [];
+-  if (status === "rejected" || status === "failed") {
+-    actions.push({ label: "Inspect run", kind: "run" });
++async function catalogOrNull(read) {
++  try {
++    return await read();
++  } catch {
++    return null;
+   }
+-  if (uploadPath) {
+-    actions.push({ label: "Upload corrected file", kind: "upload", href: uploadPath });
+-  }
+-  if (!uploadPath) {
+-    actions.push({ label: "Open run history", kind: "history", href: "/runs" });
+-  }
+-  return actions;
+ }
+ 
+ export default async function SourcesPage() {
+@@ -51,10 +55,15 @@ export default async function SourcesPage() {
+     redirect("/");
+   }
+ 
+-  const [freshnessDatasets, recentRuns] = await Promise.all([
+-    getSourceFreshness(),
+-    getRuns(200),
+-  ]);
++  const [freshnessDatasets, recentRuns, sourceAssets, sourceSystems, columnMappings, datasetContracts] =
++    await Promise.all([
++      getSourceFreshness(),
++      getRuns(200),
++      catalogOrNull(() => getSourceAssets()),
++      catalogOrNull(() => getSourceSystems()),
++      catalogOrNull(() => getColumnMappings()),
++      catalogOrNull(() => getDatasetContracts()),
++    ]);
+ 
+   // Each row is one source asset. Several assets can feed the same dataset
+   // (three bank accounts into account_transactions), so run details are
+@@ -66,8 +75,14 @@ export default async function SourcesPage() {
+     const lastRun = ds.latest_run_id ? runsById.get(ds.latest_run_id) || null : null;
+     const uploadPath = BUILTIN_UPLOAD_PATH[ds.dataset_name] || null;
+     const staleness = stalenessLabel(ds.landed_at);
+-    const actions = remediationActions(ds.status, uploadPath);
+-    return { ...ds, lastRun, uploadPath, staleness, actions };
++    const availability = resolveAvailability(
++      ds.source_asset_id,
++      sourceAssets,
++      sourceSystems,
++      columnMappings,
++      datasetContracts,
++    );
++    return { ...ds, lastRun, uploadPath, staleness, availability };
+   });
+ 
+   // Sort: stale/never first, then by dataset name
+@@ -125,6 +140,9 @@ export default async function SourcesPage() {
+               </Link>
+             </div>
+           </div>
++          <div className="muted" style={{ marginBottom: "12px" }}>
++            The same format may be used by multiple accounts. Confirm your selected source.
++          </div>
+           <ResponsiveTable
+             label="Source status and remediation"
+             rows={rows}
+@@ -165,15 +183,17 @@ export default async function SourcesPage() {
+               },
+               {
+                 key: "landed_at",
+-                header: "Last ingested",
+-                cell: (row) =>
+-                  row.latest_run_id ? (
+-                    <Link className="inlineLink" href={`/runs/${row.latest_run_id}`}>
+-                      {row.landed_at ? new Date(row.landed_at).toLocaleDateString("en-GB") : row.latest_run_id}
+-                    </Link>
+-                  ) : (
+-                    <span className="muted">Never</span>
+-                  ),
++                header: "Last ingested & upload",
++                cell: (row) => (
++                  <SourceRowUpload
++                    sourceAssetId={row.source_asset_id}
++                    name={row.name || formatDatasetLabel(row.dataset_name)}
++                    available={row.availability.available}
++                    reason={row.availability.reason}
++                    latestRunId={row.latest_run_id}
++                    landedAt={row.landed_at}
++                  />
++                ),
+               },
+               {
+                 key: "status",
+@@ -198,26 +218,6 @@ export default async function SourcesPage() {
+                 header: "Uploaded as",
+                 cell: (row) => <span className="muted">{row.lastRun?.source_name || null}</span>,
+               },
+-              {
+-                key: "actions",
+-                header: "Actions",
+-                hideLabel: true,
+-                cell: (row) => (
+-                  <span style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+-                    {row.actions.map((action) =>
+-                      action.kind === "run" && row.latest_run_id ? (
+-                        <Link key={action.label} className="inlineLink" href={`/runs/${row.latest_run_id}`}>
+-                          {action.label}
+-                        </Link>
+-                      ) : action.href ? (
+-                        <Link key={action.label} className="inlineLink" href={action.href}>
+-                          {action.label}
+-                        </Link>
+-                      ) : null
+-                    )}
+-                  </span>
+-                ),
+-              },
+             ]}
+           />
+         </article>
+diff --git a/apps/web/frontend/components/source-row-upload.js b/apps/web/frontend/components/source-row-upload.js
+new file mode 100644
+index 0000000..dff4ce0
+--- /dev/null
++++ b/apps/web/frontend/components/source-row-upload.js
+@@ -0,0 +1,213 @@
++"use client";
++
++import Link from "next/link";
++import { useRouter } from "next/navigation";
++import { useRef, useState } from "react";
++
++const CONFIGURED_UPLOAD_PATH = "/upload/configured-csv";
++
++// router.refresh() re-renders the server row and can remount this client
++// component, resetting its local state. A module-level registry keeps the
++// most recent outcome announcement per row so it survives that remount.
++const pendingAnnouncements = new Map();
++
++function outcomeText(outcome) {
++  switch (outcome) {
++    case "landed":
++      return "Upload landed.";
++    case "rejected":
++      return "Upload rejected.";
++    case "duplicate":
++      return "Duplicate file; already exists.";
++    case "landed_unconfirmed":
++    case "identity_unconfirmed":
++      return "Run recorded; source identity could not be confirmed.";
++    case "identity_mismatch":
++      return "Run recorded; source identity differs.";
++    case "auth_required":
++      return "Authentication required.";
++    case "forbidden":
++      return "Forbidden.";
++    default:
++      return "Upload outcome could not be confirmed.";
++  }
++}
++
++function freshnessLabel(state) {
++  switch (state) {
++    case "current":
++      return "Fresh";
++    case "overdue":
++      return "Stale";
++    case "due_soon":
++      return "Due soon";
++    case "missing_period":
++      return "Missing period";
++    case "parse_failed":
++      return "Failed";
++    case "unconfigured":
++      return "Unconfigured";
++    default:
++      return state;
++  }
++}
++
++export function SourceRowUpload({
++  sourceAssetId,
++  name,
++  available,
++  reason,
++  latestRunId: initialLatestRunId,
++  landedAt: initialLandedAt
++}) {
++  const router = useRouter();
++  const fileInputRef = useRef(null);
++  const seqRef = useRef(0);
++  const uploadingRef = useRef(false);
++
++  const [latestRunId, setLatestRunId] = useState(initialLatestRunId);
++  const [landedAt, setLandedAt] = useState(initialLandedAt);
++  const [phase, setPhase] = useState("idle");
++  const [preview, setPreview] = useState(null);
++  const [filename, setFilename] = useState("");
++  const [announcement, setAnnouncement] = useState(() => pendingAnnouncements.get(sourceAssetId) || "");
++
++  async function handleFileChange(event) {
++    const file = event.target.files?.[0];
++    if (!file) {
++      seqRef.current += 1;
++      setPhase("idle");
++      setPreview(null);
++      setFilename("");
++      return;
++    }
++    const seq = ++seqRef.current;
++    setPhase("previewing");
++    setPreview(null);
++    setFilename(file.name);
++    pendingAnnouncements.delete(sourceAssetId);
++    setAnnouncement("");
++    const form = new FormData();
++    form.append("file", file);
++    let data = null;
++    try {
++      const response = await fetch(`/sources/${encodeURIComponent(sourceAssetId)}/dry-run`, {
++        method: "POST",
++        body: form
++      });
++      data = await response.json().catch(() => null);
++    } catch {
++      data = null;
++    }
++    if (seq !== seqRef.current) return;
++    if (!data) {
++      setPhase("not-ready");
++      setPreview(null);
++      return;
++    }
++    const valid =
++      data.ready === true &&
++      data.target &&
++      data.target.source_asset_id === sourceAssetId &&
++      data.target.upload_path === CONFIGURED_UPLOAD_PATH;
++    setPhase(valid ? "ready" : "not-ready");
++    setPreview(data);
++  }
++
++  async function handleUpload() {
++    if (!available || phase !== "ready" || uploadingRef.current) return;
++    const file = fileInputRef.current?.files?.[0];
++    if (!file) return;
++    uploadingRef.current = true;
++    setPhase("uploading");
++    setAnnouncement("");
++    const form = new FormData();
++    form.append("file", file);
++    form.append("source_name", name);
++    let receipt = null;
++    try {
++      const response = await fetch(`/sources/${encodeURIComponent(sourceAssetId)}/upload`, {
++        method: "POST",
++        body: form
++      });
++      receipt = await response.json().catch(() => null);
++    } catch {
++      receipt = null;
++    }
++    uploadingRef.current = false;
++    const outcome = receipt?.outcome;
++    const freshness = typeof receipt?.freshness_state === "string" ? ` ${freshnessLabel(receipt.freshness_state)}.` : "";
++    const message = outcomeText(outcome) + freshness;
++    pendingAnnouncements.set(sourceAssetId, message);
++    setAnnouncement(message);
++    if (
++      ["landed", "rejected", "duplicate"].includes(outcome) &&
++      typeof receipt?.run_id === "string" &&
++      receipt.run_id.length > 0
++    ) {
++      setLatestRunId(receipt.run_id);
++      setLandedAt(null);
++      router.refresh();
++    }
++    setPhase("idle");
++    setPreview(null);
++    setFilename("");
++    if (fileInputRef.current) fileInputRef.current.value = "";
++  }
++
++  const runLink = latestRunId ? (
++    <Link className="inlineLink" href={`/runs/${latestRunId}`}>
++      {landedAt ? new Date(landedAt).toLocaleDateString("en-GB") : latestRunId}
++    </Link>
++  ) : (
++    <span className="muted">Never</span>
++  );
++
++  return (
++    <span className="sourceRowUpload">
++      {runLink}
++      {available ? (
++        <span className="sourceRowUploadControls">
++          <input
++            ref={fileInputRef}
++            type="file"
++            accept=".csv,.xlsx,.json,text/csv,application/json"
++            onChange={handleFileChange}
++            disabled={phase === "uploading"}
++            aria-label={`File for ${name}`}
++          />
++          <button
++            type="button"
++            className="ghostButton inlineButton"
++            onClick={handleUpload}
++            disabled={phase !== "ready" || phase === "uploading"}
++          >
++            {`Upload to ${name}`}
++          </button>
++        </span>
++      ) : (
++        <span className="muted">{reason}</span>
++      )}
++      {phase === "previewing" ? <span className="muted">Validating file…</span> : null}
++      {preview && phase !== "previewing" ? (
++        <span className="sourceRowUploadPreview">
++          {preview.ready ? (
++            <span className="muted">
++              Validated file: {filename}. Rows: {preview.row_count}
++            </span>
++          ) : (
++            <span className="muted">
++              Validation issues found.
++              {(preview.issues || []).map((issue, index) => (
++                <span key={`${issue.code}-${index}`} style={{ display: "block" }}>
++                  {issue.message}
++                </span>
++              ))}
++            </span>
++          )}
++        </span>
++      ) : null}
++      <span aria-live="polite">{announcement}</span>
++    </span>
++  );
++}
+diff --git a/apps/web/frontend/lib/source-row-upload-model.mjs b/apps/web/frontend/lib/source-row-upload-model.mjs
+new file mode 100644
+index 0000000..69d4674
+--- /dev/null
++++ b/apps/web/frontend/lib/source-row-upload-model.mjs
+@@ -0,0 +1,254 @@
++// Pure helpers for the source-row upload BFF surface. This module has no
++// imports so it can be exercised directly by the unit tests under /unit and
++// stays free of server-only transport concerns.
++
++export const ISSUE_TEMPLATES = Object.freeze({
++  duplicate_file: "File already exists.",
++  empty_file: "File is empty.",
++  duplicate_column: "Duplicate column.",
++  missing_required_column: "Required column is missing.",
++  unexpected_column: "Unexpected column.",
++  column_count_mismatch: "Column count does not match the header.",
++  invalid_integer: "Invalid integer.",
++  invalid_decimal: "Invalid decimal.",
++  invalid_date: "Invalid date.",
++  invalid_datetime: "Invalid datetime.",
++  invalid_boolean: "Invalid boolean.",
++  unknown: "Validation issue."
++});
++
++const MISSING_VALUE_CODE = "missing_required_value";
++
++export function validColumn(value) {
++  if (typeof value !== "string" || value.length === 0 || value.length > 128) return null;
++  if (/[^A-Za-z0-9_ .-]/.test(value)) return null;
++  return value;
++}
++
++export function validRowNumber(value) {
++  if (typeof value !== "number" || !Number.isInteger(value)) return null;
++  if (value < 1 || value > 1_000_000_000) return null;
++  return value;
++}
++
++export function validRowCount(value) {
++  if (typeof value !== "number" || !Number.isInteger(value) || value < 0) return null;
++  return value;
++}
++
++export function normalizeIssue(issue) {
++  const rawCode = typeof issue?.code === "string" ? issue.code : "";
++  const isMissingValue = rawCode === MISSING_VALUE_CODE;
++  const known = Object.prototype.hasOwnProperty.call(ISSUE_TEMPLATES, rawCode);
++  const code = isMissingValue || known ? rawCode : "unknown";
++
++  if (code === MISSING_VALUE_CODE) {
++    const column = validColumn(issue?.column);
++    if (column === null) {
++      return { code: "unknown", message: ISSUE_TEMPLATES.unknown };
++    }
++    const rowNumber = validRowNumber(issue?.row_number);
++    const result = { code, message: `Required value missing for column '${column}'.`, column };
++    if (rowNumber !== null) result.row_number = rowNumber;
++    return result;
++  }
++
++  return { code, message: ISSUE_TEMPLATES[code] };
++}
++
++export function normalizeIssues(issues) {
++  if (!Array.isArray(issues)) return [];
++  const result = [];
++  for (const issue of issues) {
++    if (issue && typeof issue === "object") result.push(normalizeIssue(issue));
++  }
++  return result;
++}
++
++export function normalizePromotion(promotion) {
++  if (!promotion || typeof promotion !== "object") return null;
++  const result = {};
++  if (typeof promotion.facts_loaded === "number" && Number.isInteger(promotion.facts_loaded) && promotion.facts_loaded >= 0) {
++    result.facts_loaded = promotion.facts_loaded;
++  }
++  if (Array.isArray(promotion.marts_refreshed)) {
++    result.marts_refreshed = promotion.marts_refreshed.filter((value) => typeof value === "string");
++  }
++  if (Array.isArray(promotion.publication_keys)) {
++    result.publication_keys = promotion.publication_keys.filter((value) => typeof value === "string");
++  }
++  if (typeof promotion.skipped === "boolean") {
++    result.skipped = promotion.skipped;
++  }
++  return result;
++}
++
++export function sanitizeTarget(target) {
++  if (!target || typeof target !== "object") return null;
++  const sourceAssetId = typeof target.source_asset_id === "string" ? target.source_asset_id : "";
++  const uploadPath = typeof target.upload_path === "string" ? target.upload_path : "";
++  const confidenceLabel = typeof target.confidence_label === "string" ? target.confidence_label : "";
++  return { source_asset_id: sourceAssetId, upload_path: uploadPath, confidence_label: confidenceLabel };
++}
++
++export function normalizeDryRunPayload(payload) {
++  const preview = payload && typeof payload === "object" ? payload.preview : null;
++  const issues = normalizeIssues(preview?.issues);
++  return {
++    ready: preview?.ready === true,
++    target: sanitizeTarget(preview?.target),
++    row_count: validRowCount(preview?.row_count) ?? 0,
++    issues,
++    detection: {
++      format:
++        typeof preview?.detection?.format === "string" ? preview.detection.format : "unknown"
++    }
++  };
++}
++
++export function dryRunErrorBody() {
++  return { ready: false, row_count: 0, issues: [], detection: { format: "unknown" } };
++}
++
++export function trimSourceName(value) {
++  return typeof value === "string" ? value.trim() : "";
++}
++
++// Availability resolution: consult the catalog and fail closed. Free-form
++// source type and transport values are intentionally not consulted — only the
++// asset's enabled flag and its referenced system/mapping/contract.
++export function resolveAvailability(assetId, sourceAssets, sourceSystems, columnMappings, datasetContracts) {
++  if (!assetId) return { available: false, reason: "Upload unavailable" };
++  if (sourceAssets === null) return { available: false, reason: "Upload unavailable" };
++  const asset = sourceAssets.find((record) => record?.source_asset_id === assetId);
++  if (!asset) return { available: false, reason: "Source not found" };
++  if (!asset.enabled) return { available: false, reason: "Source disabled" };
++  if (sourceSystems === null) return { available: false, reason: "Upload unavailable" };
++  const system = sourceSystems.find((record) => record?.source_system_id === asset.source_system_id);
++  if (!system || !system.enabled) return { available: false, reason: "Source system disabled" };
++  if (columnMappings === null) return { available: false, reason: "Upload unavailable" };
++  const mapping = columnMappings.find((record) => record?.column_mapping_id === asset.column_mapping_id);
++  if (!mapping) return { available: false, reason: "Column mapping unavailable" };
++  if (datasetContracts === null) return { available: false, reason: "Upload unavailable" };
++  const contract = datasetContracts.find((record) => record?.dataset_contract_id === asset.dataset_contract_id);
++  if (!contract) return { available: false, reason: "Upload unavailable" };
++  return { available: true, reason: null };
++}
++
++const OUTCOME_MESSAGES = Object.freeze({
++  identity_mismatch: "Run recorded; source identity differs.",
++  identity_unconfirmed: "Run recorded; source identity could not be confirmed.",
++  outcome_unknown: "Upload outcome could not be confirmed.",
++  superseded: "Run landed. The observed latest run differs.",
++  missing_row: "Run landed. The source freshness row was not returned.",
++  auth_required: "Authentication required.",
++  forbidden: "Forbidden."
++});
++
++// Map an already-fetched upload decision into the final BFF response. All I/O
++// (forward, run-context reread, freshness read) happens in the route handler;
++// this function is a pure mapping so it can be unit-tested directly.
++export function classifyUpload(input) {
++  const { ingestStatus, runId, runStatus, rowCount, issues, promotion, context, freshness } = input;
++  const hasReceipt = typeof runId === "string" && runId.length > 0;
++
++  if (!hasReceipt) {
++    if (ingestStatus === 401) {
++      return { status: 401, body: { outcome: "auth_required", message: OUTCOME_MESSAGES.auth_required } };
++    }
++    if (ingestStatus === 403) {
++      return { status: 403, body: { outcome: "forbidden", message: OUTCOME_MESSAGES.forbidden } };
++    }
++    if (ingestStatus === 400 || ingestStatus === 404 || ingestStatus === 422) {
++      return {
++        status: ingestStatus,
++        body: { outcome: "outcome_unknown", message: OUTCOME_MESSAGES.outcome_unknown }
++      };
++    }
++    return {
++      status: 502,
++      body: { outcome: "outcome_unknown", message: OUTCOME_MESSAGES.outcome_unknown }
++    };
++  }
++
++  const receipt = { run_id: runId };
++  if (typeof runStatus === "string" && runStatus.length > 0) receipt.status = runStatus;
++
++  const isSuccess = ingestStatus >= 200 && ingestStatus < 300;
++
++  if (isSuccess) {
++    if (context === "contradiction") {
++      return {
++        status: ingestStatus,
++        body: { ...receipt, outcome: "identity_mismatch", message: OUTCOME_MESSAGES.identity_mismatch }
++      };
++    }
++    if (context !== "match") {
++      return { status: ingestStatus, body: { ...receipt, outcome: "landed_unconfirmed" } };
++    }
++
++    const details = {};
++    if (rowCount !== null && rowCount !== undefined) details.row_count = rowCount;
++    if (Array.isArray(issues) && issues.length > 0) details.issues = issues;
++    if (promotion) details.promotion = promotion;
++
++    if (!freshness || freshness.kind === "unreadable") {
++      return { status: ingestStatus, body: { ...receipt, ...details, outcome: "landed" } };
++    }
++    if (freshness.kind === "match") {
++      const body = { ...receipt, ...details, outcome: "landed" };
++      if (typeof freshness.freshnessState === "string") body.freshness_state = freshness.freshnessState;
++      return { status: ingestStatus, body };
++    }
++    if (freshness.kind === "superseded") {
++      return {
++        status: ingestStatus,
++        body: {
++          ...receipt,
++          ...details,
++          outcome: "landed",
++          freshness_state: typeof freshness.freshnessState === "string" ? freshness.freshnessState : null,
++          observation: "superseded",
++          observed_latest_run_id: typeof freshness.latestRunId === "string" ? freshness.latestRunId : null,
++          message: OUTCOME_MESSAGES.superseded
++        }
++      };
++    }
++    return {
++      status: ingestStatus,
++      body: {
++        ...receipt,
++        ...details,
++        outcome: "landed",
++        observation: "missing",
++        observed_latest_run_id: null,
++        freshness_state: null,
++        message: OUTCOME_MESSAGES.missing_row
++      }
++    };
++  }
++
++  if (ingestStatus === 400 || ingestStatus === 409) {
++    if (context === "match") {
++      const body = { ...receipt, outcome: ingestStatus === 409 ? "duplicate" : "rejected" };
++      if (rowCount !== null && rowCount !== undefined) body.row_count = rowCount;
++      if (Array.isArray(issues) && issues.length > 0) body.issues = issues;
++      return { status: ingestStatus, body };
++    }
++    if (context === "contradiction") {
++      return {
++        status: ingestStatus,
++        body: { ...receipt, outcome: "identity_mismatch", message: OUTCOME_MESSAGES.identity_mismatch }
++      };
++    }
++    return {
++      status: ingestStatus,
++      body: { ...receipt, outcome: "identity_unconfirmed", message: OUTCOME_MESSAGES.identity_unconfirmed }
++    };
++  }
++
++  return {
++    status: ingestStatus,
++    body: { ...receipt, outcome: "outcome_unknown", message: OUTCOME_MESSAGES.outcome_unknown }
++  };
++}
+diff --git a/apps/web/frontend/lib/source-row-upload.js b/apps/web/frontend/lib/source-row-upload.js
+new file mode 100644
+index 0000000..d58c9d6
+--- /dev/null
++++ b/apps/web/frontend/lib/source-row-upload.js
+@@ -0,0 +1,196 @@
++import { NextResponse } from "next/server";
++
++import { backendRequest } from "@/lib/backend";
++import {
++  classifyUpload,
++  dryRunErrorBody,
++  normalizeDryRunPayload,
++  normalizeIssues,
++  normalizePromotion,
++  trimSourceName,
++  validRowCount
++} from "@/lib/source-row-upload-model.mjs";
++
++const CONFIGURED_UPLOAD_PATH = "/upload/configured-csv";
++
++function json(data, status) {
++  return NextResponse.json(data, { status });
++}
++
++function missingFileUploadBody() {
++  return { outcome: "outcome_unknown", message: "Upload outcome could not be confirmed." };
++}
++
++function readFile(formData) {
++  const file = formData.get("file");
++  if (!file || typeof file !== "object" || typeof file.name !== "string") return null;
++  return file;
++}
++
++function buildDryRunForm(file, sourceAssetId) {
++  const form = new FormData();
++  form.set("file", file, file.name);
++  form.set("source_asset_id", sourceAssetId);
++  form.set("upload_path", CONFIGURED_UPLOAD_PATH);
++  return form;
++}
++
++function buildUploadForm(file, sourceAssetId, sourceName) {
++  const form = new FormData();
++  form.set("file", file, file.name);
++  form.set("source_asset_id", sourceAssetId);
++  form.set("source_name", sourceName);
++  return form;
++}
++
++async function readJson(response) {
++  try {
++    return await response.json();
++  } catch {
++    return null;
++  }
++}
++
++export async function handleSourceDryRun(request, sourceAssetId) {
++  let formData;
++  try {
++    formData = await request.formData();
++  } catch {
++    formData = new FormData();
++  }
++  const file = readFile(formData);
++  if (!file) {
++    return json(dryRunErrorBody(), 400);
++  }
++
++  let response;
++  try {
++    response = await backendRequest("/ingest/dry-run", {
++      method: "POST",
++      cookieHeader: request.headers.get("cookie") || "",
++      body: buildDryRunForm(file, sourceAssetId)
++    });
++  } catch {
++    return json(dryRunErrorBody(), 502);
++  }
++
++  if (response.status >= 500) {
++    return json(dryRunErrorBody(), 502);
++  }
++
++  const payload = await readJson(response);
++  if (!response.ok) {
++    // Preserve the meaningful upstream status without echoing diagnostics.
++    return json(dryRunErrorBody(), response.status);
++  }
++  return json(normalizeDryRunPayload(payload), response.status);
++}
++
++async function readRunContext(runId, sourceAssetId, request) {
++  let response;
++  try {
++    response = await backendRequest(`/runs/${encodeURIComponent(runId)}`, {
++      method: "GET",
++      cookieHeader: request.headers.get("cookie") || ""
++    });
++  } catch {
++    return "unreadable";
++  }
++  if (!response.ok) return "unreadable";
++  const payload = await readJson(response);
++  const contextSourceId = payload?.run?.context?.source_asset_id;
++  if (typeof contextSourceId !== "string") return "unreadable";
++  return contextSourceId === sourceAssetId ? "match" : "contradiction";
++}
++
++async function readFreshness(sourceAssetId, runId, request) {
++  let response;
++  try {
++    response = await backendRequest("/control/source-freshness", {
++      method: "GET",
++      cookieHeader: request.headers.get("cookie") || ""
++    });
++  } catch {
++    return { kind: "unreadable" };
++  }
++  if (!response.ok) return { kind: "unreadable" };
++  const payload = await readJson(response);
++  const datasets = Array.isArray(payload?.datasets) ? payload.datasets : [];
++  const row = datasets.find((entry) => entry?.source_asset_id === sourceAssetId);
++  if (!row) return { kind: "missing" };
++  const freshnessState = typeof row.freshness_state === "string" ? row.freshness_state : null;
++  if (row.latest_run_id === runId) {
++    return { kind: "match", freshnessState };
++  }
++  return {
++    kind: "superseded",
++    freshnessState,
++    latestRunId: typeof row.latest_run_id === "string" ? row.latest_run_id : null
++  };
++}
++
++export async function handleSourceUpload(request, sourceAssetId) {
++  let formData;
++  try {
++    formData = await request.formData();
++  } catch {
++    formData = new FormData();
++  }
++  const file = readFile(formData);
++  if (!file) {
++    return json(missingFileUploadBody(), 400);
++  }
++  const sourceName = trimSourceName(formData.get("source_name")) || "configured-upload";
++
++  let response;
++  try {
++    response = await backendRequest("/ingest/configured-csv", {
++      method: "POST",
++      cookieHeader: request.headers.get("cookie") || "",
++      body: buildUploadForm(file, sourceAssetId, sourceName)
++    });
++  } catch {
++    return json(missingFileUploadBody(), 502);
++  }
++
++  if (response.status >= 500) {
++    return json(missingFileUploadBody(), 502);
++  }
++
++  const payload = await readJson(response);
++  const run = payload && typeof payload === "object" && payload.run && typeof payload.run === "object" ? payload.run : null;
++  const runId = typeof run?.run_id === "string" && run.run_id.length > 0 ? run.run_id : null;
++  const runStatus = typeof run?.status === "string" && run.status.length > 0 ? run.status : null;
++  const rowCount = validRowCount(run?.row_count);
++  const issues = normalizeIssues(run?.issues);
++  const promotion = normalizePromotion(payload?.promotion);
++
++  if (!runId) {
++    const result = classifyUpload({
++      ingestStatus: response.status,
++      runId: null,
++      runStatus: null,
++      rowCount: null,
++      issues: [],
++      promotion: null,
++      context: null,
++      freshness: null
++    });
++    return json(result.body, result.status);
++  }
++
++  const context = await readRunContext(runId, sourceAssetId, request);
++  const freshness = context === "match" ? await readFreshness(sourceAssetId, runId, request) : null;
++
++  const result = classifyUpload({
++    ingestStatus: response.status,
++    runId,
++    runStatus,
++    rowCount,
++    issues,
++    promotion,
++    context,
++    freshness
++  });
++  return json(result.body, result.status);
++}
+diff --git a/apps/web/frontend/unit/source-row-upload-model.test.mjs b/apps/web/frontend/unit/source-row-upload-model.test.mjs
+new file mode 100644
+index 0000000..d6a711f
+--- /dev/null
++++ b/apps/web/frontend/unit/source-row-upload-model.test.mjs
+@@ -0,0 +1,134 @@
++import assert from "node:assert/strict";
++import { test } from "node:test";
++
++import {
++  classifyUpload,
++  normalizeDryRunPayload,
++  normalizeIssue,
++  normalizePromotion,
++  resolveAvailability,
++  sanitizeTarget,
++  trimSourceName
++} from "../lib/source-row-upload-model.mjs";
++
++test("normalizeIssue keeps only the fixed safe templates", () => {
++  assert.deepEqual(
++    normalizeIssue({ code: "unknown", message: "SECRET_VALUE https://sensitive.invalid/trace STACKTRACE", column: "SECRET_VALUE", row_number: "STACKTRACE" }),
++    { code: "unknown", message: "Validation issue." }
++  );
++  assert.deepEqual(normalizeIssue({ code: "duplicate_file", message: "anything" }), {
++    code: "duplicate_file",
++    message: "File already exists."
++  });
++  assert.deepEqual(normalizeIssue({ code: "private_code", message: "leak" }), {
++    code: "unknown",
++    message: "Validation issue."
++  });
++});
++
++test("normalizeIssue interpolates a validated column for missing_required_value", () => {
++  assert.deepEqual(
++    normalizeIssue({ code: "missing_required_value", message: "SECRET_VALUE", column: "amount", row_number: 2 }),
++    { code: "missing_required_value", message: "Required value missing for column 'amount'.", column: "amount", row_number: 2 }
++  );
++  assert.deepEqual(
++    normalizeIssue({ code: "missing_required_value", column: "https://private", row_number: "2" }),
++    { code: "unknown", message: "Validation issue." }
++  );
++});
++
++test("normalizePromotion permits only the four safe fields", () => {
++  assert.deepEqual(
++    normalizePromotion({ skipped: true, skip_reason: "secret", diagnostic: "leak", source_asset_id: "x" }),
++    { skipped: true }
++  );
++  assert.deepEqual(
++    normalizePromotion({ facts_loaded: 3, marts_refreshed: ["m", 7], publication_keys: ["k"], skipped: false }),
++    { facts_loaded: 3, marts_refreshed: ["m"], publication_keys: ["k"], skipped: false }
++  );
++  assert.equal(normalizePromotion(null), null);
++});
++
++test("sanitizeTarget and normalizeDryRunPayload drop non-whitelisted fields", () => {
++  assert.deepEqual(
++    sanitizeTarget({ source_asset_id: "a", upload_path: "/upload/configured-csv", confidence_label: "manual", contract_id: "leak", confidence_score: 1 }),
++    { source_asset_id: "a", upload_path: "/upload/configured-csv", confidence_label: "manual" }
++  );
++  const payload = normalizeDryRunPayload({
++    preview: {
++      target: { source_asset_id: "a", upload_path: "/upload/configured-csv", confidence_label: "manual", kind: "leak" },
++      ready: true,
++      row_count: 4,
++      date_range: { leak: true },
++      issues: [{ code: "unknown", message: "SECRET_VALUE", column: "SECRET_VALUE" }],
++      detection: { format: "csv", file_name: "leak.csv" }
++    }
++  });
++  assert.equal(payload.ready, true);
++  assert.equal(payload.row_count, 4);
++  assert.deepEqual(payload.target, { source_asset_id: "a", upload_path: "/upload/configured-csv", confidence_label: "manual" });
++  assert.deepEqual(payload.detection, { format: "csv" });
++  assert.deepEqual(payload.issues, [{ code: "unknown", message: "Validation issue." }]);
++});
++
++test("resolveAvailability fails closed on every unavailable path", () => {
++  const asset = { source_asset_id: "a", source_system_id: "s", column_mapping_id: "m", dataset_contract_id: "c", enabled: true };
++  const system = { source_system_id: "s", enabled: true };
++  const mapping = { column_mapping_id: "m" };
++  const contract = { dataset_contract_id: "c" };
++  assert.equal(resolveAvailability("", [asset], [system], [mapping], [contract]).available, false);
++  assert.equal(resolveAvailability("a", null, [system], [mapping], [contract]).reason, "Upload unavailable");
++  assert.equal(resolveAvailability("a", [], [system], [mapping], [contract]).reason, "Source not found");
++  assert.equal(resolveAvailability("a", [{ ...asset, enabled: false }], [system], [mapping], [contract]).reason, "Source disabled");
++  assert.equal(resolveAvailability("a", [asset], [{ source_system_id: "s", enabled: false }], [mapping], [contract]).reason, "Source system disabled");
++  assert.equal(resolveAvailability("a", [asset], [system], [], [contract]).reason, "Column mapping unavailable");
++  assert.deepEqual(resolveAvailability("a", [asset], [system], [mapping], [contract]), { available: true, reason: null });
++});
++
++test("resolveAvailability does not restrict on source type or transport", () => {
++  const asset = { source_asset_id: "a", source_system_id: "s", column_mapping_id: "m", dataset_contract_id: "c", enabled: true, asset_type: "custom-device" };
++  const system = { source_system_id: "s", enabled: true, transport: "custom-transport", source_type: "free-string" };
++  assert.equal(resolveAvailability("a", [asset], [system], [{ column_mapping_id: "m" }], [{ dataset_contract_id: "c" }]).available, true);
++});
++
++test("trimSourceName trims and rejects non-strings", () => {
++  assert.equal(trimSourceName("  named  "), "named");
++  assert.equal(trimSourceName(null), "");
++});
++
++test("classifyUpload maps the receipt-bearing decisions", () => {
++  const receipt = { runId: "run-1", runStatus: "landed", rowCount: 1, issues: [], promotion: null, context: "match", freshness: { kind: "match", freshnessState: "current" } };
++  const landed = classifyUpload({ ingestStatus: 201, ...receipt });
++  assert.equal(landed.status, 201);
++  assert.equal(landed.body.outcome, "landed");
++  assert.equal(landed.body.freshness_state, "current");
++
++  const mismatch = classifyUpload({ ingestStatus: 201, runId: "run-1", runStatus: "landed", rowCount: null, issues: [], promotion: null, context: "contradiction", freshness: null });
++  assert.equal(mismatch.body.outcome, "identity_mismatch");
++  assert.equal(mismatch.body.message, "Run recorded; source identity differs.");
++  assert.equal(mismatch.body.freshness_state, undefined);
++
++  const unconfirmed = classifyUpload({ ingestStatus: 201, runId: "run-1", runStatus: "landed", rowCount: null, issues: [], promotion: null, context: "unreadable", freshness: null });
++  assert.equal(unconfirmed.body.outcome, "landed_unconfirmed");
++
++  const superseded = classifyUpload({ ingestStatus: 201, runId: "run-1", runStatus: "landed", rowCount: 1, issues: [], promotion: null, context: "match", freshness: { kind: "superseded", freshnessState: "current", latestRunId: "other-run" } });
++  assert.equal(superseded.body.observation, "superseded");
++  assert.equal(superseded.body.observed_latest_run_id, "other-run");
++
++  const duplicate = classifyUpload({ ingestStatus: 409, runId: "run-1", runStatus: "rejected", rowCount: null, issues: [{ code: "unknown", message: "Validation issue." }], promotion: null, context: "match", freshness: null });
++  assert.equal(duplicate.body.outcome, "duplicate");
++
++  const identityUnconfirmed = classifyUpload({ ingestStatus: 400, runId: "run-1", runStatus: "rejected", rowCount: null, issues: [], promotion: null, context: "unreadable", freshness: null });
++  assert.equal(identityUnconfirmed.body.outcome, "identity_unconfirmed");
++  assert.equal(identityUnconfirmed.body.message, "Run recorded; source identity could not be confirmed.");
++});
++
++test("classifyUpload never invents an outcome without a receipt", () => {
++  assert.equal(classifyUpload({ ingestStatus: 401, runId: null, runStatus: null, rowCount: null, issues: [], promotion: null, context: null, freshness: null }).body.outcome, "auth_required");
++  assert.equal(classifyUpload({ ingestStatus: 403, runId: null, runStatus: null, rowCount: null, issues: [], promotion: null, context: null, freshness: null }).body.outcome, "forbidden");
++  const unknown = classifyUpload({ ingestStatus: 422, runId: null, runStatus: null, rowCount: null, issues: [], promotion: null, context: null, freshness: null });
++  assert.equal(unknown.status, 422);
++  assert.equal(unknown.body.outcome, "outcome_unknown");
++  assert.equal(unknown.body.message, "Upload outcome could not be confirmed.");
++  assert.equal(classifyUpload({ ingestStatus: 200, runId: null, runStatus: null, rowCount: null, issues: [], promotion: null, context: null, freshness: null }).status, 502);
++});
+diff --git a/tests/test_hla1587_source_row_upload_unit.py b/tests/test_hla1587_source_row_upload_unit.py
+new file mode 100644
+index 0000000..61126cc
+--- /dev/null
++++ b/tests/test_hla1587_source_row_upload_unit.py
+@@ -0,0 +1,41 @@
++"""Run the frontend unit tests for the source-row upload BFF helpers.
++
++These helpers are the pure, security-sensitive mapping functions behind the
++`POST /sources/{source_asset_id}/dry-run` and `/upload` BFF routes. They are
++written in JavaScript and exercised here through Node's built-in test runner so
++their semantics (not just their presence) are covered.
++"""
++
++from __future__ import annotations
++
++import shutil
++import subprocess
++from pathlib import Path
++
++import pytest
++
++ROOT = Path(__file__).resolve().parents[1]
++FRONTEND_ROOT = ROOT / "apps" / "web" / "frontend"
++UNIT_TESTS = FRONTEND_ROOT / "unit" / "source-row-upload-model.test.mjs"
++
++
++def _node_binary() -> str:
++    pinned = Path("/projects/dev/homelab-analytics/.tooling/node-v20.20.1-linux-x64/bin/node")
++    if pinned.is_file():
++        return str(pinned)
++    discovered = shutil.which("node")
++    assert discovered, "node is required to run the frontend unit tests"
++    return discovered
++
++
++@pytest.mark.slow
++def test_source_row_upload_model_unit_tests() -> None:
++    assert UNIT_TESTS.is_file(), "frontend unit test file missing"
++    result = subprocess.run(
++        [_node_binary(), "--test", str(UNIT_TESTS)],
++        cwd=FRONTEND_ROOT,
++        capture_output=True,
++        text=True,
++        timeout=120,
++    )
++    assert result.returncode == 0, result.stdout + result.stderr

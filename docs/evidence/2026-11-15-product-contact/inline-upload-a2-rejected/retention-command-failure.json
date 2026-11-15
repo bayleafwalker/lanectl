@@ -1,0 +1,12 @@
+{
+  "args": [
+    "git",
+    "-C",
+    "/tmp/hla-final-source-freeze-pnmal4h5/source.git",
+    "fsck",
+    "--strict"
+  ],
+  "returncode": 1,
+  "stdout": "",
+  "stderr": "error: packfile ./objects/pack/pack-20573b0028754aff02621e145fe429fc8aea61e9.pack index not opened\nerror: unable to load rev-index for pack './objects/pack/pack-20573b0028754aff02621e145fe429fc8aea61e9.pack'\n"
+}

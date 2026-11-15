@@ -1,0 +1,137 @@
+[
+  {
+    "ts": "2026-11-15T12:26:38Z",
+    "type": "item.claimed",
+    "data": {
+      "attempt_id": "hla-source-row-upload-a2",
+      "model": "opencode-go/deepseek-v4-pro",
+      "worker": "opencode",
+      "lane": "implement",
+      "release_revision": 1,
+      "prompt_feedback_version": 1
+    }
+  },
+  {
+    "ts": "2026-11-15T13:11:40Z",
+    "type": "attempt.finished",
+    "data": {
+      "attempt_id": "hla-source-row-upload-a2",
+      "elapsed_s": 2700.2,
+      "escalation_reason": null,
+      "exit_code": 124,
+      "final_tail": "Now I'll write the BFF route handler logic:\n\n",
+      "head_sha": "7a26443e988587755bcb82efd3b6913e4c4d0659",
+      "isolation_breach": false,
+      "main_changed": false,
+      "outcome": "failed",
+      "seed_sha": "e231f870ceb3283278ec877033d892b8bd2b960a"
+    }
+  },
+  {
+    "ts": "2026-11-15T13:11:40Z",
+    "type": "usage.recorded",
+    "data": {
+      "attempt_id": "hla-source-row-upload-a2",
+      "model": "opencode-go/deepseek-v4-pro",
+      "provider": "opencode",
+      "source": "adapter",
+      "units": {
+        "cache_read_tokens": 15477248,
+        "cache_write_tokens": 0,
+        "cost_usd": 0.9489930499999998,
+        "input_tokens": 378447,
+        "output_tokens": 20889,
+        "reasoning_tokens": 160282,
+        "steps": 78
+      }
+    }
+  },
+  {
+    "ts": "2026-11-15T13:16:34Z",
+    "type": "gate.result",
+    "data": {
+      "attempt_id": "hla-source-row-upload-a2",
+      "gate": "diff-policy",
+      "passed": false,
+      "violations": [
+        "size-budget: 942 changed lines > 700 for size M"
+      ]
+    }
+  },
+  {
+    "ts": "2026-11-15T13:16:34Z",
+    "type": "gate.result",
+    "data": {
+      "attempt_id": "hla-source-row-upload-a2",
+      "gate": "fail-on-base",
+      "passed": false,
+      "violations": [
+        "no-tests-collected-on-base: ['tests/test_hla1587_source_row_upload_unit.py']"
+      ]
+    }
+  },
+  {
+    "ts": "2026-11-15T13:16:34Z",
+    "type": "gate.result",
+    "data": {
+      "attempt_id": "hla-source-row-upload-a2",
+      "gate": "acceptance-on-base",
+      "passed": true,
+      "violations": []
+    }
+  },
+  {
+    "ts": "2026-11-15T13:16:34Z",
+    "type": "gate.result",
+    "data": {
+      "attempt_id": "hla-source-row-upload-a2",
+      "gate": "acceptance",
+      "passed": true,
+      "violations": []
+    }
+  },
+  {
+    "ts": "2026-11-15T13:16:34Z",
+    "type": "gate.result",
+    "data": {
+      "attempt_id": "hla-source-row-upload-a2",
+      "gate": "job:ruff",
+      "passed": true,
+      "violations": []
+    }
+  },
+  {
+    "ts": "2026-11-15T13:16:34Z",
+    "type": "decision.recorded",
+    "data": {
+      "attempt_id": "hla-source-row-upload-a2",
+      "by": "gates",
+      "decision": "rejected",
+      "reasons": [
+        "diff-policy: size-budget: 942 changed lines > 700 for size M",
+        "fail-on-base: no-tests-collected-on-base: ['tests/test_hla1587_source_row_upload_unit.py']",
+        "worker outcome failed"
+      ],
+      "rules_revision": "decision-rules/v3"
+    }
+  },
+  {
+    "ts": "2026-11-15T13:16:34Z",
+    "type": "experiment.recorded",
+    "data": {
+      "attempt_id": "hla-source-row-upload-a2",
+      "decision": "rejected",
+      "elapsed_s": 2700.2,
+      "gates_failed": [
+        "diff-policy",
+        "fail-on-base"
+      ],
+      "lane_revision": 3,
+      "model": "opencode-go/deepseek-v4-pro",
+      "rules_revision": "decision-rules/v3",
+      "size": "M",
+      "task_class": "product-ui",
+      "worker": "opencode"
+    }
+  }
+]

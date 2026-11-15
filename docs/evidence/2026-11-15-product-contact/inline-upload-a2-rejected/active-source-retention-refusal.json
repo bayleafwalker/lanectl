@@ -1,0 +1,8 @@
+{
+  "returncode": 1,
+  "guard": "actual live worker refuses immutable source retention",
+  "source_output_directory_created": false,
+  "source_read": false,
+  "worker_changed": false,
+  "implementation_attempts_added": 0
+}

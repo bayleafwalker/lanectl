@@ -1,0 +1,11 @@
+{
+  "at": "2026-11-15T13:19:17.437312+00:00",
+  "state": "parked",
+  "actual_claims": 2,
+  "attempt_id": "hla-source-row-upload-a2",
+  "decision": "rejected",
+  "infra": false,
+  "no_third_attempt": true,
+  "source_adopted": false,
+  "product_delivery": "UNOBSERVED"
+}

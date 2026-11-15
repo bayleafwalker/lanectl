@@ -1,0 +1,50 @@
+{
+  "measured_at": "2026-11-15T13:15:34.370931+00:00",
+  "item": "hla-source-row-upload",
+  "attempt_id": "hla-source-row-upload-a2",
+  "actual_claims": 2,
+  "outcome_cap": 2,
+  "finished": {
+    "attempt_id": "hla-source-row-upload-a2",
+    "elapsed_s": 2700.2,
+    "escalation_reason": null,
+    "exit_code": 124,
+    "final_tail": "Now I'll write the BFF route handler logic:\n\n",
+    "head_sha": "7a26443e988587755bcb82efd3b6913e4c4d0659",
+    "isolation_breach": false,
+    "main_changed": false,
+    "outcome": "failed",
+    "seed_sha": "e231f870ceb3283278ec877033d892b8bd2b960a"
+  },
+  "head": "7a26443e988587755bcb82efd3b6913e4c4d0659",
+  "seed": "e231f870ceb3283278ec877033d892b8bd2b960a",
+  "worker_added_plus_deleted": 942,
+  "binary_files": [],
+  "M700_within": false,
+  "preserved_base_tests": {
+    "tests/test_freshness_remediation_flow.py": {
+      "base_sha256": "2656a736545db680eb4a47dede90b8076496398a661ac9eae92efae3b2bd9fbb",
+      "head_sha256": "2656a736545db680eb4a47dede90b8076496398a661ac9eae92efae3b2bd9fbb",
+      "equal": true
+    },
+    "tests/test_file_format.py": {
+      "base_sha256": "199d172cb34dd6453f3db098ca3967afbeeaef2d80f96038d808aae17b299bbf",
+      "head_sha256": "199d172cb34dd6453f3db098ca3967afbeeaef2d80f96038d808aae17b299bbf",
+      "equal": true
+    },
+    "tests/test_manual_upload_and_preview_api.py": {
+      "base_sha256": "1113524d05d5c3a081b9d3d8f154ee1cc96397f2c6828817daeaa6e175058ab4",
+      "head_sha256": "1113524d05d5c3a081b9d3d8f154ee1cc96397f2c6828817daeaa6e175058ab4",
+      "equal": true
+    },
+    "tests/test_web_auth.py": {
+      "base_sha256": "c9c9f12cbb62a8996bb29e815d7c7272119b3df97d0dbdd3e9241696d2d40cb4",
+      "head_sha256": "c9c9f12cbb62a8996bb29e815d7c7272119b3df97d0dbdd3e9241696d2d40cb4",
+      "equal": true
+    }
+  },
+  "frozen_acceptance_sha256": "38354937708ffe7f9699c836e41e65abca603b7f354c92cba5f0a482263162d3",
+  "isolated_bundle_restore_fsck_exit": 0,
+  "source_adopted": false,
+  "product_delivery": "UNOBSERVED"
+}

@@ -349,3 +349,24 @@ Onboarding #2904 R1 exhausted both Pro and Flash attempts; corrected planning di
 The first inline-upload model later timed out after 2,700.2 seconds. Its 685-line source passed all five recorded gates, but independent immutable-source review found stale row cells, lost receipt qualifications, wrong-preview relabeling, catalog reads that fail open and superficial helper tests. It remains rejected. The integrator recorded these original-outcome findings before the remaining normal R1 retry. The second claim started at 12:26 UTC on Go Pro with that bounded feedback, without changing the specification, M700, two-attempt cap or policy. [First-result evidence](../evidence/2026-11-15-product-contact/inline-upload-a1-rejected/REVIEW.md).
 
 An independent local-route prerequisite is now observed: OpenCode 2.2.6 and installed lanectl 0.2.14 completed a real `local/worker-fast` file read/write probe in 27.94 seconds. Four observed relay requests went to the explicit loopback model and returned 200. A held inference lock refused native dispatch with exit 3 and no model request, and the owned lock released. This is operational wiring evidence, not private-product quality, GPU attestation, a routing promotion or the restricted-release landing exit. [Local readiness](../evidence/2026-11-15-local-route-readiness/README.md).
+
+### November 15 inline-upload disposition and next product contact
+
+HLA1587 R1 exhausted both native implementation attempts and is parked. Flash
+timed out at2700.2s with685changed lines; its frozen gates passed but source review
+found original-outcome defects. Pro also timed out at2700.2s and changed942lines,
+exceedingM700 by242. Its diff-policy and fail-on-base gates failed; frozen
+acceptance and Ruff passed. Neither source was adopted, and no attempt budget
+was reset. [Final source and ruling](../evidence/2026-11-15-product-contact/inline-upload-a2-rejected/README.md)
+retain the distinction, unchanged preserved tests and independent bundle proof.
+The same-row inline-upload outcome and all delivery gates remain incomplete.
+
+The next separate original pending item is HLA1590: one card per active domain,
+with a real headline metric, trend and its top attention item, plus a truthful
+empty state. Served reservation507 owns native read-only planning over canonical
+b2d0fe3. This is planning only: no release, implementation or product completion.
+Missing domain/metric/ranking contracts must be resolved from actual reporting
+semantics; freshness-only cards or global attention do not satisfy the outcome.
+Policy PR7 remains a reviewed preparation-only draft; canonical authority remains
+revision1 with empty autonomous classes. No local restricted/hosted/clock exit
+is established.

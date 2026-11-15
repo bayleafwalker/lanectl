@@ -1,0 +1,19 @@
+{
+  "README.md": "6be764e02f6c5e32d75cba46d3351a6eaf9160ceeba3d63deb2cda5313844076",
+  "REVIEW.md": "6d23b0416665e1daa5930fac730bc69e3dcae0726c16be0eda3094d098438c22",
+  "active-source-retention-refusal.json": "aa20bda924abf360bc3a4526e367e92f5a98eb419eae74de52c8edcf4fcab838",
+  "active-source-retention-refusal.log": "05b4af376e16dce289d82ee7e159fd0dc075c9145f476692fb9637e4c0a41caf",
+  "final-disposition.json": "b133b24691f42b73be87786be46e734e5939387f3ad5a25cf6fe2f79ff5e32f1",
+  "final-source.bundle": "de16bc6779ec2d1aa64794091f7c480b58b84580b4f4b6b7d3e36c8d7e7a2bac",
+  "measured-events.json": "bca6f8b9d7961b39710dd6977dd72ad1d7f25e9596ea550d5e5865f62df132c3",
+  "native-status.json": "4005fb1316262e37fb8c1a98c75d2003c3b35391dc7466e5c3935b47949a52a3",
+  "retain-final-v1.py": "fa438b2d355b3b0f630837a9c0fbffa5a020d3e7b933c6af60a0d4e528098d85",
+  "retain-final-v2.py": "4bc090548da37f6fc38dc16a1bca0bdf0ad1cd661356442fdc7dc052b99b8074",
+  "retain-final.py": "b0207f48c29da4d574c156fcaf16062cde411f04aeaab7b8a43d5fe59bda4f18",
+  "retention-command-failure.json": "48d6000068cb5ef2f3f8b7e37924fe73e681931f5b5b5595d3aadb74a69137fe",
+  "retention-integrity-diagnostic.jsonl": "343c80c719f470f99d817a639253dce449d02cc81d72e332a94e0aef440f4132",
+  "source-proof.json": "87a0667ac0db98935938ae65f3c2e4bee54b1a8ee0ab2468ce6b38ba85ff409a",
+  "worker-name-status.txt": "82e782d6ff4bd703d1672c8a063bfc282bd458b3e327da1c4233ef34c651c232",
+  "worker-numstat.txt": "60ad0bc4b8a9c6eebdcd4e63391aac71c9afe41a8e5ca5da85b2857c4b05bfef",
+  "worker-source.diff": "82a398ea6f7581ad6db74c01f0574d84d7202824c77593646f2cd96491793616"
+}
