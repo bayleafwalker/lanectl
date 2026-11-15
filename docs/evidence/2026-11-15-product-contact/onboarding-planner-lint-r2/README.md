@@ -18,7 +18,7 @@ the intended named assertions; the actual worker pytest wrapper passes and
 rejects all four faults and Node exit91. This is diagnostic evidence for rejected
 a1, not candidate qualification under revised acceptance and not adoption.
 
-There remains only one actual implementation attempt across R1/R2. Do not reset
+Only one further actual implementation attempt is permitted across R1/R2. Do not reset
 or erase a1, promote its source, bypass the30line integrator budget, waive gates,
 or claim wholeUI/hosted/product completion. Policy PR7 remains preparation only.
 

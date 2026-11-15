@@ -278,7 +278,31 @@ retains real red/publication controls and conservative classification limits.
 
 The separately repaired onboarding acceptance received renewed nativeGoProaccept.
 Ordinary base and publication runs each show11controlsPASS/5semanticExpandFAIL,
-no errors or skips. HLA2904 releaseR1 is guarded-published; first nativeProattempt
-is running, with no candidate or product completion claimed. [Packet](../evidence/2026-11-14-product-contact/onboarding-portability-r2/README.md).
+no errors or skips. HLA2904 releaseR1 was guarded-published and its first native
+Pro attempt completed, as qualified below. [Packet](../evidence/2026-11-14-product-contact/onboarding-portability-r2/README.md).
 PolicyPR7 remains a prepared standing model-error proposal; canonicalauthorityv1
 and empty autonomous classes are unchanged. This adds no evidence-clock exit.
+
+### 15 November planner acceptance lint correction
+
+Onboarding a1 completed natively at source `a5da26b`; normal diff, base-negative
+and frozen browser gates passed, but Ruff rejected 71 style errors in the
+planner-owned frozen acceptance. The attempt remains rejected and R1 is now
+parked so the enabled tick cannot dispatch the unchanged broken packet. Source,
+native completion, original release and rejection history are
+[preserved](../evidence/2026-11-15-product-contact/onboarding-planner-lint-r2/README.md).
+
+The planner correction passes target Ruff, preserves all non-import AST and
+normalized import aliases, and reproduces exactly 11 passing base controls and
+five semantic Expand failures with no errors/skips. At 609 added-plus-deleted
+planner lines it exceeds the integrator allowance and requires a genuine R2
+with new byte-bound independent review and guarded publication. Native review
+is running; R2 is not published. R1's actual attempt remains counted: only one
+further implementation attempt is permitted across this outcome, despite the
+runtime's per-revision cap. No attempt promotion or policy activation occurred.
+
+An independent diagnostic audit of preserved a1 passed the seven helper contract
+tests, four helper faults, actual worker wrapper and its four semantic faults
+and Node-execution negative control. That does not qualify a new candidate.
+Full Make/55 visuals, real-page behavior, native specialist review, train/dev,
+PR/CI and canonical adoption remain required before product acceptance.
