@@ -10,6 +10,7 @@ import sqlite3
 import subprocess
 import sys
 import zipfile
+from contextlib import closing
 from pathlib import Path
 
 import pytest
@@ -35,7 +36,7 @@ def owner(tmp_path):
 
 
 def rows(path):
-    with sqlite3.connect(path) as db:
+    with closing(sqlite3.connect(path)) as db:
         return {
             table: db.execute(
                 "SELECT * FROM " + table + " ORDER BY 1,2,3,4,5"
@@ -859,3 +860,220 @@ def test_failed_readonly_connection_setup_closes_its_handle(tmp_path, monkeypatc
     with pytest.raises(sqlite3.DatabaseError):
         recovery._connect(tmp_path / "candidate.sqlite")
     assert closed == [True]
+
+
+@pytest.mark.parametrize("operation", ["backup", "restore"])
+@pytest.mark.parametrize("invalid_event", [None, [], {"schema": "lanectl.event/v1"}])
+def test_cli_rejects_malformed_event_envelopes_without_traceback_or_publication(
+    owner, tmp_path, operation, invalid_event
+):
+    source, store = owner
+    store.append("ws", "repo", "control", "p", "batch-0001", 0, [event()])
+    good, bad, destination = (
+        tmp_path / name for name in ("good.lane", "bad.lane", "destination.sqlite")
+    )
+    recovery.backup(source, good)
+    original_artifact = good.read_bytes()
+    if operation == "backup":
+        with sqlite3.connect(source) as db:
+            db.execute("UPDATE lane_events SET event=?", (json.dumps(invalid_event),))
+        before = rows(source)
+        result = cli("backup", source, destination, state=tmp_path / "unused")
+        assert rows(source) == before
+    else:
+        payload_path = tmp_path / "corrupt.sqlite"
+        with zipfile.ZipFile(good) as archive:
+            payload_path.write_bytes(archive.read("owner.sqlite"))
+        with sqlite3.connect(payload_path) as db:
+            db.execute("UPDATE lane_events SET event=?", (json.dumps(invalid_event),))
+        payload = payload_path.read_bytes()
+        rewrite(
+            good,
+            bad,
+            mutate_payload=lambda _: payload,
+            mutate_manifest=lambda m: m["payload"].update(
+                bytes=len(payload), sha256=hashlib.sha256(payload).hexdigest()
+            ),
+        )
+        before = rows(source)
+        result = cli("restore", bad, destination, state=tmp_path / "unused")
+        assert rows(source) == before
+    assert result.returncode == 1
+    refusal = json.loads(result.stdout)
+    assert refusal["ok"] is False and refusal["authority_changed"] is False
+    assert "Traceback" not in result.stderr
+    assert not destination.exists() and not (tmp_path / "unused").exists()
+    assert good.read_bytes() == original_artifact
+
+
+@pytest.mark.parametrize("redirect", ["hardlink", "symlink"])
+def test_cli_refuses_unsafe_existing_shm_before_sqlite_can_touch_canary(
+    owner, tmp_path, redirect
+):
+    source, store = owner
+    keeper = sqlite3.connect(source)
+    try:
+        keeper.execute("BEGIN")
+        keeper.execute("SELECT count(*) FROM lane_events").fetchone()
+        store.append("ws", "repo", "control", "p", "batch-0001", 0, [event()])
+        shm = Path(str(source) + "-shm")
+        canary = tmp_path / "caller-shm-canary"
+        canary.write_bytes(shm.read_bytes())
+        canary.chmod(0o600)
+        shm.unlink()
+        if redirect == "hardlink":
+            os.link(canary, shm)
+        else:
+            shm.symlink_to(canary)
+        original = canary.read_bytes()
+        artifact = tmp_path / "snapshot.lane"
+        result = cli("backup", source, artifact, state=tmp_path / "unused")
+        assert result.returncode == 1
+        refusal = json.loads(result.stdout)
+        assert "unsafe-source-shm" in refusal["error"]
+        assert canary.read_bytes() == original
+        assert not artifact.exists() and not (tmp_path / "unused").exists()
+        assert not list(tmp_path.glob(".lanectl-recovery-*"))
+    finally:
+        keeper.close()
+
+
+def test_readonly_wal_alias_does_not_expand_the_writable_shm_guard(owner, tmp_path):
+    source, store = owner
+    keeper = sqlite3.connect(source)
+    try:
+        keeper.execute("BEGIN")
+        keeper.execute("SELECT count(*) FROM lane_events").fetchone()
+        store.append("ws", "repo", "control", "p", "batch-0001", 0, [event()])
+        wal = Path(str(source) + "-wal")
+        alias = tmp_path / "wal-readonly-alias"
+        os.link(wal, alias)
+        before = alias.read_bytes()
+        result = cli(
+            "backup", source, tmp_path / "snapshot.lane", state=tmp_path / "unused"
+        )
+        assert result.returncode == 0, result.stdout + result.stderr
+        assert alias.read_bytes() == before
+    finally:
+        keeper.close()
+
+
+def test_restore_publishes_a_complete_wal_owner_and_measures_its_distinct_hash(
+    owner, tmp_path
+):
+    from contextlib import closing
+
+    source, store = owner
+    store.append("ws", "repo", "control", "p", "batch-0001", 0, [event()])
+    artifact, destination = tmp_path / "snapshot.lane", tmp_path / "restored.sqlite"
+    backup = recovery.backup(source, artifact)
+    original = artifact.read_bytes()
+    result = cli("restore", artifact, destination, state=tmp_path / "unused")
+    assert result.returncode == 0, result.stdout + result.stderr
+    receipt = json.loads(result.stdout)
+    with closing(sqlite3.connect(destination)) as db:
+        assert db.execute("PRAGMA journal_mode").fetchone() == ("wal",)
+    assert receipt["journal_mode"] == "wal"
+    assert receipt["payload_sha256"] == backup["payload_sha256"]
+    assert (
+        receipt["restored_database_sha256"]
+        == hashlib.sha256(destination.read_bytes()).hexdigest()
+    )
+    assert receipt["restored_database_sha256"] != receipt["payload_sha256"]
+    assert artifact.read_bytes() == original
+    assert rows(destination) == rows(source)
+    assert not Path(str(destination) + "-wal").exists()
+    assert not Path(str(destination) + "-shm").exists()
+    main_only = tmp_path / "main-only.sqlite"
+    shutil.copyfile(destination, main_only)
+    assert rows(main_only) == rows(source)
+
+
+def test_wal_preparation_failure_is_prepublication_and_preserves_original_artifact(
+    owner, tmp_path, monkeypatch
+):
+    source, _ = owner
+    artifact, destination = tmp_path / "snapshot.lane", tmp_path / "restored.sqlite"
+    recovery.backup(source, artifact)
+    original = artifact.read_bytes()
+
+    def fail(path):
+        raise sqlite3.OperationalError("injected private WAL preparation failure")
+
+    with monkeypatch.context() as patch:
+        patch.setattr(recovery, "_prepare_wal", fail)
+        with pytest.raises(recovery.RecoveryError):
+            recovery.restore(artifact, destination)
+    assert not destination.exists() and artifact.read_bytes() == original
+    recovery.restore(artifact, tmp_path / "new-restored.sqlite")
+
+
+@pytest.mark.parametrize("observations", [("delete",), ("wal", "delete")])
+def test_private_wal_preparation_must_verify_the_actual_mode(
+    tmp_path, monkeypatch, observations
+):
+    closed = []
+    observed = iter(observations)
+
+    class Connection:
+        def execute(self, command):
+            return self
+
+        def fetchone(self):
+            return (next(observed),)
+
+        def close(self):
+            closed.append(True)
+
+    monkeypatch.setattr(
+        recovery.sqlite3, "connect", lambda *args, **kwargs: Connection()
+    )
+    with pytest.raises(recovery.RecoveryError):
+        recovery._prepare_wal(tmp_path / "owned-candidate.sqlite")
+    assert closed == [True]
+
+
+def test_unpublished_candidate_sidecars_refuse_before_publication_without_cleanup_loss(
+    owner, tmp_path, monkeypatch
+):
+    source, _ = owner
+    artifact, destination = tmp_path / "snapshot.lane", tmp_path / "restored.sqlite"
+    recovery.backup(source, artifact)
+    original = artifact.read_bytes()
+    prepare = recovery._prepare_wal
+    retained = []
+
+    def inject(path):
+        prepare(path)
+        sidecar = Path(str(path) + "-wal")
+        sidecar.write_bytes(b"caller sentinel")
+        retained.append(sidecar)
+
+    monkeypatch.setattr(recovery, "_prepare_wal", inject)
+    with pytest.raises(recovery.RecoveryError):
+        recovery.restore(artifact, destination)
+    assert not destination.exists() and artifact.read_bytes() == original
+    assert retained[0].read_bytes() == b"caller sentinel"
+
+
+def test_private_wal_preparation_cannot_change_verified_owner_data(
+    owner, tmp_path, monkeypatch
+):
+    source, store = owner
+    store.append("ws", "repo", "control", "p", "batch-0001", 0, [event()])
+    artifact, destination = tmp_path / "snapshot.lane", tmp_path / "restored.sqlite"
+    recovery.backup(source, artifact)
+    original = artifact.read_bytes()
+    prepare = recovery._prepare_wal
+
+    def corrupt_candidate(path):
+        prepare(path)
+        with closing(sqlite3.connect(path)) as db:
+            db.execute("UPDATE lane_events SET principal='changed'")
+            db.commit()
+
+    monkeypatch.setattr(recovery, "_prepare_wal", corrupt_candidate)
+    with pytest.raises(recovery.RecoveryError):
+        recovery.restore(artifact, destination)
+    assert not destination.exists() and artifact.read_bytes() == original
+    assert StreamStore(source).read("ws", "repo", "control")["revision"] == 1

@@ -143,6 +143,19 @@ def _fresh(path, parent_fd):
         )
 
 
+def _source_shm(database):
+    # A readonly SQLite connection can still mmap-write SHM bookkeeping. An
+    # existing SHM alias could therefore modify an unrelated caller file.
+    try:
+        info = Path(str(database) + "-shm").lstat()
+    except FileNotFoundError:
+        return
+    try:
+        _regular(info)
+    except RecoveryError as error:
+        raise RecoveryError("unsafe-source-shm: " + str(error)) from error
+
+
 @contextmanager
 def _stage(parent):
     root = Path(tempfile.mkdtemp(prefix=".lanectl-recovery-", dir=parent))
@@ -251,8 +264,9 @@ def _copy(source, destination, *, limit):
     return count, digest.hexdigest()
 
 
-def _connect(path):
-    db = sqlite3.connect(path.as_uri() + "?mode=ro", uri=True, timeout=5)
+def _connect(path, *, immutable=False):
+    suffix = "?mode=ro&immutable=1" if immutable else "?mode=ro"
+    db = sqlite3.connect(path.as_uri() + suffix, uri=True, timeout=5)
     try:
         db.setlimit(sqlite3.SQLITE_LIMIT_LENGTH, 2 * MAX_BYTES + 4096)
         db.setlimit(sqlite3.SQLITE_LIMIT_SQL_LENGTH, 32768)
@@ -293,10 +307,10 @@ def _scope(values):
     return tuple(values)
 
 
-def _inspect(path):
+def _inspect(path, *, immutable=False):
     if path.stat().st_size > MAX_PAYLOAD:
         raise RecoveryError("resource-limit: database exceeds1GiB")
-    with closing(_connect(path)) as db:
+    with closing(_connect(path, immutable=immutable)) as db:
         _catalog(db)
         counts = {
             name: db.execute("SELECT count(*) FROM " + name).fetchone()[0]
@@ -334,6 +348,11 @@ def _inspect(path):
             ):
                 raise RecoveryError("invalid-owner-history: event revision/principal")
             value = json.loads(raw)
+            if (
+                not isinstance(value, dict)
+                or not {"schema", "ts", "type", "item_id", "data"} <= value.keys()
+            ):
+                raise RecoveryError("invalid-owner-history: incomplete event envelope")
             validate_event(value)
             if encode(value) != raw:
                 raise RecoveryError("invalid-owner-history: noncanonical event")
@@ -408,6 +427,7 @@ def _backup_progress(status, remaining, total, started, page_size):
 def _online_snapshot(source, destination, owned):
     with _new_file(destination, owned):
         pass
+    _source_shm(source)
     with (
         closing(_connect(source)) as origin,
         closing(sqlite3.connect(destination)) as snapshot,
@@ -426,6 +446,28 @@ def _online_snapshot(source, destination, owned):
         # Only the candidate changes journal mode, making its payload standalone.
         snapshot.execute("PRAGMA journal_mode=DELETE")
     _sync_file(destination)
+
+
+def _prepare_wal(path):
+    # This is an explicitly restored, already verified PRIVATE candidate. The
+    # artifact and original owner are never opened writable by recovery.
+    with closing(sqlite3.connect(path, timeout=5)) as db:
+        db.execute("PRAGMA trusted_schema=OFF")
+        if db.execute("PRAGMA journal_mode=WAL").fetchone() != ("wal",) or db.execute(
+            "PRAGMA journal_mode"
+        ).fetchone() != ("wal",):
+            raise RecoveryError("private-candidate-wal-preparation-refused")
+
+
+def _no_candidate_sidecars(path):
+    for suffix in ("-wal", "-shm", "-journal"):
+        try:
+            Path(str(path) + suffix).lstat()
+        except FileNotFoundError:
+            continue
+        raise RecoveryError(
+            "private-candidate-sidecar-present: main-file completeness unproven"
+        )
 
 
 def _info(name):
@@ -564,7 +606,9 @@ def _bundle(stream):
         yield bundle, manifest
 
 
-def _receipt(operation, artifact, artifact_hash, manifest, destination=None):
+def _receipt(
+    operation, artifact, artifact_hash, manifest, destination=None, restored_hash=None
+):
     return {
         "schema": RECEIPT,
         "ok": True,
@@ -574,7 +618,15 @@ def _receipt(operation, artifact, artifact_hash, manifest, destination=None):
         "owner_schema": SCHEMA_VERSION,
         "payload_sha256": manifest["payload"]["sha256"],
         **{k: manifest[k] for k in ("counts", "heads")},
-        **({"database": str(destination)} if destination else {}),
+        **(
+            {
+                "database": str(destination),
+                "restored_database_sha256": restored_hash,
+                "journal_mode": "wal",
+            }
+            if destination
+            else {}
+        ),
         "authority_changed": False,
         "quiescence": "not-asserted",
     }
@@ -586,6 +638,7 @@ def backup(database, artifact):
         database, artifact = _path(database), _path(artifact)
         with _input(database) as source_fd, _parent(artifact) as parent_fd:
             _fresh(artifact, parent_fd)
+            _source_shm(database)
             if os.fstat(source_fd).st_size > MAX_PAYLOAD:
                 raise RecoveryError("resource-limit: database exceeds1GiB")
             with _stage(artifact.parent) as (stage, owned):
@@ -680,6 +733,16 @@ def restore(artifact, destination):
                     raise RecoveryError(
                         "invalid-artifact: measured counts/heads mismatch"
                     )
+                _prepare_wal(candidate)
+                _no_candidate_sidecars(candidate)
+                # Immutable inspection proves all required data is present in
+                # the main file alone, without creating or reading companions.
+                if _inspect(candidate, immutable=True) != {
+                    k: manifest[k] for k in ("counts", "heads")
+                }:
+                    raise RecoveryError("private-candidate-wal-state-mismatch")
+                _no_candidate_sidecars(candidate)
+                restored_hash = _hash(candidate)
                 _sync_file(candidate)
                 _same_input(artifact, source_fd)
                 _fresh(destination, parent_fd)
@@ -687,7 +750,9 @@ def restore(artifact, destination):
                 published = str(destination)
                 _sync_parent(parent_fd)
                 _check_publication(candidate, destination, parent_fd)
-            return _receipt("restore", artifact, artifact_hash, manifest, destination)
+            return _receipt(
+                "restore", artifact, artifact_hash, manifest, destination, restored_hash
+            )
     except (
         OSError,
         sqlite3.Error,

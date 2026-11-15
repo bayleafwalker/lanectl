@@ -192,6 +192,12 @@ lanectl stream restore /private/lanectl/owner-backup.lane /private/lanectl/recov
 Inputs must be regular files owned by the invoking user, without hard-link
 aliases, mode 0400 or 0600, in existing owned mode 0700 directories. Symlinks,
 including ancestor symlinks, are refused. New artifacts and databases are 0600.
+`stream init` preserves its existing umask-based permissions: with umask 0022,
+a new database is 0644. Its owner must explicitly prepare the source as 0600
+(and its parent as 0700) before backup. Recovery never silently chmods a source. Existing source SHM metadata must also
+be a private owned regular file without aliases: SQLite can mmap-write read
+bookkeeping even for a readonly database connection. Backup checks it before
+opening SQLite; legitimate active-WAL snapshots remain supported.
 Existing destination names or SQLite WAL/SHM/journal sidecars are refused.
 The local filesystem must support SQLite locks, exclusive hard links and file
 and directory fsync. These commands leave authority selection unchanged and do
@@ -204,8 +210,12 @@ both table counts and sorted workspace/repository/stream head revisions. The
 reader validates closed archive metadata, integrity, the exact supported owner
 catalog, complete event/batch linkage and the measured manifest before
 publishing. Checksums detect corruption; they do not authenticate an artifact.
-Keep artifacts in trusted backup custody. The SQLite payload is standalone;
-restoring it preserves schema/data/idempotency and does not run migration.
+Keep artifacts in trusted backup custody. The artifact SQLite payload is
+standalone. Restore validates it, explicitly prepares WAL on the private
+candidate, closes it, then verifies schema/data from the main file alone with
+immutable readonly inspection before publication. It never initializes or
+migrates an owner, changes source journal settings, or depends on unpublished
+WAL/SHM contents.
 
 Bounds are explicit: 1GiB SQLite payload, 1MiB manifest, 1,000,000 events,
 100,000 batches and 4,096 populated scopes. The online-copy phase has a 300-second
@@ -218,7 +228,10 @@ silently truncated. Those bounds do not change the append/read API.
 Publication stages beside the destination, closes and fsyncs the complete
 candidate, links the new final name without replacement, then fsyncs its
 parent. Successful JSON receipts bind the artifact hash, schema, counts, heads
-and restored path and state `authority_changed:false` and
+and restored path. Restore also records `journal_mode:"wal"` and the independently
+measured `restored_database_sha256`; `payload_sha256` continues to identify the
+original artifact payload, whose header differs from the prepared WAL database.
+Receipts state `authority_changed:false` and
 `quiescence:"not-asserted"`. A failure after linking can leave a valid,
 unactivated result; an error's `published` field identifies that effect when
 available. Inspect it before proceeding: retry refuses replacement. Interrupted
