@@ -6,9 +6,13 @@ attempt count used while preparing this packet. The historical outcome,
 planner-correction text and native request/response retain that incorrect
 one-attempt-remaining premise for audit; they do not authorize another attempt.
 
-R1 a1 remains rejected and unadopted. Native source is retained on HLA branch
-`lane/hla-onboarding-expand-a1` at a5da26bb45c061b5af292d6dfb919867ae40b8f7.
-Its worker-only patch and exact frozen R1 release are retained here. Native
+R1 a1 remains rejected and unadopted at a5da26bb45c061b5af292d6dfb919867ae40b8f7.
+Both native source objects are retained in `r1-a2-rejection/r1-native-sources.bundle`,
+requiring canonical HLA base b2d0fe3. A fresh repository fetched only that base,
+restored both exact heads from the bundle and passed strict git fsck without
+alternates; see `bundle-restore-proof.json`. The retired lane branches no longer
+occupy the canonical checkout. The worker-only patch and frozen R1 release are
+also retained here. Native
 done/exit0 is distinct from the subsequent normal Ruff gate rejection.
 
 The new acceptance ca89412670f6aa71085101f4714013d6a6a34f15328f1f64e4e094af3d27af8a
