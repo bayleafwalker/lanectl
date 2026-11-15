@@ -1,0 +1,5 @@
+Traceback (most recent call last):
+  File "/tmp/lanectl-local-readiness-20261115/check-boundaries.py", line 55, in <module>
+    assert status['outcome']=='failed' and status['exit_code']==3 and status['usage'] is None
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError

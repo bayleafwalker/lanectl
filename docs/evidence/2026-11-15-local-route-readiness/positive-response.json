@@ -1,0 +1,12 @@
+{
+  "verdict": "accept",
+  "reason": "trusted_proposal_bytes (119745) is well within max_trusted_proposal_bytes (262144). The separate-bound rule correctly isolates the input bound from the output bound (max_model_response_bytes) and intent bound (max_intent_bytes), which are semantically unrelated constraints.",
+  "trivial_pass": "A shared-bound check that incorrectly compared trusted_proposal_bytes against max_model_response_bytes would reject any value above 65536. Since 119745 > 65536, the proposal would wrongly fail the shared-bound check even though it is a valid input proposal under the correct max_trusted_proposal_bytes bound of 262144.",
+  "checks": [
+    "probe_nonce: local-route-815f921af7c0",
+    "trusted_proposal_bytes=119745 <= max_trusted_proposal_bytes=262144 => pass",
+    "max_trusted_proposal_bytes (decimal input bound) = 262144",
+    "First invalid trusted-input byte count (max_trusted_proposal_bytes + 1) = 262145",
+    "Wrong shared-bound check would flag first-invalid at 65537 (> max_model_response_bytes)"
+  ]
+}

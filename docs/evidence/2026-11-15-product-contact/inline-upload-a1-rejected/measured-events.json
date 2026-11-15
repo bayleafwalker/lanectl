@@ -1,0 +1,141 @@
+[
+  {
+    "ts": "2026-11-15T11:26:44Z",
+    "type": "item.claimed",
+    "data": {
+      "attempt_id": "hla-source-row-upload-a1",
+      "model": "opencode-go/deepseek-v4.1-flash",
+      "worker": "opencode",
+      "lane": "implement",
+      "release_revision": 1,
+      "prompt_feedback_version": 1
+    }
+  },
+  {
+    "ts": "2026-11-15T12:11:46Z",
+    "type": "attempt.finished",
+    "data": {
+      "attempt_id": "hla-source-row-upload-a1",
+      "elapsed_s": 2700.2,
+      "escalation_reason": null,
+      "exit_code": 124,
+      "final_tail": "Now the shared route module and thin handlers:",
+      "head_sha": "a3e4709e9882315c69c107bdf5bc698268f1c16a",
+      "isolation_breach": false,
+      "main_changed": false,
+      "outcome": "failed",
+      "seed_sha": "8bf6645cf0fda379ff564549fbbc704b7df660c5"
+    }
+  },
+  {
+    "ts": "2026-11-15T12:11:46Z",
+    "type": "usage.recorded",
+    "data": {
+      "attempt_id": "hla-source-row-upload-a1",
+      "model": "opencode-go/deepseek-v4.1-flash",
+      "provider": "opencode",
+      "source": "adapter",
+      "units": {
+        "cache_read_tokens": 25383296,
+        "cache_write_tokens": 0,
+        "cost_usd": 0.20308812000000004,
+        "input_tokens": 311959,
+        "output_tokens": 58930,
+        "reasoning_tokens": 74644,
+        "steps": 141
+      }
+    }
+  },
+  {
+    "ts": "2026-11-15T12:16:52Z",
+    "type": "gate.result",
+    "data": {
+      "attempt_id": "hla-source-row-upload-a1",
+      "gate": "diff-policy",
+      "passed": true,
+      "violations": []
+    }
+  },
+  {
+    "ts": "2026-11-15T12:16:52Z",
+    "type": "gate.result",
+    "data": {
+      "attempt_id": "hla-source-row-upload-a1",
+      "gate": "fail-on-base",
+      "passed": true,
+      "violations": []
+    }
+  },
+  {
+    "ts": "2026-11-15T12:16:52Z",
+    "type": "gate.result",
+    "data": {
+      "attempt_id": "hla-source-row-upload-a1",
+      "gate": "acceptance-on-base",
+      "passed": true,
+      "violations": []
+    }
+  },
+  {
+    "ts": "2026-11-15T12:16:52Z",
+    "type": "gate.result",
+    "data": {
+      "attempt_id": "hla-source-row-upload-a1",
+      "gate": "acceptance",
+      "passed": true,
+      "violations": []
+    }
+  },
+  {
+    "ts": "2026-11-15T12:16:52Z",
+    "type": "gate.result",
+    "data": {
+      "attempt_id": "hla-source-row-upload-a1",
+      "gate": "job:ruff",
+      "passed": true,
+      "violations": []
+    }
+  },
+  {
+    "ts": "2026-11-15T12:16:52Z",
+    "type": "decision.recorded",
+    "data": {
+      "attempt_id": "hla-source-row-upload-a1",
+      "by": "gates",
+      "decision": "rejected",
+      "reasons": [
+        "worker outcome failed"
+      ],
+      "rules_revision": "decision-rules/v3"
+    }
+  },
+  {
+    "ts": "2026-11-15T12:16:52Z",
+    "type": "experiment.recorded",
+    "data": {
+      "attempt_id": "hla-source-row-upload-a1",
+      "decision": "rejected",
+      "elapsed_s": 2700.2,
+      "gates_failed": [],
+      "lane_revision": 3,
+      "model": "opencode-go/deepseek-v4.1-flash",
+      "rules_revision": "decision-rules/v3",
+      "size": "M",
+      "task_class": "product-ui",
+      "worker": "opencode"
+    }
+  },
+  {
+    "ts": "2026-11-15T12:21:50Z",
+    "type": "decision.recorded",
+    "data": {
+      "attempt_id": "hla-source-row-upload-a1",
+      "by": "integrator",
+      "decision": "rejected",
+      "reasons": [
+        "Immutable a3e4709,685 lines: frozen gates pass but timeout124 is real failure. Model-error findings: only local link changes; server freshness/date/status/recovery cells stay old. Network rejection keeps ready preview, enabling immediate resubmit; file is not reset and input is not disabled while pending. sanitizePreview overwrites wrong upstream source ID with pinned ID while keeping ready. Null system/mapping/contract reads fail open. UI drops superseded/missing observations, turning another latest row freshness into an unqualified landed/current message. Any receipt, including mismatched/unconfirmed identity, replaces selected row Last ingested link. Keep receipts inspectable separately from confirmed latest-source state. Added tests search source strings rather than exercise helper semantics. Satisfy the full original outcome within the normal remaining retry; no acceptance, budget, policy or permission changes."
+      ],
+      "rules_revision": "integrator"
+    }
+  }
+]

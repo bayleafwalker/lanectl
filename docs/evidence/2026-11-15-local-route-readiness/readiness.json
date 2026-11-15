@@ -1,0 +1,18 @@
+{
+  "measured_at": "2026-11-15T11:52:12.253020+00:00",
+  "lane_status_exit": 0,
+  "holder": {
+    "pid": null,
+    "models": null,
+    "started_at": null
+  },
+  "purpose_not_published": true,
+  "models_http_status": 200,
+  "models": [
+    "worker-fast",
+    "writer-cydonia",
+    "writer-gemma",
+    "writer-mistral"
+  ],
+  "models_body_sha256": "fb1b429b3cb4fcd2c72ee96021b91670f68477f475d8476bd4dd19647f4503dc"
+}

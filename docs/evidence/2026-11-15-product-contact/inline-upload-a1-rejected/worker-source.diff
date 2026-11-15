@@ -1,0 +1,769 @@
+diff --git a/apps/web/frontend/app/sources/[sourceAssetId]/dry-run/route.js b/apps/web/frontend/app/sources/[sourceAssetId]/dry-run/route.js
+new file mode 100644
+index 0000000..d8d38a2
+--- /dev/null
++++ b/apps/web/frontend/app/sources/[sourceAssetId]/dry-run/route.js
+@@ -0,0 +1,10 @@
++import { NextResponse } from "next/server";
++
++import { sourceAssetIdFromRequest } from "@/lib/source-row-upload";
++import { dryRunSourceRow } from "@/lib/source-row-upload-route";
++
++/** @param {Request} request @param {{ params: { sourceAssetId?: string } }} context */
++export async function POST(request, { params }) {
++  const result = await dryRunSourceRow(request, sourceAssetIdFromRequest(request, params));
++  return NextResponse.json(result.body, { status: result.status });
++}
+diff --git a/apps/web/frontend/app/sources/[sourceAssetId]/upload/route.js b/apps/web/frontend/app/sources/[sourceAssetId]/upload/route.js
+new file mode 100644
+index 0000000..5798de9
+--- /dev/null
++++ b/apps/web/frontend/app/sources/[sourceAssetId]/upload/route.js
+@@ -0,0 +1,10 @@
++import { NextResponse } from "next/server";
++
++import { sourceAssetIdFromRequest } from "@/lib/source-row-upload";
++import { uploadSourceRow } from "@/lib/source-row-upload-route";
++
++/** @param {Request} request @param {{ params: { sourceAssetId?: string } }} context */
++export async function POST(request, { params }) {
++  const result = await uploadSourceRow(request, sourceAssetIdFromRequest(request, params));
++  return NextResponse.json(result.body, { status: result.status });
++}
+diff --git a/apps/web/frontend/app/sources/page.js b/apps/web/frontend/app/sources/page.js
+index 9e53a01..99d558f 100755
+--- a/apps/web/frontend/app/sources/page.js
++++ b/apps/web/frontend/app/sources/page.js
+@@ -3,7 +3,17 @@ import { redirect } from "next/navigation";
+ 
+ import { AppShell } from "@/components/app-shell";
+ import { ResponsiveTable } from "@/components/responsive-table";
+-import { getCurrentUser, getSourceFreshness, getRuns } from "@/lib/backend";
++import { SourceRowUpload } from "@/components/source-row-upload";
++import {
++  getColumnMappings,
++  getCurrentUser,
++  getDatasetContracts,
++  getRuns,
++  getSourceAssets,
++  getSourceFreshness,
++  getSourceSystems
++} from "@/lib/backend";
++import { resolveSourceUpload } from "@/lib/source-row-upload";
+ 
+ // Links land on the matching upload card on /upload; the /upload/<dataset>
+ // paths themselves are POST-only route handlers.
+@@ -31,18 +41,13 @@ function formatDatasetLabel(datasetName) {
+     .replace(/\b\w/g, (c) => c.toUpperCase());
+ }
+ 
+-function remediationActions(status, uploadPath) {
+-  const actions = [];
+-  if (status === "rejected" || status === "failed") {
+-    actions.push({ label: "Inspect run", kind: "run" });
+-  }
++// The row's own latest run is the only /runs/ link it carries: remediation
++// links never point at a run again, so each row has exactly one run target.
++function remediationActions(uploadPath) {
+   if (uploadPath) {
+-    actions.push({ label: "Upload corrected file", kind: "upload", href: uploadPath });
+-  }
+-  if (!uploadPath) {
+-    actions.push({ label: "Open run history", kind: "history", href: "/runs" });
++    return [{ label: "Upload corrected file", kind: "upload", href: uploadPath }];
+   }
+-  return actions;
++  return [{ label: "Open run history", kind: "history", href: "/runs" }];
+ }
+ 
+ export default async function SourcesPage() {
+@@ -51,10 +56,27 @@ export default async function SourcesPage() {
+     redirect("/");
+   }
+ 
+-  const [freshnessDatasets, recentRuns] = await Promise.all([
+-    getSourceFreshness(),
+-    getRuns(200),
+-  ]);
++  // Freshness and runs must load for the page to mean anything; catalog facts
++  // only decide whether one row may upload, so a catalog failure disables the
++  // row's uploader instead of blanking the page.
++  const [freshnessRead, runsRead, assetsRead, systemsRead, mappingsRead, contractsRead] =
++    await Promise.allSettled([
++      getSourceFreshness(), getRuns(200), getSourceAssets({ includeArchived: true }),
++      getSourceSystems(), getColumnMappings(), getDatasetContracts(),
++    ]);
++  for (const read of [freshnessRead, runsRead]) {
++    if (read.status !== "fulfilled") throw read.reason;
++  }
++  const freshnessDatasets = freshnessRead.value;
++  const recentRuns = runsRead.value;
++  const list = (read) =>
++    read.status === "fulfilled" && Array.isArray(read.value) ? read.value : null;
++  const catalog = {
++    assets: list(assetsRead),
++    systems: list(systemsRead),
++    mappings: list(mappingsRead),
++    contracts: list(contractsRead),
++  };
+ 
+   // Each row is one source asset. Several assets can feed the same dataset
+   // (three bank accounts into account_transactions), so run details are
+@@ -66,8 +88,15 @@ export default async function SourcesPage() {
+     const lastRun = ds.latest_run_id ? runsById.get(ds.latest_run_id) || null : null;
+     const uploadPath = BUILTIN_UPLOAD_PATH[ds.dataset_name] || null;
+     const staleness = stalenessLabel(ds.landed_at);
+-    const actions = remediationActions(ds.status, uploadPath);
+-    return { ...ds, lastRun, uploadPath, staleness, actions };
++    const actions = remediationActions(uploadPath);
++    return {
++      ...ds,
++      lastRun,
++      uploadPath,
++      upload: resolveSourceUpload(ds, catalog),
++      staleness,
++      actions,
++    };
+   });
+ 
+   // Sort: stale/never first, then by dataset name
+@@ -166,14 +195,16 @@ export default async function SourcesPage() {
+               {
+                 key: "landed_at",
+                 header: "Last ingested",
+-                cell: (row) =>
+-                  row.latest_run_id ? (
+-                    <Link className="inlineLink" href={`/runs/${row.latest_run_id}`}>
+-                      {row.landed_at ? new Date(row.landed_at).toLocaleDateString("en-GB") : row.latest_run_id}
+-                    </Link>
+-                  ) : (
+-                    <span className="muted">Never</span>
+-                  ),
++                cell: (row) => (
++                  <SourceRowUpload
++                    available={row.upload.available}
++                    initialLabel={row.landed_at ? new Date(row.landed_at).toLocaleDateString("en-GB") : row.latest_run_id || ""}
++                    initialRunId={row.latest_run_id || ""}
++                    note={row.upload.note}
++                    sourceAssetId={row.source_asset_id || ""}
++                    sourceName={row.name || formatDatasetLabel(row.dataset_name)}
++                  />
++                ),
+               },
+               {
+                 key: "status",
+@@ -205,11 +236,7 @@ export default async function SourcesPage() {
+                 cell: (row) => (
+                   <span style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                     {row.actions.map((action) =>
+-                      action.kind === "run" && row.latest_run_id ? (
+-                        <Link key={action.label} className="inlineLink" href={`/runs/${row.latest_run_id}`}>
+-                          {action.label}
+-                        </Link>
+-                      ) : action.href ? (
++                      action.href ? (
+                         <Link key={action.label} className="inlineLink" href={action.href}>
+                           {action.label}
+                         </Link>
+diff --git a/apps/web/frontend/components/source-row-upload.js b/apps/web/frontend/components/source-row-upload.js
+new file mode 100644
+index 0000000..1baf7be
+--- /dev/null
++++ b/apps/web/frontend/components/source-row-upload.js
+@@ -0,0 +1,148 @@
++"use client";
++
++import Link from "next/link";
++import { useId, useRef, useState } from "react";
++
++import { describeOutcome, previewMatchesTarget } from "@/lib/source-row-upload";
++
++// Validation messages are already templated by the sanitizer, so they can be
++// announced verbatim next to the fallback sentence.
++function issueText(payload, fallback) {
++  const messages = Array.isArray(payload?.issues)
++    ? payload.issues.map((issue) => issue?.message).filter(Boolean)
++    : [];
++  return messages.length > 0 ? `${fallback} ${messages.join(" ")}` : fallback;
++}
++
++const SHARED_FORMAT_NOTE =
++  "The same file format can be used by more than one account; the columns do not identify the source. Confirm the selected source row before uploading.";
++
++// One source row uploads into itself: a preview bound to this row enables the
++// button, a new file drops the old preview, and a late reply never wins.
++export function SourceRowUpload({
++  sourceAssetId,
++  sourceName,
++  initialRunId,
++  initialLabel,
++  available,
++  note
++}) {
++  const inputId = useId();
++  const inputRef = useRef(null);
++  const previewRequestRef = useRef(0);
++  const busyRef = useRef(false);
++  const [run, setRun] = useState({ id: initialRunId || "", label: initialLabel || "" });
++  const [preview, setPreview] = useState(null);
++  const [notice, setNotice] = useState("");
++  const [busy, setBusy] = useState(false);
++  const target = `/sources/${encodeURIComponent(sourceAssetId)}`;
++
++  async function onFileChange(event) {
++    const file = event.target.files?.[0] || null;
++    const requestId = previewRequestRef.current + 1;
++    previewRequestRef.current = requestId;
++    setPreview(null);
++    setNotice("");
++    if (!file) return;
++    try {
++      const body = new FormData();
++      body.set("file", file);
++      const response = await fetch(`${target}/dry-run`, { method: "POST", body });
++      const payload = await response.json().catch(() => null);
++      if (requestId !== previewRequestRef.current) return;
++      if (!response.ok || !previewMatchesTarget(payload, sourceAssetId)) {
++        setNotice("This preview is not bound to the selected source; the upload stays disabled.");
++        return;
++      }
++      if (payload.ready !== true) {
++        setNotice(issueText(payload, "This file did not pass the preview; the upload stays disabled."));
++        return;
++      }
++      setPreview({ fileName: file.name, rowCount: payload.row_count });
++    } catch {
++      if (requestId !== previewRequestRef.current) return;
++      setNotice("Preview failed; the upload stays disabled.");
++    }
++  }
++
++  async function onUpload() {
++    if (busyRef.current || !preview) return;
++    const file = inputRef.current?.files?.[0] || null;
++    if (!file || file.name !== preview.fileName) {
++      setPreview(null);
++      setNotice("The selected file changed; preview it before uploading.");
++      return;
++    }
++    busyRef.current = true;
++    setBusy(true);
++    setNotice("");
++    try {
++      const body = new FormData();
++      body.set("file", file);
++      body.set("source_name", sourceName);
++      const response = await fetch(`${target}/upload`, { method: "POST", body });
++      const payload = await response.json().catch(() => null);
++      setNotice(describeOutcome(payload));
++      setPreview(null);
++      if (typeof payload?.run_id === "string" && payload.run_id) {
++        setRun({ id: payload.run_id, label: payload.run_id });
++      }
++    } catch {
++      setNotice(describeOutcome(null));
++    } finally {
++      busyRef.current = false;
++      setBusy(false);
++    }
++  }
++
++  const count = preview && Number.isInteger(preview.rowCount) ? preview.rowCount : 0;
++  const muted = { fontSize: "0.82rem", margin: 0 };
++
++  return (
++    <div style={{ display: "grid", gap: "6px", minWidth: "200px" }}>
++      <div>
++        {run.id ? (
++          <Link className="inlineLink" href={`/runs/${run.id}`}>
++            {run.label || run.id}
++          </Link>
++        ) : (
++          <span className="muted">Never</span>
++        )}
++      </div>
++      {available ? (
++        <>
++          <label className="muted" htmlFor={inputId} style={{ fontSize: "0.8rem" }}>
++            Preview a CSV, XLSX or JSON file for this source
++          </label>
++          <input
++            accept=".csv,.xlsx,.json,text/csv,application/json"
++            id={inputId}
++            onChange={onFileChange}
++            ref={inputRef}
++            type="file"
++          />
++          <p className="muted" style={muted}>{SHARED_FORMAT_NOTE}</p>
++          <button
++            aria-label={`Upload to ${sourceName}`}
++            className="primaryButton inlineButton"
++            disabled={busy || !preview}
++            onClick={onUpload}
++            type="button"
++          >
++            Upload to {sourceName}
++          </button>
++        </>
++      ) : (
++        <p className="muted" style={muted}>{note || "Upload unavailable for this source."}</p>
++      )}
++      <div aria-live="polite">
++        {preview ? (
++          <span className="muted" style={muted}>
++            {`${preview.fileName}: ${count} ${count === 1 ? "row" : "rows"} ready.`}
++          </span>
++        ) : null}
++        {notice ? <span className="muted" style={{ ...muted, display: "block" }}>{notice}</span> : null}
++      </div>
++    </div>
++  );
++}
+diff --git a/apps/web/frontend/lib/source-row-upload-route.js b/apps/web/frontend/lib/source-row-upload-route.js
+new file mode 100644
+index 0000000..5dd5f30
+--- /dev/null
++++ b/apps/web/frontend/lib/source-row-upload-route.js
+@@ -0,0 +1,105 @@
++// Server side: build a fresh multipart body and classify the API's answer.
++
++import { backendRequest } from "@/lib/backend";
++import { OUTCOME_UNKNOWN_MESSAGE, SOURCE_ROW_UPLOAD_PATH, classifyUpload, readReceipt, readRunContextId, sanitizePreview } from "@/lib/source-row-upload";
++
++const DRY_RUN_FAILED = { message: "Dry-run preview failed." };
++
++async function readJson(response) {
++  try {
++    return await response.json();
++  } catch {
++    return null;
++  }
++}
++
++async function readJsonPath(path, cookieHeader) {
++  try {
++    const response = await backendRequest(path, { method: "GET", cookieHeader });
++    return response.ok ? await readJson(response) : null;
++  } catch {
++    return null;
++  }
++}
++
++/** The uploaded file part, or null when the request carries no usable file. */
++async function readUpload(request) {
++  try {
++    const form = await request.formData();
++    const upload = form.get("file");
++    return { form, upload: upload && typeof upload !== "string" ? upload : null };
++  } catch {
++    return { form: null, upload: null };
++  }
++}
++
++export async function dryRunSourceRow(request, sourceAssetId) {
++  const { upload } = await readUpload(request);
++  if (!upload || !sourceAssetId) {
++    return { status: 400, body: { message: "Choose a file to preview." } };
++  }
++  // A fresh body: the pinned path id and the configured upload path only.
++  const body = new FormData();
++  body.set("file", upload);
++  body.set("source_asset_id", sourceAssetId);
++  body.set("upload_path", SOURCE_ROW_UPLOAD_PATH);
++  let response;
++  try {
++    response = await backendRequest("/ingest/dry-run", {
++      method: "POST",
++      cookieHeader: request.headers.get("cookie") || "",
++      body
++    });
++  } catch {
++    return { status: 502, body: DRY_RUN_FAILED };
++  }
++  const payload = await readJson(response);
++  if (!response.ok) {
++    return { status: response.status >= 500 ? 502 : response.status, body: DRY_RUN_FAILED };
++  }
++  if (!payload?.preview || typeof payload.preview !== "object") {
++    return { status: 502, body: DRY_RUN_FAILED };
++  }
++  return { status: 200, body: sanitizePreview(payload.preview, sourceAssetId) };
++}
++
++export async function uploadSourceRow(request, sourceAssetId) {
++  const { form, upload } = await readUpload(request);
++  if (!upload || !sourceAssetId) {
++    return { status: 400, body: { message: "Choose a file to upload." } };
++  }
++  const rawName = form?.get("source_name");
++  const cookieHeader = request.headers.get("cookie") || "";
++  const body = new FormData();
++  body.set("file", upload);
++  body.set("source_asset_id", sourceAssetId);
++  body.set("source_name", (typeof rawName === "string" ? rawName.trim() : "") || "manual-upload");
++  let response;
++  try {
++    response = await backendRequest("/ingest/configured-csv", {
++      method: "POST",
++      cookieHeader,
++      body
++    });
++  } catch {
++    return {
++      status: 502,
++      body: { outcome: "outcome_unknown", message: OUTCOME_UNKNOWN_MESSAGE }
++    };
++  }
++  const httpStatus = response.status;
++  const payload = await readJson(response);
++  const succeeded = httpStatus >= 200 && httpStatus < 300;
++  const receipt = readReceipt(payload);
++  let runContextId = null;
++  let freshnessRows = null;
++  if (receipt && (succeeded || httpStatus === 400 || httpStatus === 409)) {
++    const detail = await readJsonPath(`/runs/${encodeURIComponent(receipt.runId)}`, cookieHeader);
++    runContextId = readRunContextId(detail);
++    if (succeeded && runContextId === sourceAssetId) {
++      const freshness = await readJsonPath("/control/source-freshness", cookieHeader);
++      freshnessRows = Array.isArray(freshness?.datasets) ? freshness.datasets : null;
++    }
++  }
++  return classifyUpload({ httpStatus, payload, sourceAssetId, runContextId, freshnessRows });
++}
+diff --git a/apps/web/frontend/lib/source-row-upload.js b/apps/web/frontend/lib/source-row-upload.js
+new file mode 100644
+index 0000000..17f2a63
+--- /dev/null
++++ b/apps/web/frontend/lib/source-row-upload.js
+@@ -0,0 +1,271 @@
++// Pinned-target upload contract for one /sources row.
++//
++// The path id is the only identity: multipart binding fields are dropped, the
++// dry-run target is advisory, and nothing upstream says is echoed unless it
++// fits a fixed template or a format-validated field.
++
++export const SOURCE_ROW_UPLOAD_PATH = "/upload/configured-csv";
++export const IDENTITY_MISMATCH_MESSAGE = "Run recorded; source identity differs.";
++export const IDENTITY_UNCONFIRMED_MESSAGE = "Run recorded; source identity could not be confirmed.";
++export const OUTCOME_UNKNOWN_MESSAGE = "Upload outcome could not be confirmed.";
++export const SUPERSEDED_MESSAGE = "Run landed. The observed latest run differs.";
++export const MISSING_ROW_MESSAGE = "Run landed. The source freshness row was not returned.";
++
++const LANDED_MESSAGE = "Upload landed.";
++const UNKNOWN_ISSUE = { code: "unknown", message: "Validation issue." };
++const COLUMN_PATTERN = /^[A-Za-z0-9][A-Za-z0-9 ._-]{0,127}$/;
++const ISSUE_TEMPLATES = {
++  duplicate_file: "File already exists.", empty_file: "File is empty.",
++  duplicate_column: "Duplicate column.", missing_required_column: "Required column is missing.",
++  unexpected_column: "Unexpected column.", invalid_integer: "Invalid integer.",
++  column_count_mismatch: "Column count does not match the header.",
++  invalid_decimal: "Invalid decimal.", invalid_date: "Invalid date.",
++  invalid_datetime: "Invalid datetime.", invalid_boolean: "Invalid boolean."
++};
++const FRESHNESS_LABELS = {
++  current: "current", due_soon: "due soon", overdue: "overdue (stale)",
++  missing_period: "missing period", parse_failed: "failed to parse",
++  unconfigured: "not configured", unavailable: "unavailable"
++};
++
++const isObject = (value) => Boolean(value) && typeof value === "object" && !Array.isArray(value);
++const isString = (value) => typeof value === "string";
++const boundedString = (value, max) =>
++  typeof value === "string" && value.length > 0 && value.length <= max ? value : null;
++const boundedInt = (value, min) =>
++  Number.isInteger(value) && value >= min && value <= 1_000_000_000 ? value : null;
++const withBase = (status, fields, rest) => ({ status, body: { ...fields, ...rest } });
++const ownLookup = (table, key) =>
++  typeof key === "string" && Object.hasOwn(table, key) ? table[key] : null;
++
++// Decode the percent-encoded path segment exactly once: an id with a slash, a
++// percent or non-ascii text is never trimmed and never decoded twice.
++export function decodeSourceAssetId(value) {
++  if (typeof value !== "string" || value === "") return "";
++  try {
++    return decodeURIComponent(value);
++  } catch {
++    return value;
++  }
++}
++
++export function sourceAssetIdFromRequest(request, params) {
++  const pathname = request?.url ? new URL(request.url).pathname : "";
++  const segments = pathname.split("/");
++  const raw =
++    segments[1] === "sources" && segments.length >= 4 ? segments[2] : params?.sourceAssetId;
++  return decodeSourceAssetId(raw ?? "");
++}
++
++export function sanitizeIssues(issues) {
++  if (!Array.isArray(issues)) return [];
++  return issues.map((issue) => {
++    if (!isObject(issue)) return null;
++    const rowNumber = boundedInt(issue.row_number, 1);
++    if (issue.code === "missing_required_value") {
++      const column =
++        typeof issue.column === "string" && COLUMN_PATTERN.test(issue.column) ? issue.column : null;
++      if (!column) return UNKNOWN_ISSUE;
++      const missing = {
++        code: "missing_required_value",
++        message: `Required value missing for column '${column}'.`,
++        column
++      };
++      return rowNumber === null ? missing : { ...missing, row_number: rowNumber };
++    }
++    const known = ownLookup(ISSUE_TEMPLATES, issue.code);
++    return known ? { code: issue.code, message: known } : UNKNOWN_ISSUE;
++  }).filter(Boolean).slice(0, 20);
++}
++
++export function sanitizePromotion(promotion) {
++  if (!isObject(promotion)) return null;
++  const result = {};
++  if (Number.isInteger(promotion.facts_loaded) && promotion.facts_loaded >= 0) {
++    result.facts_loaded = promotion.facts_loaded;
++  }
++  for (const key of ["marts_refreshed", "publication_keys"]) {
++    if (Array.isArray(promotion[key])) result[key] = promotion[key].filter(isString);
++  }
++  if (typeof promotion.skipped === "boolean") result.skipped = promotion.skipped;
++  return result;
++}
++
++// Detection is advisory: the id is pinned and fields are re-typed, not spread.
++export function sanitizePreview(preview, sourceAssetId) {
++  const target = isObject(preview?.target) ? preview.target : {};
++  const detection = isObject(preview?.detection) ? preview.detection : {};
++  const strings = (record, key) => (typeof record[key] === "string" ? record[key] : "");
++  return {
++    ready: preview?.ready === true,
++    target: {
++      source_asset_id: sourceAssetId,
++      upload_path: strings(target, "upload_path"),
++      confidence_label: strings(target, "confidence_label")
++    },
++    row_count: boundedInt(preview?.row_count, 0) ?? 0,
++    issues: sanitizeIssues(preview?.issues),
++    detection: { format: strings(detection, "format") }
++  };
++}
++
++export function previewMatchesTarget(payload, sourceAssetId) {
++  return Boolean(
++    isObject(payload?.target) &&
++      payload.target.source_asset_id === sourceAssetId &&
++      payload.target.upload_path === SOURCE_ROW_UPLOAD_PATH
++  );
++}
++
++export function readReceipt(payload) {
++  const run = isObject(payload) ? payload.run : null;
++  const runId = isObject(run) ? boundedString(run.run_id, 256) : null;
++  if (!runId) return null;
++  return {
++    runId,
++    status: boundedString(run.status, 64),
++    rowCount: boundedInt(run.row_count, 0),
++    issues: sanitizeIssues(run.issues),
++    promotion: sanitizePromotion(payload.promotion)
++  };
++}
++
++// Only a context that names a source is usable; otherwise identity is unreadable.
++export function readRunContextId(payload) {
++  return boundedString(payload?.run?.context?.source_asset_id, 512);
++}
++
++// Decide the BFF outcome from the upstream status, its receipt, the actually read
++// run context and an independently read freshness row.
++export function classifyUpload({ httpStatus, payload, sourceAssetId, runContextId, freshnessRows }) {
++  if (httpStatus === 401) {
++    return withBase(401, {}, {
++      outcome: "auth_required",
++      message: "Sign in again to upload to this source."
++    });
++  }
++  if (httpStatus === 403) {
++    return withBase(403, {}, {
++      outcome: "forbidden",
++      message: "You do not have permission to upload to this source."
++    });
++  }
++  const unknown = (status) =>
++    withBase(status, {}, { outcome: "outcome_unknown", message: OUTCOME_UNKNOWN_MESSAGE });
++  const receipt = readReceipt(payload);
++  if (!receipt) return unknown([400, 404, 422].includes(httpStatus) ? httpStatus : 502);
++
++  const fields = {
++    run_id: receipt.runId,
++    status: receipt.status,
++    row_count: receipt.rowCount,
++    issues: receipt.issues
++  };
++  const matches = typeof runContextId === "string" && runContextId === sourceAssetId;
++  if (httpStatus === 400 || httpStatus === 409) {
++    if (!runContextId || !matches) {
++      const outcome = runContextId ? "identity_mismatch" : "identity_unconfirmed";
++      const message = runContextId ? IDENTITY_MISMATCH_MESSAGE : IDENTITY_UNCONFIRMED_MESSAGE;
++      return withBase(httpStatus, fields, { outcome, message });
++    }
++    return httpStatus === 409
++      ? withBase(httpStatus, fields, {
++          outcome: "duplicate",
++          message: "Duplicate file: this payload was already ingested. Inspect the recorded run."
++        })
++      : withBase(httpStatus, fields, {
++          outcome: "rejected",
++          message: "Upload rejected: the file did not pass validation."
++        });
++  }
++  if (httpStatus < 200 || httpStatus >= 300) return unknown(502);
++  if (!runContextId) {
++    return withBase(httpStatus, fields, {
++      outcome: "landed_unconfirmed",
++      message: "Upload landed, but the run could not be confirmed from the API."
++    });
++  }
++  if (!matches) {
++    return withBase(httpStatus, fields, {
++      outcome: "identity_mismatch",
++      message: IDENTITY_MISMATCH_MESSAGE
++    });
++  }
++
++  const landed = { ...fields, outcome: "landed", promotion: receipt.promotion };
++  if (!Array.isArray(freshnessRows)) {
++    return withBase(httpStatus, landed, { message: LANDED_MESSAGE });
++  }
++  const row = freshnessRows.find(
++    (candidate) => isObject(candidate) && candidate.source_asset_id === sourceAssetId
++  );
++  const freshnessState = typeof row?.freshness_state === "string" ? row.freshness_state : null;
++  if (!row) {
++    return withBase(httpStatus, landed, {
++      observation: "missing",
++      observed_latest_run_id: null,
++      freshness_state: null,
++      message: MISSING_ROW_MESSAGE
++    });
++  }
++  if (row.latest_run_id === receipt.runId) {
++    return withBase(httpStatus, landed, { freshness_state: freshnessState, message: LANDED_MESSAGE });
++  }
++  return withBase(httpStatus, landed, {
++    observation: "superseded",
++    observed_latest_run_id: typeof row.latest_run_id === "string" ? row.latest_run_id : null,
++    freshness_state: freshnessState,
++    message: SUPERSEDED_MESSAGE
++  });
++}
++
++export function freshnessLabel(state) {
++  return ownLookup(FRESHNESS_LABELS, state) || "";
++}
++
++// Whether one freshness row may upload from /sources. A free-form asset type or
++// transport never becomes a restriction; an empty id is never uploadable.
++export function resolveSourceUpload(row, catalog = {}) {
++  const denied = (note) => ({ available: false, note });
++  const sourceAssetId = typeof row?.source_asset_id === "string" ? row.source_asset_id : "";
++  if (!sourceAssetId) return denied("Source identifier unavailable for this row.");
++  if (!Array.isArray(catalog.assets)) return denied("Source catalog unavailable.");
++  const asset = catalog.assets.find((item) => item?.source_asset_id === sourceAssetId);
++  if (!asset) return denied("Source asset not found in the catalog.");
++  if (asset.enabled === false || asset.archived === true) return denied("Source asset disabled.");
++  const system = Array.isArray(catalog.systems)
++    ? catalog.systems.find((item) => item?.source_system_id === asset.source_system_id)
++    : null;
++  if (system && system.enabled === false) return denied("Source system disabled.");
++  const known = (list, key, id) =>
++    !Array.isArray(list) || !id || list.some((item) => item?.[key] === id);
++  if (!known(catalog.mappings, "column_mapping_id", asset.column_mapping_id)) {
++    return denied("Column mapping unavailable for this source.");
++  }
++  if (!known(catalog.contracts, "dataset_contract_id", asset.dataset_contract_id)) {
++    return denied("Dataset contract unavailable for this source.");
++  }
++  return { available: true, note: "" };
++}
++
++const OUTCOME_TEXT = {
++  landed: LANDED_MESSAGE,
++  landed_unconfirmed: "Upload landed, but the run could not be confirmed. Check the run history.",
++  identity_mismatch: IDENTITY_MISMATCH_MESSAGE,
++  identity_unconfirmed: IDENTITY_UNCONFIRMED_MESSAGE,
++  duplicate: "Duplicate file: this payload was already ingested. Inspect the recorded run.",
++  rejected: "Upload rejected: the file did not pass validation.",
++  auth_required: "Sign in again to upload to this source.",
++  forbidden: "You do not have permission to upload to this source."
++};
++
++export function describeOutcome(payload) {
++  const observed = freshnessLabel(payload?.freshness_state);
++  const text = OUTCOME_TEXT[payload?.outcome];
++  if (!text) {
++    return "Upload outcome could not be confirmed. It was not retried; check the run history.";
++  }
++  return payload?.outcome === "landed" && observed
++    ? `${text} Observed freshness: ${observed}.`
++    : text;
++}
+diff --git a/tests/test_source_row_upload.py b/tests/test_source_row_upload.py
+new file mode 100644
+index 0000000..007e306
+--- /dev/null
++++ b/tests/test_source_row_upload.py
+@@ -0,0 +1,54 @@
++"""Contract tests for the /sources pinned-target upload wiring."""
++
++from pathlib import Path
++
++FRONTEND = Path(__file__).resolve().parents[1] / "apps/web/frontend"
++
++
++def _read(path: str) -> str:
++    return (FRONTEND / path).read_text()
++
++
++def test_routes_and_handlers_keep_the_path_identity() -> None:
++    for route, handler in (
++        ("app/sources/[sourceAssetId]/dry-run/route.js", "dryRunSourceRow"),
++        ("app/sources/[sourceAssetId]/upload/route.js", "uploadSourceRow"),
++    ):
++        source = _read(route)
++        assert "sourceAssetIdFromRequest(request, params)" in source
++        assert handler in source
++    server = _read("lib/source-row-upload-route.js")
++    # Each handler builds its own multipart body: only the pinned id and the
++    # bound upload path or trimmed source name are forwarded.
++    assert 'body.set("file", upload)' in server
++    assert 'body.set("source_asset_id", sourceAssetId)' in server
++    assert 'body.set("upload_path", SOURCE_ROW_UPLOAD_PATH)' in server
++    assert 'body.set("source_name"' in server
++    assert 'backendRequest("/ingest/configured-csv"' in server
++
++
++def test_path_identity_is_decoded_exactly_once() -> None:
++    library = _read("lib/source-row-upload.js")
++    assert library.count("decodeURIComponent") == 1
++    # The raw path segment wins over a framework-decoded param.
++    assert "segments[2] : params?.sourceAssetId" in library
++
++
++def test_sanitizers_are_allowlists_and_never_echo_diagnostics() -> None:
++    library = _read("lib/source-row-upload.js")
++    assert 'missing_required_column: "Required column is missing."' in library
++    assert "Required value missing for column '${column}'." in library
++    assert 'UNKNOWN_ISSUE = { code: "unknown", message: "Validation issue." }' in library
++    assert "skip_reason" not in library
++    assert "manifest_path" not in library and "raw_path" not in library
++
++
++def test_row_control_cannot_mutate_without_the_preflight_gate() -> None:
++    component = _read("components/source-row-upload.js")
++    assert component.startswith('"use client"')
++    assert 'aria-live="polite"' in component
++    assert 'type="button"' in component
++    assert "<form" not in component
++    page = _read("app/sources/page.js")
++    assert "<SourceRowUpload" in page
++    assert "resolveSourceUpload(ds, catalog)" in page

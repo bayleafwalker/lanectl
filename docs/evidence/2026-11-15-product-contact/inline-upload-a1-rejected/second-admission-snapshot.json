@@ -1,0 +1,19 @@
+{
+  "measured_at": "2026-11-15T12:26:38.405777+00:00",
+  "item": "hla-source-row-upload",
+  "phase": "native-second-attempt",
+  "actual_prior_claims": 1,
+  "total_outcome_cap": 2,
+  "release_revision": 1,
+  "attempt_id": "hla-source-row-upload-a2",
+  "model": "opencode-go/deepseek-v4-pro",
+  "actual_claims": 2,
+  "feedback": [
+    {
+      "attempt_id": "hla-source-row-upload-a1",
+      "model": "opencode-go/deepseek-v4.1-flash",
+      "reason": "Immutable a3e4709,685 lines: frozen gates pass but timeout124 is real failure. Model-error findings: only local link changes; server freshness/date/status/recovery cells stay old. Network rejection keeps ready preview, enabling immediate resubmit; file is not reset and input is not disabled while pending. sanitizePreview overwrites wrong upstream source ID with pinned ID while keeping ready. Null system/mapping/contract reads fail open. UI drops superseded/missing observations, turning another latest row freshness into an unqualified landed/current message. Any receipt, including mismatched/unconfirmed identity, replaces selected row Last ingested link. Keep receipts inspectable separately from confirmed latest-source state. Added tests search source strings rather than exercise helper semantics. Satisfy the full original outcome within the normal remaining retry; no acceptance, budget, policy or permission changes."
+    }
+  ],
+  "candidate": "UNOBSERVED"
+}

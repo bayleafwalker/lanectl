@@ -1,0 +1,9 @@
+{
+  "base_only_fetched": "b2d0fe393ac0971e906cce275e91f45e94422593",
+  "head_restored": "a3e4709e9882315c69c107bdf5bc698268f1c16a",
+  "seed_present": "8bf6645cf0fda379ff564549fbbc704b7df660c5",
+  "no_alternates": true,
+  "fsck_strict_exit": 0,
+  "frozen_acceptance_sha256": "38354937708ffe7f9699c836e41e65abca603b7f354c92cba5f0a482263162d3",
+  "source_adopted": false
+}

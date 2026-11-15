@@ -1,0 +1,8 @@
+{
+  "probe_nonce": "local-route-815f921af7c0",
+  "trusted_proposal_bytes": 119745,
+  "max_trusted_proposal_bytes": 262144,
+  "max_model_response_bytes": 65536,
+  "max_intent_bytes": 16384,
+  "rule": "Compare trusted input only with max_trusted_proposal_bytes. Keep the independent output/intent bounds unchanged."
+}
