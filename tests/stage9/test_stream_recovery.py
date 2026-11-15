@@ -1100,3 +1100,29 @@ def test_private_wal_preparation_cannot_rewrite_consistent_principals(
     with pytest.raises(recovery.RecoveryError):
         recovery.restore(artifact, destination)
     assert not destination.exists() and artifact.read_bytes() == original
+
+
+def test_closed_candidate_must_still_be_wal_before_publication(
+    owner, tmp_path, monkeypatch
+):
+    source, store = owner
+    store.append("ws", "repo", "control", "p", "batch-0001", 0, [event()])
+    artifact, destination = tmp_path / "snapshot.lane", tmp_path / "restored.sqlite"
+    recovery.backup(source, artifact)
+    original_artifact, original_source = artifact.read_bytes(), rows(source)
+    prepare = recovery._prepare_wal
+    measured_headers = []
+
+    def rewrite_mode(path):
+        prepare(path)
+        with closing(sqlite3.connect(path)) as db:
+            assert db.execute("PRAGMA journal_mode=DELETE").fetchone() == ("delete",)
+        measured_headers.append(path.read_bytes()[:20])
+
+    monkeypatch.setattr(recovery, "_prepare_wal", rewrite_mode)
+    with pytest.raises(recovery.RecoveryError, match="closed-candidate-not-wal"):
+        recovery.restore(artifact, destination)
+    assert measured_headers[0][:16] == b"SQLite format 3\x00"
+    assert measured_headers[0][18:20] == b"\x01\x01"
+    assert not destination.exists() and artifact.read_bytes() == original_artifact
+    assert rows(source) == original_source

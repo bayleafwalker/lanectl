@@ -472,6 +472,15 @@ def _prepare_wal(path):
             raise RecoveryError("private-candidate-wal-preparation-refused")
 
 
+def _closed_wal(path):
+    # Inspect the closed main file without opening SQLite or creating companions.
+    # Both header versions must record WAL after private candidate preparation.
+    with path.open("rb") as stream:
+        header = stream.read(20)
+    if header[:16] != b"SQLite format 3\x00" or header[18:20] != b"\x02\x02":
+        raise RecoveryError("closed-candidate-not-wal")
+
+
 def _no_candidate_sidecars(path):
     for suffix in ("-wal", "-shm", "-journal"):
         try:
@@ -758,6 +767,7 @@ def restore(artifact, destination):
                 _no_candidate_sidecars(candidate)
                 if _logical_rows_digest(candidate) != verified_rows_digest:
                     raise RecoveryError("private-candidate-wal-content-changed")
+                _closed_wal(candidate)
                 restored_hash = _hash(candidate)
                 _sync_file(candidate)
                 _same_input(artifact, source_fd)
