@@ -1,0 +1,221 @@
+diff --git a/src/lanectl/specification.py b/src/lanectl/specification.py
+index 4340de6..b2574e7 100644
+--- a/src/lanectl/specification.py
++++ b/src/lanectl/specification.py
+@@ -3,7 +3,8 @@
+ Model output is data: only a bounded outcome and new acceptance files cross
+ from disposable clones into the backlog. Models cannot publish or set commands,
+ base commits, routing, scope, grants or policy. Review evidence binds the exact
+-release and acceptance bytes and is invalidated by an edit or rebase.
++release and acceptance bytes and is invalidated by an edit or rebase. Reviewer
++proposal input is read-only at the byte level, including JSON formatting.
+ """
+ from __future__ import annotations
+ 
+@@ -11,6 +12,7 @@ import hashlib
+ import json
+ import os
+ import shlex
++import stat
+ import subprocess
+ import tempfile
+ import tomllib
+@@ -29,6 +31,7 @@ from .sandbox import from_lane
+ 
+ SCHEMA = 'lanectl-specification/v1'
+ MAX_RESPONSE_BYTES = 65536
++MAX_PROPOSAL_BYTES = 256 * 1024
+ MAX_INTENT_BYTES = 16384
+ MAX_FILES = 8
+ EVIDENCE_FILE = 'specification.json'
+@@ -66,7 +69,31 @@ def _models(author, reviewer, lane, repo, data_class):
+         raise ValueError('spec author must differ from eligible implementers')
+ 
+ 
++def _check_proposal(path, expected):
++    # Open without following a substituted symlink or blocking on a FIFO.
++    try:
++        fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
++        try:
++            if not stat.S_ISREG(os.fstat(fd).st_mode):
++                raise ValueError('adversarial reviewer modified the proposal')
++            actual = bytearray()
++            while len(actual) <= len(expected):
++                chunk = os.read(fd, len(expected) + 1 - len(actual))
++                if not chunk:
++                    break
++                actual.extend(chunk)
++        finally:
++            os.close(fd)
++    except OSError:
++        raise ValueError('adversarial reviewer modified the proposal') from None
++    if actual != expected:
++        raise ValueError('adversarial reviewer modified the proposal')
++
++
+ def _invoke(repo, lane, base_sha, model, prompt, *, adapter_fn=None, proposal=None, timeout_s=600):
++    proposal_bytes = None if proposal is None else json.dumps(proposal).encode('utf-8')
++    if proposal_bytes is not None and len(proposal_bytes) > MAX_PROPOSAL_BYTES:
++        raise ValueError('proposal exceeds byte bound')
+     with tempfile.TemporaryDirectory(prefix='lanectl-spec-') as temp:
+         root = Path(temp)
+         wt = root / 'checkout'
+@@ -77,8 +104,8 @@ def _invoke(repo, lane, base_sha, model, prompt, *, adapter_fn=None, proposal=No
+         if seed.exists():
+             raise ValueError('reserved .lanectl-spec path already exists on base')
+         seed.mkdir()
+-        if proposal is not None:
+-            (seed / 'proposal.json').write_text(json.dumps(proposal))
++        if proposal_bytes is not None:
++            (seed / 'proposal.json').write_bytes(proposal_bytes)
+         before = _git(wt, 'rev-parse', 'HEAD')
+         sb = from_lane(lane.sandbox, (str(wt), str(root / 'runtime')), timeout_s + 30,
+                        attempt_id='spec-' + root.name)
+@@ -107,8 +134,8 @@ def _invoke(repo, lane, base_sha, model, prompt, *, adapter_fn=None, proposal=No
+             raise ValueError('spec model wrote outside its response directory')
+         if seed.is_symlink() or not seed.resolve().is_relative_to(wt.resolve()):
+             raise ValueError('model replaced the response directory')
+-        if proposal is not None and _read_json(seed / 'proposal.json') != proposal:
+-            raise ValueError('adversarial reviewer modified the proposal')
++        if proposal_bytes is not None:
++            _check_proposal(seed / 'proposal.json', proposal_bytes)
+         return _read_json(seed / 'response.json'), result.usage
+ 
+ 
+diff --git a/tests/stage8/test_specification.py b/tests/stage8/test_specification.py
+index ccc99d1..dbe983b 100644
+--- a/tests/stage8/test_specification.py
++++ b/tests/stage8/test_specification.py
+@@ -1,6 +1,8 @@
+ """Intent drafts stay isolated, independently reviewed and unpublished."""
+ import json
+ import os
++import subprocess
++import sys
+ from pathlib import Path
+ 
+ import pytest
+@@ -242,3 +244,123 @@ def test_protection():
+     assert not (repo/'leaked').exists()
+     assert cli.main(['backlog','publish','spec-sub'])==0
+     assert not (repo/'leaked').exists()
++
++
++def test_reviewer_accepts_large_trusted_proposal(estate):
++    repo, _, _ = estate
++    proposal = {'outcome': 'Large acceptance', 'tests': {'tests/test_large.py': '# ' + 'a' * 73712}}
++    def adapter(**kw):
++        (kw['worktree'] / '.lanectl-spec/response.json').write_text('{"verdict":"accept"}')
++        return AdapterResult('done', 0, '', None)
++    result, _ = spec._invoke(spec.load_repos()['target'], spec.load_lane('implement'),
++                             backlog_head(repo), 'scripted/reviewer', 'review',
++                             proposal=proposal, adapter_fn=adapter)
++    assert result == {'verdict': 'accept'}
++
++
++def invoke_review(estate, proposal, adapter):
++    repo, _, _ = estate
++    return spec._invoke(spec.load_repos()['target'], spec.load_lane('implement'),
++                        backlog_head(repo), 'scripted/reviewer', 'review',
++                        proposal=proposal, adapter_fn=adapter)
++
++
++def review_response(**kw):
++    (kw['worktree'] / '.lanectl-spec/response.json').write_text('{"verdict":"accept"}')
++    return AdapterResult('done', 0, '', None)
++
++
++def test_proposal_exact_bound_and_one_byte_over_before_clone(estate, monkeypatch):
++    overhead = len(json.dumps({'data': ''}).encode('utf-8'))
++    exact = {'data': 'a' * (spec.MAX_PROPOSAL_BYTES - overhead)}
++    assert invoke_review(estate, exact, review_response)[0] == {'verdict': 'accept'}
++    def forbidden(*args, **kwargs):
++        pytest.fail('oversized input reached clone or adapter')
++    monkeypatch.setattr(spec, '_git', forbidden)
++    with pytest.raises(ValueError, match='proposal exceeds byte bound'):
++        invoke_review(estate, {'data': exact['data'] + 'a'}, forbidden)
++
++
++def test_proposal_bound_measures_utf8_bytes(estate, monkeypatch):
++    original = json.dumps
++    monkeypatch.setattr(spec.json, 'dumps', lambda obj: original(obj, ensure_ascii=False))
++    proposal = {'data': 'é' * (spec.MAX_PROPOSAL_BYTES // 2)}
++    assert len(original(proposal, ensure_ascii=False)) < spec.MAX_PROPOSAL_BYTES
++    def forbidden(*args, **kwargs):
++        pytest.fail('oversized input reached clone or adapter')
++    monkeypatch.setattr(spec, '_git', forbidden)
++    with pytest.raises(ValueError, match='proposal exceeds byte bound'):
++        invoke_review(estate, proposal, forbidden)
++
++
++@pytest.mark.parametrize('change', ['changed', 'format', 'truncate', 'append', 'missing',
++                                    'symlink', 'directory'])
++def test_reviewer_must_preserve_proposal_bytes_and_regular_file(estate, change):
++    proposal = {'outcome': 'Some outcome', 'tests': {'tests/test_a.py': 'assert False'}}
++    def adapter(**kw):
++        result = review_response(**kw)
++        path = kw['worktree'] / '.lanectl-spec/proposal.json'
++        if change == 'changed':
++            path.write_bytes(b'{}')
++        elif change == 'format':
++            path.write_text(json.dumps(proposal, indent=2))
++        elif change == 'truncate':
++            path.write_bytes(path.read_bytes()[:-1])
++        elif change == 'append':
++            with path.open('ab') as stream:
++                stream.write(b'x' * (spec.MAX_PROPOSAL_BYTES + 1))
++        else:
++            original = path.read_bytes()
++            path.unlink()
++            if change == 'symlink':
++                target = path.parent / 'identical.json'
++                target.write_bytes(original)
++                path.symlink_to(target)
++            elif change == 'directory':
++                path.mkdir()
++        return result
++    with pytest.raises(ValueError, match='modified the proposal'):
++        invoke_review(estate, proposal, adapter)
++
++
++def test_valid_oversized_response_still_rejected(estate):
++    def adapter(**kw):
++        (kw['worktree'] / '.lanectl-spec/response.json').write_text(
++            json.dumps({'reason': 'x' * spec.MAX_RESPONSE_BYTES}))
++        return AdapterResult('done', 0, '', None)
++    with pytest.raises(ValueError, match='model response exceeds byte bound'):
++        invoke_review(estate, {'outcome': 'ok'}, adapter)
++
++
++def test_symlink_guard_detects_missing_nofollow(tmp_path, monkeypatch):
++    target = tmp_path / 'target'
++    target.write_bytes(b'identical')
++    link = tmp_path / 'proposal.json'
++    link.symlink_to(target)
++    with pytest.raises(ValueError, match='modified the proposal'):
++        spec._check_proposal(link, b'identical')
++    # Removing the flag would make this same identical regular target pass.
++    monkeypatch.setattr(spec.os, 'O_NOFOLLOW', 0)
++    spec._check_proposal(link, b'identical')
++
++
++def test_fifo_guard_is_nonblocking_and_detects_missing_flag(tmp_path):
++    fifo = tmp_path / 'proposal.json'
++    os.mkfifo(fifo)
++    probe = """import sys
++from lanectl import specification as spec
++if sys.argv[2] == 'without-nonblock':
++    spec.os.O_NONBLOCK = 0
++try:
++    spec._check_proposal(sys.argv[1], b'proposal')
++except ValueError as exc:
++    assert str(exc) == 'adversarial reviewer modified the proposal'
++else:
++    raise AssertionError('FIFO accepted')
++"""
++    subprocess.run([sys.executable, '-c', probe, str(fifo), 'normal'],
++                   check=True, capture_output=True, text=True, timeout=5)
++    # The child is killed and reaped by subprocess.run if the blocking flag is lost.
++    with pytest.raises(subprocess.TimeoutExpired):
++        subprocess.run([sys.executable, '-c', probe, str(fifo), 'without-nonblock'],
++                       check=True, capture_output=True, text=True, timeout=5)

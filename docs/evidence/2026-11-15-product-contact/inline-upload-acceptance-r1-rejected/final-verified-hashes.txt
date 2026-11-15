@@ -1,0 +1,2 @@
+83a6bf1c26bd5d1014974fe0dcd27d64af8d36e13e1b4cf7fc760e70de7ca7eb  /tmp/hla-inline-upload-acceptance-draft-20261115/tests/test_hla1587_acceptance.py
+a047315ce1d88b5fc907227f060d83b9410304683b71e1c3ebe387c596835c05  /tmp/hla-inline-upload-acceptance-draft-20261115/outcome.md

@@ -1,0 +1,42 @@
+   Building lanectl @ file:///projects/dev/_wt/lanectl-spec-review-input-bound-20261115
+      Built lanectl @ file:///projects/dev/_wt/lanectl-spec-review-input-bound-20261115
+warning: Failed to hardlink files; falling back to full copy. This may lead to degraded performance.
+         If the cache and target directories are on different filesystems, hardlinking may not be supported.
+         If this is intentional, set `export UV_LINK_MODE=copy` or use `--link-mode=copy` to suppress this warning.
+Installed 8 packages in 79ms
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_________________ test_reviewer_accepts_large_trusted_proposal _________________
+
+estate = (PosixPath('/tmp/lanectl-proposal-input-fix-20261115/red-tmp/test_reviewer_accepts_large_tr0/target'), <function estate.<locals>.release at 0x7b91fa901080>, <lanectl.events.EventLog object at 0x7b91fa966e40>)
+
+    def test_reviewer_accepts_large_trusted_proposal(estate):
+        repo, _, _ = estate
+        proposal = {'outcome': 'Large acceptance', 'tests': {'tests/test_large.py': '# ' + 'a' * 73712}}
+        def adapter(**kw):
+            (kw['worktree'] / '.lanectl-spec/response.json').write_text('{"verdict":"accept"}')
+            return AdapterResult('done', 0, '', None)
+>       result, _ = spec._invoke(spec.load_repos()['target'], spec.load_lane('implement'),
+                                 backlog_head(repo), 'scripted/reviewer', 'review',
+                                 proposal=proposal, adapter_fn=adapter)
+
+tests/stage8/test_specification.py:253: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/lanectl/specification.py:110: in _invoke
+    if proposal is not None and _read_json(seed / 'proposal.json') != proposal:
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+path = PosixPath('/tmp/lanectl-spec-pwm766k2/checkout/.lanectl-spec/proposal.json')
+
+    def _read_json(path):
+        if path.is_symlink() or not path.is_file():
+            raise ValueError('model response must be a regular JSON file')
+        if path.stat().st_size > MAX_RESPONSE_BYTES:
+>           raise ValueError('model response exceeds byte bound')
+E           ValueError: model response exceeds byte bound
+
+src/lanectl/specification.py:46: ValueError
+=========================== short test summary info ============================
+FAILED tests/stage8/test_specification.py::test_reviewer_accepts_large_trusted_proposal
+1 failed in 0.38s

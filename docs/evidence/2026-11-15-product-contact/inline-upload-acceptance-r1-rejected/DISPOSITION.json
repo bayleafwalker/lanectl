@@ -1,0 +1,9 @@
+{
+  "status": "rejected draft; do not publish",
+  "implementation_attempts_consumed": 0,
+  "native_adversarial_review": "not run",
+  "reason": "candidate-side impossible duplicate success sequence, incomplete uncertain-effect/response whitelist/UI guards, and orphan cleanup gap",
+  "base_results": "66 cases21pass45absent-featurefail0error/skip; insufficient to validate candidate branches",
+  "author": "first-party Terra",
+  "owner": "root integration owner"
+}
