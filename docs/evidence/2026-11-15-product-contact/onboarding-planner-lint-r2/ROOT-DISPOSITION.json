@@ -1,0 +1,40 @@
+{
+  "measured_at": "2026-11-15T07:46:46.893218+00:00",
+  "state": "parked and exhausted; R2 unpublished",
+  "implementation_attempts_consumed": 2,
+  "further_implementation_attempts_permitted": 0,
+  "canonical_release_unchanged": true,
+  "r2_publication_event_absent": true,
+  "new_native_attempt_launched": false,
+  "preflight_refused_before_timer_or_release_changes": true,
+  "native_review_scope": "Accepted corrected acceptance style/semantics under stale one-attempt-history premise; not publication authority.",
+  "correction": "Root relied on stale handoff count. Timer had admitted a2 on 2026-11-14T21:48:28Z; it timed out2700s and was rejected22:34:16Z. Both are actual non-infra attempts.",
+  "retained_attempts": [
+    {
+      "id": "hla-onboarding-expand-a1",
+      "model": "opencode-go/deepseek-v4-pro",
+      "source": "a5da26bb45c061b5af292d6dfb919867ae40b8f7",
+      "native_outcome": "done",
+      "native_exit": 0
+    },
+    {
+      "id": "hla-onboarding-expand-a2",
+      "model": "opencode-go/deepseek-v4.1-flash",
+      "source": "c6936969f3191f57609839526441cd521539d7c7",
+      "native_outcome": "failed",
+      "native_exit": 124
+    }
+  ],
+  "unsupported_claims": [
+    "one implementation attempt remains",
+    "R2 may be published to obtain another attempt"
+  ],
+  "still_valid_evidence": [
+    "ca894126 corrected acceptance passes Ruff",
+    "normalized imports and all non-import AST equal",
+    "actual ordinary base11PASS5namedExpandFAIL0errors/skips",
+    "diagnostic a1 unit/mutation/wrapper audit"
+  ],
+  "product_adoption": false,
+  "policy_activation": false
+}

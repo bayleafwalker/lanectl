@@ -11,9 +11,9 @@
   "prior_attempt_id": "hla-onboarding-expand-a1",
   "prior_source_sha": "a5da26bb45c061b5af292d6dfb919867ae40b8f7",
   "prior_seed_sha": "02280751dc9954f1cbc4ad5b27d89110993538ad",
-  "implementation_attempts_consumed": 1,
+  "implementation_attempts_consumed": 2,
   "total_outcome_attempt_limit": 2,
-  "further_implementation_attempts_permitted": 1,
+  "further_implementation_attempts_permitted": 0,
   "prior_outcome": "rejected by job:ruff; not adopted",
   "bindings": {
     "test_onboarding_expand_acceptance.py": "ca89412670f6aa71085101f4714013d6a6a34f15328f1f64e4e094af3d27af8a",
@@ -26,5 +26,7 @@
   "ast_negative_controls": {
     "changed_function_body_rejected": true,
     "changed_PAGE_rejected": true
-  }
+  },
+  "history_corrected": true,
+  "prior_one_remaining_claim": "incorrect; see ROOT-DISPOSITION.json"
 }

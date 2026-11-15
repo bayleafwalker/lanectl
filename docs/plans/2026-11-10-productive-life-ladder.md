@@ -297,9 +297,14 @@ normalized import aliases, and reproduces exactly 11 passing base controls and
 five semantic Expand failures with no errors/skips. At 609 added-plus-deleted
 planner lines it exceeds the integrator allowance and requires a genuine R2
 with new byte-bound independent review and guarded publication. Native review
-is running; R2 is not published. R1's actual attempt remains counted: only one
-further implementation attempt is permitted across this outcome, despite the
-runtime's per-revision cap. No attempt promotion or policy activation occurred.
+accepted the corrected bytes, but the live admission preflight refused: the tick
+had already admitted Flash a2 overnight. A2 timed out at2700s and was rejected;
+both total attempts are consumed. Root had relied on the stale handoff's count
+when preparing R2 and has corrected that error in Git and served work state.
+No R2 was published and no new worker launched. Canonical R1 is unchanged and
+parked; the prepared scratch specification is explicitly invalidated. A new
+revision must not be used to obtain a third attempt. No attempt promotion or
+policy activation occurred.
 
 An independent diagnostic audit of preserved a1 passed the seven helper contract
 tests, four helper faults, actual worker wrapper and its four semantic faults

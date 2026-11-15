@@ -1,0 +1,80 @@
+{
+  "item_id": "hla-onboarding-expand",
+  "state": "parked",
+  "release_revision": 1,
+  "attempts": [
+    {
+      "attempt_id": "hla-onboarding-expand-a1",
+      "base_sha": "b2d0fe393ac0971e906cce275e91f45e94422593",
+      "branch": "lane/hla-onboarding-expand-a1",
+      "lane": "implement",
+      "lane_digest": "sha256:7bd3d1f327b84636",
+      "lane_revision": 3,
+      "model": "opencode-go/deepseek-v4-pro",
+      "prompt_feedback_version": 1,
+      "release_revision": 1,
+      "runner_process": {
+        "boot_id": "bd59e4fd-e182-4b3a-aa2e-b78ebef31fa6",
+        "host": "workstation",
+        "machine_id": "e681b85141f226386e176a1de00fcc3ab4546197d3aa937aad606d73ce133a5b",
+        "pid": 2595955,
+        "start_ticks": "5563260"
+      },
+      "worker": "opencode",
+      "worker_unit": "lanectl-attempt-54947aef5f568594b1befa51.service",
+      "ts": "2026-11-14T21:22:22Z",
+      "item_id": "hla-onboarding-expand",
+      "finished": {
+        "attempt_id": "hla-onboarding-expand-a1",
+        "elapsed_s": 890.6,
+        "escalation_reason": null,
+        "exit_code": 0,
+        "final_tail": "zen acceptance** `tests/test_onboarding_expand_acceptance.py` \u2014 **16/16 named cases, no skips**, full JUnit validated.\n- **Frozen wiring probe** `run_wiring_probe.py` \u2014 mutant override wrapper triggers the expected `expand_core` heading failure while all 11 controls stay green; candidate hash/status invariant and owned worktree cleanup verified.\n- **Web compilation** \u2014 `next build` reported `\u2713 Compiled successfully` and `\u2713 Generating static pages (84/84)`. (The standalone output-trace step then errors on `mkdir '/projects/dev/_wt/lanes/homelab-analytics'`, purely an artifact of my symlinked `node_modules` into the canonical checkout at a different path prefix \u2014 not code-related.)\n- **Node checks** \u2014 `typecheck` (tsc), `codegen:check`, `tokens:check`, `contracts:check` all pass.\n- **Python** \u2014 `test_architecture_contract.py` (101) + `test_web_auth.py`/`test_web_app.py`/`test_finance_operator_journey_contract.py` + my wrapper = all pass; `ruff check` clean.\n\nCheckout is clean with a single worktree; the acceptance test was left byte-identical (its hash still matches the frozen `70c99c10\u2026`).\n\nNote: the full `make verify-fast` `web-build`/`web-ui-test` (55 Playwright visual checks) couldn't complete end-to-end here only because the checkout's `node_modules` is a cross-prefix symlink into the canonical repo, which breaks Next's standalone trace step \u2014 the compilation and all 84 pages succeed, and no storyboard story renders `OnboardingChecklist`, so those baselines are unaffected.",
+        "head_sha": "a5da26bb45c061b5af292d6dfb919867ae40b8f7",
+        "isolation_breach": false,
+        "main_changed": false,
+        "outcome": "done",
+        "seed_sha": "02280751dc9954f1cbc4ad5b27d89110993538ad"
+      },
+      "decision": "parked",
+      "infra": false
+    },
+    {
+      "attempt_id": "hla-onboarding-expand-a2",
+      "base_sha": "b2d0fe393ac0971e906cce275e91f45e94422593",
+      "branch": "lane/hla-onboarding-expand-a2",
+      "lane": "implement",
+      "lane_digest": "sha256:7bd3d1f327b84636",
+      "lane_revision": 3,
+      "model": "opencode-go/deepseek-v4.1-flash",
+      "prompt_feedback_version": 1,
+      "release_revision": 1,
+      "runner_process": {
+        "boot_id": "bd59e4fd-e182-4b3a-aa2e-b78ebef31fa6",
+        "host": "workstation",
+        "machine_id": "e681b85141f226386e176a1de00fcc3ab4546197d3aa937aad606d73ce133a5b",
+        "pid": 2653567,
+        "start_ticks": "5719776"
+      },
+      "worker": "opencode",
+      "worker_unit": "lanectl-attempt-d6b93f53908906b8443d7644.service",
+      "ts": "2026-11-14T21:48:28Z",
+      "item_id": "hla-onboarding-expand",
+      "finished": {
+        "attempt_id": "hla-onboarding-expand-a2",
+        "elapsed_s": 2700.1,
+        "escalation_reason": null,
+        "exit_code": 124,
+        "final_tail": "Implementation and all binding candidate gates are complete; I'm waiting on the final aggregate `make -k verify-fast` run to finish before summarizing.",
+        "head_sha": "c6936969f3191f57609839526441cd521539d7c7",
+        "isolation_breach": false,
+        "main_changed": false,
+        "outcome": "failed",
+        "seed_sha": "6c05ce1bb17afdf6e931a026b2acdb9d8d3e33ec"
+      },
+      "decision": "parked",
+      "infra": false
+    }
+  ],
+  "last_reason": "Corrected live-ledger audit: both total implementation attempts were consumed in R1. a2 Flash timed out at 2700s and was rejected. R2 preparation assumed stale one-attempt history and is invalid for publication; no further retry or source adoption."
+}
