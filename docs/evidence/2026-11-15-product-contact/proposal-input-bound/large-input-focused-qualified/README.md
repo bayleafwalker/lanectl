@@ -1,0 +1,9 @@
+# Successful official large-input integration
+
+The unchanged installed0.2.14 specification._invoke actually returned after a native OpenCode Go DeepSeek V4 Pro focused adversarial review of the genuine114,114-byte rejected R3 HLA acceptance. Native outcome done, process exit0, no escalation; official call225.845seconds. The supplied proposal is byte-equal to the exact original serialization; the returned response is a bounded regular JSON file with the required four-key shape. Official post-call tracked-source, reserved-directory and exact regular-descriptor proposal checks completed before return. No adapter stub or bypass was used; the retention hook only copied owned runtime/response artifacts before normal temporary cleanup.
+
+The reviewer returned revise on the known external-form association no-JS gap. This qualifies the core input protocol, not HLA acceptance, final adversarial review, publication or candidate behavior. R3 remains rejected; a later complete reviewed proposal and all product delivery gates are required.
+
+Static-review limits: native HTML wording overstates that a form cannot contain a whole table. A form may wrap a table, and row controls may belong to that ancestor or an external form. The valid actionable finding is that nested forms-only traversal misses actual row controls and their owners. Root requires row-scoped owner traversal, not testing every unrelated document form. Native extraction/provider caches outside the checkout were not inventoried; this is no host-wide write/isolation or cache-cleanup claim. The core source proof likewise limits its descriptor/file checks to their actual scope.
+
+The previous permission-denied Sonnet invocation remains failed integration evidence. It was not relabeled successful because this separate call succeeded. No HLA implementation attempt, policy/autonomy change, grant/credential change or hosted deployment occurred.

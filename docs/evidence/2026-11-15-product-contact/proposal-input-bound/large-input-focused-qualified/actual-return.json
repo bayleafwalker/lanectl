@@ -1,0 +1,32 @@
+{
+  "response": {
+    "verdict": "revise",
+    "reason": "The no-JS safety predicate in RP-nojs is structurally blind to the only standards-conformant way to express a row-spanning native submit, so it false-passes. The embedded test scopes its search to page.locator(\"tr\").filter({hasText: aName}).locator(\"form\") \u2014 forms nested inside a <tr>. A <form> cannot legally wrap a <tr> or a whole <table>: the HTML parser foster-parents it out of the table (the 'in table' insertion mode). A row-spanning native submit therefore must be expressed as a <form> placed elsewhere in the document with an in-row <input type=file> and/or <button type=submit> associated via the form=\"<id>\" attribute. In that valid, natural layout rawRows.locator(\"form\") returns zero elements, the fill/click loops run zero times, attempted stays 0, and the sole browser-side assertion assert.deepEqual(posts, []) passes trivially. attempted is recorded in the step log but never asserted, and the Python-side _browser_case adds only assert after == before for RP-nojs, which is also trivially satisfied because the script never submits anything. Confirmed the current /sources page renders a real <table>/<tr> (ResponsiveTable) with only Link anchors and no native <form>, so the property is asserted against a DOM shape the parser itself cannot produce for row-spanning forms. Conclusion: the exact supplied test does NOT reject a real external-associated native submitter; it would pass while a no-JS user could click the in-row control and fire a mutation POST with no preflight. This is a genuine gap independent of the separate R4 repair, and it cannot be closed by requiring attempted > 0, because absence of native mutation controls is explicitly allowed by the outcome ('a safe form or file selector is not itself prohibited').",
+    "trivial_pass": "Candidate renders a per-row native upload control as an external form plus form= association (valid HTML; the row stays a real <tr> so rawCount still equals 1): <form id=\"up-a\" action=\"/upload/configured-csv\" method=\"POST\" enctype=\"multipart/form-data\"><input type=\"hidden\" name=\"source_asset_id\" value=\"bank_partner_transactions\"><input type=\"file\" name=\"file\"></form> placed as a sibling before the <table>, and inside the Bank Partner Transactions row <td>: <input type=\"file\" form=\"up-a\"> and <button type=\"submit\" form=\"up-a\">Upload to Bank Partner Transactions</button>. The RP-nojs script does: rawRows = page.locator(\"tr\").filter({hasText:\"Bank Partner Transactions\"}) -> count 1 (passes rawCount==1); rawRows.locator(\"form\") -> [] because no <form> is nested inside the <tr>; so the form/file/field/submit loops never execute, attempted stays 0, no POST is ever issued, posts stays [], and assert.deepEqual(posts,[]) passes, while the Python-side assert after==before also passes. A real no-JS user clicking the in-row button natively submits the external form to /upload/configured-csv (a mutation POST matching the /^\\/upload\\// && !/dry-run$/ changes filter) with no preflight dry-run gate. The same bypass works if the author wraps the whole <table> in a <form> \u2014 the parser foster-parents the form out, the row still matches, and rawRows.locator(\"form\") is again empty.",
+    "checks": [
+      "Decoded .lanectl-spec/proposal.json (114114 bytes) via json.load and extracted the single test string tests/test_hla1587_acceptance.py (100626 bytes) to /tmp/opencode for grep/read; no Python or browser source was executed.",
+      "Confirmed RP-nojs block (lines ~1017-1049): page.locator(\"tr\").filter({hasText: aName}) then rawRows.locator(\"form\").all(); the only browser-side assertion is assert.deepEqual(posts, [], ...).",
+      "Confirmed attempted is only written into the step() log (step(\"no-js\", {rowVisible, attempted, posts, harmless})) and never asserted anywhere in the file.",
+      "Confirmed _browser_case for RP-nojs adds only assert after == before (line ~1473-1474), which holds trivially when the script issues no submit.",
+      "Confirmed the route filter records any mutation POST (path matching /^(\\/sources\\/|\\/ingest\\/|\\/upload\\/)/ and not ending in /dry-run) into posts, so the predicate is only as strong as the controls it actually clicks.",
+      "Confirmed base /sources renders ResponsiveTable (real <table>/<tr>) with Link anchors and no native <form>, and confirmed the HTML parser foster-parents a <form> out of a table, so a row-spanning native form is impossible nested inside a <tr> \u2014 the search scope the predicate relies on.",
+      "Minimal safe predicate to close it (no attempted>0 requirement): enumerate document-wide page.locator(\"form\") AND form-associated controls that reference a form via the form= attribute (e.g. page.locator('button[type=submit][form], input[type=submit][form], input[type=file][form]')), resolve each control's owner form, fill any file/required fields, click each visible+enabled native submit, and assert no mutation POST fires (posts stays []).",
+      "Static limits honored: read bounded, JSON-decoded chunks and targeted greps only; did not execute acceptance/product/dependency commands, install anything, read credentials or error.log, invoke providers, delegate, edit source, push, deploy, or mutate the tracker; wrote only .lanectl-spec/response.json, leaving proposal.json byte-identical; output kept well under 64 KiB."
+    ]
+  },
+  "usage": {
+    "input_tokens": 52697,
+    "output_tokens": 4542,
+    "reasoning_tokens": 10097,
+    "cache_read_tokens": 606208,
+    "cache_write_tokens": 0,
+    "cost_usd": 0.07710182,
+    "steps": 22
+  },
+  "elapsed_s": 225.845,
+  "installed_version": "0.2.14",
+  "proposal_bytes": 114114,
+  "official_large_input_call_returned": true,
+  "publication": false,
+  "candidate": "UNOBSERVED"
+}
