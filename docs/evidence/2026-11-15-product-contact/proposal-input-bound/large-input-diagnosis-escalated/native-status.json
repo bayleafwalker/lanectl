@@ -1,0 +1,21 @@
+{
+  "schema": "lanectl-claude-adapter/v1",
+  "outcome": "escalated",
+  "exit_code": 0,
+  "worker": "claude",
+  "model": "claude-sonnet-5-5",
+  "external": false,
+  "final_message_tail": "I wrote the review to `.lanectl-spec/response.json` with a verdict of `revise`. It is read-only static analysis; I ran no tests, builds or providers. Browser timing, the Docker image digest and the native and forced-Docker outcomes are unobserved.\n\nI confirmed all four known blockers from the proposal text. I also found nine more material defects:\n\n- **`test_nb7` over-specifies.** It requires `observation: observed` and a freshness state after a receipt-free failure, although the contract only says these \"may\" be returned. This rejects a safer candidate that omits them.\n- **RP5 rejects a valid design.** It requires both preflight requests to finish, so a candidate that aborts the stale request fails.\n- **Test vocabulary is not in the contract.** The tests hard-code outcomes `rejected`, `duplicate`, `auth_required` and `forbidden`, plus a 502 mapping, none of which the proposal's contract enumerates.\n- **`RP-nojs` can pass trivially.** It never asserts that any control was attempted, so a candidate with no no-JS controls passes.\n- **Upload path check is weak.** The inline upload only checks that the request URL ends in `/upload`, not the exact `/sources/<id>/upload` path.\n- **`guard-fault-rewrite` tests the wrong route.** It exercises the legacy `/upload/dry-run` route and response shape, not the inline `/sources/*/dry-run` contract.\n- **Population audit is bypassable.** It only runs through the script's `__main__` entry point, so the documented `pytest tests/...` command skips the missing-case and skip enforcement.\n- **No independent cleanup check.** The failure-finalizer test never confirms the stopped browser process is gone, and a reused PID could raise a spurious infrastructure error.\n- **`wrong_context` asserts too little.** It only checks `identity_mismatch`, not that `run_id`, a freshness state or a \"landed\" message are withheld.\n\nThe response also lists four concrete trivial-pass attacks.",
+  "escalation_reason": "native permission denial prevented autonomous verification",
+  "usage": {
+    "input_tokens": 14,
+    "output_tokens": 12543,
+    "cache_read_tokens": 354969,
+    "cache_write_tokens": 94269,
+    "cost_usd": 0.5380309000000001,
+    "turns": 7
+  },
+  "worktree": "/tmp/lanectl-spec-xetwhqx6/checkout",
+  "started_at": "2026-11-15T10:13:59Z",
+  "ended_at": "2026-11-15T10:15:53Z"
+}

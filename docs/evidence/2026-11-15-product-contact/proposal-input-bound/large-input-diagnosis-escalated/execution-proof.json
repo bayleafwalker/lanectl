@@ -1,0 +1,13 @@
+{
+  "proposal_bytes": 90104,
+  "retained_proposal_matches_exact_serialization": true,
+  "proposal_sha256": "82c3fbc0fdd1ade85b1ffb3894128c1c2edf35c38147cb877535558a7ba81c30",
+  "response_bytes": 8469,
+  "adapter_outcome": "escalated",
+  "native_process_exit": 0,
+  "official_invoke_returned": false,
+  "integration_qualified": false,
+  "binding_or_publication_authority": false,
+  "reason": "native permission denial prevented autonomous verification; raw denial details are not retained by the adapter status",
+  "candidate": "UNOBSERVED"
+}
