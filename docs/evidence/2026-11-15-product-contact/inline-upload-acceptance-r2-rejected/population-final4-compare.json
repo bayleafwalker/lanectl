@@ -1,0 +1,8 @@
+{
+  "same_names_and_statuses": true,
+  "total": 75,
+  "statuses": {
+    "passed": 28,
+    "failed": 47
+  }
+}

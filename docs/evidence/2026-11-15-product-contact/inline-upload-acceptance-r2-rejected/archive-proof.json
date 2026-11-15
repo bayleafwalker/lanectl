@@ -1,0 +1,11 @@
+{
+  "files": 1366,
+  "zip_bytes": 2282688,
+  "zip_sha256": "0b4a00a3995f82243c8b5a989eb69f6e389973443f1a5263d39742e44b54806c",
+  "all_members_read_back_equal": true,
+  "excluded_only": [
+    "__pycache__",
+    ".pytest_cache"
+  ],
+  "publication": false
+}
