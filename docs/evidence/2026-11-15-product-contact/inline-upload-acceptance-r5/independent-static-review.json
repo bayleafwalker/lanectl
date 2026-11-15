@@ -1,0 +1,10 @@
+{
+  "reviewer_task": "/root/onboarding_acceptance_review",
+  "verdict": "clear for official base qualification and full native specification review",
+  "test_sha256": "38354937708ffe7f9699c836e41e65abca603b7f354c92cba5f0a482263162d3",
+  "outcome_sha256": "cd5947226adeec5ff07c36f663cd36846199ed6a46ade835707aa55b3604bd01",
+  "unique_expected_cases": 92,
+  "observed_by_reviewer": "Static source/hash review; no product/dependency/provider commands",
+  "findings": "Earlier defects repaired; final semantic predicates accept alternative count-label order, discriminate current filename/count, reject unrelated warning-token counterexample; identity/stale/cancellation/no-JS/cleanup repairs remain intact.",
+  "limits": "No publication or candidate acceptance inferred; separate actual runtime and native review required and retained in official/."
+}

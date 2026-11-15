@@ -1,0 +1,6 @@
+{
+  "paths_observed_in_raw_log": [
+    "/tmp/pytest-of-bayleaf/pytest-15291"
+  ],
+  "ownership_basis": "Exact emitted first official run log; do not clean any unlisted sibling pytest root."
+}

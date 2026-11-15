@@ -1,0 +1,10 @@
+{
+  "retained_files": 10617,
+  "zip_bytes": 27793926,
+  "zip_sha256": "7a0b5026b0b0a67e9f1e693d2c3cfa48ee2e9a3106804416c312ce783132c3b4",
+  "all_retained_members_readback_equal": true,
+  "source_and_cache_omissions_and_withheld_generated_keys": "RETENTION-INVENTORY.json inside archive",
+  "all_raw_files_claimed": false,
+  "secret_scan_clear_after_withholding_generated_build_secrets": true,
+  "secret_scan_bypassed": false
+}

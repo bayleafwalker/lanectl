@@ -333,3 +333,12 @@ Both attempted served `sprintctl render` commands were refused as operation
 unavailable. No local database fallback was used; served work remains
 authoritative and the measured changes are retained in Git. This is a snapshot
 tooling gap, not product completion or a reason to widen authority.
+
+
+## Progress (2026-11-15)
+
+Installed lanectl0.2.14 closes served2906 with accepted decision485 and reservation506released. Trusted review input has an independent256KiB bound before dispatch, while model output stays64KiB and intent16KiB. Final1140tests and independent native source review passed. Two clean exact-tag offline wheels, all62runtime files, all3public asset readbacks and installed bytes match. An actual official native review of114,114bytes completed with revise for a real acceptance gap; that qualifies input handling, not the feature. [Closeout](../evidence/2026-11-15-product-contact/proposal-input-bound/CLOSEOUT.json).
+
+Original HLA1587 inline stale-row upload is independently prepared on canonical API b2d0fe3. The first-party readable R5specification has92named cases:35base controls pass,57fail for missing inline routes/controls/availability text,0errors/skips in native and genuinely native-unavailable Docker modes. Official base qualification matches those exact results; independent static and full native GoPro specification review accepted the frozen bytes. [Preparation evidence](../evidence/2026-11-15-product-contact/inline-upload-acceptance-r5/README.md). Publication, implementation, all candidate gates, train/dev/CI/adoption and the full original outcome remain separate. No implementation attempt has yet been consumed by these planner repairs.
+
+Onboarding2904 R1 exhausted both Pro and Flash attempts; its corrected planning did not authorize another publication or attempt. Attention-boundary R2 remains exhausted. Model-error repair permission is only [draft PR7](https://github.com/bayleafwalker/lanectl/pull/7), with canonical authority still revision1/spec-gap and gate-gap, cumulative30and no autonomous classes. No source or preparation establishes an autonomous-week, hosted claim-to-outcome, restricted local-pool or self-filed-unchanged-release exit.

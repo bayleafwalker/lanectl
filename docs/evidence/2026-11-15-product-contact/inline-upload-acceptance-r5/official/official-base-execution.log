@@ -1,0 +1,13 @@
+[0mdirenv: loading /projects/dev/lanectl/.envrc
+Traceback (most recent call last):
+  File "/tmp/hla-inline-upload-official-r5-20261115/qualify-base.py", line 61, in <module>
+    actual = population(junit)
+  File "/tmp/hla-inline-upload-official-r5-20261115/qualify-base.py", line 29, in population
+    cases = list(ET.parse(path).getroot().iter('testcase'))
+                 ~~~~~~~~^^^^^^
+  File "/home/bayleaf/.local/share/uv/python/cpython-3.13.16-linux-x86_64-gnu/lib/python3.13/xml/etree/ElementTree.py", line 1219, in parse
+    tree.parse(source, parser)
+    ~~~~~~~~~~^^^^^^^^^^^^^^^^
+  File "/home/bayleaf/.local/share/uv/python/cpython-3.13.16-linux-x86_64-gnu/lib/python3.13/xml/etree/ElementTree.py", line 562, in parse
+    source = open(source, "rb")
+FileNotFoundError: [Errno 2] No such file or directory: '/tmp/hla-inline-upload-official-r5-20261115/official-base-junit.xml'

@@ -1,0 +1,12 @@
+{
+  "test": {
+    "exit": 1,
+    "rejected_expected_hash_guard": true,
+    "draft_unchanged": true
+  },
+  "outcome": {
+    "exit": 1,
+    "rejected_expected_hash_guard": true,
+    "draft_unchanged": true
+  }
+}

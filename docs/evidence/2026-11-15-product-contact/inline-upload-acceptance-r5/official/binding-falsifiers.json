@@ -1,0 +1,24 @@
+{
+  "positive_publish_validation": [],
+  "negative_controls": {
+    "acceptance": [
+      "specification: release or acceptance changed; regenerate/re-review specification"
+    ],
+    "outcome": [
+      "specification: release or acceptance changed; regenerate/re-review specification"
+    ],
+    "base": [
+      "specification: release or acceptance changed; regenerate/re-review specification"
+    ],
+    "review-verdict": [
+      "specification: adversarial review requests revision"
+    ],
+    "base-failure": [
+      "specification: expected base failure unverified: ['injected setup failure']"
+    ]
+  },
+  "original_unchanged": true,
+  "release_digest": "22bbdfd2cf561c877a8aab944eeafa8714a685ca5da3f49d38d92b9ab041782a",
+  "publication": false,
+  "candidate": "UNOBSERVED"
+}
