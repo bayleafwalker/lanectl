@@ -1,0 +1,117 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@11f9893b081a58869d3b5fccaea48c9e9e46f990 # v8.3.2
+        with:
+          version: "0.13.0"
+          python-version: "3.13.16"
+          enable-cache: true
+      - name: Install locked development dependencies
+        run: uv sync --frozen --python 3.13.16
+      - name: Prepare the actual user systemd manager and namespace prerequisites
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(cat /proc/1/comm)" = systemd
+          command -v systemd-run
+          sudo mkdir -p /projects
+          ci_uid="$(id -u)"
+          sudo loginctl enable-linger "$(id -un)"
+          sudo systemctl start "user@${ci_uid}.service"
+          export XDG_RUNTIME_DIR="/run/user/${ci_uid}"
+          export DBUS_SESSION_BUS_ADDRESS="unix:path=${XDG_RUNTIME_DIR}/bus"
+          printf 'XDG_RUNTIME_DIR=%s\nDBUS_SESSION_BUS_ADDRESS=%s\n' \
+            "$XDG_RUNTIME_DIR" "$DBUS_SESSION_BUS_ADDRESS" >> "$GITHUB_ENV"
+          systemd-run --user --wait --pipe --collect /bin/true
+          # Ubuntu restricts unprivileged namespaces on some disposable images.
+          # Change only this runner VM, only after the actual namespace probe fails.
+          if ! unshare --user --map-root-user true; then
+            test -e /proc/sys/kernel/apparmor_restrict_unprivileged_userns
+            sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+            unshare --user --map-root-user true
+          fi
+      - name: Prove real filesystem isolation and nonpassing timeout/stop outcomes
+        shell: bash
+        run: |
+          uv run --frozen --no-sync python - <<'PY'
+          from dataclasses import replace
+          from pathlib import Path
+          import shlex
+          import subprocess
+          import tempfile
+          import time
+          import uuid
+          from lanectl.sandbox import Sandbox
+
+          with tempfile.TemporaryDirectory(prefix="lanectl-ci-") as temporary:
+              root = Path(temporary)
+              ro, rw, hidden = (root / name for name in ("readonly", "writable", "hidden"))
+              for path in (ro, rw, hidden):
+                  path.mkdir()
+              (ro / "input").write_text("readable")
+              (hidden / "input").write_text("private-canary")
+              sandbox = Sandbox("systemd-run", ("/projects", str(ro)), (str(rw),), 10,
+                  unit="lanectl-ci-" + uuid.uuid4().hex, inaccessible=(str(hidden),),
+                  guard_completion=True)
+              command = (
+                  "set -e; "
+                  "test \"$(cat " + shlex.quote(str(ro / "input")) + ")\" = readable; "
+                  "if touch " + shlex.quote(str(ro / "forbidden")) + "; then exit 81; fi; "
+                  "if cat " + shlex.quote(str(hidden / "input")) + "; then exit 82; fi; "
+                  "printf writable > " + shlex.quote(str(rw / "allowed")))
+              result = subprocess.run(sandbox.wrap_shell(command, rw), shell=True,
+                  capture_output=True, text=True, timeout=25)
+              assert result.returncode == 0, result
+              assert (rw / "allowed").read_text() == "writable"
+              assert not (ro / "forbidden").exists()
+              deadline = replace(sandbox, unit="lanectl-ci-" + uuid.uuid4().hex, timeout_s=1)
+              result = subprocess.run(deadline.wrap_shell("sleep 20", rw), shell=True,
+                  capture_output=True, text=True, timeout=20)
+              assert result.returncode != 0, "oneshot deadline manufactured success"
+              stopped = replace(sandbox, unit="lanectl-ci-" + uuid.uuid4().hex)
+              ready = rw / "started"
+              command = "touch " + shlex.quote(str(ready)) + "; sleep 30"
+              process = subprocess.Popen(stopped.wrap_shell(command, rw), shell=True,
+                  stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+              try:
+                  until = time.monotonic() + 5
+                  while not ready.exists() and time.monotonic() < until:
+                      time.sleep(.02)
+                  assert ready.exists(), "stop probe did not start"
+                  subprocess.run(["systemctl", "--user", "stop", stopped.unit], check=True, timeout=15)
+                  process.communicate(timeout=20)
+                  assert process.returncode != 0, "stopped oneshot manufactured success"
+              finally:
+                  stopped.cancel()
+                  if process.poll() is None:
+                      process.kill()
+                      process.communicate(timeout=10)
+          PY
+      - name: Run the complete test population
+        run: uv run --frozen --no-sync pytest -q --junitxml=junit.xml
+      - name: Retain test results
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: test-results
+          path: junit.xml
+          if-no-files-found: warn
