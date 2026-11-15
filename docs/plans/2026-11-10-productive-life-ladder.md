@@ -379,3 +379,9 @@ contracts or genuine prerequisites. The native1,450–1,750-line estimate is
 unmeasured and includes no additional homelab contracts; no M700 waiver or
 unsupported-facet substitute was adopted. Active-domain clarification is pending
 with the operator. No release or implementation attempt has started for1590.
+
+The operator resolved active membership on November15: loaded capability packs
+that own sources, currently Finance, Utilities and Homelab. No-data active
+domains remain enumerable. The [recorded decision](../evidence/2026-11-15-product-contact/domain-cards-planning/owner-decision-active-domains.json)
+settles membership; currency-safe reports and populated-homelab trend/attention,
+priority consistency and complete-outcome feasibility remain prerequisites.

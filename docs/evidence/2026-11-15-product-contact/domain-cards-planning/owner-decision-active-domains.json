@@ -1,0 +1,21 @@
+{
+  "schema": "owner-decision/v1",
+  "work": "homelab-analytics#1590",
+  "date": "2026-11-15",
+  "source": "explicit operator answer in active session",
+  "definition": "Loaded capability packs that own non-empty source definitions",
+  "current_domains": [
+    "finance",
+    "utilities",
+    "homelab"
+  ],
+  "overview": "Excluded: composition pack owns no sources",
+  "membership_data_independent": true,
+  "remaining_prerequisites": [
+    "currency-preserving reporting",
+    "real populated-homelab comparable history and domain attention",
+    "consistent source-specific priority",
+    "source-grounded feasibility within existing lane policy"
+  ],
+  "implementation": "UNOBSERVED"
+}

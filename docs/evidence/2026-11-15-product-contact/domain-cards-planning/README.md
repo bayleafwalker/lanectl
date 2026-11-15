@@ -30,3 +30,9 @@ files are cross-host-replicated; served reservation/work state is authoritative.
 The original /tmp copies are host-local. No runtime test or product delivery is
 claimed by this plan. New independent1597 automatic-collapse unit-readiness work
 may proceed without interpreting it as an Expand2904 retry.
+
+Operator decision received2026-11-15: active domains are loaded capability packs
+that own sources, currently Finance, Utilities and Homelab. The explicit decision
+in owner-decision-active-domains.json supersedes the pending membership question
+above and the native plan's unadopted proposal status. Other reporting and budget
+feasibility prerequisites remain open; no implementation has started.
