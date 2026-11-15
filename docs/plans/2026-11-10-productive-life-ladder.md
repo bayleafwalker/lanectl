@@ -370,3 +370,12 @@ semantics; freshness-only cards or global attention do not satisfy the outcome.
 Policy PR7 remains a reviewed preparation-only draft; canonical authority remains
 revision1 with empty autonomous classes. No local restricted/hosted/clock exit
 is established.
+
+Native domain-card planning has now completed with actual Opus5.5 exit0 in
+553.063s. The [planning disposition](../evidence/2026-11-15-product-contact/domain-cards-planning/plan.md)
+keeps the full outcome but is not implementation-ready: active-domain authority,
+currency-safe reporting, populated homelab history/attention and priority require
+contracts or genuine prerequisites. The native1,450–1,750-line estimate is
+unmeasured and includes no additional homelab contracts; no M700 waiver or
+unsupported-facet substitute was adopted. Active-domain clarification is pending
+with the operator. No release or implementation attempt has started for1590.

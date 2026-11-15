@@ -1,0 +1,39 @@
+{
+  "base": "b2d0fe393ac0971e906cce275e91f45e94422593",
+  "unit": "hla-domain-cards-plan-20261115.service",
+  "invocation_id": "327036fbae6240ea916b1b6419f66d42",
+  "native_exit": 0,
+  "native_subtype": "success",
+  "native_is_error": false,
+  "duration_ms": 553063,
+  "model_usage": {
+    "claude-opus-5-5": {
+      "inputTokens": 174,
+      "outputTokens": 40089,
+      "cacheReadInputTokens": 8845619,
+      "cacheCreationInputTokens": 169271,
+      "webSearchRequests": 0,
+      "costUSD": 3.9257678000000023,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 14624,
+      "cacheCreationEphemeral5mInputTokens": 0,
+      "cacheCreationEphemeral1hInputTokens": 169271,
+      "canonicalModel": "claude-opus-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+    }
+  },
+  "artifacts": {
+    "prompt.txt": "745c879d9203835e0eccad6d45760029301a2ef8e2ace60d9a2e5168dd1fe514",
+    "native.json": "452cb0444f098ed1a5ff330c0952180dd1ced781d82e8cbba8ca5aa6a2c89283",
+    "native-plan.md": "7ea594e3042d9c678d9b641ec9d8b55bb2fd4caaa7ffa834cc3cae53104c4f3f",
+    "discovery.md": "f0394f60bab979e583dfbca5fb0aeafcb858ec266b28adabe11160519ce4d24b",
+    "plan.md": "b4301e2b2dac0f8305e73cc4496ceff0683ad37e2cad21bc850c95280a20899b"
+  },
+  "scope": "read-only planning, no acceptance or implementation",
+  "limitations": [
+    "Not runtime-qualified; decision and contract gaps remain.",
+    "Line count and time feasibility are estimates, not measured candidate diff."
+  ]
+}

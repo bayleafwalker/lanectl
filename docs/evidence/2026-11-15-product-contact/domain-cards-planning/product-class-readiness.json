@@ -1,0 +1,48 @@
+{
+  "by_class": {
+    "product-api": {
+      "attempts": 10,
+      "below_bar": false,
+      "fix_classes": {},
+      "gate_accepted": 4,
+      "landed_clean": 3,
+      "mean_elapsed_s": 1162.64,
+      "model_precision": 0.75,
+      "precision": 0.75,
+      "ruled": 4,
+      "usage": {
+        "cache_read_tokens": 64965120,
+        "cache_write_tokens": 0,
+        "cost_usd": 0.5718741899999997,
+        "input_tokens": 1305195,
+        "output_tokens": 120533,
+        "reasoning_tokens": 202433,
+        "steps": 661
+      }
+    },
+    "product-ui": {
+      "attempts": 9,
+      "below_bar": false,
+      "fix_classes": {},
+      "gate_accepted": 2,
+      "landed_clean": 0,
+      "mean_elapsed_s": 1906.222,
+      "model_precision": 0.0,
+      "precision": 0.0,
+      "ruled": 2,
+      "usage": {
+        "cache_read_tokens": 115064064,
+        "cache_write_tokens": 0,
+        "cost_usd": 3.320903579999999,
+        "input_tokens": 2041417,
+        "output_tokens": 229532,
+        "reasoning_tokens": 621827,
+        "steps": 846
+      }
+    }
+  },
+  "min_ruled": 20,
+  "precision_bar": 0.5,
+  "stop_conditions": [],
+  "limitation": "conditional gate-accepted/rule attribution, not overall attempt success or product-class qualification; no policy or routing change"
+}
