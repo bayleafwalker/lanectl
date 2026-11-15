@@ -1,0 +1,14 @@
+{
+  "phase": "terminal",
+  "model": "opencode-go/deepseek-v4-pro",
+  "base_sha": "82dbd9477029d6fda7df67edc617f45a1a4ceb59",
+  "proposal_sha256": "ad2c33ba7a99269826aa90b8e91d98a0ce2164c0b4a9f95fbbcdc0f2ffa0c42d",
+  "proposal_bytes": 95394,
+  "implementation_attempt": false,
+  "unit": "lanectl-attempt-c4c65ea6e600868efe3f9f27.service",
+  "worktree": "/tmp/lanectl-spec-v2b7jygw/checkout",
+  "native_status": "/tmp/lanectl-spec-v2b7jygw/runtime/status.json",
+  "exit": 0,
+  "verdict": "accept",
+  "elapsed_s": 769.036
+}

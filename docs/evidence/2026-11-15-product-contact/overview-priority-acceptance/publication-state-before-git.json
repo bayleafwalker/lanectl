@@ -1,0 +1,11 @@
+{
+  "phase": "published-before-git",
+  "item": "hla-overview-priority",
+  "work": "homelab-analytics#2908",
+  "implementation_attempts": 0,
+  "candidate": "UNOBSERVED",
+  "forced_history_refusals": 3,
+  "timer_initial": "active",
+  "measured_at": "2026-11-15T18:03:09.453260+00:00",
+  "release_digest": "b323606fcf307172a2fdde73b5af58f178390f398bb597df790a33e0a15fa368"
+}

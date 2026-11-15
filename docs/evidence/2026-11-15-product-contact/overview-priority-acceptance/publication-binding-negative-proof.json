@@ -1,0 +1,11 @@
+{
+  "release_digest": "b323606fcf307172a2fdde73b5af58f178390f398bb597df790a33e0a15fa368",
+  "forced_refusals": [
+    "changed-frozen-acceptance-refused",
+    "changed-release-refused",
+    "review-revise-refused"
+  ],
+  "restored_exact_bytes_pass": true,
+  "publication": false,
+  "implementation_attempts": 0
+}

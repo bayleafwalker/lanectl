@@ -1,0 +1,17 @@
+{
+  "code": 1,
+  "classification": "expected",
+  "command_template": "uv run --no-sync python -m pytest -q -p no:cacheprovider {files}",
+  "setup_command": "uv sync -q --extra dev",
+  "selected_files": [
+    "tests/test_overview_priority_gate.py"
+  ],
+  "evidence_locations": [
+    {
+      "root": "/tmp/hla-overview-priority-gate-7_cnypl8",
+      "exists": true
+    }
+  ],
+  "release_digest": "b323606fcf307172a2fdde73b5af58f178390f398bb597df790a33e0a15fa368",
+  "candidate": "UNOBSERVED"
+}

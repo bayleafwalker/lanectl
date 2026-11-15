@@ -1,0 +1,12 @@
+{
+  "base_sha": "82dbd9477029d6fda7df67edc617f45a1a4ceb59",
+  "release_digest": "b323606fcf307172a2fdde73b5af58f178390f398bb597df790a33e0a15fa368",
+  "test_sha256": "659bc7989349a24c24d0d4b508ec2fb0cf9a108dc8b72205914f6ac0251f0062",
+  "outcome_sha256": "68892a2fabfb1de85f82f4099d10a881b6c0fc324f65f3ad06caf35a2134ffc2",
+  "proposal_sha256": "ad2c33ba7a99269826aa90b8e91d98a0ce2164c0b4a9f95fbbcdc0f2ffa0c42d",
+  "author_model": "gpt-6.1-terra",
+  "reviewer_model": "opencode-go/deepseek-v4-pro",
+  "candidate": "UNOBSERVED",
+  "implementation_attempts": 0,
+  "publication": false
+}

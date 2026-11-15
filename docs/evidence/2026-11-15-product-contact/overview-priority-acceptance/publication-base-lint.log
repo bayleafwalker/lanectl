@@ -1,0 +1,17 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_________________________ test_overview_priority_gate __________________________
+
+    def test_overview_priority_gate():
+        result = gate()
+        if result not in (0, 1):
+            raise RuntimeError("acceptance returned infrastructure status " + str(result))
+>       assert result == 0
+E       assert 1 == 0
+
+tests/test_overview_priority_gate.py:1876: AssertionError
+----------------------------- Captured stdout call -----------------------------
+HLA_ACCEPTANCE_EVIDENCE=/tmp/hla-overview-priority-gate-rjg0abbl
+=========================== short test summary info ============================
+FAILED tests/test_overview_priority_gate.py::test_overview_priority_gate - as...
+1 failed in 98.71s (0:01:38)

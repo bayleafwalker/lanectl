@@ -1,0 +1,109 @@
+{
+  "schema": "retained-files/v1",
+  "files": [
+    {
+      "path": "README.md",
+      "sha256": "52e6cb845d1111d5c11972b6230bab9d44ebc2313690497809a0d13bb3fa5226"
+    },
+    {
+      "path": "baseline-state.json",
+      "sha256": "4b80aa731c7b568913c49aac0ab3b2040001daa1b30ce82c1920780e1235b73e"
+    },
+    {
+      "path": "final-author-proof.json",
+      "sha256": "79f13349f49c2240b242809a6bca472cafaf016050c076c5f663d6cc2adc4fb8"
+    },
+    {
+      "path": "finalize.py",
+      "sha256": "9af30e98b3104df6f8af69ed06060d3de1c55b6cf041ae861b12ec91950b3b9d"
+    },
+    {
+      "path": "native-response.json",
+      "sha256": "7f0fd774b73da7e6a853b17980ffd85d603d9949ea48aa40bb9427033640cd01"
+    },
+    {
+      "path": "native-result.json",
+      "sha256": "313d489f88a05520679640daeb6915faac3dfbabdde9aad0c70dc5477c8aa16f"
+    },
+    {
+      "path": "native-status.json",
+      "sha256": "833a22979e6f6dd4d3f50bdc97c962299d95b6dbd6f10e563adb289b8eeddfd6"
+    },
+    {
+      "path": "native-stream.jsonl",
+      "sha256": "26b402147858496e80bb359d2667b66458db11ed2eab3b2c8789f10fa990e27f"
+    },
+    {
+      "path": "official-base-call.json",
+      "sha256": "b2dae92dc4225b81f7a2cb17720a59ef0d8e007941888527ecb6e78d87d4aebe"
+    },
+    {
+      "path": "official-base-lint.log",
+      "sha256": "9b910371b3f7bafbf1b3c4758580a3722aa7212e4581673cd06db13768c972ab"
+    },
+    {
+      "path": "official-base-proof.json",
+      "sha256": "85783cab205c35eb137a5ba9f31348695134ee5c0b80327c7536e05d6feea632"
+    },
+    {
+      "path": "outcome.md",
+      "sha256": "68892a2fabfb1de85f82f4099d10a881b6c0fc324f65f3ad06caf35a2134ffc2"
+    },
+    {
+      "path": "prepare_and_lint.py",
+      "sha256": "dde99e990100f3424812581a0ed9e396537992fc4e821b8a07b3e3cc7d551d82"
+    },
+    {
+      "path": "proposal.json",
+      "sha256": "ad2c33ba7a99269826aa90b8e91d98a0ce2164c0b4a9f95fbbcdc0f2ffa0c42d"
+    },
+    {
+      "path": "publication-base-lint.log",
+      "sha256": "d9ebd9c2d63461de82d44be67f72e2387c48c0258c9fe19ad095509f904af2fb"
+    },
+    {
+      "path": "publication-base-proof.json",
+      "sha256": "cc3a3e489765ab976b4287db39d88dbe10515b7dba732b08aab4aa2312c397b7"
+    },
+    {
+      "path": "publication-binding-negative-proof.json",
+      "sha256": "66083cc02b908b7ed3a92144470e2d532f0f053b543c89270d066713d2c4262f"
+    },
+    {
+      "path": "publication-state-before-git.json",
+      "sha256": "00585d29a5695b2e2ef5f4a3a868903a9b08fe09fa55d1a126e9e44227acaa5a"
+    },
+    {
+      "path": "publish.py",
+      "sha256": "9d9f65d1bc2a981b13ad63a8b4807125141a05e5877a7ee7b818484b37bd1037"
+    },
+    {
+      "path": "request.json",
+      "sha256": "bcc7257ced40cede42dd1b2a7fb131a3f55b431012b3bb3ced1a13b3b10181cb"
+    },
+    {
+      "path": "review-process.json",
+      "sha256": "74ab65306e430c7b890d3cdd7749d23708029d95ca511438402fff194913701d"
+    },
+    {
+      "path": "review-prompt.txt",
+      "sha256": "7b487662f804096d87db636c4c2d6686d0dff2618b35bf9989ff0300dad6af18"
+    },
+    {
+      "path": "review-usage.json",
+      "sha256": "d6d41c4ceb402bf29a13c5c91e0bf64eb060bdc96249cd025d86f6b377800e7f"
+    },
+    {
+      "path": "review.json",
+      "sha256": "dc959b540964aa8f30500f0b808895c1f8a6c8ec8bc67c5909ff16ec1e3637a6"
+    },
+    {
+      "path": "review_native.py",
+      "sha256": "1c22f2d89c12765769762ae91205fea54a2454058d206efcc436c2214f66b02f"
+    },
+    {
+      "path": "source-binding.json",
+      "sha256": "bdf3ba30e3c8311b104f27e8785053090d0477fd24d13c46c43423fdbae1c91a"
+    }
+  ]
+}

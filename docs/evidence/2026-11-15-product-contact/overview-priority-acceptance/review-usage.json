@@ -1,0 +1,9 @@
+{
+  "input_tokens": 189285,
+  "output_tokens": 8226,
+  "reasoning_tokens": 49031,
+  "cache_read_tokens": 4795904,
+  "cache_write_tokens": 0,
+  "cost_usd": 0.34380686,
+  "steps": 54
+}

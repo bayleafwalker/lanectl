@@ -1,0 +1,15 @@
+{
+  "outcome": "done",
+  "exit_code": 0,
+  "final_tail": "e outer `gate()`) and cross-checked every claim against the live repository at base `82dbd9477029d6fda7df67edc617f45a1a4ceb59`.\n\n**Verdict: `accept`** \u2014 no genuine scope or gate gap remains.\n\nKey verification points:\n\n1. **Population/classification resolves correctly.** 53 cases = 24 functions carrying `semantic_priority` + 29 controls. At base, exactly 23 of those semantic cases fail typed (`SemanticPriorityFailure`); `test_review_recognized_warning_and_unknown_neutral` passes at base because review already labels severity 3 as `status-failed` \u2014 a regression guard, not a base-red trigger. This matches the reported 23/30 split.\n\n2. **Oracle is faithful, not tautological.** `priority()` encodes the spec exactly (3/2/1 rank, unknown/absent/out-of-range last and visible, `type(s) is int` rejecting bool/str, code-point tie order with nulls-after-strings), and guard-falsification tests prove the guards actually catch inversions/tampering.\n\n3. **No narrowing, no mock subject.** All nine named consumers are exercised against real code (real Postgres via Docker, real `next build` standalone, real Playwright Chromium with a native\u2192Docker fallback, real briefing composer, real assistant route). `consumer_publication` swaps only data and restores both mart and snapshot tables.\n\n4. **Base-red vs infrastructure is correctly separated.** Only a matching `SemanticPriorityFailure: HLA_SEMANTIC_PRIORITY:<category>` is typed semantic; plain asserts, missing Docker/Node/build/browser, and cleanup failures classify as spec-gap (infrastructure), never semantic evidence.\n\n5. **No portability falsehoods.** Docker is an explicit prerequisite for real PG; Linux x86_64 and a SHA256-pinned Node download are declared, with no hosted-CI claim. The frozen acceptance bytes are external and separate from all candidate diff lines.\n\nThe response is written to `.lanectl-spec/response.json` with the required four fields (`verdict`, `reason`, `trivial_pass`, `checks`) and validates as well-formed JSON.",
+  "escalation_reason": null,
+  "usage": {
+    "input_tokens": 189285,
+    "output_tokens": 8226,
+    "reasoning_tokens": 49031,
+    "cache_read_tokens": 4795904,
+    "cache_write_tokens": 0,
+    "cost_usd": 0.34380686,
+    "steps": 54
+  }
+}
