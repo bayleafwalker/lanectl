@@ -1,0 +1,12 @@
+[
+  {
+    "specialist": "god-class-file-size",
+    "severity": "watchlist",
+    "file": "apps/web/frontend/unit/onboarding-auto-collapse.test.cjs",
+    "line": 1,
+    "finding": "No size-threshold finding applies to this change. Both new files are far below the limits, and no existing file or function grew. The pre-existing top-offender watchlist was not enumerated, so this review is incomplete on that output.",
+    "evidence": "The diff adds only two new files: the node:test suite (126 lines, 10 tests, with the longest function `load` about 24 lines) and the pytest wrapper (33 lines, one test of about 19 lines). The diff does not touch the production files. The components they exercise are small: `apps/web/frontend/components/onboarding-checklist.js` is 217 lines and `apps/web/frontend/lib/onboarding-sources.js` is 72 lines. Neither crosses the 600 LOC file limit, and no class applies. I did not run a repo-wide LOC survey of existing production files over 600 lines. Only Read, Grep and Glob were allowed, and none of them returns sorted line counts.",
+    "recommendation": "Accept as is for god-class-file-size. If a watchlist is required for this review, run a repo-wide count of production files over 600 LOC in a separate pass, with `packages/storage/`, `packages/pipelines/` and the domain packs first. The `unit/` test file is a single flat module and can stay unsplit as it grows, until it nears 600 lines.",
+    "blocker": false
+  }
+]

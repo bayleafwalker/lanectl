@@ -1,0 +1,7 @@
+{
+  "library_list_sha256": "0511ad898d5e4a4e4f12a5b343efddb41c812be0cb6d5903c7cf61e0397cd509",
+  "existing_nix_dirs": 17,
+  "port_6006_before": "State Recv-Q Send-Q Local Address:Port Peer Address:PortProcess\n",
+  "browser_changed": false,
+  "source_changed": false
+}

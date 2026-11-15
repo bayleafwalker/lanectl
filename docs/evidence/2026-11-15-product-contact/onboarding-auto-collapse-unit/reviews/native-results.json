@@ -1,0 +1,205 @@
+{
+  "pack-boundary": {
+    "exit": 0,
+    "is_error": false,
+    "subtype": "success",
+    "model_usage": {
+      "claude-sonnet-5-5": {
+        "inputTokens": 4,
+        "outputTokens": 220,
+        "cacheReadInputTokens": 10522,
+        "cacheCreationInputTokens": 5373,
+        "webSearchRequests": 0,
+        "costUSD": 0.024752200000000002,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 145,
+        "cacheCreationEphemeral5mInputTokens": 0,
+        "cacheCreationEphemeral1hInputTokens": 5373,
+        "canonicalModel": "claude-sonnet-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "permission_denials": [],
+    "duration_ms": 4755,
+    "raw_sha256": "d9eabe0c487c2f098604132ddb2550d3d8f10dd41af3eaa7e825ec7ea02522d5",
+    "findings": "/tmp/hla1597-unit-review-20261115/pack-boundary.findings.json",
+    "raw": "/tmp/hla1597-unit-review-20261115/pack-boundary.native.json",
+    "has_non_json_envelope": false
+  },
+  "god-class-file-size": {
+    "exit": 0,
+    "is_error": false,
+    "subtype": "success",
+    "model_usage": {
+      "claude-sonnet-5-5": {
+        "inputTokens": 6,
+        "outputTokens": 1054,
+        "cacheReadInputTokens": 20208,
+        "cacheCreationInputTokens": 5935,
+        "webSearchRequests": 0,
+        "costUSD": 0.0363128,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 176,
+        "cacheCreationEphemeral5mInputTokens": 0,
+        "cacheCreationEphemeral1hInputTokens": 5935,
+        "canonicalModel": "claude-sonnet-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "permission_denials": [],
+    "duration_ms": 10680,
+    "raw_sha256": "f51872704f875382beda927edeb83347e2b142e4fa1c27b53fb0192285523b3d",
+    "findings": "/tmp/hla1597-unit-review-20261115/god-class-file-size.findings.json",
+    "raw": "/tmp/hla1597-unit-review-20261115/god-class-file-size.native.json",
+    "has_non_json_envelope": true
+  },
+  "test-quality": {
+    "exit": 0,
+    "is_error": false,
+    "subtype": "success",
+    "model_usage": {
+      "claude-sonnet-5-5": {
+        "inputTokens": 12,
+        "outputTokens": 4565,
+        "cacheReadInputTokens": 65511,
+        "cacheCreationInputTokens": 12406,
+        "webSearchRequests": 0,
+        "costUSD": 0.10184909999999998,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 1457,
+        "cacheCreationEphemeral5mInputTokens": 0,
+        "cacheCreationEphemeral1hInputTokens": 12406,
+        "canonicalModel": "claude-sonnet-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "permission_denials": [],
+    "duration_ms": 42214,
+    "raw_sha256": "98e3eb555ab85cf7a2a1f15b7834c2885a5d38313e3da90ee1aa7f85735c8781",
+    "findings": "/tmp/hla1597-unit-review-20261115/test-quality.findings.json",
+    "raw": "/tmp/hla1597-unit-review-20261115/test-quality.native.json",
+    "has_non_json_envelope": true
+  },
+  "suppression-drift": {
+    "exit": 0,
+    "is_error": false,
+    "subtype": "success",
+    "model_usage": {
+      "claude-sonnet-5-5": {
+        "inputTokens": 4,
+        "outputTokens": 232,
+        "cacheReadInputTokens": 10503,
+        "cacheCreationInputTokens": 5354,
+        "webSearchRequests": 0,
+        "costUSD": 0.0247943,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 157,
+        "cacheCreationEphemeral5mInputTokens": 0,
+        "cacheCreationEphemeral1hInputTokens": 5354,
+        "canonicalModel": "claude-sonnet-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "permission_denials": [],
+    "duration_ms": 6055,
+    "raw_sha256": "7fdec3e658032380a86268a864f3c24801fd155b93b67548c282b455a05ad02f",
+    "findings": "/tmp/hla1597-unit-review-20261115/suppression-drift.findings.json",
+    "raw": "/tmp/hla1597-unit-review-20261115/suppression-drift.native.json",
+    "has_non_json_envelope": false
+  },
+  "stratum-coherence": {
+    "exit": 0,
+    "is_error": false,
+    "subtype": "success",
+    "model_usage": {
+      "claude-sonnet-5-5": {
+        "inputTokens": 14,
+        "outputTokens": 3029,
+        "cacheReadInputTokens": 92341,
+        "cacheCreationInputTokens": 13952,
+        "webSearchRequests": 0,
+        "costUSD": 0.09536009999999999,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 179,
+        "cacheCreationEphemeral5mInputTokens": 0,
+        "cacheCreationEphemeral1hInputTokens": 13952,
+        "canonicalModel": "claude-sonnet-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "permission_denials": [],
+    "duration_ms": 26980,
+    "raw_sha256": "1a7d5cf321a7b12cc5df7fc55baafa07449933d464269942a874a295fab2eb5d",
+    "findings": "/tmp/hla1597-unit-review-20261115/stratum-coherence.findings.json",
+    "raw": "/tmp/hla1597-unit-review-20261115/stratum-coherence.native.json",
+    "has_non_json_envelope": true
+  },
+  "semantic-ownership": {
+    "exit": 0,
+    "is_error": false,
+    "subtype": "success",
+    "model_usage": {
+      "claude-sonnet-5-5": {
+        "inputTokens": 8,
+        "outputTokens": 2797,
+        "cacheReadInputTokens": 33949,
+        "cacheCreationInputTokens": 10681,
+        "webSearchRequests": 0,
+        "costUSD": 0.0741049,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 829,
+        "cacheCreationEphemeral5mInputTokens": 0,
+        "cacheCreationEphemeral1hInputTokens": 10681,
+        "canonicalModel": "claude-sonnet-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "permission_denials": [],
+    "duration_ms": 23880,
+    "raw_sha256": "1bd63d7c9f513cf0aab39e98ac2116be163bed44bd299247141b04d7777b5c0e",
+    "findings": "/tmp/hla1597-unit-review-20261115/semantic-ownership.findings.json",
+    "raw": "/tmp/hla1597-unit-review-20261115/semantic-ownership.native.json",
+    "has_non_json_envelope": true
+  },
+  "repetition-vs-abstraction": {
+    "exit": 0,
+    "is_error": false,
+    "subtype": "success",
+    "model_usage": {
+      "claude-sonnet-5-5": {
+        "inputTokens": 10,
+        "outputTokens": 1952,
+        "cacheReadInputTokens": 40857,
+        "cacheCreationInputTokens": 6381,
+        "webSearchRequests": 0,
+        "costUSD": 0.0491497,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 105,
+        "cacheCreationEphemeral5mInputTokens": 0,
+        "cacheCreationEphemeral1hInputTokens": 6381,
+        "canonicalModel": "claude-sonnet-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "permission_denials": [],
+    "duration_ms": 19513,
+    "raw_sha256": "7e2bf3733e124967b9faeec9cf70c284067b67d7a76e508b1fe441d0985c575a",
+    "findings": "/tmp/hla1597-unit-review-20261115/repetition-vs-abstraction.findings.json",
+    "raw": "/tmp/hla1597-unit-review-20261115/repetition-vs-abstraction.native.json",
+    "has_non_json_envelope": false
+  }
+}

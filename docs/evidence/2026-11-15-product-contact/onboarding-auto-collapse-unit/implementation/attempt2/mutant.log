@@ -1,0 +1,116 @@
+TAP version 13
+# MUTANT APPLIED
+# MUTANT APPLIED
+# Subtest: fixture: real sources define 5 datasets, 2 required
+ok 1 - fixture: real sources define 5 datasets, 2 required
+  ---
+  duration_ms: 0.560892
+  ...
+# Subtest: SSR without mounted renders nothing
+ok 2 - SSR without mounted renders nothing
+  ---
+  duration_ms: 2.672182
+  ...
+# Subtest: none -> full 0/5 core 0/2
+ok 3 - none -> full 0/5 core 0/2
+  ---
+  duration_ms: 4.344109
+  ...
+# Subtest: one core -> full 1/5 core 1/2
+ok 4 - one core -> full 1/5 core 1/2
+  ---
+  duration_ms: 0.951344
+  ...
+# Subtest: optional only -> full 3/5 core 0/2
+ok 5 - optional only -> full 3/5 core 0/2
+  ---
+  duration_ms: 0.765003
+  ...
+# Subtest: core + partial optional -> full 4/5 core 1/2
+ok 6 - core + partial optional -> full 4/5 core 1/2
+  ---
+  duration_ms: 0.582613
+  ...
+# Subtest: both cores -> compact 2/5
+not ok 7 - both cores -> compact 2/5
+  ---
+  duration_ms: 1.120144
+  location: '/projects/dev/_wt/hla1597-unit-20261115/apps/web/frontend/unit/onboarding-auto-collapse.test.cjs:121:1'
+  failureType: 'testCodeFailure'
+  error: 'Onboarding Get started — connect your data sources Minimise Dismiss 2 of 5 sources active · 2/2 core sources ready Account transactions active Cashflow, categories, anomalies Subscriptions active Recurring cost baseline Contract prices Affordability ratios, contract watchlist Upload Budgets Budget variance, envelopes Upload Loan repayments Debt service ratio, loan schedule Upload Full onboarding guide'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    compact (/projects/dev/_wt/hla1597-unit-20261115/apps/web/frontend/unit/onboarding-auto-collapse.test.cjs:92:10)
+    TestContext.<anonymous> (/projects/dev/_wt/hla1597-unit-20261115/apps/web/frontend/unit/onboarding-auto-collapse.test.cjs:121:41)
+    Test.runInAsyncScope (node:async_hooks:206:9)
+    Test.run (node:internal/test_runner/test:796:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:526:18)
+    Test.postRun (node:internal/test_runner/test:889:19)
+    Test.run (node:internal/test_runner/test:835:12)
+    process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    async Test.processPendingSubtests (node:internal/test_runner/test:526:7)
+  ...
+# Subtest: both cores + optional -> compact 3/5
+not ok 8 - both cores + optional -> compact 3/5
+  ---
+  duration_ms: 0.714033
+  location: '/projects/dev/_wt/hla1597-unit-20261115/apps/web/frontend/unit/onboarding-auto-collapse.test.cjs:122:1'
+  failureType: 'testCodeFailure'
+  error: 'Onboarding Get started — connect your data sources Minimise Dismiss 3 of 5 sources active · 2/2 core sources ready Account transactions active Cashflow, categories, anomalies Subscriptions active Recurring cost baseline Contract prices Affordability ratios, contract watchlist Upload Budgets active Budget variance, envelopes Loan repayments Debt service ratio, loan schedule Upload Full onboarding guide'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    compact (/projects/dev/_wt/hla1597-unit-20261115/apps/web/frontend/unit/onboarding-auto-collapse.test.cjs:92:10)
+    TestContext.<anonymous> (/projects/dev/_wt/hla1597-unit-20261115/apps/web/frontend/unit/onboarding-auto-collapse.test.cjs:123:3)
+    Test.runInAsyncScope (node:async_hooks:206:9)
+    Test.run (node:internal/test_runner/test:796:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:526:18)
+    Test.postRun (node:internal/test_runner/test:889:19)
+    Test.run (node:internal/test_runner/test:835:12)
+    process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    async Test.processPendingSubtests (node:internal/test_runner/test:526:7)
+  ...
+# Subtest: all five -> compact 5/5
+not ok 9 - all five -> compact 5/5
+  ---
+  duration_ms: 0.644623
+  location: '/projects/dev/_wt/hla1597-unit-20261115/apps/web/frontend/unit/onboarding-auto-collapse.test.cjs:124:1'
+  failureType: 'testCodeFailure'
+  error: 'Onboarding Get started — connect your data sources Minimise Dismiss 5 of 5 sources active · 2/2 core sources ready Account transactions active Cashflow, categories, anomalies Subscriptions active Recurring cost baseline Contract prices active Affordability ratios, contract watchlist Budgets active Budget variance, envelopes Loan repayments active Debt service ratio, loan schedule Full onboarding guide'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: true
+  actual: false
+  operator: '=='
+  stack: |-
+    compact (/projects/dev/_wt/hla1597-unit-20261115/apps/web/frontend/unit/onboarding-auto-collapse.test.cjs:92:10)
+    TestContext.<anonymous> (/projects/dev/_wt/hla1597-unit-20261115/apps/web/frontend/unit/onboarding-auto-collapse.test.cjs:124:39)
+    Test.runInAsyncScope (node:async_hooks:206:9)
+    Test.run (node:internal/test_runner/test:796:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:526:18)
+    Test.postRun (node:internal/test_runner/test:889:19)
+    Test.run (node:internal/test_runner/test:835:12)
+    process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    async Test.processPendingSubtests (node:internal/test_runner/test:526:7)
+  ...
+# Subtest: duplicate core + unknown -> full 1/5 core 1/2
+ok 10 - duplicate core + unknown -> full 1/5 core 1/2
+  ---
+  duration_ms: 0.792693
+  ...
+1..10
+# tests 10
+# suites 0
+# pass 7
+# fail 3
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 99.595815

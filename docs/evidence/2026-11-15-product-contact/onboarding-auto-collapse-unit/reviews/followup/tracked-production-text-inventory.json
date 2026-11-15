@@ -1,0 +1,386 @@
+{
+  "head": "57a7785c17ae76ba2169ca6af5bd4af62564a188",
+  "selection": "all tracked UTF-8 text under apps, packages, scripts, tools, migrations, infra, charts, site, githooks, .github; exclude tests, story, fixture paths, symlinks and sensitive-named files",
+  "files": [
+    {
+      "file": "apps/web/frontend/generated/openapi.json",
+      "lines": 23293,
+      "sha256": "e620934fd60891723244e306a5b70fd85ec86c94a926c7528f99dccaf6d97c89",
+      "category": "generated_or_lock"
+    },
+    {
+      "file": "apps/web/frontend/generated/api.d.ts",
+      "lines": 15406,
+      "sha256": "ef37629335a46eda2215de77b73da82efb29e0ea2d30366378984b9d04e71e14",
+      "category": "generated_or_lock"
+    },
+    {
+      "file": "apps/web/frontend/generated/publication-contracts.ts",
+      "lines": 9448,
+      "sha256": "d298650501ecc9366e4b79a4ed5f4ebfb4889e8114e2f318a2d5e8a8fc776dee",
+      "category": "generated_or_lock"
+    },
+    {
+      "file": "apps/web/frontend/generated/publication-contracts.json",
+      "lines": 9408,
+      "sha256": "93f7ed08dc624ccd73d02c66f073e0197c2db1a94f220d41771bed4824cd365d",
+      "category": "generated_or_lock"
+    },
+    {
+      "file": "apps/web/frontend/package-lock.json",
+      "lines": 6411,
+      "sha256": "d66454a52904fd24950f5b8a8f23d74b465447ac06c487829cfeed872008bef8",
+      "category": "generated_or_lock"
+    },
+    {
+      "file": "charts/homelab-analytics/dashboards/homelab-analytics-ops.json",
+      "lines": 1908,
+      "sha256": "7db8d16399986d23888d555535b9b9b69c68fda1b79f5f41b82dba69797d7a3b",
+      "category": "other_text"
+    },
+    {
+      "file": "apps/web/frontend/app/control/catalog/page.js",
+      "lines": 1575,
+      "sha256": "3c503b372d362da5b2172a36c90b2b4d4c775d2a8529138d5f8b97c96ee35124",
+      "category": "other_text"
+    },
+    {
+      "file": "apps/web/frontend/app/globals.css",
+      "lines": 1562,
+      "sha256": "823cac0eef02cddbfefde9f4a86cad7dce13d4ba314a56a04567617a7b42da2e",
+      "category": "other_text"
+    },
+    {
+      "file": "packages/pipelines/reporting_service.py",
+      "lines": 1533,
+      "sha256": "ec46f2a9cb20658ae32c704d39e30c4a8ebd7f68e34fe5d9c7b9d3bf0c7f7e01",
+      "category": "other_text"
+    },
+    {
+      "file": "apps/web/frontend/lib/backend.ts",
+      "lines": 1517,
+      "sha256": "1f57c3fb1da55d60cb4d45c1da4e1e3e5ff9d3a21549e7abbf8cc24ba706f574",
+      "category": "other_text"
+    },
+    {
+      "file": "packages/demo/bundle.py",
+      "lines": 1410,
+      "sha256": "2e2f44c655087eb9579a0188d91553127f4f057a6de91636f43e40f151f24643",
+      "category": "other_text"
+    },
+    {
+      "file": "apps/api/routes/report_routes.py",
+      "lines": 1257,
+      "sha256": "e41217e2d369ed2d8446f3cc2d538bdd8bf9247a8083fbea26a40d5362658a1a",
+      "category": "other_text"
+    },
+    {
+      "file": "apps/web/frontend/app/control/execution/page.js",
+      "lines": 1229,
+      "sha256": "436b11906264b821cfd13b18f298b0f259f6b2e7d0473b273a5ac85ad5521671",
+      "category": "other_text"
+    },
+    {
+      "file": "packages/domains/homelab/pipelines/ha_policy.py",
+      "lines": 1154,
+      "sha256": "287e3ab71de89a83cd3bc20a10eb5c2dbb8bbb7635761a49e0afbd21f8539147",
+      "category": "other_text"
+    },
+    {
+      "file": "apps/api/auth_policies.py",
+      "lines": 1142,
+      "sha256": "792bc7ca4dae05cf82033c7a469da1d49afc994be369e04924c21d0ebbeef983",
+      "category": "other_text"
+    },
+    {
+      "file": "packages/domains/finance/pipelines/scenario_service.py",
+      "lines": 1114,
+      "sha256": "16d53c7e01c0847eb83d55880cad432da993339ad40751c12539db829acecb62",
+      "category": "other_text"
+    },
+    {
+      "file": "packages/application/use_cases/pack_lifecycle.py",
+      "lines": 960,
+      "sha256": "12ef9b5186c0982a17d75f58b72b508e93cc9edf1dcea8bf96dc049657ddc0af",
+      "category": "other_text"
+    },
+    {
+      "file": "apps/api/app.py",
+      "lines": 908,
+      "sha256": "756a97ca7d4b284efb850ccc019f53b975dc7a1022a1aed10823c46a13f5f88e",
+      "category": "other_text"
+    },
+    {
+      "file": "packages/storage/control_plane.py",
+      "lines": 908,
+      "sha256": "ca2dd53919dfd3c3ae75d78b94a18b2010253dbeaaf3656cfea485e51a337627",
+      "category": "other_text"
+    },
+    {
+      "file": "packages/storage/execution_control_plane.py",
+      "lines": 899,
+      "sha256": "5ef492ddf56b165ad7e627f0a806c02b037eaed237a9a482abaf2c2008addf32",
+      "category": "other_text"
+    },
+    {
+      "file": "packages/domains/overview/pipelines/transformation_overview.py",
+      "lines": 885,
+      "sha256": "cff35d36c63b5285c0d5871b10019bc493764e341aef31aff7e3d8c51a560cbc",
+      "category": "other_text"
+    },
+    {
+      "file": "packages/application/use_cases/morning_brief.py",
+      "lines": 875,
+      "sha256": "df506e7d1da91d0b98175e87da487c006a7e3d38a67627e5a1d3d398409b8270",
+      "category": "other_text"
+    },
+    {
+      "file": "packages/application/use_cases/control_terminal.py",
+      "lines": 872,
+      "sha256": "1f0a2865e7d0eaf374fbde262b15f1a63277e9d881bc779a7392b9592c8d7776",
+      "category": "other_text"
+    },
+    {
+      "file": "packages/application/use_cases/decision_ledger.py",
+      "lines": 865,
+      "sha256": "a76d9b8f4c375ea496e1c37b8e884fac1658283c979be06096cf2f28b084b592",
+      "category": "other_text"
+    },
+    {
+      "file": "migrations/duckdb/0001_initial_schema.sql",
+      "lines": 833,
+      "sha256": "42d9795b87fc703518de33a2d50590cbbd51a1fc7d8876e9da62fd2146c7e9a6",
+      "category": "other_text"
+    },
+    {
+      "file": "packages/application/use_cases/morning_brief_sections.py",
+      "lines": 811,
+      "sha256": "e4728cd3d9f92e2fd8d28a80537e1d5d06d4c00468280752e9b57b67bb5f2477",
+      "category": "other_text"
+    },
+    {
+      "file": "packages/platform/action_proposals.py",
+      "lines": 792,
+      "sha256": "5b0039a81f84ece2dcb3067927c7a72ac9c931b363375fa81b62bac977c1b412",
+      "category": "other_text"
+    },
+    {
+      "file": "packages/storage/sqlite_control_plane_schema.py",
+      "lines": 780,
+      "sha256": "8135752293eca3242d3f6440a7838a1b0abd927c8a91790b3bfbbc9f16c34b95",
+      "category": "other_text"
+    },
+    {
+      "file": "packages/shared/external_registry.py",
+      "lines": 770,
+      "sha256": "e4c7a809336a24cdc57415436f9e8ab07f075d1477b6cb2de56f042a3f5489a7",
+      "category": "other_text"
+    },
+    {
+      "file": "packages/domains/utilities/pipelines/battery_plan_outcome.py",
+      "lines": 746,
+      "sha256": "d33c34dbb92443dda9fafa4f87635834f30c5ba56a53a4ccc69c14dae4059b03",
+      "category": "other_text"
+    },
+    {
+      "file": "packages/demo/seeder.py",
+      "lines": 744,
+      "sha256": "e2d992245436ad3da08d196a7649c56fc81b1435f2afecf6202a53a41f6933d9",
+      "category": "other_text"
+    },
+    {
+      "file": "packages/domains/finance/pipelines/transformation_transactions.py",
+      "lines": 744,
+      "sha256": "aadcdade323933cfeb4dc9c6badd7a936cd08a427d2c9eb36172238fe4947e9d",
+      "category": "other_text"
+    },
+    {
+      "file": "packages/domains/utilities/pipelines/transformation_utilities.py",
+      "lines": 744,
+      "sha256": "0ab0ba89059b00c1676a2ed7551bd865bbc76429093a001258b63ca0f89965fb",
+      "category": "other_text"
+    },
+    {
+      "file": "packages/storage/source_contract_catalog.py",
+      "lines": 740,
+      "sha256": "da802fd60dc63bda059026198e7dbf258e6e42eb29061a9fcaae2f45a4ec7964",
+      "category": "other_text"
+    },
+    {
+      "file": "packages/storage/sqlite_asset_definition_catalog.py",
+      "lines": 734,
+      "sha256": "def384b3bb73f41c36d98c871b1b075598966bc5ffc5222c4f3ed4babb90e63a",
+      "category": "other_text"
+    },
+    {
+      "file": "packages/domains/utilities/pipelines/kotiakku_evidence.py",
+      "lines": 725,
+      "sha256": "72075e47c885a8f25a2da72fa50ba16fd105f0b40a28d4d3ad15a15047c1c48d",
+      "category": "other_text"
+    },
+    {
+      "file": "packages/shared/settings.py",
+      "lines": 697,
+      "sha256": "c7e621e45b842337c08aa42bc17f5e73aa099bee868a00d16cce72a2e26a7720",
+      "category": "other_text"
+    },
+    {
+      "file": "packages/platform/auth/oidc_provider.py",
+      "lines": 680,
+      "sha256": "21c9d4a61bb52b923451dc8df86abdee20be8ba68cd3dd5732dd6685aded6452",
+      "category": "other_text"
+    },
+    {
+      "file": "packages/storage/postgres_asset_definition_catalog.py",
+      "lines": 671,
+      "sha256": "99080491e497e05317c1e0581e7558489bb5395677c576497aaccfc42dddd712",
+      "category": "other_text"
+    },
+    {
+      "file": "packages/domains/homelab/pipelines/ha_bridge_ingestion.py",
+      "lines": 658,
+      "sha256": "e29757218b3f7e78ecfce10403f76805d6204bfe5140d259960c29815e529e12",
+      "category": "other_text"
+    },
+    {
+      "file": "apps/web/frontend/app/page.js",
+      "lines": 656,
+      "sha256": "65421e5d5b880fe22d33e69eaded4809e3295275672bb4dcbec35640b2a7c86a",
+      "category": "other_text"
+    },
+    {
+      "file": "apps/worker/control_plane.py",
+      "lines": 645,
+      "sha256": "c701b13c16d3e6081768064281108e43d50321e841604e861abd5e75b063fa13",
+      "category": "other_text"
+    },
+    {
+      "file": "apps/web/frontend/app/console.css",
+      "lines": 636,
+      "sha256": "87e97ac58e625d18cfa0e661c58f61511be17d989ea44cfc7f26808de0a320f8",
+      "category": "other_text"
+    },
+    {
+      "file": "packages/platform/contract_compat/publication_compare.py",
+      "lines": 624,
+      "sha256": "ffa9c4d9b50e91fbf63ed5f5d6b4901e4fb912e18937f9ec6b88068a85f0d77b",
+      "category": "other_text"
+    },
+    {
+      "file": "packages/platform/publication_contracts.py",
+      "lines": 623,
+      "sha256": "09b07db31c6273e97c82ce9f1136f05435370b76192c687dc7525f4263f4c6e5",
+      "category": "other_text"
+    },
+    {
+      "file": "apps/api/routes/action_proposal_routes.py",
+      "lines": 621,
+      "sha256": "357ec2a885948fdb8cb861a4643792ed54ff3febb3a9f84044569aa8874427a7",
+      "category": "other_text"
+    },
+    {
+      "file": "packages/pipelines/upload_dry_run.py",
+      "lines": 619,
+      "sha256": "4f21e2288812a100efa433f95a7458167cc45d076792f17b635457ffb56db4e5",
+      "category": "other_text"
+    },
+    {
+      "file": "packages/domains/overview/pipelines/scenario_service_overview.py",
+      "lines": 618,
+      "sha256": "f924e1eece6b9597af3c4606552e1d6d8880213447d029964e273662488a94e0",
+      "category": "other_text"
+    },
+    {
+      "file": "packages/pipelines/config_preflight.py",
+      "lines": 613,
+      "sha256": "421f6333a8c04efa5f9d795ed06050e9e1496a219f9873e53ee5379b366e220a",
+      "category": "other_text"
+    },
+    {
+      "file": "packages/storage/backup_bundle.py",
+      "lines": 613,
+      "sha256": "4804b6483aef2b2990f4be2accbadbf8bc25b99f7703085e27525db6bd0fa7f0",
+      "category": "other_text"
+    },
+    {
+      "file": "apps/web/frontend/components/upload-detection-wizard.js",
+      "lines": 607,
+      "sha256": "091157247118c5f2b1d03360eeb7d47773c8a8194ae449f8f67656b71713e11e",
+      "category": "other_text"
+    },
+    {
+      "file": "packages/domains/homelab/pipelines/ha_action_dispatcher.py",
+      "lines": 603,
+      "sha256": "3f36f2016299071b3fa53f021301e1c4be18f77da549194db42ff4dfd9e9fba5",
+      "category": "other_text"
+    },
+    {
+      "file": "apps/web/frontend/components/transformation-catalog-panel.js",
+      "lines": 601,
+      "sha256": "d19d68dfc9304ddd71c1f5966fdf87ab17695b5079e4159fd77b29d3e2c67261",
+      "category": "other_text"
+    }
+  ],
+  "exclusions": [
+    {
+      "path": "charts/homelab-analytics/values.runtime-secrets-example.yaml",
+      "reason": "sensitive-name exclusion"
+    },
+    {
+      "path": "infra/examples/demo-data/sources/credit card/Lasku_01012026.pdf",
+      "reason": "unreadable or non-utf8"
+    },
+    {
+      "path": "infra/examples/demo-data/sources/credit card/Lasku_01022026.pdf",
+      "reason": "unreadable or non-utf8"
+    },
+    {
+      "path": "infra/examples/demo-data/sources/credit card/Lasku_01032026.pdf",
+      "reason": "unreadable or non-utf8"
+    },
+    {
+      "path": "infra/examples/secrets/auth-local-secret.example.yaml",
+      "reason": "sensitive-name exclusion"
+    },
+    {
+      "path": "infra/examples/secrets/blob-storage-secret.example.yaml",
+      "reason": "sensitive-name exclusion"
+    },
+    {
+      "path": "infra/examples/secrets/oidc-secret.example.yaml",
+      "reason": "sensitive-name exclusion"
+    },
+    {
+      "path": "infra/examples/secrets/postgres-api-secret.example.yaml",
+      "reason": "sensitive-name exclusion"
+    },
+    {
+      "path": "infra/examples/secrets/postgres-external-secret.example.yaml",
+      "reason": "sensitive-name exclusion"
+    },
+    {
+      "path": "infra/examples/secrets/postgres-secret.example.yaml",
+      "reason": "sensitive-name exclusion"
+    },
+    {
+      "path": "infra/examples/secrets/postgres-worker-secret.example.yaml",
+      "reason": "sensitive-name exclusion"
+    },
+    {
+      "path": "infra/examples/secrets/provider-api-secret.example.yaml",
+      "reason": "sensitive-name exclusion"
+    },
+    {
+      "path": "infra/examples/secrets/provider-api-secret.sops.example.yaml",
+      "reason": "sensitive-name exclusion"
+    },
+    {
+      "path": "packages/platform/auth/credential_resolution.py",
+      "reason": "sensitive-name exclusion"
+    },
+    {
+      "path": "packages/shared/secrets.py",
+      "reason": "sensitive-name exclusion"
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "head": "57a7785c17ae76ba2169ca6af5bd4af62564a188",
+  "phase": "terminal",
+  "targets": [
+    "web-ui-test",
+    "helm-lint"
+  ],
+  "runtime_list_sha256": "0511ad898d5e4a4e4f12a5b343efddb41c812be0cb6d5903c7cf61e0397cd509",
+  "tests_baselines_tolerances_changed": false,
+  "returncode": 2,
+  "elapsed_s": 26.825,
+  "tracked_status_after": ""
+}

@@ -1,0 +1,299 @@
+{
+  "ci": {
+    "jobs": [
+      {
+        "id": 132857475919,
+        "name": "dependency-audit",
+        "status": "completed",
+        "conclusion": "success",
+        "run_id": 43729133007,
+        "logs_url": null,
+        "steps": [
+          {
+            "name": "Set up job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 1
+          },
+          {
+            "name": "Run actions/checkout@v4",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 2
+          },
+          {
+            "name": "Run actions/setup-python@v5",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 3
+          },
+          {
+            "name": "Install dependencies",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 4
+          },
+          {
+            "name": "Advisory dependency audit",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 5
+          },
+          {
+            "name": "Post Run actions/setup-python@v5",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 9
+          },
+          {
+            "name": "Post Run actions/checkout@v4",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 10
+          },
+          {
+            "name": "Complete job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 11
+          }
+        ]
+      },
+      {
+        "id": 132857476111,
+        "name": "verify-fast",
+        "status": "completed",
+        "conclusion": "success",
+        "run_id": 43729133007,
+        "logs_url": null,
+        "steps": [
+          {
+            "name": "Set up job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 1
+          },
+          {
+            "name": "Run actions/checkout@v4",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 2
+          },
+          {
+            "name": "Run actions/setup-python@v5",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 3
+          },
+          {
+            "name": "Run actions/setup-node@v4",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 4
+          },
+          {
+            "name": "Run azure/setup-helm@v4",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 5
+          },
+          {
+            "name": "Install dependencies",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 6
+          },
+          {
+            "name": "Run blocking verification",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 7
+          },
+          {
+            "name": "Run actions/upload-artifact@v4",
+            "status": "completed",
+            "conclusion": "skipped",
+            "number": 8
+          },
+          {
+            "name": "Build contract artifact bundle for pull requests",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 9
+          },
+          {
+            "name": "Run actions/upload-artifact@v4",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 10
+          },
+          {
+            "name": "Post Run actions/setup-node@v4",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 18
+          },
+          {
+            "name": "Post Run actions/setup-python@v5",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 19
+          },
+          {
+            "name": "Post Run actions/checkout@v4",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 20
+          },
+          {
+            "name": "Complete job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 21
+          }
+        ]
+      },
+      {
+        "id": 132857476145,
+        "name": "docker-smoke",
+        "status": "completed",
+        "conclusion": "success",
+        "run_id": 43729133007,
+        "logs_url": null,
+        "steps": [
+          {
+            "name": "Set up job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 1
+          },
+          {
+            "name": "Run actions/checkout@v4",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 2
+          },
+          {
+            "name": "Build image",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 3
+          },
+          {
+            "name": "Run Compose startup smoke",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 4
+          },
+          {
+            "name": "Post Run actions/checkout@v4",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 8
+          },
+          {
+            "name": "Complete job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 9
+          }
+        ]
+      },
+      {
+        "id": 132857476272,
+        "name": "append-only-shards",
+        "status": "completed",
+        "conclusion": "success",
+        "run_id": 43729133007,
+        "logs_url": null,
+        "steps": [
+          {
+            "name": "Set up job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 1
+          },
+          {
+            "name": "Run actions/checkout@v4",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 2
+          },
+          {
+            "name": "Checkout agentops at a pinned commit",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 3
+          },
+          {
+            "name": "check",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 4
+          },
+          {
+            "name": "Post Checkout agentops at a pinned commit",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 7
+          },
+          {
+            "name": "Post Run actions/checkout@v4",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 8
+          },
+          {
+            "name": "Complete job",
+            "status": "completed",
+            "conclusion": "success",
+            "number": 9
+          }
+        ]
+      }
+    ]
+  },
+  "merge": {
+    "sha": "82dbd9477029d6fda7df67edc617f45a1a4ceb59",
+    "merged": true,
+    "message": "Pull Request successfully merged"
+  },
+  "pr": {
+    "url": "https://github.com/bayleafwalker/homelab-analytics/pull/86",
+    "number": 86,
+    "state": "closed",
+    "merged": true,
+    "mergeable": false,
+    "draft": false,
+    "body": "The checklist already compacts automatically when both required core sources are active. This adds unit coverage of that production rule by compiling and rendering the real component and source definitions, plus an ordinary pytest wrapper with explicit missing-tool, timeout and failure handling.\n\nThe change adds two test files (159 lines) and preserves existing frontend files and baselines. The documented mounted-state seam uses real React and Next Link; hydration, storage and Expand behavior are outside this unit’s scope. Existing locked `esbuild` supplies the compiler.\n\nValidation: full `make verify-fast` passed, including 2,756 fast tests, adapter/documentation/architecture checks, build/type checks, all 55 unchanged visual checks and Helm lint. The Node suite passes 10 cases; disabling only auto-collapse makes exactly three semantic cases fail with seven passing. Independent wrapper error-path probes and native specialist review found no blocker.\n\nServed work: `homelab-analytics#1597` (sprintctl).\n",
+    "title": "test(onboarding): cover automatic core-source collapse",
+    "base": "main",
+    "base_sha": "b2d0fe393ac0971e906cce275e91f45e94422593",
+    "head": "codex/hla1597-unit-20261115",
+    "head_sha": "57a7785c17ae76ba2169ca6af5bd4af62564a188",
+    "head_repo_id": 1175879040,
+    "head_repo_full_name": "bayleafwalker/homelab-analytics",
+    "merge_commit_sha": "82dbd9477029d6fda7df67edc617f45a1a4ceb59",
+    "user": {
+      "login": "bayleafwalker",
+      "name": "bayleafwalker",
+      "email": null,
+      "avatar_url": "https://avatars.githubusercontent.com/u/29043838?v=4",
+      "id": 29043838
+    },
+    "requested_reviewers": null,
+    "requested_team_reviewers": null,
+    "diff": null,
+    "comments": null,
+    "created_at": "2026-11-15T15:18:24Z",
+    "updated_at": "2026-11-15T15:38:45Z",
+    "closed_at": "2026-11-15T15:38:42Z",
+    "merged_at": "2026-11-15T15:38:42Z",
+    "commits": 1,
+    "changed_files": 2,
+    "additions": 159,
+    "deletions": 0,
+    "display_url": "https://github.com/bayleafwalker/homelab-analytics/pull/86",
+    "display_title": "test(onboarding): cover automatic core-source collapse"
+  }
+}

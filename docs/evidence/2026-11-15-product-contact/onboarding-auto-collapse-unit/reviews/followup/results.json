@@ -1,0 +1,64 @@
+{
+  "test-quality": {
+    "exit": 0,
+    "model_usage": {
+      "claude-sonnet-5-5": {
+        "inputTokens": 14,
+        "outputTokens": 7059,
+        "cacheReadInputTokens": 99915,
+        "cacheCreationInputTokens": 21971,
+        "webSearchRequests": 0,
+        "costUSD": 0.16849350000000002,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 1295,
+        "cacheCreationEphemeral5mInputTokens": 0,
+        "cacheCreationEphemeral1hInputTokens": 21971,
+        "canonicalModel": "claude-sonnet-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "permission_denials": [],
+    "subtype": "success",
+    "duration_ms": 58643,
+    "raw_sha256": "adb354cac9cb1f82e575786b46625db16f8353aba26732aab1021a3a02f15098",
+    "findings_count": 5,
+    "explicit_status": [
+      "INCOMPLETE"
+    ],
+    "raw": "/tmp/hla1597-unit-review-20261115/followup/test-quality.native.json",
+    "findings": "/tmp/hla1597-unit-review-20261115/followup/test-quality.findings.json"
+  },
+  "god-class-file-size": {
+    "exit": 0,
+    "model_usage": {
+      "claude-sonnet-5-5": {
+        "inputTokens": 14,
+        "outputTokens": 9263,
+        "cacheReadInputTokens": 80164,
+        "cacheCreationInputTokens": 17446,
+        "webSearchRequests": 0,
+        "costUSD": 0.1704584,
+        "contextWindow": 1000000,
+        "maxOutputTokens": 128000,
+        "thinkingTokens": 750,
+        "cacheCreationEphemeral5mInputTokens": 0,
+        "cacheCreationEphemeral1hInputTokens": 17446,
+        "canonicalModel": "claude-sonnet-5-5",
+        "provider": "firstParty",
+        "costBasis": "list"
+      }
+    },
+    "permission_denials": [],
+    "subtype": "success",
+    "duration_ms": 60149,
+    "raw_sha256": "0dfc595b65e2735bd3cbb9d030630af91ea4d3550f70a7b7de0f2ba40f3a2349",
+    "findings_count": 48,
+    "explicit_status": [
+      "INCOMPLETE"
+    ],
+    "raw": "/tmp/hla1597-unit-review-20261115/followup/god-class-file-size.native.json",
+    "findings": "/tmp/hla1597-unit-review-20261115/followup/god-class-file-size.findings.json"
+  }
+}

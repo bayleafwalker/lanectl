@@ -1,0 +1,60 @@
+TAP version 13
+# Subtest: fixture: real sources define 5 datasets, 2 required
+ok 1 - fixture: real sources define 5 datasets, 2 required
+  ---
+  duration_ms: 0.604463
+  ...
+# Subtest: SSR without mounted renders nothing
+ok 2 - SSR without mounted renders nothing
+  ---
+  duration_ms: 2.659302
+  ...
+# Subtest: none -> full 0/5 core 0/2
+ok 3 - none -> full 0/5 core 0/2
+  ---
+  duration_ms: 4.50076
+  ...
+# Subtest: one core -> full 1/5 core 1/2
+ok 4 - one core -> full 1/5 core 1/2
+  ---
+  duration_ms: 1.023124
+  ...
+# Subtest: optional only -> full 3/5 core 0/2
+ok 5 - optional only -> full 3/5 core 0/2
+  ---
+  duration_ms: 1.088764
+  ...
+# Subtest: core + partial optional -> full 4/5 core 1/2
+ok 6 - core + partial optional -> full 4/5 core 1/2
+  ---
+  duration_ms: 0.570363
+  ...
+# Subtest: both cores -> compact 2/5
+ok 7 - both cores -> compact 2/5
+  ---
+  duration_ms: 0.303491
+  ...
+# Subtest: both cores + optional -> compact 3/5
+ok 8 - both cores + optional -> compact 3/5
+  ---
+  duration_ms: 0.214041
+  ...
+# Subtest: all five -> compact 5/5
+ok 9 - all five -> compact 5/5
+  ---
+  duration_ms: 0.345462
+  ...
+# Subtest: duplicate core + unknown -> full 1/5 core 1/2
+ok 10 - duplicate core + unknown -> full 1/5 core 1/2
+  ---
+  duration_ms: 0.919174
+  ...
+1..10
+# tests 10
+# suites 0
+# pass 10
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 101.533681

@@ -1,0 +1,28 @@
+Starting [systemd-run] /etc/profiles/per-user/bayleaf/bin/bash /tmp/hla1597-unit-review-20261115/pack-boundary.sh...
+Started [systemd-run] /etc/profiles/per-user/bayleaf/bin/bash /tmp/hla1597-unit-review-20261115/pack-boundary.sh.
+hla1597-review-pack-boundary.service: Main process exited, code=exited, status=127/n/a
+hla1597-review-pack-boundary.service: Failed with result 'exit-code'.
+Starting [systemd-run] /etc/profiles/per-user/bayleaf/bin/bash /tmp/hla1597-unit-review-20261115/god-class-file-size.sh...
+Started [systemd-run] /etc/profiles/per-user/bayleaf/bin/bash /tmp/hla1597-unit-review-20261115/god-class-file-size.sh.
+hla1597-review-god-class-file-size.service: Main process exited, code=exited, status=127/n/a
+hla1597-review-god-class-file-size.service: Failed with result 'exit-code'.
+Starting [systemd-run] /etc/profiles/per-user/bayleaf/bin/bash /tmp/hla1597-unit-review-20261115/test-quality.sh...
+Started [systemd-run] /etc/profiles/per-user/bayleaf/bin/bash /tmp/hla1597-unit-review-20261115/test-quality.sh.
+hla1597-review-test-quality.service: Main process exited, code=exited, status=127/n/a
+hla1597-review-test-quality.service: Failed with result 'exit-code'.
+Starting [systemd-run] /etc/profiles/per-user/bayleaf/bin/bash /tmp/hla1597-unit-review-20261115/suppression-drift.sh...
+Started [systemd-run] /etc/profiles/per-user/bayleaf/bin/bash /tmp/hla1597-unit-review-20261115/suppression-drift.sh.
+hla1597-review-suppression-drift.service: Main process exited, code=exited, status=127/n/a
+hla1597-review-suppression-drift.service: Failed with result 'exit-code'.
+Starting [systemd-run] /etc/profiles/per-user/bayleaf/bin/bash /tmp/hla1597-unit-review-20261115/stratum-coherence.sh...
+Started [systemd-run] /etc/profiles/per-user/bayleaf/bin/bash /tmp/hla1597-unit-review-20261115/stratum-coherence.sh.
+hla1597-review-stratum-coherence.service: Main process exited, code=exited, status=127/n/a
+hla1597-review-stratum-coherence.service: Failed with result 'exit-code'.
+Starting [systemd-run] /etc/profiles/per-user/bayleaf/bin/bash /tmp/hla1597-unit-review-20261115/semantic-ownership.sh...
+Started [systemd-run] /etc/profiles/per-user/bayleaf/bin/bash /tmp/hla1597-unit-review-20261115/semantic-ownership.sh.
+hla1597-review-semantic-ownership.service: Main process exited, code=exited, status=127/n/a
+hla1597-review-semantic-ownership.service: Failed with result 'exit-code'.
+Starting [systemd-run] /etc/profiles/per-user/bayleaf/bin/bash /tmp/hla1597-unit-review-20261115/repetition-vs-abstraction.sh...
+Started [systemd-run] /etc/profiles/per-user/bayleaf/bin/bash /tmp/hla1597-unit-review-20261115/repetition-vs-abstraction.sh.
+hla1597-review-repetition-vs-abstraction.service: Main process exited, code=exited, status=127/n/a
+hla1597-review-repetition-vs-abstraction.service: Failed with result 'exit-code'.

@@ -1,0 +1,34 @@
+Independent read-only specialist review of stable HLA1597 candidate 57a7785c17ae76ba2169ca6af5bd4af62564a188, base b2d0fe393ac0971e906cce275e91f45e94422593, full bound diff /tmp/hla1597-unit-review-20261115/diff.patch. Your assigned specialist is god-class-file-size; repo-selected role criteria:
+
+---
+specialist: god-class-file-size
+---
+
+## Scope
+
+Detect files, classes, and functions that are too large to review safely. Produce two
+outputs: findings for files, classes, or functions that grew in this scope and crossed
+a threshold, plus a watchlist of pre-existing top offenders.
+
+Thresholds:
+
+- File: 600 LOC
+- Function: about 80 lines
+- Class: more than 15 methods, or methods importing from more than three distinct packages
+
+## Calibration anchors
+
+Include any existing production file over 600 LOC in the watchlist, even when it did
+not change. Flag growth in `packages/storage/`, `packages/pipelines/`, or a domain
+pack when it crosses a threshold and no focused extraction path is evident.
+
+## Severity guidance
+
+- `blocker`: a file grew in this scope and is now more than twice the size of the
+  next-largest file in its package.
+- `advisory`: a file grew past 600 LOC, or a newly added function crossed 80 lines.
+- `watchlist`: an unchanged pre-existing offender.
+
+Return `[]` when no findings apply.
+
+Inspect BOTH entire new test files and real production component/source definitions, test scripts/package/CI details as needed, and relevant product direction. Read-only; use only Read/Grep/Glob in this repository or owned diff; do not access error.log, credentials, private repos, other worktrees, execute commands, edit files or delegate. Review actual changed behavior, not worker claims alone. Mounted-only React adapter must guard all 3 initial false and retain real React.useState, compact dismissed=false; SSR uses actual React. Primary component/source definitions/Next Link remain real, no copied collapse predicate or source string oracle. Eight semantic cases + two guards, exact counts/membership/duplicate unknown handling; wrapper collected ordinary pytest, no slow/skip and fails missing tools/timeout. Seam explicitly is not hydration/storage/Expand/manual coverage. Challenge global Module._load restoration and node:test order, mocking/circular oracle/weak guards/falsifier independence, and scope. Existing 1597 required coverage only; no product implementation or adoption of exhausted onboarding2904 source. Worker reports 10 pass; independent preload mutant 3 semantic failures/7 pass; focused Make pass, Ruff/mypy pass; full Make not yet observed. Do not treat these claims as fresh executions or claim gates passed. Return ONLY valid JSON array of role findings with specialist,severity,file,line,finding,evidence,recommendation,blocker. Include exact references and anything incomplete. Empty [] only for a complete no-finding review. Do not output sensitive data.

@@ -1,0 +1,25 @@
+{
+  "head": "57a7785c17ae76ba2169ca6af5bd4af62564a188",
+  "command": "export LD_LIBRARY_PATH=/nix/store/3dkchpfn8r3ipsccl1001xhcl5smfjdx-glib-2.88.3/lib:/nix/store/8pcrdazxyw8b1n3i0v9d2r3g38hrgw63-nspr-4.40/lib:/nix/store/l34g6v1iwrww50gk7rg06x1ncn5x3ifl-nss-3.130/lib:/nix/store/4g39rajyrxqn3na1kd4pykdigsr82af5-at-spi2-core-2.60.6/lib:/nix/store/d34lp4b2b0glnmwf7ij3ha8mrmb30l64-dbus-1.16.2-lib/lib:/nix/store/znrm90algr0fvnnnp130am1qfg59nl1f-libx11-1.8.13/lib:/nix/store/a3rbzlj5wzxwjpncc0q9p6l64sc52m3y-libxcomposite-0.4.7/lib:/nix/store/kg5wp6wavf5p7v6shcccyqxy2nlzsn5s-libxdamage-1.1.7/lib:/nix/store/firki6qp8l2y6jgpwvix2wd95bi572mi-libxext-1.3.7/lib:/nix/store/l5y7fz08zvrqiinb90j1r922ymncb0sj-libxfixes-6.0.2/lib:/nix/store/w8szff2i3dyf21v08j9yvpznfr7518wi-libxrandr-1.5.5/lib:/nix/store/knm96d081dl0mhbbdbmi2gwqj2sn0jbh-mesa-libgbm-26.1.3/lib:/nix/store/zrkqwk0989k5wa1gn3cjb76jfga3d8i3-expat-2.8.5/lib:/nix/store/cvr8yyrrqnjxgd7bs6lwgra4qma7kwl9-libxcb-1.17.0/lib:/nix/store/nvrv5w6rhc39h8snrsw03nqs679cf7rh-libxkbcommon-1.13.2/lib:/nix/store/gvhdvn542cwd3wr2978nh4ydzp89msq7-systemd-minimal-libs-261.3/lib:/nix/store/xlqm12gx3s3f7dc1a5pnfk4p2niw2lri-alsa-lib-1.2.16.1/lib; export FONTCONFIG_FILE=/tmp/hla1597-browser-runtime-20261115/fonts/noble-image-rules.conf; export FONTCONFIG_PATH=/tmp/hla1597-browser-runtime-20261115/fonts/noble-etc-fonts; export XDG_CACHE_HOME=/tmp/hla1597-browser-runtime-20261115/fonts/nobleimage-visual/cache; export TMPDIR=/tmp/hla1597-browser-runtime-20261115/fonts/nobleimage-visual/tmp; export PLAYWRIGHT_BROWSERS_PATH=/home/bayleaf/.cache/ms-playwright; /nix/store/27hadlzi8db7r6gpd7aq1cgbgcaj5frr-gnumake-4.4.1/bin/make verify-fast",
+  "fenced": true,
+  "guard_completion": true,
+  "phase": "terminal",
+  "model_implementation_attempts": 2,
+  "product_source_changed": false,
+  "initial_failure_retained": "initial-verify-fast.log",
+  "python_discovery": "owned .venv, no command-line PYTHON override",
+  "runtime": {
+    "LD_LIBRARY_PATH": "/nix/store/3dkchpfn8r3ipsccl1001xhcl5smfjdx-glib-2.88.3/lib:/nix/store/8pcrdazxyw8b1n3i0v9d2r3g38hrgw63-nspr-4.40/lib:/nix/store/l34g6v1iwrww50gk7rg06x1ncn5x3ifl-nss-3.130/lib:/nix/store/4g39rajyrxqn3na1kd4pykdigsr82af5-at-spi2-core-2.60.6/lib:/nix/store/d34lp4b2b0glnmwf7ij3ha8mrmb30l64-dbus-1.16.2-lib/lib:/nix/store/znrm90algr0fvnnnp130am1qfg59nl1f-libx11-1.8.13/lib:/nix/store/a3rbzlj5wzxwjpncc0q9p6l64sc52m3y-libxcomposite-0.4.7/lib:/nix/store/kg5wp6wavf5p7v6shcccyqxy2nlzsn5s-libxdamage-1.1.7/lib:/nix/store/firki6qp8l2y6jgpwvix2wd95bi572mi-libxext-1.3.7/lib:/nix/store/l5y7fz08zvrqiinb90j1r922ymncb0sj-libxfixes-6.0.2/lib:/nix/store/w8szff2i3dyf21v08j9yvpznfr7518wi-libxrandr-1.5.5/lib:/nix/store/knm96d081dl0mhbbdbmi2gwqj2sn0jbh-mesa-libgbm-26.1.3/lib:/nix/store/zrkqwk0989k5wa1gn3cjb76jfga3d8i3-expat-2.8.5/lib:/nix/store/cvr8yyrrqnjxgd7bs6lwgra4qma7kwl9-libxcb-1.17.0/lib:/nix/store/nvrv5w6rhc39h8snrsw03nqs679cf7rh-libxkbcommon-1.13.2/lib:/nix/store/gvhdvn542cwd3wr2978nh4ydzp89msq7-systemd-minimal-libs-261.3/lib:/nix/store/xlqm12gx3s3f7dc1a5pnfk4p2niw2lri-alsa-lib-1.2.16.1/lib",
+    "FONTCONFIG_FILE": "/tmp/hla1597-browser-runtime-20261115/fonts/noble-image-rules.conf",
+    "FONTCONFIG_PATH": "/tmp/hla1597-browser-runtime-20261115/fonts/noble-etc-fonts",
+    "XDG_CACHE_HOME": "/tmp/hla1597-browser-runtime-20261115/fonts/nobleimage-visual/cache",
+    "TMPDIR": "/tmp/hla1597-browser-runtime-20261115/fonts/nobleimage-visual/tmp",
+    "PLAYWRIGHT_BROWSERS_PATH": "/home/bayleaf/.cache/ms-playwright"
+  },
+  "standalone_visual_gate": "55 passed unchanged + Helm lint0",
+  "second_failure_retained": "second-verify-fast.log",
+  "returncode": 0,
+  "elapsed_s": 731.693,
+  "head_after": "57a7785c17ae76ba2169ca6af5bd4af62564a188",
+  "tracked_status_after": ""
+}

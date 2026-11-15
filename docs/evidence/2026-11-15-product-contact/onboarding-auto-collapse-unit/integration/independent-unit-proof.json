@@ -1,0 +1,32 @@
+{
+  "head": "57a7785c17ae76ba2169ca6af5bd4af62564a188",
+  "results": {
+    "green": {
+      "returncode": 0,
+      "tests": 10,
+      "passed": 10,
+      "failed": 0,
+      "skipped": 0,
+      "failed_names": []
+    },
+    "red": {
+      "returncode": 1,
+      "tests": 10,
+      "passed": 7,
+      "failed": 3,
+      "skipped": 0,
+      "failed_names": [
+        "both cores -> compact 2/5",
+        "both cores + optional -> compact 3/5",
+        "all five -> compact 5/5"
+      ]
+    }
+  },
+  "source_hashes_before_after_equal": {
+    "apps/web/frontend/unit/onboarding-auto-collapse.test.cjs": "e8a86b2cda86fa6c1231eaa4b85ac19528603614e5d1810da9b0d32aa9742ed3",
+    "apps/web/frontend/components/onboarding-checklist.js": "b93139b12501637dbc7016a8ae9aff339edde4463c249d06adfd0c875a3611c1",
+    "apps/web/frontend/lib/onboarding-sources.js": "20ec10e44733522726567c30dd27de73a4882a867f5dc7c39917952562caebe4"
+  },
+  "mutant": "externalModule.prototype._compile replaces ONLY compiledautomaticcollapsebranch; noondiskproductmutation",
+  "fenced_completion": true
+}

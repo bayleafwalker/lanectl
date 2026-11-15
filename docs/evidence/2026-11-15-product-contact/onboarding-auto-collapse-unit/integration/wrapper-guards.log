@@ -1,0 +1,31 @@
+{
+  "head": "57a7785c17ae76ba2169ca6af5bd4af62564a188",
+  "wrapper_sha256": "89fabc9cc59e89e25d67676905460c93fc42644e5ba5db13f941bf91bc182056",
+  "guards": [
+    {
+      "guard": "missing-node",
+      "raised": "Failed",
+      "message": "node is required on PATH for the onboarding unit suite",
+      "expected_failure": true
+    },
+    {
+      "guard": "missing-dependency",
+      "raised": "Failed",
+      "message": "missing frontend dependency esbuild; run npm ci in /tmp/hla1597-missing-deps-e819opnk",
+      "expected_failure": true
+    },
+    {
+      "guard": "timeout",
+      "raised": "Failed",
+      "message": "node unit suite timed out after 120s",
+      "expected_failure": true
+    },
+    {
+      "guard": "node-nonzero",
+      "raised": "AssertionError",
+      "message": "guard-stdoutguard-stderr",
+      "expected_failure": true
+    }
+  ],
+  "source_unchanged": true
+}

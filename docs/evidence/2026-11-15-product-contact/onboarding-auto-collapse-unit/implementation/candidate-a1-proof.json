@@ -1,0 +1,15 @@
+{
+  "native_attempt": 1,
+  "focused_gate": "make test-target TEST='tests/test_onboarding_auto_collapse_unit.py -x --tb=short'",
+  "focused_exit": 0,
+  "focused_summary": "1 passed in 0.14s",
+  "ruff": "All checks passed!",
+  "mypy": "Success: no issues found in 1 source file",
+  "tracked_source_unchanged": true,
+  "candidate_sha256": {
+    "apps/web/frontend/unit/onboarding-auto-collapse.test.cjs": "f8304ec003473f8a1f694a2adff9856489c9b84b34b0bebac8d58ec28ff5f86c",
+    "tests/test_onboarding_auto_collapse_unit.py": "89fabc9cc59e89e25d67676905460c93fc42644e5ba5db13f941bf91bc182056"
+  },
+  "total_lines": 151,
+  "known_gap": "Third mounted state original initialfalse not asserted; untouchedSSR uses adapterfalse rather than rawReact."
+}

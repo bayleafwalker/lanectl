@@ -1,0 +1,10 @@
+{
+  "head": "57a7785c17ae76ba2169ca6af5bd4af62564a188",
+  "exit": 2,
+  "duration_s": 765.353,
+  "browser_cases": 55,
+  "browser_semantic_cases_reached": 0,
+  "browser_error": "cachedchromiumheadless1217 missing libglib-2.0.so.0 underfor_traincleanenv",
+  "source_or_gates_changed": false,
+  "next": "verifyexistingruntimeunderexactnamespace,thenunchanged55andwholeMake"
+}

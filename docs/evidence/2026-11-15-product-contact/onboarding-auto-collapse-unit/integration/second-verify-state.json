@@ -1,0 +1,15 @@
+{
+  "head": "57a7785c17ae76ba2169ca6af5bd4af62564a188",
+  "command": "/nix/store/27hadlzi8db7r6gpd7aq1cgbgcaj5frr-gnumake-4.4.1/bin/make verify-fast",
+  "fenced": true,
+  "guard_completion": true,
+  "phase": "terminal",
+  "model_implementation_attempts": 2,
+  "product_source_changed": false,
+  "initial_failure_retained": "initial-verify-fast.log",
+  "python_discovery": "owned .venv, no command-line PYTHON override",
+  "returncode": 2,
+  "elapsed_s": 765.353,
+  "head_after": "57a7785c17ae76ba2169ca6af5bd4af62564a188",
+  "tracked_status_after": ""
+}

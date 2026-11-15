@@ -1,0 +1,42 @@
+[
+  {
+    "specialist": "stratum-coherence",
+    "severity": "advisory",
+    "file": "apps/web/frontend/unit/onboarding-auto-collapse.test.cjs",
+    "line": 1,
+    "finding": "The diff creates a new top-level test directory, `apps/web/frontend/unit/`, in the web surface. It's the only non-node_modules test location under `apps/web/frontend`, and the stratum map says nothing about frontend test placement. The change stays inside the surface stratum. It adds no packages/ directory, no kernel or semantic-engine imports, and no product-pack reach. So it isn't a blocker. The new node:test convention is just unrecorded. Nothing registers it: the frontend package.json has no `test` script, only `playwright:test`, and the only runner is a pytest wrapper.",
+    "evidence": "The Glob for `apps/web/frontend/{unit,tests,__tests__,test,e2e}/**` returns only this file. `docs/architecture/stratum-map.md` has zero mentions of `frontend` or `unit`. `apps/web/frontend/package.json:16-17` defines only the playwright scripts.",
+    "recommendation": "Add a one-line note, in the PR description or the relevant frontend or testing doc, saying `apps/web/frontend/unit/` is the surface-level node:test location and that pytest drives it. No ADR is needed.",
+    "blocker": false
+  },
+  {
+    "specialist": "stratum-coherence",
+    "severity": "advisory",
+    "file": "tests/test_onboarding_auto_collapse_unit.py",
+    "line": 1,
+    "finding": "The test is a surface-stratum check, and the diff contains no semantic-engine or product-pack logic. The `ONBOARDING_SOURCES` source definitions (5 datasets, 2 required) are owned by the frontend lib. The test imports them from `lib/onboarding-sources.js` and does not copy them. The expected counts in the test (for example `/5` and `/2`) are hard-coded literals. The fixture test asserts `SOURCES.length == 5` and `required == 2`. If the real definitions change, those two tests fail, which is probably intended.",
+    "evidence": "The `compile(\"lib/onboarding-sources.js\")` call is at cjs:55. The fixture assertions are at cjs:103-106. The pytest wrapper is at tests/test_onboarding_auto_collapse_unit.py:153-171. It uses `pytest.fail` for a missing node or dependency and for a timeout, and it has no skip or slow marker.",
+    "recommendation": "No stratum action is needed. This is informational.",
+    "blocker": false
+  },
+  {
+    "specialist": "stratum-coherence",
+    "severity": "watchlist",
+    "file": "tests/test_architecture_contract.py",
+    "line": 1,
+    "finding": "The architecture contract test has no references to `apps/web/frontend`, so it can't check frontend test placement or surface-layer direction for JS code. This predates the diff. The new test also doesn't touch Python layer direction, so the existing checks are unaffected.",
+    "evidence": "A Grep for `frontend` in `tests/test_architecture_contract.py` returns no matches.",
+    "recommendation": "Nothing is required for this unit.",
+    "blocker": false
+  },
+  {
+    "specialist": "stratum-coherence",
+    "severity": "watchlist",
+    "file": "apps/web/frontend/unit/onboarding-auto-collapse.test.cjs",
+    "line": 31,
+    "finding": "Scope limit of this review. I covered stratum placement and cross-stratum coherence only. I did not execute anything, so none of the reported gate results are verified here: the 10 passing tests, the 3-failure mutant run, the focused Make, Ruff and mypy, and the full Make that hasn't been observed yet. Several items in the assignment are outside the stratum-coherence criteria and I haven't reviewed them. They are the `Module._load` restoration, node:test ordering, circular oracle and weak guards, falsifier independence, and the useState adapter's hook-order guard. For the useState adapter, the call-count and initial-false assertions are visible at cjs:62-64 and cjs:78. The other items need the correctness or test-quality specialists.",
+    "evidence": "The diff at /tmp/hla1597-unit-review-20261115/diff.patch (cjs lines 31-81) and the stratum-map and architecture files only. No commands were run.",
+    "recommendation": "Don't read this review as passing the correctness or test-quality criteria. Have the other specialists cover those, and run the full gate before merge.",
+    "blocker": false
+  }
+]

@@ -1,0 +1,31 @@
+Independent read-only specialist review of stable HLA1597 candidate 57a7785c17ae76ba2169ca6af5bd4af62564a188, base b2d0fe393ac0971e906cce275e91f45e94422593, full bound diff /tmp/hla1597-unit-review-20261115/diff.patch. Your assigned specialist is stratum-coherence; repo-selected role criteria:
+
+---
+specialist: stratum-coherence
+---
+
+## Scope
+
+Evaluate whether the diff respects the kernel, semantic-engine, product-pack, and
+surface strata. Flag code crossing strata without an ADR or classification note,
+semantic logic leaking into surfaces, product packs reaching kernel internals, and new
+files in ambiguous, scaffold, or transitional packages without resolving their status.
+
+## References
+
+- `docs/architecture/stratum-map.md`
+- `docs/architecture/data-platform-architecture.md`
+
+`tests/test_architecture_contract.py` checks selected layer direction and imports. This
+review covers placement and unresolved package ambiguity beyond those checks.
+
+## Severity guidance
+
+- `blocker`: new code in an ambiguous package without resolving its stratum, or
+  a clear unapproved stratum violation introduced by the diff.
+- `advisory`: an existing transitional package grows without a classification note.
+- `watchlist`: unchanged stratum ambiguity.
+
+Return `[]` when no findings apply.
+
+Inspect BOTH entire new test files and real production component/source definitions, test scripts/package/CI details as needed, and relevant product direction. Read-only; use only Read/Grep/Glob in this repository or owned diff; do not access error.log, credentials, private repos, other worktrees, execute commands, edit files or delegate. Review actual changed behavior, not worker claims alone. Mounted-only React adapter must guard all 3 initial false and retain real React.useState, compact dismissed=false; SSR uses actual React. Primary component/source definitions/Next Link remain real, no copied collapse predicate or source string oracle. Eight semantic cases + two guards, exact counts/membership/duplicate unknown handling; wrapper collected ordinary pytest, no slow/skip and fails missing tools/timeout. Seam explicitly is not hydration/storage/Expand/manual coverage. Challenge global Module._load restoration and node:test order, mocking/circular oracle/weak guards/falsifier independence, and scope. Existing 1597 required coverage only; no product implementation or adoption of exhausted onboarding2904 source. Worker reports 10 pass; independent preload mutant 3 semantic failures/7 pass; focused Make pass, Ruff/mypy pass; full Make not yet observed. Do not treat these claims as fresh executions or claim gates passed. Return ONLY valid JSON array of role findings with specialist,severity,file,line,finding,evidence,recommendation,blocker. Include exact references and anything incomplete. Empty [] only for a complete no-finding review. Do not output sensitive data.

@@ -1,0 +1,17 @@
+{
+  "reason": "Two path-to-SHA256 frontend manifests triggered 20 generic-api-key matches on names such as ui-tokens and console-keys followed by hashes. Both raw inventories remain host-local and are omitted from publication rather than adding scanner exceptions. All 276 path/hash pairs compare equal.",
+  "entries": 276,
+  "equal": true,
+  "raw_files": [
+    {
+      "path": "implementation/source-before.json",
+      "sha256": "25e69042bb6f3182e20dd3e7ec05cb0cb43d66f893d736103e7bd233eecf3e24"
+    },
+    {
+      "path": "implementation/attempt2/source-after.json",
+      "sha256": "25e69042bb6f3182e20dd3e7ec05cb0cb43d66f893d736103e7bd233eecf3e24"
+    }
+  ],
+  "scanner_findings": 20,
+  "values_published": false
+}

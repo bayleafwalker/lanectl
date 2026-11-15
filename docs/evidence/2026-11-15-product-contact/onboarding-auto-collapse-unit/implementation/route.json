@@ -1,0 +1,11 @@
+{
+  "manifest": "/projects/dev/_wt/hla1597-unit-20261115/homelab-analytics.dispatch.json",
+  "sha256": "ff720a1a1cbeb6e5b623904bf3049d354469ae9ef571761bb28d2554751ea0b6",
+  "action": "build",
+  "alias": "fast-build",
+  "native_model": "claude-sonnet-5-5",
+  "correction": "Root corrected historical Haiku/eng-fast prose before actual attempt; current structured manifest route wins.",
+  "implementation_attempt": 1,
+  "global_model_policy_sha256": "647cc974f3d0f40a8673fe8df36fef2c93d7f52a7ade2c26365759a5580a1832",
+  "global_model_policy": "/projects/dev/agentops/model-routing.json"
+}

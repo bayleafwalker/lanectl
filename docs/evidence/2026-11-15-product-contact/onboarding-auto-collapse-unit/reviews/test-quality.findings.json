@@ -1,0 +1,52 @@
+[
+  {
+    "specialist": "test-quality",
+    "severity": "advisory",
+    "file": "apps/web/frontend/unit/onboarding-auto-collapse.test.cjs",
+    "line": 27,
+    "finding": "The suite imports esbuild directly, but esbuild is not a declared dependency of the frontend. It is only a transitive dev dependency (package-lock.json node_modules/esbuild 0.25.12, dev:true), and a grep of package.json found no esbuild entry. A routine dependency change could remove or move it and break the suite. The pytest wrapper would then fail with 'missing frontend dependency' instead of showing a product regression.",
+    "evidence": "Line 27: `req(\"esbuild\")`. Grep for 'esbuild' in apps/web/frontend/package.json returned no matches. The lockfile lists esbuild only at line 3353 as a transitive dev package.",
+    "recommendation": "Declare esbuild as an explicit devDependency, or document why relying on the transitive copy is acceptable. This is a scope tradeoff, since adding it changes package.json and the lockfile.",
+    "blocker": false
+  },
+  {
+    "specialist": "test-quality",
+    "severity": "advisory",
+    "file": "tests/test_onboarding_auto_collapse_unit.py",
+    "line": 171,
+    "finding": "The wrapper only checks that `node --test` exits 0. It does not check that the 10 expected node tests actually ran and passed. If the .cjs file were emptied, its tests were skipped, or it were reduced to fewer cases, the wrapper would still pass. The wrapper itself is not trivially true: it fails on a missing node, missing dependencies, a timeout and a nonzero exit. It does not guard against silent loss of cases, though, and the eight cases plus two guards are the required coverage.",
+    "evidence": "Line 171: `assert result.returncode == 0`. There is no parsing of stdout for 'pass 10' / 'fail 0' / 'skipped 0'.",
+    "recommendation": "Assert on the node:test summary, for example that stdout contains `# pass 10`, `# fail 0` and `# skipped 0`. Alternatively use `--test-reporter=tap` and count the results.",
+    "blocker": false
+  },
+  {
+    "specialist": "test-quality",
+    "severity": "advisory",
+    "file": "apps/web/frontend/unit/onboarding-auto-collapse.test.cjs",
+    "line": 99,
+    "finding": "The compact assertions pin exact UI copy, `Onboarding: N/5 sources active \u2014 core sources ready` and `Expand`, and the full assertions pin `N of 5 sources active` and `M/2 core sources ready`. The specification (HLA1597) is that the compact badge shows when both required sources are active, so these strings are only a proxy for it. A harmless copy change would break the tests. The expected counts (5, 2, and N per case) are hardcoded literals rather than copied from the component's own predicate, which keeps them independent. The `fixture` test checks the 5 and 2 against the real sources.",
+    "evidence": "Lines 92-93 and 99-100 assert literal strings. The component text sits at components/onboarding-checklist.js:85-86 and 135-139.",
+    "recommendation": "Optional: for the compact case, assert the headline distinction (heading absent, `Expand` present, no `Minimise`) and treat the exact count text as secondary. Otherwise accept the copy-coupling as deliberate.",
+    "blocker": false
+  },
+  {
+    "specialist": "test-quality",
+    "severity": "advisory",
+    "file": "apps/web/frontend/unit/onboarding-auto-collapse.test.cjs",
+    "line": 62,
+    "finding": "The mounted-seam guard is positional. It forces the third `useState` call to true and asserts that every initial value is false and that there are exactly 3 calls. If the hook order changed, for example `mounted` and `compact` swapped, the guard would not name the cause. The semantic cases would fail instead, which still catches it, but with a misleading message. The test's own header says hydration, localStorage, Expand and manual interaction are out of scope, and the code matches that. Because `useEffect` does not run in SSR, the dismissed/compact localStorage paths are never exercised.",
+    "evidence": "Lines 62-67 select state.calls === 3. The component declares dismissed, compact and mounted at onboarding-checklist.js:12-14. The adapter keeps the real React.useState and spreads the real React object. `Module._load` is restored in a try/finally at lines 47-51, and the patch applies only when `parent === mod`, so there is no leakage across compiles. The node:test cases run synchronously and do not depend on order.",
+    "recommendation": "No change needed beyond an optional comment on the guard. Keep the scope statement in the file header and in any summary: this covers the mounted render seam only and does not replace hydration, storage or Expand coverage.",
+    "blocker": false
+  },
+  {
+    "specialist": "test-quality",
+    "severity": "watchlist",
+    "file": "apps/web/frontend/unit/onboarding-auto-collapse.test.cjs",
+    "line": 1,
+    "finding": "The review is incomplete in three ways. I read only the diff and the source files, and ran no commands. The worker's reported results (10 pass, the independent preload mutant giving 3 semantic failures and 7 passes, focused Make, Ruff and mypy passing, full Make not yet observed) are unverified claims from me. I did not confirm how the pytest wrapper is collected: no slow or skip markers appear in the diff, but I did not inspect the pytest config or CI. I also did not confirm that the `next/link` real-module load and the esbuild JSX interop (default import of the adapter object) work in the pinned versions. Both are plausible from the code.",
+    "evidence": "Only the diff, components/onboarding-checklist.js, lib/onboarding-sources.js, package.json and package-lock.json were read.",
+    "recommendation": "Run the focused Make target and the full Make target, and check pytest markers and CI, before declaring the gates passed.",
+    "blocker": false
+  }
+]

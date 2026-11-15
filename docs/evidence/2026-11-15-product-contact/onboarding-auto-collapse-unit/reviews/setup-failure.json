@@ -1,0 +1,18 @@
+{
+  "failure": "Python setup script had IndentationError before creating launch scripts",
+  "setup_command": "python heredoc to create prompts and scripts followed by systemd-run loop",
+  "unit_command": "/etc/profiles/per-user/bayleaf/bin/bash /tmp/hla1597-unit-review-20261115/<role>.sh",
+  "unit_names": [
+    "hla1597-review-pack-boundary.service",
+    "hla1597-review-god-class-file-size.service",
+    "hla1597-review-test-quality.service",
+    "hla1597-review-suppression-drift.service",
+    "hla1597-review-stratum-coherence.service",
+    "hla1597-review-semantic-ownership.service",
+    "hla1597-review-repetition-vs-abstraction.service"
+  ],
+  "unit_exit_code": 127,
+  "evidence": "/tmp/hla1597-unit-review-20261115/setup-unit-journal.txt",
+  "provider_invocations": 0,
+  "note": "Corrected shell scripts were syntax-checked after the live launches, not before; all native live results must be checked individually. Collected setup units no longer appear in failed list."
+}

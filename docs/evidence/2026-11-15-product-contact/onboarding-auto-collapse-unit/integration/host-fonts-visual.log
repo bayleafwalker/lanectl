@@ -1,0 +1,227 @@
+PATH=/projects/dev/homelab-analytics/.tooling/node-v20.20.1-linux-x64/bin:$PATH npm --prefix apps/web/frontend run ui:test
+
+> ui:test
+> start-server-and-test storybook http://127.0.0.1:6006 playwright:test
+
+1: starting server using command "npm run storybook"
+and when url "[ 'http://127.0.0.1:6006' ]" is responding with HTTP status code 200
+running tests using command "npm run playwright:test"
+
+
+> storybook
+> npm run tokens:build && storybook dev -p 6006 --ci
+
+
+> tokens:build
+> node scripts/build-ui-tokens.mjs
+
+@storybook/core v8.6.18
+
+info => Serving static files from ././public at /
+info => Starting manager..
+info => Starting preview..
+info Using tsconfig paths for react-docgen
+╭─────────────────────────────────────────────────────────────────────╮
+│                                                                     │
+│   [38;2;162;224;94mStorybook 8.6.18 for react-vite started[39m                           │
+│   212 ms for manager and 264 ms for preview                         │
+│                                                                     │
+│   Local:            http://localhost:6006/                          │
+│   On your network:  http://192.168.10.55:6006/                      │
+│                                                                     │
+│   [38;2;243;173;56mA new version (10.6.5) is available![39m                              │
+│                                                                     │
+│   Upgrade now: [38;2;162;224;94mnpx storybook@latest upgrade[39m                         │
+│                                                                     │
+│   Read full changelog:                                              │
+│   https://github.com/storybookjs/storybook/blob/main/CHANGELOG.md   │
+│                                                                     │
+╰─────────────────────────────────────────────────────────────────────╯
+
+> playwright:test
+> playwright test
+
+
+Running 55 tests using 4 workers
+
+  ✓   3 [chromium] › playwright/ui-innovation.spec.js:28:3 › cashflow sankey demo-month renders flows and stays accessible (1.5s)
+  ✓   4 [chromium] › playwright/ui-wave-3.spec.js:21:1 › explain opens from the keyboard and closes with Escape (1.5s)
+  ✘   1 [chromium] › playwright/storybook-ui.spec.js:18:1 › app shell story stays accessible and visually stable (1.7s)
+  ✓   2 [chromium] › playwright/ops-console.spec.js:22:3 › console admin stays accessible (1.8s)
+  ✓   6 [chromium] › playwright/ui-wave-3.spec.js:44:1 › explain closes on an outside click (491ms)
+  ✓   5 [chromium] › playwright/ui-innovation.spec.js:28:3 › cashflow sankey categorised-with-occasional renders flows and stays accessible (802ms)
+  ✓   8 [chromium] › playwright/ui-wave-3.spec.js:56:1 › explain says when the lineage walk left older runs out (752ms)
+  ✓   7 [chromium] › playwright/ops-console.spec.js:22:3 › console reader stays accessible (1.0s)
+  ✓  10 [chromium] › playwright/ui-innovation.spec.js:28:3 › cashflow sankey focused-payee renders flows and stays accessible (779ms)
+  ✘   9 [chromium] › playwright/storybook-ui.spec.js:27:1 › retro shell story stays accessible and visually stable (1.0s)
+  ✓  11 [chromium] › playwright/ui-wave-3.spec.js:65:1 › explain says nothing about truncation for a whole graph (461ms)
+  ✓  12 [chromium] › playwright/ops-console.spec.js:22:3 › console nothing-yet stays accessible (884ms)
+  ✓  13 [chromium] › playwright/ui-innovation.spec.js:28:3 › cashflow sankey overspent renders flows and stays accessible (740ms)
+  ✓  14 [chromium] › playwright/ui-wave-3.spec.js:73:3 › explain lineage-unavailable stays accessible when open (773ms)
+  ✓  16 [chromium] › playwright/ops-console.spec.js:30:3 › heat grid full stays accessible (807ms)
+  ✓  15 [chromium] › playwright/storybook-ui.spec.js:36:1 › msw-backed story resolves mocked response (958ms)
+  ✓  17 [chromium] › playwright/ui-innovation.spec.js:28:3 › cashflow sankey sparse renders flows and stays accessible (748ms)
+  ✓  18 [chromium] › playwright/ui-wave-3.spec.js:73:3 › explain wallboard stays accessible when open (826ms)
+  ✓  21 [chromium] › playwright/ui-innovation.spec.js:37:1 › cashflow sankey payees are keyboard reachable links (456ms)
+  ✓  22 [chromium] › playwright/ui-wave-3.spec.js:81:1 › explain panel stays inside a phone-width viewport (492ms)
+  ✓  19 [chromium] › playwright/ops-console.spec.js:30:3 › heat grid sparse stays accessible (826ms)
+  ✓  23 [chromium] › playwright/ui-innovation.spec.js:45:1 › cashflow sankey draws nothing when no money has been published (443ms)
+  ✓  20 [chromium] › playwright/storybook-ui.spec.js:42:1 › upload wizard enforces accept/retry gating before upload (1.3s)
+  ✓  25 [chromium] › playwright/ops-console.spec.js:30:3 › heat grid date-only stays accessible (800ms)
+  ✓  26 [chromium] › playwright/ui-innovation.spec.js:52:3 › cashflow bucket-ledger lists the buckets and stays accessible (742ms)
+  ✓  27 [chromium] › playwright/storybook-ui.spec.js:89:1 › policy template refuses submission until required inputs are supplied (756ms)
+  ✓  24 [chromium] › playwright/ui-wave-3.spec.js:90:1 › responsive table is a table on wide screens and slips at phone width (1.4s)
+  ✓  28 [chromium] › playwright/ops-console.spec.js:30:3 › heat grid empty stays accessible (786ms)
+  ✓  29 [chromium] › playwright/ui-innovation.spec.js:52:3 › cashflow bucket-ledger-overspent lists the buckets and stays accessible (725ms)
+  ✓  30 [chromium] › playwright/storybook-ui.spec.js:117:1 › operating picture v2 story shows the grouped net in the hero (463ms)
+  ✓  32 [chromium] › playwright/ops-console.spec.js:38:1 › console fits one 1440x900 screen without scrolling (450ms)
+  ✓  31 [chromium] › playwright/ui-wave-3.spec.js:110:1 › as-of scrubber marks the viewed month and shows gaps as inert (785ms)
+  ✓  33 [chromium] › playwright/ui-innovation.spec.js:52:3 › cashflow bucket-ledger-sparse lists the buckets and stays accessible (729ms)
+  ✓  34 [chromium] › playwright/ops-console.spec.js:63:1 › F1-F5 focus panels and Ctrl+K opens the shared command palette (475ms)
+  ✓  35 [chromium] › playwright/ui-wave-3.spec.js:120:1 › sparkline month labels stay readable and never overlap at any card width (497ms)
+  ✓  37 [chromium] › playwright/ops-console.spec.js:84:1 › console stacks at phone width without horizontal scroll (435ms)
+  ✓  36 [chromium] › playwright/ui-innovation.spec.js:60:3 › briefing mixed renders every section and stays accessible (827ms)
+  ✓  38 [chromium] › playwright/ui-innovation.spec.js:60:3 › briefing nothing-trusted-yet renders every section and stays accessible (839ms)
+  ✓  39 [chromium] › playwright/ui-innovation.spec.js:67:1 › cashflow flow list is the narrow-screen alternative (715ms)
+  ✓  40 [chromium] › playwright/ui-innovation.spec.js:74:3 › wallboard standard stays accessible (802ms)
+  ✓  41 [chromium] › playwright/ui-innovation.spec.js:74:3 › wallboard compact stays accessible (751ms)
+  ✓  42 [chromium] › playwright/ui-innovation.spec.js:74:3 › wallboard nothing-connected stays accessible (731ms)
+  ✓  43 [chromium] › playwright/ui-innovation.spec.js:81:1 › wallboard standard lays out the kiosk grid (459ms)
+  ✓  44 [chromium] › playwright/ui-innovation.spec.js:106:1 › wallboard compact mode hides the event feed and hotkey hint (448ms)
+  ✓  45 [chromium] › playwright/ui-innovation.spec.js:127:1 › wallboard refresh pauses while hidden and refreshes on return (445ms)
+  ✓  46 [chromium] › playwright/ui-innovation.spec.js:149:1 › wallboard refresh ticks without focus but not while hidden or hovered (3.3s)
+  ✓  47 [chromium] › playwright/ui-innovation.spec.js:168:3 › wallboard panel service-tile-up renders (699ms)
+  ✓  48 [chromium] › playwright/ui-innovation.spec.js:168:3 › wallboard panel devices renders (697ms)
+  ✓  49 [chromium] › playwright/ui-innovation.spec.js:168:3 › wallboard panel events renders (690ms)
+  ✓  50 [chromium] › playwright/ui-innovation.spec.js:168:3 › wallboard panel power renders (683ms)
+  ✓  51 [chromium] › playwright/ui-innovation.spec.js:168:3 › wallboard panel power-ambiguous renders (670ms)
+  ✓  52 [chromium] › playwright/ui-innovation.spec.js:175:1 › app shell rail groups the nav, marks the current page and stays accessible (756ms)
+  ✓  53 [chromium] › playwright/ui-innovation.spec.js:183:1 › app shell collapses to a menu button at phone width (459ms)
+  ✓  54 [chromium] › playwright/ui-innovation.spec.js:195:1 › state panels expose one alert and polite statuses (741ms)
+  ✓  55 [chromium] › playwright/ui-innovation.spec.js:201:1 › command palette opens with the keyboard and follows the highlighted link (901ms)
+
+
+  1) [chromium] › playwright/storybook-ui.spec.js:18:1 › app shell story stays accessible and visually stable 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoHaveScreenshot[2m([22m[32mexpected[39m[2m)[22m failed
+
+    Locator: locator('main')
+      49 pixels (ratio 0.01 of all image pixels) are different.
+
+      Snapshot: app-shell-admin-control.png
+
+    Call log:
+    [2m  - Expect "toHaveScreenshot(app-shell-admin-control.png)" with timeout 5000ms[22m
+    [2m    - verifying given screenshot expectation[22m
+    [2m  - waiting for locator('main')[22m
+    [2m    - locator resolved to <main tabindex="-1" id="main-content" class="page shellMain">…</main>[22m
+    [2m  - taking element screenshot[22m
+    [2m    - disabled all CSS animations[22m
+    [2m  - waiting for fonts to load...[22m
+    [2m  - fonts loaded[22m
+    [2m  - attempting scroll into view action[22m
+    [2m    - waiting for element to be stable[22m
+    [2m  - 49 pixels (ratio 0.01 of all image pixels) are different.[22m
+    [2m  - waiting 100ms before taking screenshot[22m
+    [2m  - waiting for locator('main')[22m
+    [2m    - locator resolved to <main tabindex="-1" id="main-content" class="page shellMain">…</main>[22m
+    [2m  - taking element screenshot[22m
+    [2m    - disabled all CSS animations[22m
+    [2m  - waiting for fonts to load...[22m
+    [2m  - fonts loaded[22m
+    [2m  - attempting scroll into view action[22m
+    [2m    - waiting for element to be stable[22m
+    [2m  - captured a stable screenshot[22m
+    [2m  - 49 pixels (ratio 0.01 of all image pixels) are different.[22m
+
+
+      19 |   await gotoStory(page, "shells-appshell--admin-control");
+      20 |   await expect(page.getByRole("navigation", { name: "Primary" })).toBeVisible();
+    > 21 |   await expect(page.locator("main")).toHaveScreenshot("app-shell-admin-control.png");
+         |                                      ^
+      22 |
+      23 |   const results = await new AxeBuilder({ page }).include("main").analyze();
+      24 |   expect(results.violations, violationMessage(results.violations)).toEqual([]);
+        at /projects/dev/_wt/hla1597-unit-20261115/apps/web/frontend/playwright/storybook-ui.spec.js:21:38
+
+    attachment #1: app-shell-admin-control (image/png) ─────────────────────────────────────────────
+    Expected: playwright/storybook-ui.spec.js-snapshots/app-shell-admin-control-chromium-linux.png
+    Received: test-results/storybook-ui-app-shell-sto-2bba7-essible-and-visually-stable-chromium/app-shell-admin-control-actual.png
+    Diff:     test-results/storybook-ui-app-shell-sto-2bba7-essible-and-visually-stable-chromium/app-shell-admin-control-diff.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/storybook-ui-app-shell-sto-2bba7-essible-and-visually-stable-chromium/error-context.md
+
+  2) [chromium] › playwright/storybook-ui.spec.js:27:1 › retro shell story stays accessible and visually stable 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoHaveScreenshot[2m([22m[32mexpected[39m[2m)[22m failed
+
+    Locator: locator('main')
+      71 pixels (ratio 0.01 of all image pixels) are different.
+
+      Snapshot: retro-shell-admin-control.png
+
+    Call log:
+    [2m  - Expect "toHaveScreenshot(retro-shell-admin-control.png)" with timeout 5000ms[22m
+    [2m    - verifying given screenshot expectation[22m
+    [2m  - waiting for locator('main')[22m
+    [2m    - locator resolved to <main class="retroPage">…</main>[22m
+    [2m  - taking element screenshot[22m
+    [2m    - disabled all CSS animations[22m
+    [2m  - waiting for fonts to load...[22m
+    [2m  - fonts loaded[22m
+    [2m  - attempting scroll into view action[22m
+    [2m    - waiting for element to be stable[22m
+    [2m  - 71 pixels (ratio 0.01 of all image pixels) are different.[22m
+    [2m  - waiting 100ms before taking screenshot[22m
+    [2m  - waiting for locator('main')[22m
+    [2m    - locator resolved to <main class="retroPage">…</main>[22m
+    [2m  - taking element screenshot[22m
+    [2m    - disabled all CSS animations[22m
+    [2m  - waiting for fonts to load...[22m
+    [2m  - fonts loaded[22m
+    [2m  - attempting scroll into view action[22m
+    [2m    - waiting for element to be stable[22m
+    [2m  - captured a stable screenshot[22m
+    [2m  - 71 pixels (ratio 0.01 of all image pixels) are different.[22m
+
+
+      28 |   await gotoStory(page, "shells-retroshell--admin-control");
+      29 |   await expect(page.getByRole("navigation", { name: "Retro navigation" })).toBeVisible();
+    > 30 |   await expect(page.locator("main")).toHaveScreenshot("retro-shell-admin-control.png");
+         |                                      ^
+      31 |
+      32 |   const results = await new AxeBuilder({ page }).include("main").analyze();
+      33 |   expect(results.violations, violationMessage(results.violations)).toEqual([]);
+        at /projects/dev/_wt/hla1597-unit-20261115/apps/web/frontend/playwright/storybook-ui.spec.js:30:38
+
+    attachment #1: retro-shell-admin-control (image/png) ───────────────────────────────────────────
+    Expected: playwright/storybook-ui.spec.js-snapshots/retro-shell-admin-control-chromium-linux.png
+    Received: test-results/storybook-ui-retro-shell-s-c5e62-essible-and-visually-stable-chromium/retro-shell-admin-control-actual.png
+    Diff:     test-results/storybook-ui-retro-shell-s-c5e62-essible-and-visually-stable-chromium/retro-shell-admin-control-diff.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/storybook-ui-retro-shell-s-c5e62-essible-and-visually-stable-chromium/error-context.md
+
+  2 failed
+    [chromium] › playwright/storybook-ui.spec.js:18:1 › app shell story stays accessible and visually stable 
+    [chromium] › playwright/storybook-ui.spec.js:27:1 › retro shell story stays accessible and visually stable 
+  53 passed (23.9s)
+Error: Command failed with exit code 1: npm run playwright:test
+    at makeError (/projects/dev/_wt/hla1597-unit-20261115/apps/web/frontend/node_modules/execa/lib/error.js:60:11)
+    at handlePromise (/projects/dev/_wt/hla1597-unit-20261115/apps/web/frontend/node_modules/execa/index.js:118:26)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5) {
+  shortMessage: 'Command failed with exit code 1: npm run playwright:test',
+  command: 'npm run playwright:test',
+  escapedCommand: '"npm run playwright:test"',
+  exitCode: 1,
+  signal: undefined,
+  signalDescription: undefined,
+  stdout: undefined,
+  stderr: undefined,
+  failed: true,
+  timedOut: false,
+  isCanceled: false,
+  killed: false
+}
+make: *** [Makefile:167: web-ui-test] Error 1

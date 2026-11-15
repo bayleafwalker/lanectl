@@ -1,0 +1,8 @@
+Observed systemctl --user show while running:
+ActiveState=active
+SubState=running
+InvocationID=b93252cb02ed45f7a049f5c03149a5bd
+MainPID=2124601
+ReadWritePaths=/projects/dev/_wt/hla1597-unit-20261115
+ReadOnlyPaths=/projects
+InaccessiblePaths=-/home/bayleaf/.config/vuoro/credentials -/run/user/1000/credentials

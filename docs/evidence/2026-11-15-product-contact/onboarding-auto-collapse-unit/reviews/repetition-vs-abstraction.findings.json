@@ -1,0 +1,32 @@
+[
+  {
+    "specialist": "repetition-vs-abstraction",
+    "severity": "watchlist",
+    "file": "apps/web/frontend/unit/onboarding-auto-collapse.test.cjs",
+    "line": 31,
+    "finding": "The test file defines its own in-memory JSX compile and Module._load interception harness (`compile`, `load`). This is the first node:test unit file in apps/web/frontend/unit/, and no other file in the repo uses `transformSync` or `Module._load`, so nothing is duplicated today. If a second component unit test arrives, it should reuse this harness through a shared helper in unit/ instead of copying it.",
+    "evidence": "Grep for `transformSync|Module\\._load` across the worktree matches only this file. Glob of apps/web/frontend/unit/* returns only this file. The diff adds no star re-exports, no storage or pipelines code, and no cross-pack duplication.",
+    "recommendation": "No change now. When a second node:test component suite is added, extract `compile` and the Module._load restoration into a shared unit/_harness.cjs.",
+    "blocker": false
+  },
+  {
+    "specialist": "repetition-vs-abstraction",
+    "severity": "watchlist",
+    "file": "tests/test_onboarding_auto_collapse_unit.py",
+    "line": 15,
+    "finding": "The Python wrapper runs a node suite by hand: it checks for node, checks node_modules dependencies, runs `subprocess.run` with a timeout, and fails on a missing tool or a timeout. This is the only wrapper of its kind in tests/, so there is no duplication yet. A second wrapper would copy the same ~15 lines, so that is the point to move them into a conftest helper or fixture.",
+    "evidence": "Grep in tests/ for `shutil.which(\"node\")` and `node_modules` finds no other wrapper. The only other `node_modules` hit is an unrelated path filter at tests/test_web_auth.py:714. I found no `test` or `node --test` script in apps/web/frontend/package.json, so this wrapper is the only entry point for the suite. That is a scope and CI observation, not a duplication finding.",
+    "recommendation": "No change now. Extract a shared `run_node_suite(path, deps)` helper when a second node:test wrapper is added.",
+    "blocker": false
+  },
+  {
+    "specialist": "repetition-vs-abstraction",
+    "severity": "watchlist",
+    "file": "apps/web/frontend/unit/onboarding-auto-collapse.test.cjs",
+    "line": 89,
+    "finding": "Review is incomplete beyond the duplication scope. I did not read the production component at components/onboarding-checklist.js, and I did not run anything. The `full` and `compact` helpers do reuse the real `ONBOARDING_SOURCES` data. The expected counts are hard-coded literals rather than a copied predicate, which suits the repetition criteria. I did not check the Module._load restoration, node:test ordering, the strength of the falsifier or the other correctness points in the assignment. Those belong to other specialists. I treat the worker's claim of 10 passing tests, the independent preload mutant result and the Make, Ruff and mypy results as unverified claims, not fresh runs.",
+    "evidence": "Only the diff, a Grep and a Glob were used for this review. No command was executed.",
+    "recommendation": "Have the correctness and test-quality specialists cover the remaining points. The full Make run has not yet been observed, so it still needs to be run before the gates are treated as passed.",
+    "blocker": false
+  }
+]

@@ -1,0 +1,627 @@
+{
+  "head": "57a7785c17ae76ba2169ca6af5bd4af62564a188",
+  "method": "Every Git-tracked blob at exact head, no path/name/suffix exclusions; UTF8/NUL classification, symlink blobs counted without dereference. Full text never printed.",
+  "tracked_blobs": 1304,
+  "binary_or_non_utf8_paths": [
+    "apps/web/frontend/playwright/storybook-ui.spec.js-snapshots/app-shell-admin-control-chromium-linux.png",
+    "apps/web/frontend/playwright/storybook-ui.spec.js-snapshots/retro-shell-admin-control-chromium-linux.png",
+    "docs/plans/frontend-design/refs/2026-10-ui-ux/before-dashboard-390.png",
+    "docs/plans/frontend-design/refs/2026-10-ui-ux/cashflow-1440.png",
+    "docs/plans/frontend-design/refs/2026-10-ui-ux/dashboard-1440.png",
+    "docs/plans/frontend-design/refs/2026-10-ui-ux/menu-390.png",
+    "docs/plans/frontend-design/refs/2026-10-ui-ux/wallboard-1280.png",
+    "docs/plans/frontend-design/refs/2026-10-ui-wave-3/cashflow-explain-1440.png",
+    "docs/plans/frontend-design/refs/2026-10-ui-wave-3/control-confidence-1440.png",
+    "docs/plans/frontend-design/refs/2026-10-ui-wave-3/dashboard-asof-390.png",
+    "docs/plans/frontend-design/refs/2026-10-ui-wave-3/dashboard-asof-explain-1440.png",
+    "docs/plans/frontend-design/refs/2026-10-ui-wave-3/sources-390.png",
+    "docs/plans/frontend-design/refs/2026-10-ui-wave-3/wallboard-explain-1280.png",
+    "docs/plans/frontend-design/refs/app-shell.png",
+    "docs/plans/frontend-design/refs/retro-shell.png",
+    "docs/product/screenshots/budgets.png",
+    "docs/product/screenshots/control.png",
+    "docs/product/screenshots/costs.png",
+    "docs/product/screenshots/finance-loop/01-ingest-summary.png",
+    "docs/product/screenshots/finance-loop/02-sources.png",
+    "docs/product/screenshots/finance-loop/03-reports-trust.png",
+    "docs/product/screenshots/finance-loop/04-expense-shock.png",
+    "docs/product/screenshots/finance-loop/05-saved-scenario.png",
+    "docs/product/screenshots/finance-loop/06-morning-brief.png",
+    "docs/product/screenshots/finance-loop/07-rejected-run.png",
+    "docs/product/screenshots/finance-loop/08-sources-remediation.png",
+    "docs/product/screenshots/loans.png",
+    "docs/product/screenshots/retro.png",
+    "docs/product/screenshots/scenarios.png",
+    "docs/product/screenshots/upload.png",
+    "docs/product/screenshots/utilities.png",
+    "infra/examples/demo-data/sources/credit card/Lasku_01012026.pdf",
+    "infra/examples/demo-data/sources/credit card/Lasku_01022026.pdf",
+    "infra/examples/demo-data/sources/credit card/Lasku_01032026.pdf"
+  ],
+  "all_tracked_utf8_over_600": [
+    {
+      "path": "apps/web/frontend/generated/openapi.json",
+      "lines": 23293,
+      "git_mode": "100755",
+      "blob": "176dc91d238b67f466f56cc765ebab4884a56d08",
+      "sha256": "e620934fd60891723244e306a5b70fd85ec86c94a926c7528f99dccaf6d97c89"
+    },
+    {
+      "path": "apps/web/frontend/generated/api.d.ts",
+      "lines": 15406,
+      "git_mode": "100755",
+      "blob": "33309732c2ca29ae01e19d4f03b53f87d14b0de3",
+      "sha256": "ef37629335a46eda2215de77b73da82efb29e0ea2d30366378984b9d04e71e14"
+    },
+    {
+      "path": "apps/web/frontend/generated/publication-contracts.ts",
+      "lines": 9448,
+      "git_mode": "100755",
+      "blob": "5decc403e826e8359c67ed85367e3f87ddecd7d4",
+      "sha256": "d298650501ecc9366e4b79a4ed5f4ebfb4889e8114e2f318a2d5e8a8fc776dee"
+    },
+    {
+      "path": "apps/web/frontend/generated/publication-contracts.json",
+      "lines": 9408,
+      "git_mode": "100755",
+      "blob": "1c2353d27ad79bec9a932e13a860bcc469c45351",
+      "sha256": "93f7ed08dc624ccd73d02c66f073e0197c2db1a94f220d41771bed4824cd365d"
+    },
+    {
+      "path": "apps/web/frontend/package-lock.json",
+      "lines": 6411,
+      "git_mode": "100755",
+      "blob": "7b6d878c132b8641a263e7ecee7e17b0b5b10bc8",
+      "sha256": "d66454a52904fd24950f5b8a8f23d74b465447ac06c487829cfeed872008bef8"
+    },
+    {
+      "path": "tests/test_api_app.py",
+      "lines": 2909,
+      "git_mode": "100755",
+      "blob": "bd4e3c72cf79ddd5a7c3c213862591ea1b65d137",
+      "sha256": "257385e847733a365a5b358c5554cc024c06f0c286be2af4d30972a499fe7985"
+    },
+    {
+      "path": "uv.lock",
+      "lines": 2086,
+      "git_mode": "100755",
+      "blob": "7268996911b06ab0ec9d508b27c5e9357f545727",
+      "sha256": "0f5d60547db05f73fa1f79ec2ec6acc1d08ba3c68d4fc8c8d4f7c90cf7e30142"
+    },
+    {
+      "path": "docs/notes/appservice-proposals/grafana-dashboard.configmap.yaml",
+      "lines": 1930,
+      "git_mode": "100644",
+      "blob": "56d8d1bb8f861130b759639073130273bb7d9953",
+      "sha256": "8586a2b36b3fc2cefbdbeedffca8d6f37cc363a7ea09448f5d85ba779e6b92a6"
+    },
+    {
+      "path": "charts/homelab-analytics/dashboards/homelab-analytics-ops.json",
+      "lines": 1908,
+      "git_mode": "100644",
+      "blob": "23c9caa2b6aa4d6b3b6ec86efcf497365c18f0db",
+      "sha256": "7db8d16399986d23888d555535b9b9b69c68fda1b79f5f41b82dba69797d7a3b"
+    },
+    {
+      "path": "tests/control_plane_test_support.py",
+      "lines": 1876,
+      "git_mode": "100755",
+      "blob": "e508a4a3d16b2dbdd05d5eaf37c6f9a9b391ef62",
+      "sha256": "22a05f8353b68f84fb378b60ea33492571ff350a78a6ff64759b434a930c6500"
+    },
+    {
+      "path": "tests/test_worker_cli.py",
+      "lines": 1703,
+      "git_mode": "100755",
+      "blob": "3414d6f9a818f4ada348b29f02b18e4246de0457",
+      "sha256": "2a768ab6f1950e189645b8b28fe99c6a5d2bf1fe292c6c0d61baba3e69e0bc2e"
+    },
+    {
+      "path": "tests/test_web_auth.py",
+      "lines": 1661,
+      "git_mode": "100755",
+      "blob": "a55998cc11a83e711899fdfff35abf0ecc88b286",
+      "sha256": "c9c9f12cbb62a8996bb29e815d7c7272119b3df97d0dbdd3e9241696d2d40cb4"
+    },
+    {
+      "path": "tests/test_adapter_contracts.py",
+      "lines": 1587,
+      "git_mode": "100755",
+      "blob": "cc93dd999e3d1c18f487df6a204b85a5b73b5274",
+      "sha256": "66c0e92bbcbd6ee13ef8b299832fcbf297b36d543252a1c51b5b058afa616f1e"
+    },
+    {
+      "path": "apps/web/frontend/app/control/catalog/page.js",
+      "lines": 1575,
+      "git_mode": "100755",
+      "blob": "756dea89ac5b4eb18a41d6fecb0c6639d931858f",
+      "sha256": "3c503b372d362da5b2172a36c90b2b4d4c775d2a8529138d5f8b97c96ee35124"
+    },
+    {
+      "path": "apps/web/frontend/app/globals.css",
+      "lines": 1562,
+      "git_mode": "100755",
+      "blob": "c4ccb2dbea17a4ab11badafd6024f031d986563f",
+      "sha256": "823cac0eef02cddbfefde9f4a86cad7dce13d4ba314a56a04567617a7b42da2e"
+    },
+    {
+      "path": "packages/pipelines/reporting_service.py",
+      "lines": 1533,
+      "git_mode": "100755",
+      "blob": "3b090c9b0a71a9e83501bd0d8803c32d7412c3f2",
+      "sha256": "ec46f2a9cb20658ae32c704d39e30c4a8ebd7f68e34fe5d9c7b9d3bf0c7f7e01"
+    },
+    {
+      "path": "apps/web/frontend/lib/backend.ts",
+      "lines": 1517,
+      "git_mode": "100755",
+      "blob": "0a230a29991a93281fc8a89156ebc9727045cecd",
+      "sha256": "1f57c3fb1da55d60cb4d45c1da4e1e3e5ff9d3a21549e7abbf8cc24ba706f574"
+    },
+    {
+      "path": "tests/test_architecture_contract.py",
+      "lines": 1509,
+      "git_mode": "100755",
+      "blob": "d4bc68fe9d9e27cd6e6827d40c98627b51e71aad",
+      "sha256": "3226fb572ee96ccbd2eb4235d14297333828f07883d79e35b14f798a48f254da"
+    },
+    {
+      "path": "packages/demo/bundle.py",
+      "lines": 1410,
+      "git_mode": "100755",
+      "blob": "106d19e4d8bb30b94c4e6dc14a9c86c31f4d62bc",
+      "sha256": "2e2f44c655087eb9579a0188d91553127f4f057a6de91636f43e40f151f24643"
+    },
+    {
+      "path": "tests/test_api_main.py",
+      "lines": 1373,
+      "git_mode": "100755",
+      "blob": "5adb1aada587a9955a634ecde4f3b0524317d446",
+      "sha256": "01ea340ff9ef425b6a6ea00b6f51c60c317a44a3bdc61f43ba3018154a92ede2"
+    },
+    {
+      "path": "apps/api/routes/report_routes.py",
+      "lines": 1257,
+      "git_mode": "100755",
+      "blob": "05b371be6bc66c1653c6e8676036de0dfbfdc559",
+      "sha256": "e41217e2d369ed2d8446f3cc2d538bdd8bf9247a8083fbea26a40d5362658a1a"
+    },
+    {
+      "path": "tests/test_ha_policy.py",
+      "lines": 1234,
+      "git_mode": "100755",
+      "blob": "d7f17b597129bad4261d432d613d854c82b28d1b",
+      "sha256": "dc9ddfbf1c0cd48222492fe124cccff738dedef450d4bd787eac1aa848835830"
+    },
+    {
+      "path": "apps/web/frontend/app/control/execution/page.js",
+      "lines": 1229,
+      "git_mode": "100755",
+      "blob": "3e07f832272fa79f4e7951095cced97ab093a599",
+      "sha256": "436b11906264b821cfd13b18f298b0f259f6b2e7d0473b273a5ac85ad5521671"
+    },
+    {
+      "path": "apps/web/frontend/stories/support/cashflow-map-fixtures.json",
+      "lines": 1218,
+      "git_mode": "100644",
+      "blob": "7c6ed552a528f8009cfefeea72f8d33caf1e07f0",
+      "sha256": "def27b38814def05989cf6e06f2751dad7b7e59c5b2b738572fd740f0f0956be"
+    },
+    {
+      "path": "tests/test_attention_record_api.py",
+      "lines": 1173,
+      "git_mode": "100644",
+      "blob": "6ed5cc231fead6ccee85ab16e4756f13b2939347",
+      "sha256": "34da78c8cb79c5ecc6d38e740c6b2ee90433dc000e6633cb3bf853aff6bb3abb"
+    },
+    {
+      "path": "packages/domains/homelab/pipelines/ha_policy.py",
+      "lines": 1154,
+      "git_mode": "100755",
+      "blob": "ff18bd8712802f1b790331b151d548263cbd571a",
+      "sha256": "287e3ab71de89a83cd3bc20a10eb5c2dbb8bbb7635761a49e0afbd21f8539147"
+    },
+    {
+      "path": "apps/api/auth_policies.py",
+      "lines": 1142,
+      "git_mode": "100755",
+      "blob": "d62197acadea46654c0bc1083d97dbed58aefac3",
+      "sha256": "792bc7ca4dae05cf82033c7a469da1d49afc994be369e04924c21d0ebbeef983"
+    },
+    {
+      "path": "packages/domains/finance/pipelines/scenario_service.py",
+      "lines": 1114,
+      "git_mode": "100755",
+      "blob": "1f297eaeda10119ab7753c839c0db2148b1fe7cf",
+      "sha256": "16d53c7e01c0847eb83d55880cad432da993339ad40751c12539db829acecb62"
+    },
+    {
+      "path": "docs/plans/substrate-baseline.md",
+      "lines": 1017,
+      "git_mode": "100755",
+      "blob": "a0e6f79d22f668ac38c2d09476ec7547b0cd7a14",
+      "sha256": "85d24f690530dcbc42d613249acfde4469c987bfa59d078d3801f9433c6dda54"
+    },
+    {
+      "path": "docs/knowledge/knowledge-base.md",
+      "lines": 1010,
+      "git_mode": "100755",
+      "blob": "cd219439427ae497f233bd9190661e13033b9830",
+      "sha256": "5818e710cb93c617236506633ee99a714337847dcde804785f7973a93683faac"
+    },
+    {
+      "path": "tests/test_api_auth.py",
+      "lines": 1006,
+      "git_mode": "100755",
+      "blob": "f100b6442ce4f5a2a939a282de07f07db869883d",
+      "sha256": "514a71114ff1ecd9d62debae84b6e81c2fd5d24cc9e0cd6fa57117767f909b43"
+    },
+    {
+      "path": "docs/decisions/household-platform-adr-and-refactor-blueprint.md",
+      "lines": 981,
+      "git_mode": "100755",
+      "blob": "930772d210c01aa18761c34db11af0a71317b4f0",
+      "sha256": "6e64132aa2061ad840f4c8f7ea87e577e304926e300c59258dc3b2452966ef4b"
+    },
+    {
+      "path": "packages/application/use_cases/pack_lifecycle.py",
+      "lines": 960,
+      "git_mode": "100644",
+      "blob": "52d727f7f16b892adb43aedaa198b1f6f4fcccb6",
+      "sha256": "12ef9b5186c0982a17d75f58b72b508e93cc9edf1dcea8bf96dc049657ddc0af"
+    },
+    {
+      "path": "apps/api/app.py",
+      "lines": 908,
+      "git_mode": "100755",
+      "blob": "bd857092bc1184e700feaf5dfa238e4706bcb01e",
+      "sha256": "756a97ca7d4b284efb850ccc019f53b975dc7a1022a1aed10823c46a13f5f88e"
+    },
+    {
+      "path": "packages/storage/control_plane.py",
+      "lines": 908,
+      "git_mode": "100755",
+      "blob": "6b8c9fca8702456a732f1fec0fe250fb5957f884",
+      "sha256": "ca2dd53919dfd3c3ae75d78b94a18b2010253dbeaaf3656cfea485e51a337627"
+    },
+    {
+      "path": "packages/storage/execution_control_plane.py",
+      "lines": 899,
+      "git_mode": "100644",
+      "blob": "f032c2e338849e76a581fae8f549af29f4855dcf",
+      "sha256": "5ef492ddf56b165ad7e627f0a806c02b037eaed237a9a482abaf2c2008addf32"
+    },
+    {
+      "path": "packages/domains/overview/pipelines/transformation_overview.py",
+      "lines": 885,
+      "git_mode": "100755",
+      "blob": "e562611fbf73f0ab78a4a8d0ba3c40455099b0b7",
+      "sha256": "cff35d36c63b5285c0d5871b10019bc493764e341aef31aff7e3d8c51a560cbc"
+    },
+    {
+      "path": "packages/application/use_cases/morning_brief.py",
+      "lines": 875,
+      "git_mode": "100644",
+      "blob": "e4ad7cc2c2304f3c7f5469f83a1cce291009c163",
+      "sha256": "df506e7d1da91d0b98175e87da487c006a7e3d38a67627e5a1d3d398409b8270"
+    },
+    {
+      "path": "packages/application/use_cases/control_terminal.py",
+      "lines": 872,
+      "git_mode": "100755",
+      "blob": "cd81045968bb68c4525dad11d1f717092e957ac9",
+      "sha256": "1f0a2865e7d0eaf374fbde262b15f1a63277e9d881bc779a7392b9592c8d7776"
+    },
+    {
+      "path": "packages/application/use_cases/decision_ledger.py",
+      "lines": 865,
+      "git_mode": "100644",
+      "blob": "bbdc96f8fc2df048ad16e6e618bda2bfbbaeb1fe",
+      "sha256": "a76d9b8f4c375ea496e1c37b8e884fac1658283c979be06096cf2f28b084b592"
+    },
+    {
+      "path": "tests/test_control_plane_api_app.py",
+      "lines": 864,
+      "git_mode": "100755",
+      "blob": "c85c827956581a316060fb0738d42a601c431ea5",
+      "sha256": "0e4d0921c280f2a9045d9339133af9c16a798225992d34391b4b91450ba5d277"
+    },
+    {
+      "path": "tests/test_api_oidc.py",
+      "lines": 852,
+      "git_mode": "100755",
+      "blob": "47d42a332901c5dd66dac28841d711f735c2b579",
+      "sha256": "2cd9219e8eb926b9e94ba73fcaccbde6442c0859c628c5e21807283112062141"
+    },
+    {
+      "path": "migrations/duckdb/0001_initial_schema.sql",
+      "lines": 833,
+      "git_mode": "100755",
+      "blob": "66bd22ada5ed966cb2b23f0e75a3f507f3c68429",
+      "sha256": "42d9795b87fc703518de33a2d50590cbbd51a1fc7d8876e9da62fd2146c7e9a6"
+    },
+    {
+      "path": "packages/application/use_cases/morning_brief_sections.py",
+      "lines": 811,
+      "git_mode": "100644",
+      "blob": "358a8ff9eebbdf9292d699d48e86a906ad8bb9c3",
+      "sha256": "e4728cd3d9f92e2fd8d28a80537e1d5d06d4c00468280752e9b57b67bb5f2477"
+    },
+    {
+      "path": "tests/test_auth_permission_registry.py",
+      "lines": 811,
+      "git_mode": "100755",
+      "blob": "6c09a581b911399f6d6f6e7920745901492b72f1",
+      "sha256": "9c53b5b727608f932649f454cd35cea161e72f9d5690c0684c286f9eb3b3b0c7"
+    },
+    {
+      "path": "packages/platform/action_proposals.py",
+      "lines": 792,
+      "git_mode": "100644",
+      "blob": "49c887d38ab6fc64600fa56ae55aaf6b1ee3ed64",
+      "sha256": "5b0039a81f84ece2dcb3067927c7a72ac9c931b363375fa81b62bac977c1b412"
+    },
+    {
+      "path": "packages/storage/sqlite_control_plane_schema.py",
+      "lines": 780,
+      "git_mode": "100755",
+      "blob": "1e4010019063047f594368bb1f741b29eb8d52f1",
+      "sha256": "8135752293eca3242d3f6440a7838a1b0abd927c8a91790b3bfbbc9f16c34b95"
+    },
+    {
+      "path": "packages/shared/external_registry.py",
+      "lines": 770,
+      "git_mode": "100755",
+      "blob": "c8b499dae4bb018cfdd388c2771a37491379714b",
+      "sha256": "e4c7a809336a24cdc57415436f9e8ab07f075d1477b6cb2de56f042a3f5489a7"
+    },
+    {
+      "path": "packages/domains/utilities/pipelines/battery_plan_outcome.py",
+      "lines": 746,
+      "git_mode": "100644",
+      "blob": "bee313b33e8c5b8808cfb107f04f2a3f6ad20c0b",
+      "sha256": "d33c34dbb92443dda9fafa4f87635834f30c5ba56a53a4ccc69c14dae4059b03"
+    },
+    {
+      "path": "packages/demo/seeder.py",
+      "lines": 744,
+      "git_mode": "100755",
+      "blob": "d4342402d960f479bd23723d43e1430f2818e775",
+      "sha256": "e2d992245436ad3da08d196a7649c56fc81b1435f2afecf6202a53a41f6933d9"
+    },
+    {
+      "path": "packages/domains/finance/pipelines/transformation_transactions.py",
+      "lines": 744,
+      "git_mode": "100755",
+      "blob": "987a917f0f798b0d61507546272376d7a8b01898",
+      "sha256": "aadcdade323933cfeb4dc9c6badd7a936cd08a427d2c9eb36172238fe4947e9d"
+    },
+    {
+      "path": "packages/domains/utilities/pipelines/transformation_utilities.py",
+      "lines": 744,
+      "git_mode": "100755",
+      "blob": "61ff8f488b7d3e82c260c8a27b160be1b8b57b29",
+      "sha256": "0ab0ba89059b00c1676a2ed7551bd865bbc76429093a001258b63ca0f89965fb"
+    },
+    {
+      "path": "packages/storage/source_contract_catalog.py",
+      "lines": 740,
+      "git_mode": "100644",
+      "blob": "0220edc79da41eaedc2b1d7ef4b9fed12bdb6611",
+      "sha256": "da802fd60dc63bda059026198e7dbf258e6e42eb29061a9fcaae2f45a4ec7964"
+    },
+    {
+      "path": "packages/storage/sqlite_asset_definition_catalog.py",
+      "lines": 734,
+      "git_mode": "100755",
+      "blob": "b7b07c25923cf616bb533baa9ee06fe59bcdedf3",
+      "sha256": "def384b3bb73f41c36d98c871b1b075598966bc5ffc5222c4f3ed4babb90e63a"
+    },
+    {
+      "path": "packages/domains/utilities/pipelines/kotiakku_evidence.py",
+      "lines": 725,
+      "git_mode": "100644",
+      "blob": "a0782bffa788608cd9259dc9b789a2abc971ec4e",
+      "sha256": "72075e47c885a8f25a2da72fa50ba16fd105f0b40a28d4d3ad15a15047c1c48d"
+    },
+    {
+      "path": "tests/test_contract_artifacts.py",
+      "lines": 700,
+      "git_mode": "100755",
+      "blob": "e4cc22b779396be5c494ad6c64b6698e7fa0d0ba",
+      "sha256": "671bc79e5fe27c573c943b2b6076177180b79b12d1e0ca9b3cb4da8062d43916"
+    },
+    {
+      "path": "packages/shared/settings.py",
+      "lines": 697,
+      "git_mode": "100755",
+      "blob": "a16a428c6b84de0575aeb9437a7292f8dfabf028",
+      "sha256": "c7e621e45b842337c08aa42bc17f5e73aa099bee868a00d16cce72a2e26a7720"
+    },
+    {
+      "path": "tests/test_ingestion_config_repository.py",
+      "lines": 685,
+      "git_mode": "100755",
+      "blob": "2f177475fc85e04d77b020a090ec36f8ac1d6c26",
+      "sha256": "0b3d3ec81e29f88ec0d5ff197cd6df602804835b48621a06b77f03703ade20e6"
+    },
+    {
+      "path": "packages/platform/auth/oidc_provider.py",
+      "lines": 680,
+      "git_mode": "100755",
+      "blob": "05f9bfbf2bdb3e26be6f745f9f2ba694e8413955",
+      "sha256": "21c9d4a61bb52b923451dc8df86abdee20be8ba68cd3dd5732dd6685aded6452"
+    },
+    {
+      "path": "tests/test_ha_action_dispatcher.py",
+      "lines": 674,
+      "git_mode": "100755",
+      "blob": "c9d4b202c6b9ed323c57c212a2fac3612c4c44dd",
+      "sha256": "49ca9f2d420604fd9c567de668650b46a221f152c172b32c02b08347d0fec639"
+    },
+    {
+      "path": "packages/storage/postgres_asset_definition_catalog.py",
+      "lines": 671,
+      "git_mode": "100755",
+      "blob": "62474ffe2a3031cbc3ca1966982cbf7d5b12361f",
+      "sha256": "99080491e497e05317c1e0581e7558489bb5395677c576497aaccfc42dddd712"
+    },
+    {
+      "path": "tests/test_publication_confidence_service.py",
+      "lines": 662,
+      "git_mode": "100644",
+      "blob": "7f39ec79566d48491f9f6fccf365cc0f1f6c3d8c",
+      "sha256": "e21e372cf52ac86d0ef78ecb4a797c78d0bbd56ed32852467473713e0e09f333"
+    },
+    {
+      "path": "packages/domains/homelab/pipelines/ha_bridge_ingestion.py",
+      "lines": 658,
+      "git_mode": "100755",
+      "blob": "cda53da259f5152a7f17a07067a6997fa0674766",
+      "sha256": "e29757218b3f7e78ecfce10403f76805d6204bfe5140d259960c29815e529e12"
+    },
+    {
+      "path": "apps/web/frontend/app/page.js",
+      "lines": 656,
+      "git_mode": "100755",
+      "blob": "ee74116c2998839443a5d25fb9eb3a888341d02f",
+      "sha256": "65421e5d5b880fe22d33e69eaded4809e3295275672bb4dcbec35640b2a7c86a"
+    },
+    {
+      "path": "tests/test_kotiakku_evidence.py",
+      "lines": 654,
+      "git_mode": "100644",
+      "blob": "e2ce5e2fe767fa3083113e5b23e3a29c765f72a4",
+      "sha256": "f0409869a5fe0f16cd9a090c474e68c1e8ae1a9aad3860fa2bf3d64122201c7f"
+    },
+    {
+      "path": "tests/test_ha_api.py",
+      "lines": 650,
+      "git_mode": "100755",
+      "blob": "d33afe45191281c3d202f1581f54b95a6cad51da",
+      "sha256": "a47baa634227b8ddf857465e06ac6a41285d28e052df93c1bb770d97e8e56c98"
+    },
+    {
+      "path": "apps/worker/control_plane.py",
+      "lines": 645,
+      "git_mode": "100755",
+      "blob": "013b0e54ef7a19a5419c0645739c8511d9564952",
+      "sha256": "c701b13c16d3e6081768064281108e43d50321e841604e861abd5e75b063fa13"
+    },
+    {
+      "path": "apps/web/frontend/app/console.css",
+      "lines": 636,
+      "git_mode": "100644",
+      "blob": "2a21d2a6b3ef7d0b9ef646116e224e7afc0c61fb",
+      "sha256": "87e97ac58e625d18cfa0e661c58f61511be17d989ea44cfc7f26808de0a320f8"
+    },
+    {
+      "path": "packages/platform/contract_compat/publication_compare.py",
+      "lines": 624,
+      "git_mode": "100644",
+      "blob": "511d6917aea992a0ae0dd59402aafd324a254ece",
+      "sha256": "ffa9c4d9b50e91fbf63ed5f5d6b4901e4fb912e18937f9ec6b88068a85f0d77b"
+    },
+    {
+      "path": "packages/platform/publication_contracts.py",
+      "lines": 623,
+      "git_mode": "100755",
+      "blob": "897cd26b883aadd5f03aeabab486ac87e26de886",
+      "sha256": "09b07db31c6273e97c82ce9f1136f05435370b76192c687dc7525f4263f4c6e5"
+    },
+    {
+      "path": "docs/plans/frontend-design/design-canvas.jsx",
+      "lines": 622,
+      "git_mode": "100644",
+      "blob": "9f3fc6111e185cdab61e806a7849a141a611a528",
+      "sha256": "5d0e3900362805093d71b2b620ccfcc266b035ce0540608239e61aaf151caa8d"
+    },
+    {
+      "path": "apps/api/routes/action_proposal_routes.py",
+      "lines": 621,
+      "git_mode": "100644",
+      "blob": "b91bc06b2c09942e00fdefcd232dec2bb7c540bb",
+      "sha256": "357ec2a885948fdb8cb861a4643792ed54ff3febb3a9f84044569aa8874427a7"
+    },
+    {
+      "path": "tests/test_policy_api_routes.py",
+      "lines": 621,
+      "git_mode": "100755",
+      "blob": "9c6c5e38f5de94c06fba26d164825f7356cd392e",
+      "sha256": "f7101e26c3d9a221d1219d58360f56cdc385f79c01392d2437cde23b93c83643"
+    },
+    {
+      "path": "packages/pipelines/upload_dry_run.py",
+      "lines": 619,
+      "git_mode": "100755",
+      "blob": "75d0ccba8e37bb754bca7e64e64146a7aea7f8ff",
+      "sha256": "4f21e2288812a100efa433f95a7458167cc45d076792f17b635457ffb56db4e5"
+    },
+    {
+      "path": "tests/test_attention_source_records.py",
+      "lines": 619,
+      "git_mode": "100644",
+      "blob": "fe50a651452ca89a89db71463a4fd65a983e9e08",
+      "sha256": "b8a2d8b9527c5f2af7b05c1ee0608f3a574a537df78c46dc8ff671633284d078"
+    },
+    {
+      "path": "packages/domains/overview/pipelines/scenario_service_overview.py",
+      "lines": 618,
+      "git_mode": "100755",
+      "blob": "bc2428fb0e75a43475b4605f0bebbacf4defd0ff",
+      "sha256": "f924e1eece6b9597af3c4606552e1d6d8880213447d029964e273662488a94e0"
+    },
+    {
+      "path": "packages/pipelines/config_preflight.py",
+      "lines": 613,
+      "git_mode": "100755",
+      "blob": "634e54f5e9c096e155a9106a8051128a16b7a01f",
+      "sha256": "421f6333a8c04efa5f9d795ed06050e9e1496a219f9873e53ee5379b366e220a"
+    },
+    {
+      "path": "packages/storage/backup_bundle.py",
+      "lines": 613,
+      "git_mode": "100644",
+      "blob": "618a4b03f303dbac17b1345158aa2de76d08cd6a",
+      "sha256": "4804b6483aef2b2990f4be2accbadbf8bc25b99f7703085e27525db6bd0fa7f0"
+    },
+    {
+      "path": "tests/test_scenario_api.py",
+      "lines": 612,
+      "git_mode": "100755",
+      "blob": "8972dd8ab14c2048dff94d017ff57b9b286cab1b",
+      "sha256": "0d4556fe7a3bb0e6862eac753ea44257e9374c88efa136cf7f3c438d08cfdb32"
+    },
+    {
+      "path": "docs/plans/household-operating-platform-roadmap.md",
+      "lines": 610,
+      "git_mode": "100755",
+      "blob": "d1ed37d34f51188ec60a4d89fdfaa4b89d56c29a",
+      "sha256": "02fa532fd270e1979f13df0daae359f5badaa3fd5de6f4878b817f1f791737fd"
+    },
+    {
+      "path": "apps/web/frontend/components/upload-detection-wizard.js",
+      "lines": 607,
+      "git_mode": "100755",
+      "blob": "3b2a10069e40642cc565b097bd4634384cf2c669",
+      "sha256": "091157247118c5f2b1d03360eeb7d47773c8a8194ae449f8f67656b71713e11e"
+    },
+    {
+      "path": "packages/domains/homelab/pipelines/ha_action_dispatcher.py",
+      "lines": 603,
+      "git_mode": "100755",
+      "blob": "5a9cc9098b3d96139ba766b1cc87fd7e2892fe00",
+      "sha256": "3f36f2016299071b3fa53f021301e1c4be18f77da549194db42ff4dfd9e9fba5"
+    },
+    {
+      "path": "apps/web/frontend/components/transformation-catalog-panel.js",
+      "lines": 601,
+      "git_mode": "100755",
+      "blob": "c59b217cfef17ecddd3a4ad3e6296f62d72dd713",
+      "sha256": "d19d68dfc9304ddd71c1f5966fdf87ab17695b5079e4159fd77b29d3e2c67261"
+    }
+  ],
+  "changed_files": "A\tapps/web/frontend/unit/onboarding-auto-collapse.test.cjs\nA\ttests/test_onboarding_auto_collapse_unit.py\n",
+  "scope_new_files_below_600": true,
+  "source_changed": false
+}

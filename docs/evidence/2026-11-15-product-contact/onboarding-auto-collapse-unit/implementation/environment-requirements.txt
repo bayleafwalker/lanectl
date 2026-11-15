@@ -1,0 +1,4 @@
+Existing CI .github/workflows/verify.yaml lines45–60: setup-node@v4 Node20, npmci frontend, then makeverify-fast; new ordinary pytest wrapper participates in test-fast.
+Local Python-only make test/test-fast/test-target requires node onPATH plus owned frontend npmci; missing tools/deps fail explicitly, with no skip/slow mark.
+Measured local runtime: Nodev20.20.1 from canonical READONLY .tooling executable; frontend node_modules installed in owned worktree using lock, no canonicalnode_modules reuse.
+Local make defaultPATH missing; installed /nix/store/27hadlzi8db7r6gpd7aq1cgbgcaj5frr-gnumake-4.4.1/bin added. Execsandbox blocked make syscall; required focusedgate succeeded escalated. This is tooling readiness, not product negative proof.

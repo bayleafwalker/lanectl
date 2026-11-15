@@ -1,0 +1,32 @@
+Independent read-only specialist review of stable HLA1597 candidate 57a7785c17ae76ba2169ca6af5bd4af62564a188, base b2d0fe393ac0971e906cce275e91f45e94422593, full bound diff /tmp/hla1597-unit-review-20261115/diff.patch. Your assigned specialist is semantic-ownership; repo-selected role criteria:
+
+---
+specialist: semantic-ownership
+---
+
+## Scope
+
+Find semantic intent regressions that pass structural tests but violate ownership rules:
+
+1. Canonical facts or dimensions read or written by the wrong package.
+2. Domain-local fields that meet the promotion criteria for a shared semantic contract.
+3. Category handling that bypasses `category_id` governance.
+4. Meaningful contract changes to units, nullability, or trust source without a version bump.
+
+## References
+
+- `docs/architecture/semantic-contracts.md`
+- `docs/architecture/domain-model.md`
+- `docs/architecture/category-governance.md`
+
+## Severity guidance
+
+- `blocker`: a semantic regression without a version bump, or a reporting path
+  that bypasses `category_id` governance.
+- `advisory`: a newly promotable local field or an expanded bridge field without
+  a removal plan.
+- `watchlist`: unchanged documented governance debt.
+
+Return `[]` when no findings apply.
+
+Inspect BOTH entire new test files and real production component/source definitions, test scripts/package/CI details as needed, and relevant product direction. Read-only; use only Read/Grep/Glob in this repository or owned diff; do not access error.log, credentials, private repos, other worktrees, execute commands, edit files or delegate. Review actual changed behavior, not worker claims alone. Mounted-only React adapter must guard all 3 initial false and retain real React.useState, compact dismissed=false; SSR uses actual React. Primary component/source definitions/Next Link remain real, no copied collapse predicate or source string oracle. Eight semantic cases + two guards, exact counts/membership/duplicate unknown handling; wrapper collected ordinary pytest, no slow/skip and fails missing tools/timeout. Seam explicitly is not hydration/storage/Expand/manual coverage. Challenge global Module._load restoration and node:test order, mocking/circular oracle/weak guards/falsifier independence, and scope. Existing 1597 required coverage only; no product implementation or adoption of exhausted onboarding2904 source. Worker reports 10 pass; independent preload mutant 3 semantic failures/7 pass; focused Make pass, Ruff/mypy pass; full Make not yet observed. Do not treat these claims as fresh executions or claim gates passed. Return ONLY valid JSON array of role findings with specialist,severity,file,line,finding,evidence,recommendation,blocker. Include exact references and anything incomplete. Empty [] only for a complete no-finding review. Do not output sensitive data.

@@ -1,0 +1,18 @@
+{
+  "green_tests": 10,
+  "green_exit": 0,
+  "red_semantic_failures": [
+    "both cores -> compact 2/5",
+    "both cores + optional -> compact 3/5",
+    "all five -> compact 5/5"
+  ],
+  "red_tests_passed": 7,
+  "red_exit": 1,
+  "preexisting_frontend_files_unchanged": 276,
+  "candidate_sha256": {
+    "apps/web/frontend/unit/onboarding-auto-collapse.test.cjs": "e8a86b2cda86fa6c1231eaa4b85ac19528603614e5d1810da9b0d32aa9742ed3",
+    "tests/test_onboarding_auto_collapse_unit.py": "89fabc9cc59e89e25d67676905460c93fc42644e5ba5db13f941bf91bc182056"
+  },
+  "total_added_lines": 159,
+  "focused_summary": "1 passed in 0.14s"
+}

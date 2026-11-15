@@ -1,0 +1,22 @@
+{
+  "bad-python-override": {
+    "returncode": 2,
+    "tail": [
+      "E   assert 0 != 0",
+      "E    +  where 0 = CompletedProcess(args=['make', '-n', 'lint', 'PYTHON_BIN='], returncode=0, stdout=\"make[1]: Entering directory '/proje...5/.venv/bin/python -m ruff check .\\nmake[1]: Leaving directory '/projects/dev/_wt/hla1597-unit-20261115'\\n\", stderr='').returncode",
+      "=========================== short test summary info ============================",
+      "FAILED tests/test_verification_tooling.py::test_makefile_refuses_to_run_python_recipes_without_an_interpreter",
+      "!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!",
+      "1 failed in 0.07s",
+      "make: *** [Makefile:89: test-target] Error 1"
+    ]
+  },
+  "normal-make": {
+    "returncode": 0,
+    "tail": [
+      ".venv/bin/python -m pytest -q tests/test_verification_tooling.py::test_makefile_refuses_to_run_python_recipes_without_an_interpreter tests/test_onboarding_auto_collapse_unit.py -x --tb=short",
+      "..                                                                       [100%]",
+      "2 passed in 0.20s"
+    ]
+  }
+}

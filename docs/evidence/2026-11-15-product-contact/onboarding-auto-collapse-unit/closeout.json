@@ -1,0 +1,39 @@
+{
+  "work_item": "homelab-analytics#1597",
+  "scope": "existing automatic-collapse rule unit coverage only",
+  "base": "b2d0fe393ac0971e906cce275e91f45e94422593",
+  "candidate": "57a7785c17ae76ba2169ca6af5bd4af62564a188",
+  "canonical_merge": "82dbd9477029d6fda7df67edc617f45a1a4ceb59",
+  "pr": "https://github.com/bayleafwalker/homelab-analytics/pull/86",
+  "ci_run": 43729133007,
+  "ci_jobs": 4,
+  "ci_conclusion": "all completed success",
+  "added_lines": 159,
+  "deleted_lines": 0,
+  "files": 2,
+  "cap_lines": 250,
+  "actual_native_implementation_attempts": 2,
+  "implementation_model": "claude-sonnet-5-5",
+  "full_verify_fast_exit": 0,
+  "full_verify_fast_elapsed_s": 731.693,
+  "fast_tests_passed": 2756,
+  "visual_tests_passed": 55,
+  "unit_tests_green": 10,
+  "mutant_semantic_failures": 3,
+  "mutant_control_passes": 7,
+  "wrapper_failure_probes": 4,
+  "production_changed": false,
+  "limitations": [
+    "mounted rendering, not hydration/storage/Expand",
+    "no lanectl feature release or ruled product-class increment",
+    "no exhausted packet reopened"
+  ],
+  "retention": "cross-host-replicated after evidence commit is pushed; served decision durable-authoritative",
+  "omissions": [
+    "node_modules/.venv/npm caches/build outputs/.next/generated keys",
+    "font binaries/image layers/browser binaries",
+    "database and bulk runtime fixtures",
+    "two frontend path-to-hash manifests that trigger generic-api-key detection; equal276entry summary and whole-file hashes retained"
+  ],
+  "source_retention": "candidate and merge commits canonical on GitHub main; readable exact source diff and both files retained here"
+}

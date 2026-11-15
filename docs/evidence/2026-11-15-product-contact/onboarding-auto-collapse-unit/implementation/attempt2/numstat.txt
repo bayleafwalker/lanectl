@@ -1,0 +1,2 @@
+126	0	apps/web/frontend/unit/onboarding-auto-collapse.test.cjs
+33	0	tests/test_onboarding_auto_collapse_unit.py

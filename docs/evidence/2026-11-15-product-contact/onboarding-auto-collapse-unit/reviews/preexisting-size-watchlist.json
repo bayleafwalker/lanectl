@@ -1,0 +1,189 @@
+{
+  "selection": "tracked production apps/ and packages/ Python, JS, JSX, TS, TSX, SQL; non-test paths >600 lines",
+  "files": [
+    {
+      "file": "apps/web/frontend/generated/api.d.ts",
+      "lines": 15406
+    },
+    {
+      "file": "apps/web/frontend/generated/publication-contracts.ts",
+      "lines": 9448
+    },
+    {
+      "file": "apps/web/frontend/app/control/catalog/page.js",
+      "lines": 1575
+    },
+    {
+      "file": "packages/pipelines/reporting_service.py",
+      "lines": 1533
+    },
+    {
+      "file": "apps/web/frontend/lib/backend.ts",
+      "lines": 1517
+    },
+    {
+      "file": "packages/demo/bundle.py",
+      "lines": 1410
+    },
+    {
+      "file": "apps/api/routes/report_routes.py",
+      "lines": 1257
+    },
+    {
+      "file": "apps/web/frontend/app/control/execution/page.js",
+      "lines": 1229
+    },
+    {
+      "file": "packages/domains/homelab/pipelines/ha_policy.py",
+      "lines": 1154
+    },
+    {
+      "file": "apps/api/auth_policies.py",
+      "lines": 1142
+    },
+    {
+      "file": "packages/domains/finance/pipelines/scenario_service.py",
+      "lines": 1114
+    },
+    {
+      "file": "packages/application/use_cases/pack_lifecycle.py",
+      "lines": 960
+    },
+    {
+      "file": "apps/api/app.py",
+      "lines": 908
+    },
+    {
+      "file": "packages/storage/control_plane.py",
+      "lines": 908
+    },
+    {
+      "file": "packages/storage/execution_control_plane.py",
+      "lines": 899
+    },
+    {
+      "file": "packages/domains/overview/pipelines/transformation_overview.py",
+      "lines": 885
+    },
+    {
+      "file": "packages/application/use_cases/morning_brief.py",
+      "lines": 875
+    },
+    {
+      "file": "packages/application/use_cases/control_terminal.py",
+      "lines": 872
+    },
+    {
+      "file": "packages/application/use_cases/decision_ledger.py",
+      "lines": 865
+    },
+    {
+      "file": "packages/application/use_cases/morning_brief_sections.py",
+      "lines": 811
+    },
+    {
+      "file": "packages/platform/action_proposals.py",
+      "lines": 792
+    },
+    {
+      "file": "packages/storage/sqlite_control_plane_schema.py",
+      "lines": 780
+    },
+    {
+      "file": "packages/shared/external_registry.py",
+      "lines": 770
+    },
+    {
+      "file": "packages/domains/utilities/pipelines/battery_plan_outcome.py",
+      "lines": 746
+    },
+    {
+      "file": "packages/demo/seeder.py",
+      "lines": 744
+    },
+    {
+      "file": "packages/domains/finance/pipelines/transformation_transactions.py",
+      "lines": 744
+    },
+    {
+      "file": "packages/domains/utilities/pipelines/transformation_utilities.py",
+      "lines": 744
+    },
+    {
+      "file": "packages/storage/source_contract_catalog.py",
+      "lines": 740
+    },
+    {
+      "file": "packages/storage/sqlite_asset_definition_catalog.py",
+      "lines": 734
+    },
+    {
+      "file": "packages/domains/utilities/pipelines/kotiakku_evidence.py",
+      "lines": 725
+    },
+    {
+      "file": "packages/shared/settings.py",
+      "lines": 697
+    },
+    {
+      "file": "packages/platform/auth/oidc_provider.py",
+      "lines": 680
+    },
+    {
+      "file": "packages/storage/postgres_asset_definition_catalog.py",
+      "lines": 671
+    },
+    {
+      "file": "packages/domains/homelab/pipelines/ha_bridge_ingestion.py",
+      "lines": 658
+    },
+    {
+      "file": "apps/web/frontend/app/page.js",
+      "lines": 656
+    },
+    {
+      "file": "apps/worker/control_plane.py",
+      "lines": 645
+    },
+    {
+      "file": "packages/platform/contract_compat/publication_compare.py",
+      "lines": 624
+    },
+    {
+      "file": "packages/platform/publication_contracts.py",
+      "lines": 623
+    },
+    {
+      "file": "apps/api/routes/action_proposal_routes.py",
+      "lines": 621
+    },
+    {
+      "file": "packages/pipelines/upload_dry_run.py",
+      "lines": 619
+    },
+    {
+      "file": "packages/domains/overview/pipelines/scenario_service_overview.py",
+      "lines": 618
+    },
+    {
+      "file": "packages/pipelines/config_preflight.py",
+      "lines": 613
+    },
+    {
+      "file": "packages/storage/backup_bundle.py",
+      "lines": 613
+    },
+    {
+      "file": "apps/web/frontend/components/upload-detection-wizard.js",
+      "lines": 607
+    },
+    {
+      "file": "packages/domains/homelab/pipelines/ha_action_dispatcher.py",
+      "lines": 603
+    },
+    {
+      "file": "apps/web/frontend/components/transformation-catalog-panel.js",
+      "lines": 601
+    }
+  ]
+}

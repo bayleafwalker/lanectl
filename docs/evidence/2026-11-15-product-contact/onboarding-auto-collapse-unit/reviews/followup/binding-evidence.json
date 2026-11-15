@@ -1,0 +1,13 @@
+{
+  "head": "57a7785c17ae76ba2169ca6af5bd4af62564a188",
+  "diff_sha256": "df1716e7b5b330ed36d8062a637a9cfa9cccca6207e61db88de8e48e2cd61afc",
+  "file_sha256": {
+    "apps/web/frontend/unit/onboarding-auto-collapse.test.cjs": "e8a86b2cda86fa6c1231eaa4b85ac19528603614e5d1810da9b0d32aa9742ed3",
+    "tests/test_onboarding_auto_collapse_unit.py": "89fabc9cc59e89e25d67676905460c93fc42644e5ba5db13f941bf91bc182056",
+    "apps/web/frontend/components/onboarding-checklist.js": "b93139b12501637dbc7016a8ae9aff339edde4463c249d06adfd0c875a3611c1",
+    "apps/web/frontend/lib/onboarding-sources.js": "20ec10e44733522726567c30dd27de73a4882a867f5dc7c39917952562caebe4"
+  },
+  "mutant_original": "/tmp/hla1597-unit-20261115/mutant-preload.cjs",
+  "mutant_sha256": "0b4f6ee0b0616e6c52e3df4fe3fac62a2f69fd520ea56016343fc5283649c4a2",
+  "inventory_sha256": "c7dc7e35046d200fae41a45da78c8d2431af706f25f1ae085058a6a5cd2430a9"
+}

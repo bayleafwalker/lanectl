@@ -1,0 +1,72 @@
+[
+  {
+    "specialist": "test-quality",
+    "severity": "info",
+    "file": "/tmp/hla1597-unit-review-20261115/followup/mutant-preload-copy.cjs",
+    "line": 4,
+    "finding": "Direct read of the preload copy confirms the mutant has one narrow seam. It wraps Module.prototype._compile and changes behaviour only when the filename ends with components/onboarding-checklist.js. It rewrites exactly one expression, the automatic-collapse condition. Every other module, including lib/onboarding-sources.js, goes straight to the original _compile. The preload does not touch esbuild, the on-disk component, or any other file.",
+    "evidence": "The preload sets needle = \"if (compact || allCoreActive)\" (line 2) and saves the original _compile (line 3). The patched _compile (lines 4-11) acts only on filenames ending with components/onboarding-checklist.js (line 5). It throws unless content.split(needle).length === 2, which means exactly one match (line 6). It replaces the needle with \"if (compact)\" (line 7), logs MUTANT APPLIED (line 8), and delegates to orig.call(this, content, filename) (line 10). In the real component, components/onboarding-checklist.js:70 is `if (compact || allCoreActive) {`. A grep of the frontend (excluding node_modules) shows allCoreActive defined at line 66 and used at lines 70 and 86 of that file. Line 70 is therefore the only occurrence of the needle. The preload also reaches the test's own compile path. test.cjs:48 calls `mod._compile(code, filename)` on a `new Module(...)` instance, and that call goes through Module.prototype._compile. The needle is checked against esbuild's output, so the exactly-one-match guard fails loudly if esbuild reformats the condition. The red log shows MUTANT APPLIED twice (independent-red.log lines 2-3). This matches the two compiles of the component: load(true) at test.cjs:87 and the SSR test at test.cjs:109. The mutant only removes the allCoreActive disjunct, so the `compact` state path and the `\" \u2014 core sources ready\"` text stay untouched. This is my own direct read of the file, not coordinator-recorded evidence.",
+    "recommendation": "None. The seam claim in independent-unit-proof.json (_compile, branch only, no on-disk mutation) is supported by the code.",
+    "blocker": false
+  },
+  {
+    "specialist": "test-quality",
+    "severity": "info",
+    "file": "/tmp/hla1597-unit-review-20261115/followup/binding-evidence.json",
+    "line": 10,
+    "finding": "The binding between the artifacts is consistent across the documents I read. Two parts rest only on coordinator-recorded evidence: the SHA256 values, and the equality between the original external preload and the copy I read. I recomputed neither, because I have no hash tool. I did not run git, so the candidate head and diff hash were not recomputed either.",
+    "evidence": "binding-evidence.json records head 57a7785c17ae76ba2169ca6af5bd4af62564a188, diff_sha256 df1716e7b5b330ed36d8062a637a9cfa9cccca6207e61db88de8e48e2cd61afc, and mutant_sha256 0b4f6ee0b0616e6c52e3df4fe3fac62a2f69fd520ea56016343fc5283649c4a2 (the original is /tmp/hla1597-unit-20261115/mutant-preload.cjs). Its file hashes for onboarding-auto-collapse.test.cjs (e8a86b2c...), onboarding-checklist.js (b93139b1...) and onboarding-sources.js (20ec10e4...) equal the hashes in independent-unit-proof.json lines 26-28. Those were measured before and after the run, and the two measurements matched. The proof head equals the binding-evidence head, and independent-unit.py:7-8 asserts the git HEAD equals that value. The red-log stack traces point at /projects/dev/_wt/hla1597-unit-20261115/.../onboarding-auto-collapse.test.cjs, which is the candidate worktree. The test and component text I read (diff.patch and the live component file) is consistent with these records. The diff.patch test file has 126 lines, and its test count and names match the logs. The proof's hash list does not cover tests/test_onboarding_auto_collapse_unit.py, so the pytest wrapper is bound only through the diff hash. My read of the component is direct. The hashes, and the identity of the preload copy with the coordinator's external file, are coordinator-recorded.",
+    "recommendation": "None.",
+    "blocker": false
+  },
+  {
+    "specialist": "test-quality",
+    "severity": "info",
+    "file": "/tmp/hla1597-integration-20261115/independent-red.log",
+    "line": 34,
+    "finding": "The red and green case names and counts correspond to each other, to the proof JSON, and to the test file. The mutant defeats exactly the three compact-branch tests. The three tests that assert the branch is not taken, plus the SSR and fixture tests, stay green, so the mutant did not break the suite wholesale.",
+    "evidence": "Green log: 1..10, tests 10, pass 10, fail 0, skipped 0, todo 0 (lines 52-60). Red log: tests 10, pass 7, fail 3, skipped 0, todo 0 (lines 109-116). The failed tests are 7 \"both cores -> compact 2/5\", 8 \"both cores + optional -> compact 3/5\", and 9 \"all five -> compact 5/5\" (red lines 35, 58, 81). Each failure is ERR_ASSERTION with expected true and actual false at test.cjs:92 inside compact(). In the diff that is the `assert.ok(!t.includes(HEADING), t)` line, and the full-checklist text is embedded in the error message. Tests 1-6 and 10 are ok in both runs. Those are the fixture, the SSR-null test, the none/one-core/optional-only/core+partial full tests, and duplicate-core+unknown. This matches independent-unit-proof.json lines 5-23. The diff.patch test file defines exactly ten tests, five of them the full-branch cases (4 `full` tests plus the duplicate case). The three compact tests map one-to-one to the red failures. Under the mutant the compact(...) cases show a full checklist. Examples are \"2 of 5 sources active \u00b7 2/2 core sources ready\" with Upload links and a \"Full onboarding guide\" link, matching the rendered branch at component lines 108-215. A full-checklist render under the mutant exercises real next/link output, because Link is not patched at test.cjs:69-72.",
+    "recommendation": "None.",
+    "blocker": false
+  },
+  {
+    "specialist": "test-quality",
+    "severity": "low",
+    "file": "apps/web/frontend/unit/onboarding-auto-collapse.test.cjs",
+    "line": 10,
+    "finding": "The header comment still names the wrong falsifier seam. Direct reading of the preload confirms the mutant patches Module.prototype._compile, not esbuild.transformSync. The test file itself carries no mutant, so anti-vacuity rests on an out-of-tree preload. That preload is at /tmp/hla1597-unit-20261115/mutant-preload.cjs, and I read a copy of it. I read it in the review bundle; it is not in the candidate repository. This is a documentation inaccuracy and does not change the soundness verdict.",
+    "evidence": "The diff has the comment at new-file lines 10-11: \"Falsifier: an external preload may patch esbuild.transformSync; nothing here knows about it.\" The preload copy patches _compile (mutant-preload-copy.cjs:3-4). The harness applies it with `node -r <preload> --test <suite>` (independent-unit.py:13).",
+    "recommendation": "Change the comment to say the falsifier patches Module.prototype._compile. Keep the preload with the evidence bundle if the red run needs to be reproducible. This is advisory and does not block the merge.",
+    "blocker": false
+  },
+  {
+    "specialist": "test-quality",
+    "severity": "info",
+    "file": "tests/test_onboarding_auto_collapse_unit.py",
+    "line": 15,
+    "finding": "Not run: the pytest wrapper, its missing-tool and missing-dependency paths, and its timeout path. They are assessed from code only. The independent proof ran node directly on the suite. The wrapper itself was never observed running, and there is no evidence of the timeout or missing-binary paths being exercised.",
+    "evidence": "From the code in the diff, `shutil.which(\"node\")` returning None leads to pytest.fail (lines 154-156). Each missing node_modules/{esbuild,react,react-dom,next} directory leads to pytest.fail (157-159). subprocess.run uses `[node, \"--test\", str(SUITE)]`, cwd=FRONTEND, timeout=120 and check=False (160-168). TimeoutExpired is mapped to pytest.fail (169-170). A non-zero return code fails the assert with stdout and stderr in the message (171). All of these paths fail and none skips. independent-unit.py:13-15 shows the independent proof executed `node --test` directly under the lanectl sandbox with timeout_s=60. It did not invoke pytest, tests/test_onboarding_auto_collapse_unit.py, or Make. The wrapper's pass or fail behaviour under Make or CI is therefore inferred, not observed.",
+    "recommendation": "No action is needed for this review. If stronger assurance is wanted, observe the wrapper in the next integration or CI run. I did not run it, and I am not claiming it was run.",
+    "blocker": false
+  },
+  {
+    "specialist": "test-quality",
+    "severity": "info",
+    "file": "apps/web/frontend/unit/onboarding-auto-collapse.test.cjs",
+    "line": 6,
+    "finding": "The coverage boundary stays as the header declares it. Proven (observed by the coordinator's independent runs, and read by me in the code): with the mounted state forced true and every useState initial asserted false, the real component and real sources render the compact badge when both core datasets are active, and the full checklist otherwise. Mutating that condition to drop allCoreActive is detected by three tests. Not run, or not covered: hydration, the localStorage read path and the useEffect, the Expand, Minimise and Dismiss interactions, full Make or verify-fast, and the CI workflow. Also not run: other mutants, such as altering the >= comparison or the required filter.",
+    "evidence": "The header at test.cjs:8-14 says \"NOT covered: hydration, localStorage, Expand, manual interaction\". The adapter forces only the third useState call (test.cjs:65). renderToStaticMarkup does not run useEffect, so the component's `setMounted(true)` and localStorage read at component lines 16-25 never execute. The `compact` assertions check the \"Expand\" text (test.cjs:100) but never click it. The only recorded red run is the one mutant, `compact || allCoreActive` to `compact`. The other branch conditions, such as `requiredDone >= requiredTotal` (component line 66), have no recorded mutant run. By inspection, tests 4, 6 and 10 (one core active) and tests 7-9 would constrain a threshold change, but that is my reasoning from the code and not an observed result.",
+    "recommendation": "None for this change. It is a unit-level test of the auto-collapse decision, and the header states the limits honestly.",
+    "blocker": false
+  },
+  {
+    "specialist": "test-quality",
+    "severity": "review-status",
+    "file": "apps/web/frontend/unit/onboarding-auto-collapse.test.cjs",
+    "line": 1,
+    "finding": "COMPLETE",
+    "evidence": "I used only Read, Grep and Glob. I read the earlier findings file, binding-evidence.json, the mutant preload copy, both changed files (as the full diff.patch), the real component (components/onboarding-checklist.js), independent-unit-proof.json, independent-green.log, independent-red.log and independent-unit.py. The two gaps in the first follow-up are closed from code and observed root evidence. (1) The mutant intercepts Module.prototype._compile only for components/onboarding-checklist.js, and rewrites exactly one match of the automatic-collapse condition. (2) The red and green test names and counts correspond to the logs, the proof JSON and the test file. Runtime limits: I executed no commands, so none of the green and red results are my own runs. They are the coordinator's observations. The SHA256 values, the git head, and the byte-identity of the preload copy with the external file rest on binding-evidence.json and independent-unit.py's own head and hash assertions, and I did not recompute them. Never run or observed: the pytest wrapper, its timeout and missing-tool paths (code-only assessment), hydration, localStorage and the useEffect, the Expand, Minimise and Dismiss interactions, full Make or verify-fast, CI, and any mutants other than the one recorded. No blocker was found. The remaining advisories are the low-severity wrong-seam comment above and the earlier low-severity advisory that esbuild is not a direct devDependency. Neither blocks the merge.",
+    "recommendation": "No further review action is needed for the test-quality role. Optionally fix the comment and add esbuild as an explicit devDependency.",
+    "blocker": false
+  }
+]

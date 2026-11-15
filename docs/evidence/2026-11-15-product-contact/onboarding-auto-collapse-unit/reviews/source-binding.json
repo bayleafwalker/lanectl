@@ -1,0 +1,16 @@
+{
+  "base": "b2d0fe393ac0971e906cce275e91f45e94422593",
+  "head": "57a7785c17ae76ba2169ca6af5bd4af62564a188",
+  "diff_sha256": "df1716e7b5b330ed36d8062a637a9cfa9cccca6207e61db88de8e48e2cd61afc",
+  "review_alias": "review-synthesis",
+  "model": "claude-sonnet-5-5",
+  "roles": [
+    "pack-boundary",
+    "god-class-file-size",
+    "test-quality",
+    "suppression-drift",
+    "stratum-coherence",
+    "semantic-ownership",
+    "repetition-vs-abstraction"
+  ]
+}

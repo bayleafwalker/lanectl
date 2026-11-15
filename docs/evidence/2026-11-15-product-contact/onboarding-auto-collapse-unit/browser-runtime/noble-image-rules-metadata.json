@@ -1,0 +1,107 @@
+{
+  "rules": [
+    {
+      "name": "10-hinting-slight.conf",
+      "image_rule_sha256": "d138eca2bac3f78d45ff7cfb649ad792caa4a6e61f73cea7cf0ea54b091f1ef4"
+    },
+    {
+      "name": "10-scale-bitmap-fonts.conf",
+      "image_rule_sha256": "df8e99abb6f82384c61978906a45a95794940545da95790d87f01d9391e0894b"
+    },
+    {
+      "name": "10-sub-pixel-rgb.conf",
+      "image_rule_sha256": "e4cfc04f5fc5093d2ba20c40f8709c9dfc099997313d0f96bc8256597a15d057"
+    },
+    {
+      "name": "10-yes-antialias.conf",
+      "image_rule_sha256": "e6d82a642d1b37f7d24dc37f938b999f00ff7aa4303b2602d04164d53f221005"
+    },
+    {
+      "name": "11-lcdfilter-default.conf",
+      "image_rule_sha256": "76aec9d8dac48faabe1bbde9e887cfb09fa45f30be5f8826e945a394a0097e48"
+    },
+    {
+      "name": "20-unhint-small-vera.conf",
+      "image_rule_sha256": "278732c68c16177f2aa3c7e4ea318b9f720aee13a433c32eb15ba626806c609d"
+    },
+    {
+      "name": "25-wqy-zenhei.conf",
+      "image_rule_sha256": "101497940c4e0254172038f23cbe488740081f6c6703d8243c3cc5218b5f6e9a"
+    },
+    {
+      "name": "30-metric-aliases.conf",
+      "image_rule_sha256": "3baf25c82e1a14c606d45c212296852be06ae9795d60e84aab573226151450a2"
+    },
+    {
+      "name": "40-nonlatin.conf",
+      "image_rule_sha256": "9c56aeed6490db1d29602d7f8e028742b5e7a0268eaaa60de2fde582c6403715"
+    },
+    {
+      "name": "45-generic.conf",
+      "image_rule_sha256": "24de9f68189d544bb4cc084d9bd8f3a59d8b988a9dc44b11e9877d5add5fc948"
+    },
+    {
+      "name": "45-latin.conf",
+      "image_rule_sha256": "807638284032d8d8f6ed8b014a0edae79a4d4f3c4e70317fdb0bfa8edd66779e"
+    },
+    {
+      "name": "48-spacing.conf",
+      "image_rule_sha256": "99d839cd8aa28854e8f54f26e7200b6e57951f39f56791a0ed473662488bcef6"
+    },
+    {
+      "name": "49-sansserif.conf",
+      "image_rule_sha256": "7849a11ce5243e8bb3d06bcad558737a8682e5122e73c8e427f4c011a2054818"
+    },
+    {
+      "name": "50-user.conf",
+      "image_rule_sha256": "449137ccce57d60bca178d57519ba54e1942d757ad171f3a88cd78df2161c970"
+    },
+    {
+      "name": "51-local.conf",
+      "image_rule_sha256": "dca9d917e1f66f73bfa495943b4d1eaab2d93810a51bc8e600cf4d4e9df03e67"
+    },
+    {
+      "name": "60-generic.conf",
+      "image_rule_sha256": "195bc8605dd23289d42c10d79cc13a5ce4a4b3cf965df5b30ecc0b7149bb951f"
+    },
+    {
+      "name": "60-latin.conf",
+      "image_rule_sha256": "2de7c687e03b1fedf9fd016aa14ed8088f52578896a73f06158dda8acd264f09"
+    },
+    {
+      "name": "64-wqy-zenhei.conf",
+      "image_rule_sha256": "7c187a99ad7f4b5ee80930c60399d3952e41ea7bbee8d9322ab685596d351a94"
+    },
+    {
+      "name": "65-fonts-ipafont-gothic.conf",
+      "image_rule_sha256": "95b425396cd7afefc03f668229b425a703d0c57b078a00111b7a289bb68513cf"
+    },
+    {
+      "name": "65-fonts-persian.conf",
+      "image_rule_sha256": "c675fab143a3638346874798be45f51f6878ebec591b4362d83cfffb828ec4ca"
+    },
+    {
+      "name": "65-nonlatin.conf",
+      "image_rule_sha256": "e309e38d7fb47cc3f639f4313b19e72c9be4d1f2db92d7d892ea65bfdd0cbd30"
+    },
+    {
+      "name": "69-unifont.conf",
+      "image_rule_sha256": "fa97c0cf5f79d70e2dc3dc48155d4c9220cd7c6a8bc95b89c4ebcc517f97479e"
+    },
+    {
+      "name": "70-no-bitmaps-except-emoji.conf",
+      "image_rule_sha256": "bb5df65896bf3011b2f2935b63ab12db1ecf078674ff73a533123445f122a92b"
+    },
+    {
+      "name": "80-delicious.conf",
+      "image_rule_sha256": "34f27b7fe9cd83b2b6d46f16ef9c477412f2d7ef63634f86b9b38b79bc4f81ad"
+    },
+    {
+      "name": "90-synthetic.conf",
+      "image_rule_sha256": "cdd0aac7840c664a7127b64db66bdfe8dc22be3774d10bc22f4a41c98de5d85e"
+    }
+  ],
+  "missing": [],
+  "source_image": "sha256:b0ab6f3cb99aa7803adbc14d9027ec1785fc6e433b97e134e0f8fe61683b6b53",
+  "changes": "only absolute font/config/cache paths redirected to owned scratch"
+}

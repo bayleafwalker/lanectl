@@ -1,0 +1,6 @@
+
+Running 2 tests using 1 worker
+
+[1A[2K[1/2] [chromium] › playwright/storybook-ui.spec.js:18:1 › app shell story stays accessible and visually stable
+[1A[2K[2/2] [chromium] › playwright/storybook-ui.spec.js:27:1 › retro shell story stays accessible and visually stable
+[1A[2K  2 passed (2.8s)

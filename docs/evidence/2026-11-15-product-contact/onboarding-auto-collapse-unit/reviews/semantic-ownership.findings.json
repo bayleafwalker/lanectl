@@ -1,0 +1,42 @@
+[
+  {
+    "specialist": "semantic-ownership",
+    "severity": "advisory",
+    "file": "apps/web/frontend/unit/onboarding-auto-collapse.test.cjs",
+    "line": 103,
+    "finding": "The fixture guard checks only counts (5 sources, 2 required). It does not check which datasets are required. The cases hardcode dataset ids that duplicate the canonical ONBOARDING_SOURCES. If the required flags moved between datasets, the counts would stay at 5 and 2 and this guard would still pass. The semantic cases would fail instead, but with misleading messages. Membership is the ownership fact here, and a guard on it would make the failure explicit. I found no ownership regression in the change itself.",
+    "evidence": "Lines 103-106 assert only `SOURCES.length === 5` and `filter(required).length === 2`. Lines 121-132 hardcode account_transactions, subscriptions, contract_prices, budgets and loan_repayments. In apps/web/frontend/lib/onboarding-sources.js, account_transactions and subscriptions are the required ones (lines 12 and 25).",
+    "recommendation": "Assert that the required set equals exactly {account_transactions, subscriptions}. Assert that the optional set equals {contract_prices, budgets, loan_repayments}. Alternatively, derive the case inputs from SOURCES instead of hardcoding ids.",
+    "blocker": false
+  },
+  {
+    "specialist": "semantic-ownership",
+    "severity": "advisory",
+    "file": "tests/test_onboarding_auto_collapse_unit.py",
+    "line": 171,
+    "finding": "The wrapper trusts the node exit code alone. It does not confirm that the expected 10 tests ran and passed. If cases were silently removed or the file collected no tests, the wrapper could stay green. The spec requires exact counts: eight semantic cases plus two guards. The wrapper does enforce that tools are present and that the run times out as a failure. It uses an ordinary pytest function with no skip or slow marker.",
+    "evidence": "Line 171 is `assert result.returncode == 0`. The output is never parsed for `# pass 10` or `# fail 0`.",
+    "recommendation": "Assert the node --test summary shows 10 passes, 0 failures and 0 skipped. Alternatively, use `--test-reporter=tap` and check the count.",
+    "blocker": false
+  },
+  {
+    "specialist": "semantic-ownership",
+    "severity": "watchlist",
+    "file": "apps/web/frontend/unit/onboarding-auto-collapse.test.cjs",
+    "line": 41,
+    "finding": "The temporary `Module._load` override is restored in a `finally` block and keyed to `parent === mod`, so it is scoped to the subject module. It is still process-global state, and it is installed again while node:test runs its tests. The risk is low because `compile` is synchronous. Next's Link is loaded for real through `mod.paths`, which depends on frontend node_modules being present. I found no leak.",
+    "evidence": "Lines 41-51 save and restore `origLoad` with try/finally. All compile calls are synchronous, at module top level (line 55) and inside `load` and the SSR test.",
+    "recommendation": "No change needed. Keep `compile` synchronous.",
+    "blocker": false
+  },
+  {
+    "specialist": "semantic-ownership",
+    "severity": "watchlist",
+    "file": "apps/web/frontend/unit/onboarding-auto-collapse.test.cjs",
+    "line": 1,
+    "finding": "No ownership, category_id governance, or contract changes found. The diff adds only tests. It reads no canonical facts or dimensions, and it writes nothing. It touches no category handling. It adds no field that could be promoted to a shared contract, and it changes no units, nullability or trust source, so no version bump is needed. Not reviewed: this review was read-only, so none of the claimed test, Make, Ruff, mypy or preload-mutant results were executed or checked. Whether the wrapper is wired into CI or the full Make target is also unverified. The Makefile excerpt I saw only shows `npm ci` bootstrapping node_modules.",
+    "evidence": "The diff has two new files, apps/web/frontend/unit/onboarding-auto-collapse.test.cjs and tests/test_onboarding_auto_collapse_unit.py. It has no production changes.",
+    "recommendation": "Run the full Make target and the preload-mutant check independently before merge.",
+    "blocker": false
+  }
+]

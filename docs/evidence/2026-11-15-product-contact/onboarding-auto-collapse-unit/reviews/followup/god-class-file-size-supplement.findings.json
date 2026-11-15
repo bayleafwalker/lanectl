@@ -1,0 +1,79 @@
+[
+  {
+    "specialist": "god-class-file-size",
+    "severity": "info",
+    "file": "apps/web/frontend/unit/onboarding-auto-collapse.test.cjs",
+    "line": 1,
+    "finding": "No size-threshold finding for the changed files. Both new files are far below the 600 LOC file limit and the 80-line function limit. No class is defined, and no existing production file grew. The 600 LOC calibration anchor applies to production files, and these are tests.",
+    "evidence": "Read directly: onboarding-auto-collapse.test.cjs is 126 lines. Its longest functions are compile (lines 25-47, 23 lines) and load (lines 52-75, 24 lines). tests/test_onboarding_auto_collapse_unit.py is 33 lines, with one test function at lines 15-33 (19 lines). binding-evidence.json lists four file hashes: the two new test files and the two production files they exercise (components/onboarding-checklist.js, lib/onboarding-sources.js). The tracked-production-text-inventory.json entries are all above 600 lines. Neither production file appears in it, so both are 600 lines or fewer, which matches the earlier read (217 and 72 lines). The diff touches no file that is in the inventory. The blocker rule (a file that grew and is now more than twice its package's next-largest file) is not triggered, because no production file grew. The new test files are test paths, so the inventory excludes them by policy. Their sizes come from my own Read of the working tree, not from the inventory.",
+    "recommendation": "Accept as is for god-class-file-size. Splitting is not needed until the unit file nears 600 lines.",
+    "blocker": false,
+    "review-status": "COMPLETE"
+  },
+  {
+    "specialist": "god-class-file-size",
+    "severity": "watchlist",
+    "file": "apps/web/frontend/generated/openapi.json",
+    "line": 1,
+    "finding": "Watchlist, unchanged, generated or lockfile (5 entries). Not a manual god-file refactor target. These are over 600 lines, but they are machine-generated or lock artifacts.",
+    "evidence": "Counts from tracked-production-text-inventory.json, category generated_or_lock: apps/web/frontend/generated/openapi.json=23293; apps/web/frontend/generated/api.d.ts=15406; apps/web/frontend/generated/publication-contracts.ts=9448; apps/web/frontend/generated/publication-contracts.json=9408; apps/web/frontend/package-lock.json=6411.",
+    "recommendation": "No split needed. Confirm that regeneration is deterministic and that review tooling collapses these paths.",
+    "blocker": false,
+    "review-status": "COMPLETE"
+  },
+  {
+    "specialist": "god-class-file-size",
+    "severity": "watchlist",
+    "file": "charts/homelab-analytics/dashboards/homelab-analytics-ops.json",
+    "line": 1,
+    "finding": "Watchlist, unchanged, hand-maintained or non-generated text over 1000 lines (11 entries). These are the largest non-generated offenders. Several are in domain packs or packages/pipelines, where the role asks for a focused extraction path.",
+    "evidence": "Counts from tracked-production-text-inventory.json, category other_text: charts/homelab-analytics/dashboards/homelab-analytics-ops.json=1908 (Grafana dashboard JSON); apps/web/frontend/app/control/catalog/page.js=1575; apps/web/frontend/app/globals.css=1562; packages/pipelines/reporting_service.py=1533; apps/web/frontend/lib/backend.ts=1517; packages/demo/bundle.py=1410; apps/api/routes/report_routes.py=1257; apps/web/frontend/app/control/execution/page.js=1229; packages/domains/homelab/pipelines/ha_policy.py=1154; apps/api/auth_policies.py=1142; packages/domains/finance/pipelines/scenario_service.py=1114. The dashboard JSON is probably an exported artifact, but the inventory labels it other_text, not generated.",
+    "recommendation": "Track these for separate refactors. Prioritise packages/pipelines/reporting_service.py and the homelab and finance domain pack files. This change does not need to address them.",
+    "blocker": false,
+    "review-status": "COMPLETE"
+  },
+  {
+    "specialist": "god-class-file-size",
+    "severity": "watchlist",
+    "file": "packages/application/use_cases/pack_lifecycle.py",
+    "line": 1,
+    "finding": "Watchlist, unchanged, non-generated, 800-999 lines (11 entries).",
+    "evidence": "Counts from tracked-production-text-inventory.json: packages/application/use_cases/pack_lifecycle.py=960; apps/api/app.py=908; packages/storage/control_plane.py=908; packages/storage/execution_control_plane.py=899; packages/domains/overview/pipelines/transformation_overview.py=885; packages/application/use_cases/morning_brief.py=875; packages/application/use_cases/control_terminal.py=872; packages/application/use_cases/decision_ledger.py=865; migrations/duckdb/0001_initial_schema.sql=833 (an SQL schema migration, which should not be edited in place); packages/application/use_cases/morning_brief_sections.py=811.",
+    "recommendation": "Include these in the god-file backlog. packages/storage/ files should be checked first for extraction paths, because the role names that package.",
+    "blocker": false,
+    "review-status": "COMPLETE"
+  },
+  {
+    "specialist": "god-class-file-size",
+    "severity": "watchlist",
+    "file": "packages/platform/action_proposals.py",
+    "line": 1,
+    "finding": "Watchlist, unchanged, non-generated, 700-799 lines (9 entries).",
+    "evidence": "Counts from tracked-production-text-inventory.json: packages/platform/action_proposals.py=792; packages/storage/sqlite_control_plane_schema.py=780; packages/shared/external_registry.py=770; packages/domains/utilities/pipelines/battery_plan_outcome.py=746; packages/demo/seeder.py=744; packages/domains/finance/pipelines/transformation_transactions.py=744; packages/domains/utilities/pipelines/transformation_utilities.py=744; packages/storage/source_contract_catalog.py=740; packages/storage/sqlite_asset_definition_catalog.py=734; packages/domains/utilities/pipelines/kotiakku_evidence.py=725.",
+    "recommendation": "Include these in the backlog. Prefer extraction before the next feature work touches these files.",
+    "blocker": false,
+    "review-status": "COMPLETE"
+  },
+  {
+    "specialist": "god-class-file-size",
+    "severity": "watchlist",
+    "file": "packages/shared/settings.py",
+    "line": 1,
+    "finding": "Watchlist, unchanged, non-generated, 601-699 lines (17 entries). This group includes all the smallest over-threshold files.",
+    "evidence": "Counts from tracked-production-text-inventory.json: packages/shared/settings.py=697; packages/platform/auth/oidc_provider.py=680; packages/storage/postgres_asset_definition_catalog.py=671; packages/domains/homelab/pipelines/ha_bridge_ingestion.py=658; apps/web/frontend/app/page.js=656; apps/worker/control_plane.py=645; apps/web/frontend/app/console.css=636; packages/platform/contract_compat/publication_compare.py=624; packages/platform/publication_contracts.py=623; apps/api/routes/action_proposal_routes.py=621; packages/pipelines/upload_dry_run.py=619; packages/domains/overview/pipelines/scenario_service_overview.py=618; packages/pipelines/config_preflight.py=613; packages/storage/backup_bundle.py=613; apps/web/frontend/components/upload-detection-wizard.js=607; packages/domains/homelab/pipelines/ha_action_dispatcher.py=603; apps/web/frontend/components/transformation-catalog-panel.js=601.",
+    "recommendation": "These are marginal. Watch for growth, and do not allow further growth without extraction. Count check: the inventory has 53 entries over 600 lines, made up of 5 generated or lock entries and 48 other_text entries (11 + 11 + 9 + 17). The inventory's smallest entry is 601, so nothing at exactly 600 was recorded.",
+    "blocker": false,
+    "review-status": "COMPLETE"
+  },
+  {
+    "specialist": "god-class-file-size",
+    "severity": "info",
+    "file": "followup/tracked-production-text-inventory.json",
+    "line": 1,
+    "finding": "Scope and residual limits. The watchlist is complete only relative to the coordinator-generated inventory. This is not a full audit of unchanged code. Function-level and class-level sizes in unchanged files were not examined.",
+    "evidence": "The inventory covers git-tracked HEAD 57a7785 under apps, packages, scripts, tools, migrations, infra, charts, site, githooks and .github, UTF-8 text only. The inventory records no entries over 600 lines under scripts, tools, infra, site, githooks or .github, and I did not check that independently. Its recorded exclusions are: test, story and fixture paths; symlinks; sensitive-named files (packages/platform/auth/credential_resolution.py, packages/shared/secrets.py, charts/homelab-analytics/values.runtime-secrets-example.yaml, and 7 infra/examples/secrets/*.example.yaml files, 10 in total); and 3 non-UTF-8 PDFs under infra/examples/demo-data/sources/credit card/. The sizes of the sensitive-named files are unknown, so they could exceed 600 lines. Repository-root files and docs outside the listed roots are not covered. Line counts were generated by the coordinator, and I did not recompute them or the SHA256 values. The counting method (such as newline versus split) is not stated. Because the inventory excludes test paths, any test files over 600 lines are not on this watchlist.",
+    "recommendation": "If a complete audit is needed, run a separate pass for the sensitive-named files (line count only, no content), the test-path files and the repository root. For this change, no further size work is required.",
+    "blocker": false,
+    "review-status": "COMPLETE"
+  }
+]

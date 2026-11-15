@@ -1,0 +1,83 @@
+/projects/dev/homelab-analytics/.venv/bin/python -m ruff check .
+All checks passed!
+/projects/dev/homelab-analytics/.venv/bin/python -m mypy apps packages
+Success: no issues found in 402 source files
+/projects/dev/homelab-analytics/.venv/bin/python -m pytest -q -m "not slow"
+........................................................................ [  2%]
+........................................................................ [  5%]
+........................................................................ [  7%]
+........................................................................ [ 10%]
+................................................................................................ [ 13%]
+........................................................................ [ 16%]
+........................................................................ [ 19%]
+........................................................................ [ 21%]
+........................................................................ [ 24%]
+........................................................................ [ 26%]
+........................................................................ [ 29%]
+........................................................................ [ 32%]
+........................................................................ [ 34%]
+........................................................................ [ 37%]
+........................................................................ [ 40%]
+........................................................................ [ 42%]
+........................................................................ [ 45%]
+........................................................................ [ 47%]
+........................................................................ [ 50%]
+........................................................................ [ 53%]
+........................................................................ [ 55%]
+........................................................................ [ 58%]
+........................................................................ [ 60%]
+........................................................................ [ 63%]
+........................................................................ [ 66%]
+........................................................................ [ 68%]
+........................................................................ [ 71%]
+........................................................................ [ 74%]
+........................................................................ [ 76%]
+........................................................................ [ 79%]
+........................................................................ [ 81%]
+........................................................................ [ 84%]
+........................................................................ [ 87%]
+........................................................................ [ 89%]
+........................................................................ [ 92%]
+........................................................................ [ 94%]
+F....................................................................... [ 97%]
+....................................................................     [100%]
+=================================== FAILURES ===================================
+______ test_makefile_refuses_to_run_python_recipes_without_an_interpreter ______
+
+    @pytest.mark.skipif(shutil.which("make") is None, reason="make is not installed")
+    def test_makefile_refuses_to_run_python_recipes_without_an_interpreter() -> None:
+        # An empty PYTHON would turn `$(PYTHON) -m ruff` into a `-m ruff` recipe line,
+        # which make treats as "ignore errors" and reports as passing.
+        result = subprocess.run(
+            ["make", "-n", "lint", "PYTHON_BIN="],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    
+>       assert result.returncode != 0
+E       assert 0 != 0
+E        +  where 0 = CompletedProcess(args=['make', '-n', 'lint', 'PYTHON_BIN='], returncode=0, stdout="make[1]: Entering directory '/proje...s/.venv/bin/python -m ruff check .\nmake[1]: Leaving directory '/projects/dev/_wt/hla1597-unit-20261115'\n", stderr='').returncode
+
+tests/test_verification_tooling.py:26: AssertionError
+=============================== warnings summary ===============================
+tests/test_api_auth.py::test_api_local_single_user_break_glass_enforces_cidr_and_ttl_session_cookie
+  /projects/dev/homelab-analytics/.venv/lib/python3.13/site-packages/starlette/testclient.py:445: DeprecationWarning: Setting per-request cookies=<...> is being deprecated, because the expected behaviour on cookie persistence is ambiguous. Set cookies directly on the client instance instead.
+    return super().request(
+
+tests/test_api_main.py::ApiMainTests::test_build_lazy_transformation_service_defers_duckdb_open
+tests/test_api_main.py::ApiMainTests::test_build_reporting_service_uses_published_mode_for_postgres_reporting
+  /projects/dev/_wt/hla1597-unit-20261115/packages/storage/runtime.py:91: RuntimeWarning: Control-plane backend is SQLite but HOMELAB_ANALYTICS_POSTGRES_DSN is set. The control plane will NOT use Postgres unless HOMELAB_ANALYTICS_CONTROL_PLANE_DSN is also set (HOMELAB_ANALYTICS_POSTGRES_DSN is shared with reporting only). Set HOMELAB_ANALYTICS_CONTROL_PLANE_BACKEND=postgres and HOMELAB_ANALYTICS_CONTROL_PLANE_DSN to use Postgres for the control plane.
+    backend = _resolve_control_plane_backend(settings)
+
+tests/test_api_main.py::ApiMainTests::test_build_lazy_transformation_service_defers_duckdb_open
+tests/test_api_main.py::ApiMainTests::test_build_reporting_service_uses_published_mode_for_postgres_reporting
+  /projects/dev/_wt/hla1597-unit-20261115/packages/storage/runtime.py:105: RuntimeWarning: Control-plane backend is SQLite but HOMELAB_ANALYTICS_POSTGRES_DSN is set. The control plane will NOT use Postgres unless HOMELAB_ANALYTICS_CONTROL_PLANE_DSN is also set (HOMELAB_ANALYTICS_POSTGRES_DSN is shared with reporting only). Set HOMELAB_ANALYTICS_CONTROL_PLANE_BACKEND=postgres and HOMELAB_ANALYTICS_CONTROL_PLANE_DSN to use Postgres for the control plane.
+    backend = _resolve_control_plane_backend(settings)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_verification_tooling.py::test_makefile_refuses_to_run_python_recipes_without_an_interpreter
+1 failed, 2755 passed, 35 deselected, 5 warnings, 120 subtests passed in 684.22s (0:11:24)
+make: *** [Makefile:86: test-fast] Error 1
