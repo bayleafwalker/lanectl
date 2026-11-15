@@ -63,7 +63,7 @@ def test_parse_result_handles_noise_markdown_and_partial_usage():
 
 
 def test_run_claude_writes_status_and_normalises_usage(tmp_path, monkeypatch):
-    bindir = _fake_claude(tmp_path, 'pwd > "$CLAUDE_FAKE_CWD"\necho \'%s\'\n' % json.dumps(RESULT))
+    bindir = _fake_claude(tmp_path, 'pwd > "$CLAUDE_FAKE_CWD"\nprintf \'%%s\\n\' \'%s\'\n' % json.dumps(RESULT))
     _env(tmp_path, monkeypatch, bindir)
     wt = tmp_path / "wt"
     wt.mkdir()
@@ -87,7 +87,7 @@ def test_run_claude_writes_status_and_normalises_usage(tmp_path, monkeypatch):
 def test_run_claude_escalates_even_when_the_cli_exits_nonzero(tmp_path, monkeypatch):
     payload = {**RESULT, "is_error": True,
                "result": "blocked\nDISPATCH_OUTCOME: ESCALATED\nESCALATION_REASON: needs a schema"}
-    bindir = _fake_claude(tmp_path, "echo '%s'\nexit 7\n" % json.dumps(payload))
+    bindir = _fake_claude(tmp_path, "printf '%%s\\n' '%s'\nexit 7\n" % json.dumps(payload))
     _env(tmp_path, monkeypatch, bindir)
     wt = tmp_path / "wt"
     wt.mkdir()

@@ -38,7 +38,7 @@ def test_run_opencode_success_escalation_and_timeout(tmp_path, monkeypatch):
     escalate = '{"type":"text","part":{"type":"text","text":"cannot\\nDISPATCH_OUTCOME: ESCALATED\\nESCALATION_REASON: scope too small"}}'
     bindir = _fake_opencode(tmp_path, f"""
 case "$*" in
-  *ESCALATE*) echo '{escalate}' ;;
+  *ESCALATE*) printf '%s\\n' '{escalate}' ;;
   *SLEEP*) sleep 30 ;;
   *) cat "{FIXTURE}" ;;
 esac
