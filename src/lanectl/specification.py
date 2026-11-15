@@ -3,7 +3,8 @@
 Model output is data: only a bounded outcome and new acceptance files cross
 from disposable clones into the backlog. Models cannot publish or set commands,
 base commits, routing, scope, grants or policy. Review evidence binds the exact
-release and acceptance bytes and is invalidated by an edit or rebase.
+release and acceptance bytes and is invalidated by an edit or rebase. Reviewer
+proposal input is read-only at the byte level, including JSON formatting.
 """
 from __future__ import annotations
 
@@ -11,6 +12,7 @@ import hashlib
 import json
 import os
 import shlex
+import stat
 import subprocess
 import tempfile
 import tomllib
@@ -29,6 +31,7 @@ from .sandbox import from_lane
 
 SCHEMA = 'lanectl-specification/v1'
 MAX_RESPONSE_BYTES = 65536
+MAX_PROPOSAL_BYTES = 256 * 1024
 MAX_INTENT_BYTES = 16384
 MAX_FILES = 8
 EVIDENCE_FILE = 'specification.json'
@@ -66,7 +69,31 @@ def _models(author, reviewer, lane, repo, data_class):
         raise ValueError('spec author must differ from eligible implementers')
 
 
+def _check_proposal(path, expected):
+    # Open without following a substituted symlink or blocking on a FIFO.
+    try:
+        fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
+        try:
+            if not stat.S_ISREG(os.fstat(fd).st_mode):
+                raise ValueError('adversarial reviewer modified the proposal')
+            actual = bytearray()
+            while len(actual) <= len(expected):
+                chunk = os.read(fd, len(expected) + 1 - len(actual))
+                if not chunk:
+                    break
+                actual.extend(chunk)
+        finally:
+            os.close(fd)
+    except OSError:
+        raise ValueError('adversarial reviewer modified the proposal') from None
+    if actual != expected:
+        raise ValueError('adversarial reviewer modified the proposal')
+
+
 def _invoke(repo, lane, base_sha, model, prompt, *, adapter_fn=None, proposal=None, timeout_s=600):
+    proposal_bytes = None if proposal is None else json.dumps(proposal).encode('utf-8')
+    if proposal_bytes is not None and len(proposal_bytes) > MAX_PROPOSAL_BYTES:
+        raise ValueError('proposal exceeds byte bound')
     with tempfile.TemporaryDirectory(prefix='lanectl-spec-') as temp:
         root = Path(temp)
         wt = root / 'checkout'
@@ -77,8 +104,8 @@ def _invoke(repo, lane, base_sha, model, prompt, *, adapter_fn=None, proposal=No
         if seed.exists():
             raise ValueError('reserved .lanectl-spec path already exists on base')
         seed.mkdir()
-        if proposal is not None:
-            (seed / 'proposal.json').write_text(json.dumps(proposal))
+        if proposal_bytes is not None:
+            (seed / 'proposal.json').write_bytes(proposal_bytes)
         before = _git(wt, 'rev-parse', 'HEAD')
         sb = from_lane(lane.sandbox, (str(wt), str(root / 'runtime')), timeout_s + 30,
                        attempt_id='spec-' + root.name)
@@ -107,8 +134,8 @@ def _invoke(repo, lane, base_sha, model, prompt, *, adapter_fn=None, proposal=No
             raise ValueError('spec model wrote outside its response directory')
         if seed.is_symlink() or not seed.resolve().is_relative_to(wt.resolve()):
             raise ValueError('model replaced the response directory')
-        if proposal is not None and _read_json(seed / 'proposal.json') != proposal:
-            raise ValueError('adversarial reviewer modified the proposal')
+        if proposal_bytes is not None:
+            _check_proposal(seed / 'proposal.json', proposal_bytes)
         return _read_json(seed / 'response.json'), result.usage
 
 

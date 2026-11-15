@@ -242,3 +242,88 @@ def test_protection():
     assert not (repo/'leaked').exists()
     assert cli.main(['backlog','publish','spec-sub'])==0
     assert not (repo/'leaked').exists()
+
+
+def test_reviewer_accepts_large_trusted_proposal(estate):
+    repo, _, _ = estate
+    proposal = {'outcome': 'Large acceptance', 'tests': {'tests/test_large.py': '# ' + 'a' * 73712}}
+    def adapter(**kw):
+        (kw['worktree'] / '.lanectl-spec/response.json').write_text('{"verdict":"accept"}')
+        return AdapterResult('done', 0, '', None)
+    result, _ = spec._invoke(spec.load_repos()['target'], spec.load_lane('implement'),
+                             backlog_head(repo), 'scripted/reviewer', 'review',
+                             proposal=proposal, adapter_fn=adapter)
+    assert result == {'verdict': 'accept'}
+
+
+def invoke_review(estate, proposal, adapter):
+    repo, _, _ = estate
+    return spec._invoke(spec.load_repos()['target'], spec.load_lane('implement'),
+                        backlog_head(repo), 'scripted/reviewer', 'review',
+                        proposal=proposal, adapter_fn=adapter)
+
+
+def review_response(**kw):
+    (kw['worktree'] / '.lanectl-spec/response.json').write_text('{"verdict":"accept"}')
+    return AdapterResult('done', 0, '', None)
+
+
+def test_proposal_exact_bound_and_one_byte_over_before_clone(estate, monkeypatch):
+    overhead = len(json.dumps({'data': ''}).encode('utf-8'))
+    exact = {'data': 'a' * (spec.MAX_PROPOSAL_BYTES - overhead)}
+    assert invoke_review(estate, exact, review_response)[0] == {'verdict': 'accept'}
+    def forbidden(*args, **kwargs):
+        pytest.fail('oversized input reached clone or adapter')
+    monkeypatch.setattr(spec, '_git', forbidden)
+    with pytest.raises(ValueError, match='proposal exceeds byte bound'):
+        invoke_review(estate, {'data': exact['data'] + 'a'}, forbidden)
+
+
+def test_proposal_bound_measures_utf8_bytes(estate, monkeypatch):
+    original = json.dumps
+    monkeypatch.setattr(spec.json, 'dumps', lambda obj: original(obj, ensure_ascii=False))
+    proposal = {'data': 'é' * (spec.MAX_PROPOSAL_BYTES // 2)}
+    assert len(original(proposal, ensure_ascii=False)) < spec.MAX_PROPOSAL_BYTES
+    def forbidden(*args, **kwargs):
+        pytest.fail('oversized input reached clone or adapter')
+    monkeypatch.setattr(spec, '_git', forbidden)
+    with pytest.raises(ValueError, match='proposal exceeds byte bound'):
+        invoke_review(estate, proposal, forbidden)
+
+
+@pytest.mark.parametrize('change', ['changed', 'format', 'truncate', 'append', 'missing',
+                                    'symlink', 'directory', 'fifo'])
+def test_reviewer_must_preserve_proposal_bytes_and_regular_file(estate, change):
+    proposal = {'outcome': 'Some outcome', 'tests': {'tests/test_a.py': 'assert False'}}
+    def adapter(**kw):
+        result = review_response(**kw)
+        path = kw['worktree'] / '.lanectl-spec/proposal.json'
+        if change == 'changed':
+            path.write_bytes(b'{}')
+        elif change == 'format':
+            path.write_text(json.dumps(proposal, indent=2))
+        elif change == 'truncate':
+            path.write_bytes(path.read_bytes()[:-1])
+        elif change == 'append':
+            with path.open('ab') as stream:
+                stream.write(b'x' * (spec.MAX_PROPOSAL_BYTES + 1))
+        else:
+            path.unlink()
+            if change == 'symlink':
+                path.symlink_to('/dev/zero')
+            elif change == 'directory':
+                path.mkdir()
+            elif change == 'fifo':
+                os.mkfifo(path)
+        return result
+    with pytest.raises(ValueError, match='modified the proposal'):
+        invoke_review(estate, proposal, adapter)
+
+
+def test_valid_oversized_response_still_rejected(estate):
+    def adapter(**kw):
+        (kw['worktree'] / '.lanectl-spec/response.json').write_text(
+            json.dumps({'reason': 'x' * spec.MAX_RESPONSE_BYTES}))
+        return AdapterResult('done', 0, '', None)
+    with pytest.raises(ValueError, match='model response exceeds byte bound'):
+        invoke_review(estate, {'outcome': 'ok'}, adapter)
