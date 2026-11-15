@@ -1,0 +1,2 @@
+{"insertion": ["probe-b", "probe-a"], "warehouse": ["probe-b", "probe-a"], "published_duckdb_adapter": ["probe-b", "probe-a"]}
+{"insertion": ["probe-a", "probe-b"], "warehouse": ["probe-a", "probe-b"], "published_duckdb_adapter": ["probe-a", "probe-b"]}

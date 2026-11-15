@@ -1,0 +1,56 @@
+{
+  "base": "82dbd9477029d6fda7df67edc617f45a1a4ceb59",
+  "planner_unit": "hla-overview-priority-plan-20261115.service",
+  "planner_invocation": "858dfda3d0614443b7ed379b0c25f4b1",
+  "native_exit": 0,
+  "native_subtype": "success",
+  "native_is_error": false,
+  "native_denials": [],
+  "duration_ms": 312290,
+  "model_usage": {
+    "claude-opus-5-5": {
+      "inputTokens": 84,
+      "outputTokens": 24213,
+      "cacheReadInputTokens": 2444289,
+      "cacheCreationInputTokens": 97706,
+      "webSearchRequests": 0,
+      "costUSD": 1.7551018000000003,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 8148,
+      "cacheCreationEphemeral5mInputTokens": 0,
+      "cacheCreationEphemeral1hInputTokens": 97706,
+      "canonicalModel": "claude-opus-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+    }
+  },
+  "probe_exits": {
+    "probe": 0,
+    "probe-r2": 0,
+    "tie": 0,
+    "frontend": 0,
+    "frontend-r2": 0
+  },
+  "artifact_sha256": {
+    "prompt.txt": "c60a6ba17cfd68bd8767d0c374b24ddbfa85a80b772b99ec43e2c34804d5b131",
+    "native.json": "27462ee8ebe67ad4a381e47079e2c1fdf85f40de1caccd280b4bc7946ddb637a",
+    "native-plan.md": "6235d6f52e393d3897ff754729a0a6ca5c3b9482b3e5454a72ba5d01753175f5",
+    "probe.py": "31420f6e5a58ad27da7d2e41ca6c9d792084ca75505d84147e47c826378b688e",
+    "probe.stdout": "edac0d347a90acf92a29c234e6500a3780543822657aa1ceec6cdb8be5afbd9a",
+    "probe-r2.py": "dba3170af22a20e1ba1ffb903184c04ce2e953dc52745c31cb667ca28c77d80f",
+    "probe-r2.stdout": "8147b897efe9b2cb470b47ddc277c47fc26fa597b7ed61c7411fcaec11bb1110",
+    "tie-probe.py": "dd3e8d6e7eff9fc65cdf05cb40773861dac7effc0701fab15e4569d7407ecd8e",
+    "tie.stdout": "41bba75992e705cf50636097e96b2fca079bb7a122c1b9992a596d385cbecc85",
+    "frontend-probe-r2.cjs": "4789ea5aa93e63be3e9745df558c8bea75e2b63b10296a1df1c71bdd61e6a4ee",
+    "frontend-r2.stdout": "dd85dd5545217c2f4b3e2cfdd952bf5d9abdc0be12e8643aabe9f992daa09dd9",
+    "plan.md": "c9e312ea493880229ff179ebce6918fe04053f4e0a77ad99e8b60fd1390c858e"
+  },
+  "limitations": [
+    "Published probe uses DuckDB-backed repository adapter, not real PostgreSQL.",
+    "Real local HTTP used auth disabled; authorization not observed.",
+    "Frontend ran actual modules in-process with injected captured rows/presentation helpers; not real Next browser.",
+    "No product change, candidate, release, or backlog registration."
+  ],
+  "root_supplied_backlog_sweep": "/tmp/hla-all-items-20261115.json"
+}
