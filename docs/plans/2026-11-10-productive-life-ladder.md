@@ -407,3 +407,27 @@ At15:41UTC, bayleaf's user manager reported no failed units; lanectl-tick.timer
 was active/waiting, and its17:29:52EET tick exited0. The only failed system unit
 was home-manager-bayleaf.service, the existing concurrent activation conflict.
 No broad reset or unrelated restart was performed.
+
+
+### November 15 public optional-image publication qualified
+
+Vuoro #2907 is accepted by served decision 487, with reservation 509 released.
+[PR #326](https://github.com/bayleafwalker/vuoro/pull/326) merged as
+784c0192 after all 14 checks passed, including the new optional-image build,
+PostgreSQL workspace checks and production contract toolchain. The existing
+default publisher remained byte-identical.
+
+The actual [publication run](https://github.com/bayleafwalker/vuoro/actions/runs/43738166657)
+built the explicit Python 3.13 optional composition and exposed separate lane
+aliases only after exact-digest checks passed. Independent registry readback
+then verified both aliases, source/workflow provenance and the pulled image's
+installed closure: Python 3.13.18, lanectl 0.2.12 and the reviewed work, audit,
+knowledge and shared pins. The public index digest is
+`sha256:15f84e1c7456191bf769f8907938f0f38da9875124e4434bdba2694b8141ec82`.
+[Source-bound closeout](../evidence/2026-11-15-public-lane-image-publication/CLOSEOUT.json)
+retains the receipt, readbacks, source reviews and local verification, including
+the earlier unconfigured full-suite failure.
+
+This closes the public artifact-publication prerequisite. It proves no hosted
+deployment, tenant migration, lane persistence/restore or event-authority
+cutover. It adds no ruled product-class result or evidence-clock exit.

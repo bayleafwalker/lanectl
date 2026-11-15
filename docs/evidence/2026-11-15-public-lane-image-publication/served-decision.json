@@ -1,0 +1,24 @@
+{
+  "repo_id": "vuoro",
+  "item_id": 2907,
+  "decision": {
+    "repo_id": "vuoro",
+    "id": 487,
+    "kind": "accept",
+    "work_item_id": 2907,
+    "sprint_id": null,
+    "release_digest": "6edc6fd89afee5235a44dc8a741f150f0eb2521d440352c597a831b01bdd722e",
+    "evidence_digests": [
+      "6f88df80e49a1c90e7ff4d903c615ac05261ae80ff415d91e7db608362960553"
+    ],
+    "rationale": "PR326 merged as784c0192 after all14required checks passed. Actual public workflow43738166657 published optional Python3.13 lane image index15f84e1c, verified source/workflow provenance, exact manifest and installed six-pin closure includinglanectl0.2.12, and both distinct aliases. Independent17:07:38UTC registry readback verified both alias digests, cryptographic source provenance and actual pulled-image closure. Public source-bound evidence is replicated in lanectl commitab4fe72, closeout SHA6f88df80. Default publisher bytes preserved. No hosted deployment, tenant migration, storage/restore or authority cutover is included.",
+    "actor": "workstation-vuoro",
+    "superseded_by_item_id": null,
+    "legacy_source": null,
+    "created_at": "2026-11-15T17:14:17.360592Z"
+  },
+  "status": "done",
+  "resolution": "accepted",
+  "terminal_decision_id": 487,
+  "replayed": false
+}

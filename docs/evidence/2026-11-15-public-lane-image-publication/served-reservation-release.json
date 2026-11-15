@@ -1,0 +1,17 @@
+{
+  "activity_age_seconds": 0,
+  "actor": "workstation-vuoro",
+  "correlation_ref": null,
+  "created_at": "2026-11-15T16:17:03Z",
+  "id": 509,
+  "interruption_reason": null,
+  "last_activity_at": "2026-11-15T17:14:17Z",
+  "release_digest": "6edc6fd89afee5235a44dc8a741f150f0eb2521d440352c597a831b01bdd722e",
+  "released_at": "2026-11-15T17:14:17Z",
+  "repo_id": "vuoro",
+  "role": "execution",
+  "session_id": "01a1d0d7-890b-7cd0-931f-0a9994d9308b",
+  "stale": false,
+  "state": "released",
+  "work_item_id": 2907
+}

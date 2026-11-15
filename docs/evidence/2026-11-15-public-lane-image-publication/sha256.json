@@ -138,6 +138,14 @@
       "sha256": "b52d4a7bfb7fe4cb939b9f2ade62e3ced3cdc806e0c3df3571323984b537af7f"
     },
     {
+      "path": "served-decision.json",
+      "sha256": "6f1989b114ad2a53632073f14f5b81d58bcfde941a140316aae12e7ecbc68e1b"
+    },
+    {
+      "path": "served-reservation-release.json",
+      "sha256": "496b7e040fc32369698b36c0ea3e0df133db3812fcaca75645f38b833439f971"
+    },
+    {
       "path": "targeted-final.log",
       "sha256": "77718f3fd5f0f9eb2c3c1da8087bd71c794c9e1fbb05fad97c2097c47bdaab4b"
     },
