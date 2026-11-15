@@ -1,6 +1,8 @@
 """Intent drafts stay isolated, independently reviewed and unpublished."""
 import json
 import os
+import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -292,7 +294,7 @@ def test_proposal_bound_measures_utf8_bytes(estate, monkeypatch):
 
 
 @pytest.mark.parametrize('change', ['changed', 'format', 'truncate', 'append', 'missing',
-                                    'symlink', 'directory', 'fifo'])
+                                    'symlink', 'directory'])
 def test_reviewer_must_preserve_proposal_bytes_and_regular_file(estate, change):
     proposal = {'outcome': 'Some outcome', 'tests': {'tests/test_a.py': 'assert False'}}
     def adapter(**kw):
@@ -308,13 +310,14 @@ def test_reviewer_must_preserve_proposal_bytes_and_regular_file(estate, change):
             with path.open('ab') as stream:
                 stream.write(b'x' * (spec.MAX_PROPOSAL_BYTES + 1))
         else:
+            original = path.read_bytes()
             path.unlink()
             if change == 'symlink':
-                path.symlink_to('/dev/zero')
+                target = path.parent / 'identical.json'
+                target.write_bytes(original)
+                path.symlink_to(target)
             elif change == 'directory':
                 path.mkdir()
-            elif change == 'fifo':
-                os.mkfifo(path)
         return result
     with pytest.raises(ValueError, match='modified the proposal'):
         invoke_review(estate, proposal, adapter)
@@ -327,3 +330,37 @@ def test_valid_oversized_response_still_rejected(estate):
         return AdapterResult('done', 0, '', None)
     with pytest.raises(ValueError, match='model response exceeds byte bound'):
         invoke_review(estate, {'outcome': 'ok'}, adapter)
+
+
+def test_symlink_guard_detects_missing_nofollow(tmp_path, monkeypatch):
+    target = tmp_path / 'target'
+    target.write_bytes(b'identical')
+    link = tmp_path / 'proposal.json'
+    link.symlink_to(target)
+    with pytest.raises(ValueError, match='modified the proposal'):
+        spec._check_proposal(link, b'identical')
+    # Removing the flag would make this same identical regular target pass.
+    monkeypatch.setattr(spec.os, 'O_NOFOLLOW', 0)
+    spec._check_proposal(link, b'identical')
+
+
+def test_fifo_guard_is_nonblocking_and_detects_missing_flag(tmp_path):
+    fifo = tmp_path / 'proposal.json'
+    os.mkfifo(fifo)
+    probe = """import sys
+from lanectl import specification as spec
+if sys.argv[2] == 'without-nonblock':
+    spec.os.O_NONBLOCK = 0
+try:
+    spec._check_proposal(sys.argv[1], b'proposal')
+except ValueError as exc:
+    assert str(exc) == 'adversarial reviewer modified the proposal'
+else:
+    raise AssertionError('FIFO accepted')
+"""
+    subprocess.run([sys.executable, '-c', probe, str(fifo), 'normal'],
+                   check=True, capture_output=True, text=True, timeout=5)
+    # The child is killed and reaped by subprocess.run if the blocking flag is lost.
+    with pytest.raises(subprocess.TimeoutExpired):
+        subprocess.run([sys.executable, '-c', probe, str(fifo), 'without-nonblock'],
+                       check=True, capture_output=True, text=True, timeout=5)
