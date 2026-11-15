@@ -66,6 +66,8 @@ def main(argv: list[str] | None = None) -> int:
     for plugin in discover_plugins("lanectl"):
         handlers.update(plugin.register(sub))
     a = p.parse_args(argv)
+    if a.cmd == "stream" and a.stream_action in {"backup", "restore"}:
+        return handlers[a.cmd](a, None)
     log = open_log()
     if a.cmd in handlers:
         return handlers[a.cmd](a, log)

@@ -151,10 +151,27 @@ def register(sub):
     importer.add_argument('--source', required=True)
     importer.add_argument('--source-sha256', help='required exact source digest for --execute')
     importer.add_argument('--execute', action='store_true', help='append verified historical batches; default is read-only dry run')
+    for action, arguments in (("backup", ("database", "artifact")), ("restore", ("artifact", "destination"))):
+        command = actions.add_parser(action, help="explicit owner recovery; authority unchanged")
+        for argument in arguments:
+            command.add_argument(argument)
     return {'stream': _cmd}
 
 
 def _cmd(args, log):
+    if args.stream_action in {"backup", "restore"}:
+        from . import stream_recovery
+        try:
+            if args.stream_action == "backup":
+                receipt = stream_recovery.backup(args.database, args.artifact)
+            else:
+                receipt = stream_recovery.restore(args.artifact, args.destination)
+        except stream_recovery.RecoveryError as error:
+            print(encode({"schema": stream_recovery.RECEIPT, "ok": False, "operation": args.stream_action,
+                "error": str(error), "published": error.published, "authority_changed": False}))
+            return 1
+        print(encode(receipt))
+        return 0
     if args.stream_action == 'init':
         initialize(args.database)
         print(f'lane stream schema {SCHEMA_VERSION}: {args.database}')

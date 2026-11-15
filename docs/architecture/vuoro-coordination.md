@@ -175,6 +175,62 @@ and restore evidence is required before calling hosted storage
 **host-persistent**. The hosted API allows cross-host clients, but does not by
 itself establish replicated storage or recovery.
 
+### Owner backup and fresh restore
+
+Use `lanectl stream backup DATABASE ARTIFACT` to snapshot an existing schema1
+owner while writers continue. SQLite's online backup API includes committed
+WAL data and both event and idempotency-batch tables. The result describes the
+completed consistent snapshot; its heads are not a claim about command-entry
+state. The command never changes the source journal/checkpoint settings.
+
+```sh
+lanectl stream backup /private/lanectl/owner.sqlite /private/lanectl/owner-backup.lane
+# Pause service writes before using a recovered owner; restore to a NEW path.
+lanectl stream restore /private/lanectl/owner-backup.lane /private/lanectl/recovered.sqlite
+```
+
+Inputs must be regular files owned by the invoking user, without hard-link
+aliases, mode 0400 or 0600, in existing owned mode 0700 directories. Symlinks,
+including ancestor symlinks, are refused. New artifacts and databases are 0600.
+Existing destination names or SQLite WAL/SHM/journal sidecars are refused.
+The local filesystem must support SQLite locks, exclusive hard links and file
+and directory fsync. These commands leave authority selection unchanged and do
+not stop other hosts or establish that writers were quiesced.
+
+The single regular-file artifact is an uncompressed ZIP with exactly
+`manifest.json` followed by `owner.sqlite`; it is never generally extracted.
+`lanectl.stream-backup/v1` binds owner schema1, payload SHA256 and byte length,
+both table counts and sorted workspace/repository/stream head revisions. The
+reader validates closed archive metadata, integrity, the exact supported owner
+catalog, complete event/batch linkage and the measured manifest before
+publishing. Checksums detect corruption; they do not authenticate an artifact.
+Keep artifacts in trusted backup custody. The SQLite payload is standalone;
+restoring it preserves schema/data/idempotency and does not run migration.
+
+Bounds are explicit: 1GiB SQLite payload, 1MiB manifest, 1,000,000 events,
+100,000 batches and 4,096 populated scopes. The online-copy phase has a 300-second
+deadline. Payload copying and hashing are streamed; restore uses an owned copy
+of the artifact before parsing. Allow roughly two payload sizes of free space
+for private candidates. SQLite values are bounded to 2MiB plus 4KiB while
+validating an artifact. An oversized or unsupported owner is refused, never
+silently truncated. Those bounds do not change the append/read API.
+
+Publication stages beside the destination, closes and fsyncs the complete
+candidate, links the new final name without replacement, then fsyncs its
+parent. Successful JSON receipts bind the artifact hash, schema, counts, heads
+and restored path and state `authority_changed:false` and
+`quiescence:"not-asserted"`. A failure after linking can leave a valid,
+unactivated result; an error's `published` field identifies that effect when
+available. Inspect it before proceeding: retry refuses replacement. Interrupted
+or ownership-conflicted candidates may remain for inspection. Cleanup only
+removes candidates whose original inode identity is still owned by this run;
+it never removes a published result or an unexpected replacement.
+
+A successful local backup/restore receipt establishes owner-source recovery
+behavior. Qualified backup custody, retention/RPO, persistent-volume recovery,
+service activation and the separate history/authority cutover remain required
+before hosted storage is called durable-authoritative.
+
 With all writers paused, initialize the owner's configured database explicitly,
 then inspect/import history from the current authority:
 
