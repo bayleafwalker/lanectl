@@ -1,0 +1,94 @@
+{
+  "rows": [
+    {
+      "argv": [
+        "uv",
+        "build",
+        "--package",
+        "vuoro-client",
+        "--wheel",
+        "--out-dir",
+        "dist/vuoro-client",
+        "--no-create-gitignore"
+      ],
+      "exit": 0,
+      "elapsed_s": 0.194,
+      "log": "check-0.log"
+    },
+    {
+      "argv": [
+        "uv",
+        "build",
+        "--package",
+        "vuoro-service",
+        "--wheel",
+        "--out-dir",
+        "dist/vuoro-service",
+        "--no-create-gitignore"
+      ],
+      "exit": 0,
+      "elapsed_s": 0.204,
+      "log": "check-1.log"
+    },
+    {
+      "argv": [
+        "uv",
+        "build",
+        "--package",
+        "vuoro-schema-runtime",
+        "--wheel",
+        "--out-dir",
+        "dist/vuoro-schema-runtime",
+        "--no-create-gitignore"
+      ],
+      "exit": 0,
+      "elapsed_s": 0.201,
+      "log": "check-2.log"
+    },
+    {
+      "argv": [
+        "uv",
+        "build",
+        "--package",
+        "vuoro-adapter-kit",
+        "--wheel",
+        "--out-dir",
+        "dist/vuoro-adapter-kit",
+        "--no-create-gitignore"
+      ],
+      "exit": 0,
+      "elapsed_s": 0.196,
+      "log": "check-3.log"
+    },
+    {
+      "argv": [
+        "uv",
+        "build",
+        "--package",
+        "vuoro-contracts",
+        "--wheel",
+        "--out-dir",
+        "dist/vuoro-contracts",
+        "--no-create-gitignore"
+      ],
+      "exit": 0,
+      "elapsed_s": 0.19,
+      "log": "check-4.log"
+    },
+    {
+      "argv": [
+        "uv",
+        "run",
+        "--no-sync",
+        "pytest",
+        "-q",
+        "-p",
+        "no:cacheprovider"
+      ],
+      "exit": 1,
+      "elapsed_s": 193.631,
+      "log": "check-5.log"
+    }
+  ],
+  "phase": "failed"
+}

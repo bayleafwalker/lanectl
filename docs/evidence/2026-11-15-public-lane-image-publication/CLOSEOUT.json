@@ -1,0 +1,44 @@
+{
+  "work_item": "vuoro#2907",
+  "source_head": "d80988c73f029771f27b299df8e9e3b7bef540af",
+  "canonical_merge": "784c0192b2f89afb1d9239d20f2ae408ee10f8d4",
+  "pr": "https://github.com/bayleafwalker/vuoro/pull/326",
+  "pr_checks": "all13CIjobs+currentnessownerconformance passed",
+  "ci_run": 43737352594,
+  "publication_run": 43738166657,
+  "publication_url": "https://github.com/bayleafwalker/vuoro/actions/runs/43738166657",
+  "publication_artifact_id": 14170863664,
+  "artifact_zip_sha256": "7fcb3e3447e5f8210e6124fffa996e81385b569877f4cca088b2477969682c2d",
+  "image": "ghcr.io/bayleafwalker/vuoro-service@sha256:15f84e1c7456191bf769f8907938f0f38da9875124e4434bdba2694b8141ec82",
+  "manifest_sha256": "d8d0ec671de91be6e1b187c0e77b945d99f63f214ce4aef3fca6389f744fab43",
+  "scope": "public optional-image publication and qualification only",
+  "source_files": 6,
+  "added_lines": 588,
+  "default_publisher_unchanged_sha256": "21b23af6a34d325a7f0733064f436398566ed4b4a7964b1564726bd55d05a818",
+  "targeted_tests": 66,
+  "ordinary_ci_profile": {
+    "passed": 3651,
+    "skipped": 248,
+    "exit": 0,
+    "production_toolchain": "separateCIjobpassed"
+  },
+  "native_source_review": {
+    "models": [
+      "claude-sonnet-5-5"
+    ],
+    "sessions": 2,
+    "final": "CLEAR for source",
+    "permission_denials": 0
+  },
+  "independent_registry_readback": "both aliases, source provenance and actual installed closure passed17:07:38UTC",
+  "hosted_deployment": false,
+  "JSONL_authority_changed": false,
+  "product_class_ruled_count_added": false,
+  "retention": "cross-host-replicated after evidence push; served decision durable-authoritative",
+  "omissions": [
+    "private hosted observations and withheld public-disclosure attempt",
+    "tool-generated signed artifact download URL",
+    "Docker image layers, dependency caches and build caches",
+    "full unpublished Docker build context"
+  ]
+}

@@ -1,0 +1,242 @@
+......................................................................ss [  1%]
+ssssssssssssssssssssssssssssssssssssssssssssss.......................... [  3%]
+............sssss.ssssss..................ss.......s.......s.......s.... [  5%]
+...s.......ss........................................................... [  7%]
+........................................................................ [  9%]
+........................................................................ [ 11%]
+........................................................................ [ 12%]
+.........................................................ssssssssssssss. [ 14%]
+........................................................................ [ 16%]
+........................................................................ [ 18%]
+...........................................s............................ [ 20%]
+........................................................................ [ 22%]
+........................................................................ [ 24%]
+........................................................................ [ 25%]
+........................................................................ [ 27%]
+........................................................................ [ 29%]
+........................................................................ [ 31%]
+........................................................................ [ 33%]
+........................................................................ [ 35%]
+........................................................................ [ 36%]
+........................................................................ [ 38%]
+........................................................................ [ 40%]
+........................................................................ [ 42%]
+........................................................................ [ 44%]
+........................................................................ [ 46%]
+........................................................................ [ 48%]
+........................................................................ [ 49%]
+..........................s.........s................................... [ 51%]
+........................................................................ [ 53%]
+........................................................................ [ 55%]
+........................................................................ [ 57%]
+........................................................................ [ 59%]
+........................................................................ [ 60%]
+........................................................................ [ 62%]
+........................................................................ [ 64%]
+........................................................................ [ 66%]
+...................................ssss................................. [ 68%]
+.....................................................ssss............... [ 70%]
+........................................................................ [ 72%]
+........................................................................ [ 73%]
+.......................sssssss.ss.ssssssssss...sssssss..ssssss.......... [ 75%]
+.s.......................................sss............................ [ 77%]
+........................................................................ [ 79%]
+........................................................................ [ 81%]
+........................................................................ [ 83%]
+s.........ssss.s...sssssssssssss........................................ [ 84%]
+..........................ssssssssssss........ss.s...................... [ 86%]
+......ssss...........................s.................................. [ 88%]
+...................................ssssssssssssssssssss.ssssssssssssssss [ 90%]
+sssssssssssssssssssssssssssssssssssssssssssss........................... [ 92%]
+........................................................................ [ 94%]
+........................................................................ [ 96%]
+........................................................................ [ 97%]
+........................................................................ [ 99%]
+...........                                                              [100%]
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /projects/dev/_wt/vuoro-lane-image-publish-20261115/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+packages/vuoro-reconciler/tests/test_execution_journal.py::test_fork_inherited_instance_refuses_shared_open_lock_description
+  /projects/dev/_wt/vuoro-lane-image-publish-20261115/packages/vuoro-reconciler/tests/test_execution_journal.py:1171: DeprecationWarning: This process (pid=2871375) is multi-threaded, use of fork() may lead to deadlocks in the child.
+    pid = os.fork()
+
+packages/vuoro-reconciler/tests/test_protected_executor.py: 15 warnings
+  /home/bayleaf/.local/share/uv/python/cpython-3.12.14-linux-x86_64-gnu/lib/python3.12/multiprocessing/popen_fork.py:66: DeprecationWarning: This process (pid=2871375) is multi-threaded, use of fork() may lead to deadlocks in the child.
+    self.pid = os.fork()
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+SKIPPED [1] packages/vuoro-service/tests/conformance/test_bound_proposal_http.py:95: requires configured disposable PostgreSQL owner
+SKIPPED [5] packages/vuoro-service/tests/conformance/test_bound_proposal_http.py:121: requires configured disposable PostgreSQL owner
+SKIPPED [4] packages/vuoro-service/tests/conformance/test_bound_proposal_http.py:131: requires configured disposable PostgreSQL owner
+SKIPPED [1] packages/vuoro-service/tests/conformance/test_bound_proposal_http.py:142: requires configured disposable PostgreSQL owner
+SKIPPED [1] packages/vuoro-service/tests/conformance/test_bound_proposal_http.py:152: requires configured disposable PostgreSQL owner
+SKIPPED [1] packages/vuoro-service/tests/conformance/test_bound_proposal_http.py:166: requires configured disposable PostgreSQL owner
+SKIPPED [1] packages/vuoro-service/tests/conformance/test_bound_proposal_http.py:177: requires configured disposable PostgreSQL owner
+SKIPPED [1] packages/vuoro-service/tests/conformance/test_effect_attempt_http.py:145: requires configured disposable PostgreSQL owner
+SKIPPED [1] packages/vuoro-service/tests/conformance/test_effect_attempt_http.py:166: requires configured disposable PostgreSQL owner
+SKIPPED [2] packages/vuoro-service/tests/conformance/test_effect_attempt_http.py:186: requires configured disposable PostgreSQL owner
+SKIPPED [1] packages/vuoro-service/tests/conformance/test_effect_attempt_http.py:200: requires configured disposable PostgreSQL owner
+SKIPPED [1] packages/vuoro-service/tests/conformance/test_effect_attempt_http.py:224: requires configured disposable PostgreSQL owner
+SKIPPED [5] packages/vuoro-service/tests/conformance/test_effect_attempt_http.py:237: requires configured disposable PostgreSQL owner
+SKIPPED [4] packages/vuoro-service/tests/conformance/test_effect_attempt_http.py:252: requires configured disposable PostgreSQL owner
+SKIPPED [1] packages/vuoro-service/tests/conformance/test_effect_attempt_http.py:267: requires configured disposable PostgreSQL owner
+SKIPPED [1] packages/vuoro-service/tests/conformance/test_effect_attempt_http.py:283: requires configured disposable PostgreSQL owner
+SKIPPED [1] packages/vuoro-service/tests/conformance/test_evidence_evaluation_http.py:218: requires configured disposable PostgreSQL owner
+SKIPPED [3] packages/vuoro-service/tests/conformance/test_evidence_evaluation_http.py:237: requires configured disposable PostgreSQL owner
+SKIPPED [4] packages/vuoro-service/tests/conformance/test_evidence_evaluation_http.py:249: requires configured disposable PostgreSQL owner
+SKIPPED [3] packages/vuoro-service/tests/conformance/test_evidence_evaluation_http.py:265: requires configured disposable PostgreSQL owner
+SKIPPED [1] packages/vuoro-service/tests/conformance/test_evidence_evaluation_http.py:277: requires configured disposable PostgreSQL owner
+SKIPPED [1] packages/vuoro-service/tests/conformance/test_evidence_evaluation_http.py:293: requires configured disposable PostgreSQL owner
+SKIPPED [3] packages/vuoro-service/tests/conformance/test_evidence_evaluation_http.py:316: requires configured disposable PostgreSQL owner
+SKIPPED [1] packages/vuoro-service/tests/conformance/test_evidence_evaluation_http.py:358: requires configured disposable PostgreSQL owner
+SKIPPED [1] packages/vuoro-service/tests/conformance/test_native_reserve_http.py:59: requires configured disposable PostgreSQL owner
+SKIPPED [3] packages/vuoro-service/tests/conformance/test_native_reserve_http.py:81: requires configured disposable PostgreSQL owner
+SKIPPED [1] packages/vuoro-service/tests/conformance/test_native_reserve_http.py:96: requires configured disposable PostgreSQL owner
+SKIPPED [4] packages/vuoro-service/tests/conformance/test_rate_limit_parking.py:40: requires configured disposable PostgreSQL owner
+SKIPPED [1] packages/vuoro-service/tests/conformance/test_rejection_details.py:19: requires the configured disposable PostgreSQL owner binding
+SKIPPED [1] packages/vuoro-service/tests/conformance/test_released_run_delegation_http.py:17: requires isolated installed release composition
+SKIPPED [1] packages/vuoro-service/tests/conformance/test_run_delegation_owner_pg.py:10: explicit clean delegation owner source/commit and guarded disposable PG database required
+SKIPPED [1] packages/vuoro-service/tests/conformance/test_run_delegation_owner_pg.py:22: explicit clean currentness owner source/commit and guarded disposable PG database required
+SKIPPED [1] packages/vuoro-service/tests/conformance/test_schema22_composition_migration.py:91: requires separately provisioned disposable schema22 migration/runtime fixture
+SKIPPED [1] packages/vuoro-service/tests/conformance/test_schema27_composition_migration.py:174: requires separately provisioned disposable schema27 migration/runtime fixture
+SKIPPED [1] packages/vuoro-service/tests/conformance/test_schema28_composition_migration.py:191: requires separately provisioned disposable schema28 migration/runtime fixture
+SKIPPED [1] packages/vuoro-service/tests/conformance/test_schema30_owner_migration.py:93: requires separately provisioned disposable schema30 owner fixture
+SKIPPED [1] packages/vuoro-service/tests/conformance/test_schema34_owner_migration.py:163: requires separately provisioned disposable schema34 owner fixture
+SKIPPED [1] packages/vuoro-service/tests/conformance/test_service103_currentness_installed.py:24: requires separately prepared disposable installed composition
+SKIPPED [1] packages/vuoro-service/tests/test_ops_isolated_restore.py:88: PostgreSQL 16 binaries (initdb/pg_ctl/pg_restore) not available
+SKIPPED [1] packages/vuoro-service/tests/test_ops_isolated_restore.py:94: PostgreSQL 16 binaries (initdb/pg_ctl/pg_restore) not available
+SKIPPED [1] packages/vuoro-service/tests/test_ops_isolated_restore.py:120: PostgreSQL 16 binaries (initdb/pg_ctl/pg_restore) not available
+SKIPPED [1] packages/vuoro-service/tests/test_ops_isolated_restore.py:134: PostgreSQL 16 binaries (initdb/pg_ctl/pg_restore) not available
+SKIPPED [1] packages/vuoro-service/tests/test_ops_isolated_restore.py:146: PostgreSQL 16 binaries (initdb/pg_ctl/pg_restore) not available
+SKIPPED [1] packages/vuoro-service/tests/test_ops_isolated_restore.py:154: PostgreSQL 16 binaries (initdb/pg_ctl/pg_restore) not available
+SKIPPED [1] packages/vuoro-service/tests/test_ops_isolated_restore.py:173: PostgreSQL 16 binaries (initdb/pg_ctl/pg_restore) not available
+SKIPPED [3] packages/vuoro-service/tests/test_ops_isolated_restore.py:193: PostgreSQL 16 binaries (initdb/pg_ctl/pg_restore) not available
+SKIPPED [1] packages/vuoro-service/tests/test_ops_isolated_restore.py:216: PostgreSQL 16 binaries (initdb/pg_ctl/pg_restore) not available
+SKIPPED [1] packages/vuoro-service/tests/test_ops_isolated_restore.py:226: PostgreSQL 16 binaries (initdb/pg_ctl/pg_restore) not available
+SKIPPED [2] packages/vuoro-service/tests/test_ops_isolated_restore.py:235: PostgreSQL 16 binaries (initdb/pg_ctl/pg_restore) not available
+SKIPPED [1] packages/vuoro-service/tests/test_tenant_schema.py:58: pinned work owner wheel is not installed
+SKIPPED [1] packages/vuoro-mcp-edge/tests/test_ledger_behaviour.py:208: disposable owner not configured
+SKIPPED [1] packages/vuoro-mcp-edge/tests/test_ledger_behaviour.py:316: disposable owner not configured
+SKIPPED [4] packages/vuoro-reconciler/tests/test_protected_basis_source.py:474: requires explicit owner-generated native PostgreSQL basis fixtures
+SKIPPED [4] packages/vuoro-reconciler/tests/test_protected_currentness.py:186: requires explicit owner-generated native PostgreSQL basis fixtures
+SKIPPED [1] packages/vuoro-reconciler/tests/test_protected_provider.py:222: actual delegated cgroup fixture required
+SKIPPED [5] packages/vuoro-reconciler/tests/test_protected_provider.py:296: actual delegated cgroup fixture required
+SKIPPED [1] packages/vuoro-reconciler/tests/test_protected_provider.py:382: actual delegated cgroup fixture required
+SKIPPED [1] packages/vuoro-reconciler/tests/test_protected_provider.py:458: actual delegated cgroup fixture required
+SKIPPED [1] packages/vuoro-reconciler/tests/test_protected_provider.py:479: actual delegated cgroup fixture required
+SKIPPED [1] packages/vuoro-reconciler/tests/test_protected_provider.py:567: actual delegated cgroup fixture required
+SKIPPED [1] packages/vuoro-reconciler/tests/test_protected_provider.py:589: actual delegated cgroup fixture required
+SKIPPED [2] packages/vuoro-reconciler/tests/test_protected_provider.py:642: actual delegated cgroup fixture required
+SKIPPED [1] packages/vuoro-reconciler/tests/test_protected_provider.py:722: actual delegated cgroup fixture required
+SKIPPED [4] packages/vuoro-reconciler/tests/test_protected_provider.py:773: actual delegated cgroup fixture required
+SKIPPED [1] packages/vuoro-reconciler/tests/test_protected_provider.py:817: actual delegated cgroup fixture required
+SKIPPED [1] packages/vuoro-reconciler/tests/test_protected_provider.py:901: actual delegated cgroup fixture required
+SKIPPED [1] packages/vuoro-reconciler/tests/test_protected_provider.py:950: actual delegated cgroup fixture required
+SKIPPED [1] packages/vuoro-reconciler/tests/test_protected_provider.py:1002: actual delegated cgroup fixture required
+SKIPPED [2] packages/vuoro-reconciler/tests/test_protected_provider.py:1040: actual delegated cgroup fixture required
+SKIPPED [1] packages/vuoro-reconciler/tests/test_protected_provider.py:1086: actual delegated cgroup fixture required
+SKIPPED [1] packages/vuoro-reconciler/tests/test_protected_provider.py:1136: actual delegated cgroup fixture required
+SKIPPED [6] packages/vuoro-reconciler/tests/test_protected_provider.py:1203: actual delegated cgroup fixture required
+SKIPPED [1] packages/vuoro-reconciler/tests/test_protected_provider.py:1493: actual delegated cgroup fixture required
+SKIPPED [3] packages/vuoro-reconciler/tests/test_protected_provider_child.py:771: actual delegated cgroup fixture required
+SKIPPED [1] packages/vuoro-reconciler/tests/test_protected_runtime_installation.py:431: explicit actual Nix installation fixture required
+SKIPPED [4] packages/vuoro-reconciler/tests/test_protected_runtime_installation.py:479: explicit actual Nix installation fixture required
+SKIPPED [1] packages/vuoro-reconciler/tests/test_protected_runtime_installation.py:534: explicit actual Nix installation fixture required
+SKIPPED [2] packages/vuoro-reconciler/tests/test_protected_runtime_local.py:154: unmerged provider fixture source required
+SKIPPED [1] packages/vuoro-reconciler/tests/test_protected_runtime_local.py:193: unmerged provider fixture source required
+SKIPPED [4] packages/vuoro-reconciler/tests/test_protected_runtime_local.py:221: unmerged provider fixture source required
+SKIPPED [3] packages/vuoro-reconciler/tests/test_protected_runtime_local.py:325: unmerged provider fixture source required
+SKIPPED [2] packages/vuoro-reconciler/tests/test_protected_runtime_local.py:358: unmerged provider fixture source required
+SKIPPED [1] packages/vuoro-reconciler/tests/test_protected_runtime_local.py:413: unmerged provider fixture source required
+SKIPPED [1] packages/vuoro-reconciler/tests/test_protected_runtime_reader_ipc.py:433: actual delegated cgroup fixture not configured
+SKIPPED [1] packages/vuoro-reconciler/tests/test_protected_runtime_reader_ipc.py:447: actual delegated cgroup fixture not configured
+SKIPPED [2] packages/vuoro-reconciler/tests/test_protected_runtime_reader_ipc.py:473: actual delegated cgroup fixture not configured
+SKIPPED [1] packages/vuoro-reconciler/tests/test_protected_runtime_reader_ipc.py:508: actual delegated cgroup fixture not configured
+SKIPPED [2] packages/vuoro-reconciler/tests/test_protected_runtime_reader_ipc.py:569: actual delegated cgroup fixture not configured
+SKIPPED [2] packages/vuoro-reconciler/tests/test_protected_runtime_reader_ipc.py:610: actual delegated cgroup fixture not configured
+SKIPPED [2] packages/vuoro-reconciler/tests/test_protected_runtime_reader_ipc.py:661: actual delegated cgroup fixture not configured
+SKIPPED [1] packages/vuoro-reconciler/tests/test_protected_runtime_reader_ipc.py:731: actual delegated cgroup fixture not configured
+SKIPPED [2] packages/vuoro-reconciler/tests/test_protected_runtime_reader_ipc.py:895: actual delegated cgroup fixture not configured
+SKIPPED [1] packages/vuoro-reconciler/tests/test_protected_runtime_reader_ipc.py:950: actual delegated cgroup fixture not configured
+SKIPPED [4] packages/vuoro-reconciler/tests/test_protected_source_pg.py:48: separate protected schema-21 owner DB not configured
+SKIPPED [1] packages/vuoro-reconciler/tests/test_sprintctl_source_pg.py:20: disposable effect owner DB not configured
+SKIPPED [1] packages/vuoro-workspace/tests/test_vuoro_adapter_served.py:262: set VUORO_WORKSPACE_TEST_PG_BIN (PostgreSQL bin dir) or VUORO_WORKSPACE_TEST_DSN for disposable PostgreSQL tests
+SKIPPED [1] packages/vuoro-workspace/tests/test_vuoro_adapter_served.py:273: set VUORO_WORKSPACE_TEST_PG_BIN (PostgreSQL bin dir) or VUORO_WORKSPACE_TEST_DSN for disposable PostgreSQL tests
+SKIPPED [1] packages/vuoro-workspace/tests/test_vuoro_adapter_served.py:297: set VUORO_WORKSPACE_TEST_PG_BIN (PostgreSQL bin dir) or VUORO_WORKSPACE_TEST_DSN for disposable PostgreSQL tests
+SKIPPED [1] packages/vuoro-workspace/tests/test_vuoro_adapter_served.py:317: set VUORO_WORKSPACE_TEST_PG_BIN (PostgreSQL bin dir) or VUORO_WORKSPACE_TEST_DSN for disposable PostgreSQL tests
+SKIPPED [1] packages/vuoro-workspace/tests/test_vuoro_adapter_served.py:349: set VUORO_WORKSPACE_TEST_PG_BIN (PostgreSQL bin dir) or VUORO_WORKSPACE_TEST_DSN for disposable PostgreSQL tests
+SKIPPED [1] packages/vuoro-workspace/tests/test_vuoro_adapter_served.py:365: set VUORO_WORKSPACE_TEST_PG_BIN (PostgreSQL bin dir) or VUORO_WORKSPACE_TEST_DSN for disposable PostgreSQL tests
+SKIPPED [1] packages/vuoro-workspace/tests/test_vuoro_adapter_served.py:380: set VUORO_WORKSPACE_TEST_PG_BIN (PostgreSQL bin dir) or VUORO_WORKSPACE_TEST_DSN for disposable PostgreSQL tests
+SKIPPED [1] packages/vuoro-workspace/tests/test_vuoro_adapter_served.py:400: set VUORO_WORKSPACE_TEST_PG_BIN (PostgreSQL bin dir) or VUORO_WORKSPACE_TEST_DSN for disposable PostgreSQL tests
+SKIPPED [1] packages/vuoro-workspace/tests/test_vuoro_adapter_served.py:417: set VUORO_WORKSPACE_TEST_PG_BIN (PostgreSQL bin dir) or VUORO_WORKSPACE_TEST_DSN for disposable PostgreSQL tests
+SKIPPED [1] packages/vuoro-workspace/tests/test_vuoro_adapter_served.py:437: set VUORO_WORKSPACE_TEST_PG_BIN (PostgreSQL bin dir) or VUORO_WORKSPACE_TEST_DSN for disposable PostgreSQL tests
+SKIPPED [1] packages/vuoro-workspace/tests/test_vuoro_adapter_served.py:450: set VUORO_WORKSPACE_TEST_PG_BIN (PostgreSQL bin dir) or VUORO_WORKSPACE_TEST_DSN for disposable PostgreSQL tests
+SKIPPED [1] packages/vuoro-workspace/tests/test_vuoro_adapter_served.py:486: set VUORO_WORKSPACE_TEST_PG_BIN (PostgreSQL bin dir) or VUORO_WORKSPACE_TEST_DSN for disposable PostgreSQL tests
+SKIPPED [1] packages/vuoro-workspace/tests/test_vuoro_adapter_served.py:499: set VUORO_WORKSPACE_TEST_PG_BIN (PostgreSQL bin dir) or VUORO_WORKSPACE_TEST_DSN for disposable PostgreSQL tests
+SKIPPED [1] packages/vuoro-workspace/tests/test_vuoro_adapter_served.py:518: set VUORO_WORKSPACE_TEST_PG_BIN (PostgreSQL bin dir) or VUORO_WORKSPACE_TEST_DSN for disposable PostgreSQL tests
+SKIPPED [1] packages/vuoro-workspace/tests/test_vuoro_adapter_served.py:555: set VUORO_WORKSPACE_TEST_PG_BIN (PostgreSQL bin dir) or VUORO_WORKSPACE_TEST_DSN for disposable PostgreSQL tests
+SKIPPED [1] packages/vuoro-workspace/tests/test_vuoro_adapter_served.py:566: set VUORO_WORKSPACE_TEST_PG_BIN (PostgreSQL bin dir) or VUORO_WORKSPACE_TEST_DSN for disposable PostgreSQL tests
+SKIPPED [1] packages/vuoro-workspace/tests/test_vuoro_adapter_served.py:578: set VUORO_WORKSPACE_TEST_PG_BIN (PostgreSQL bin dir) or VUORO_WORKSPACE_TEST_DSN for disposable PostgreSQL tests
+SKIPPED [1] packages/vuoro-workspace/tests/test_vuoro_adapter_served.py:595: set VUORO_WORKSPACE_TEST_PG_BIN (PostgreSQL bin dir) or VUORO_WORKSPACE_TEST_DSN for disposable PostgreSQL tests
+SKIPPED [1] packages/vuoro-workspace/tests/test_vuoro_adapter_served.py:620: set VUORO_WORKSPACE_TEST_PG_BIN (PostgreSQL bin dir) or VUORO_WORKSPACE_TEST_DSN for disposable PostgreSQL tests
+SKIPPED [1] packages/vuoro-workspace/tests/test_vuoro_adapter_served.py:636: set VUORO_WORKSPACE_TEST_PG_BIN (PostgreSQL bin dir) or VUORO_WORKSPACE_TEST_DSN for disposable PostgreSQL tests
+SKIPPED [1] packages/vuoro-workspace/tests/test_vuoro_adapter_served.py:663: set VUORO_WORKSPACE_TEST_PG_BIN (PostgreSQL bin dir) or VUORO_WORKSPACE_TEST_DSN for disposable PostgreSQL tests
+SKIPPED [1] packages/vuoro-workspace/tests/test_vuoro_adapter_served.py:677: set VUORO_WORKSPACE_TEST_PG_BIN (PostgreSQL bin dir) or VUORO_WORKSPACE_TEST_DSN for disposable PostgreSQL tests
+SKIPPED [1] packages/vuoro-workspace/tests/test_vuoro_adapter_served.py:699: set VUORO_WORKSPACE_TEST_PG_BIN (PostgreSQL bin dir) or VUORO_WORKSPACE_TEST_DSN for disposable PostgreSQL tests
+SKIPPED [1] packages/vuoro-workspace/tests/test_vuoro_adapter_served.py:708: set VUORO_WORKSPACE_TEST_PG_BIN (PostgreSQL bin dir) or VUORO_WORKSPACE_TEST_DSN for disposable PostgreSQL tests
+SKIPPED [1] packages/vuoro-workspace/tests/test_workspace_failure_scenarios.py:52: set VUORO_WORKSPACE_TEST_PG_BIN (PostgreSQL bin dir) or VUORO_WORKSPACE_TEST_DSN for disposable PostgreSQL tests
+SKIPPED [1] packages/vuoro-workspace/tests/test_workspace_failure_scenarios.py:76: set VUORO_WORKSPACE_TEST_PG_BIN (PostgreSQL bin dir) or VUORO_WORKSPACE_TEST_DSN for disposable PostgreSQL tests
+SKIPPED [3] packages/vuoro-workspace/tests/test_workspace_failure_scenarios.py:86: set VUORO_WORKSPACE_TEST_PG_BIN (PostgreSQL bin dir) or VUORO_WORKSPACE_TEST_DSN for disposable PostgreSQL tests
+SKIPPED [1] packages/vuoro-workspace/tests/test_workspace_failure_scenarios.py:109: set VUORO_WORKSPACE_TEST_PG_BIN (PostgreSQL bin dir) or VUORO_WORKSPACE_TEST_DSN for disposable PostgreSQL tests
+SKIPPED [1] packages/vuoro-workspace/tests/test_workspace_failure_scenarios.py:137: set VUORO_WORKSPACE_TEST_PG_BIN (PostgreSQL bin dir) or VUORO_WORKSPACE_TEST_DSN for disposable PostgreSQL tests
+SKIPPED [1] packages/vuoro-workspace/tests/test_workspace_failure_scenarios.py:160: set VUORO_WORKSPACE_TEST_PG_BIN (PostgreSQL bin dir) or VUORO_WORKSPACE_TEST_DSN for disposable PostgreSQL tests
+SKIPPED [1] packages/vuoro-workspace/tests/test_workspace_failure_scenarios.py:184: set VUORO_WORKSPACE_TEST_PG_BIN (PostgreSQL bin dir) or VUORO_WORKSPACE_TEST_DSN for disposable PostgreSQL tests
+SKIPPED [1] packages/vuoro-workspace/tests/test_workspace_failure_scenarios.py:214: set VUORO_WORKSPACE_TEST_PG_BIN (PostgreSQL bin dir) or VUORO_WORKSPACE_TEST_DSN for disposable PostgreSQL tests
+SKIPPED [1] packages/vuoro-workspace/tests/test_workspace_failure_scenarios.py:231: set VUORO_WORKSPACE_TEST_PG_BIN (PostgreSQL bin dir) or VUORO_WORKSPACE_TEST_DSN for disposable PostgreSQL tests
+SKIPPED [1] packages/vuoro-workspace/tests/test_workspace_failure_scenarios.py:256: set VUORO_WORKSPACE_TEST_PG_BIN (PostgreSQL bin dir) or VUORO_WORKSPACE_TEST_DSN for disposable PostgreSQL tests
+SKIPPED [1] packages/vuoro-workspace/tests/test_workspace_failure_scenarios.py:288: set VUORO_WORKSPACE_TEST_PG_BIN (PostgreSQL bin dir) or VUORO_WORKSPACE_TEST_DSN for disposable PostgreSQL tests
+SKIPPED [1] packages/vuoro-workspace/tests/test_workspace_failure_scenarios.py:352: set VUORO_WORKSPACE_TEST_PG_BIN (PostgreSQL bin dir) or VUORO_WORKSPACE_TEST_DSN for disposable PostgreSQL tests
+SKIPPED [1] packages/vuoro-workspace/tests/test_workspace_failure_scenarios.py:374: set VUORO_WORKSPACE_TEST_PG_BIN (PostgreSQL bin dir) or VUORO_WORKSPACE_TEST_DSN for disposable PostgreSQL tests
+SKIPPED [1] packages/vuoro-workspace/tests/test_workspace_hardening.py:46: set VUORO_WORKSPACE_TEST_PG_BIN (PostgreSQL bin dir) or VUORO_WORKSPACE_TEST_DSN for disposable PostgreSQL tests
+SKIPPED [1] packages/vuoro-workspace/tests/test_workspace_hardening.py:55: set VUORO_WORKSPACE_TEST_PG_BIN (PostgreSQL bin dir) or VUORO_WORKSPACE_TEST_DSN for disposable PostgreSQL tests
+SKIPPED [1] packages/vuoro-workspace/tests/test_workspace_hardening.py:64: set VUORO_WORKSPACE_TEST_PG_BIN (PostgreSQL bin dir) or VUORO_WORKSPACE_TEST_DSN for disposable PostgreSQL tests
+SKIPPED [1] packages/vuoro-workspace/tests/test_workspace_hardening.py:82: set VUORO_WORKSPACE_TEST_PG_BIN (PostgreSQL bin dir) or VUORO_WORKSPACE_TEST_DSN for disposable PostgreSQL tests
+SKIPPED [1] packages/vuoro-workspace/tests/test_workspace_hardening.py:97: set VUORO_WORKSPACE_TEST_PG_BIN (PostgreSQL bin dir) or VUORO_WORKSPACE_TEST_DSN for disposable PostgreSQL tests
+SKIPPED [1] packages/vuoro-workspace/tests/test_workspace_hardening.py:107: set VUORO_WORKSPACE_TEST_PG_BIN (PostgreSQL bin dir) or VUORO_WORKSPACE_TEST_DSN for disposable PostgreSQL tests
+SKIPPED [1] packages/vuoro-workspace/tests/test_workspace_hardening.py:127: set VUORO_WORKSPACE_TEST_PG_BIN (PostgreSQL bin dir) or VUORO_WORKSPACE_TEST_DSN for disposable PostgreSQL tests
+SKIPPED [1] packages/vuoro-workspace/tests/test_workspace_hardening.py:138: set VUORO_WORKSPACE_TEST_PG_BIN (PostgreSQL bin dir) or VUORO_WORKSPACE_TEST_DSN for disposable PostgreSQL tests
+SKIPPED [1] packages/vuoro-workspace/tests/test_workspace_hardening.py:160: set VUORO_WORKSPACE_TEST_PG_BIN (PostgreSQL bin dir) or VUORO_WORKSPACE_TEST_DSN for disposable PostgreSQL tests
+SKIPPED [1] packages/vuoro-workspace/tests/test_workspace_hardening.py:182: set VUORO_WORKSPACE_TEST_PG_BIN (PostgreSQL bin dir) or VUORO_WORKSPACE_TEST_DSN for disposable PostgreSQL tests
+SKIPPED [1] packages/vuoro-workspace/tests/test_workspace_hardening.py:198: set VUORO_WORKSPACE_TEST_PG_BIN (PostgreSQL bin dir) or VUORO_WORKSPACE_TEST_DSN for disposable PostgreSQL tests
+SKIPPED [1] packages/vuoro-workspace/tests/test_workspace_hardening.py:208: set VUORO_WORKSPACE_TEST_PG_BIN (PostgreSQL bin dir) or VUORO_WORKSPACE_TEST_DSN for disposable PostgreSQL tests
+SKIPPED [1] packages/vuoro-workspace/tests/test_workspace_hardening.py:229: set VUORO_WORKSPACE_TEST_PG_BIN (PostgreSQL bin dir) or VUORO_WORKSPACE_TEST_DSN for disposable PostgreSQL tests
+SKIPPED [1] packages/vuoro-workspace/tests/test_workspace_hardening.py:248: set VUORO_WORKSPACE_TEST_PG_BIN (PostgreSQL bin dir) or VUORO_WORKSPACE_TEST_DSN for disposable PostgreSQL tests
+SKIPPED [1] packages/vuoro-workspace/tests/test_workspace_hardening.py:260: set VUORO_WORKSPACE_TEST_PG_BIN (PostgreSQL bin dir) or VUORO_WORKSPACE_TEST_DSN for disposable PostgreSQL tests
+SKIPPED [1] packages/vuoro-workspace/tests/test_workspace_hardening.py:279: set VUORO_WORKSPACE_TEST_PG_BIN (PostgreSQL bin dir) or VUORO_WORKSPACE_TEST_DSN for disposable PostgreSQL tests
+SKIPPED [4] packages/vuoro-workspace/tests/test_workspace_hardening.py:329: set VUORO_WORKSPACE_TEST_PG_BIN (PostgreSQL bin dir) or VUORO_WORKSPACE_TEST_DSN for disposable PostgreSQL tests
+SKIPPED [1] packages/vuoro-workspace/tests/test_workspace_hardening.py:338: set VUORO_WORKSPACE_TEST_PG_BIN (PostgreSQL bin dir) or VUORO_WORKSPACE_TEST_DSN for disposable PostgreSQL tests
+SKIPPED [1] packages/vuoro-workspace/tests/test_workspace_hardening.py:346: set VUORO_WORKSPACE_TEST_PG_BIN (PostgreSQL bin dir) or VUORO_WORKSPACE_TEST_DSN for disposable PostgreSQL tests
+SKIPPED [1] packages/vuoro-workspace/tests/test_workspace_hardening.py:354: set VUORO_WORKSPACE_TEST_PG_BIN (PostgreSQL bin dir) or VUORO_WORKSPACE_TEST_DSN for disposable PostgreSQL tests
+SKIPPED [1] packages/vuoro-workspace/tests/test_workspace_hardening.py:364: set VUORO_WORKSPACE_TEST_PG_BIN (PostgreSQL bin dir) or VUORO_WORKSPACE_TEST_DSN for disposable PostgreSQL tests
+SKIPPED [1] packages/vuoro-workspace/tests/test_workspace_hardening.py:376: set VUORO_WORKSPACE_TEST_PG_BIN (PostgreSQL bin dir) or VUORO_WORKSPACE_TEST_DSN for disposable PostgreSQL tests
+SKIPPED [1] packages/vuoro-workspace/tests/test_workspace_hardening.py:388: set VUORO_WORKSPACE_TEST_PG_BIN (PostgreSQL bin dir) or VUORO_WORKSPACE_TEST_DSN for disposable PostgreSQL tests
+SKIPPED [1] packages/vuoro-workspace/tests/test_workspace_hardening.py:401: set VUORO_WORKSPACE_TEST_PG_BIN (PostgreSQL bin dir) or VUORO_WORKSPACE_TEST_DSN for disposable PostgreSQL tests
+SKIPPED [1] packages/vuoro-workspace/tests/test_workspace_hardening.py:420: set VUORO_WORKSPACE_TEST_PG_BIN (PostgreSQL bin dir) or VUORO_WORKSPACE_TEST_DSN for disposable PostgreSQL tests
+SKIPPED [1] packages/vuoro-workspace/tests/test_workspace_hardening.py:448: set VUORO_WORKSPACE_TEST_PG_BIN (PostgreSQL bin dir) or VUORO_WORKSPACE_TEST_DSN for disposable PostgreSQL tests
+SKIPPED [1] packages/vuoro-workspace/tests/test_workspace_hardening.py:457: set VUORO_WORKSPACE_TEST_PG_BIN (PostgreSQL bin dir) or VUORO_WORKSPACE_TEST_DSN for disposable PostgreSQL tests
+SKIPPED [1] packages/vuoro-workspace/tests/test_workspace_hardening.py:477: set VUORO_WORKSPACE_TEST_PG_BIN (PostgreSQL bin dir) or VUORO_WORKSPACE_TEST_DSN for disposable PostgreSQL tests
+SKIPPED [1] packages/vuoro-workspace/tests/test_workspace_hardening.py:491: set VUORO_WORKSPACE_TEST_PG_BIN (PostgreSQL bin dir) or VUORO_WORKSPACE_TEST_DSN for disposable PostgreSQL tests
+SKIPPED [1] packages/vuoro-workspace/tests/test_workspace_hardening.py:508: set VUORO_WORKSPACE_TEST_PG_BIN (PostgreSQL bin dir) or VUORO_WORKSPACE_TEST_DSN for disposable PostgreSQL tests
+SKIPPED [1] packages/vuoro-workspace/tests/test_workspace_hardening.py:526: set VUORO_WORKSPACE_TEST_PG_BIN (PostgreSQL bin dir) or VUORO_WORKSPACE_TEST_DSN for disposable PostgreSQL tests
+SKIPPED [1] packages/vuoro-workspace/tests/test_workspace_hardening.py:543: set VUORO_WORKSPACE_TEST_PG_BIN (PostgreSQL bin dir) or VUORO_WORKSPACE_TEST_DSN for disposable PostgreSQL tests
+SKIPPED [1] packages/vuoro-workspace/tests/test_workspace_migrations.py:27: set VUORO_WORKSPACE_TEST_PG_BIN (PostgreSQL bin dir) or VUORO_WORKSPACE_TEST_DSN for disposable PostgreSQL tests
+SKIPPED [1] packages/vuoro-workspace/tests/test_workspace_migrations.py:37: set VUORO_WORKSPACE_TEST_PG_BIN (PostgreSQL bin dir) or VUORO_WORKSPACE_TEST_DSN for disposable PostgreSQL tests
+SKIPPED [1] packages/vuoro-workspace/tests/test_workspace_migrations.py:49: set VUORO_WORKSPACE_TEST_PG_BIN (PostgreSQL bin dir) or VUORO_WORKSPACE_TEST_DSN for disposable PostgreSQL tests
+SKIPPED [1] packages/vuoro-workspace/tests/test_workspace_migrations.py:56: set VUORO_WORKSPACE_TEST_PG_BIN (PostgreSQL bin dir) or VUORO_WORKSPACE_TEST_DSN for disposable PostgreSQL tests
+SKIPPED [1] packages/vuoro-workspace/tests/test_workspace_migrations.py:73: set VUORO_WORKSPACE_TEST_PG_BIN (PostgreSQL bin dir) or VUORO_WORKSPACE_TEST_DSN for disposable PostgreSQL tests
+SKIPPED [1] packages/vuoro-workspace/tests/test_workspace_migrations.py:79: set VUORO_WORKSPACE_TEST_PG_BIN (PostgreSQL bin dir) or VUORO_WORKSPACE_TEST_DSN for disposable PostgreSQL tests
+SKIPPED [1] packages/vuoro-workspace/tests/test_workspace_migrations.py:107: set VUORO_WORKSPACE_TEST_PG_BIN (PostgreSQL bin dir) or VUORO_WORKSPACE_TEST_DSN for disposable PostgreSQL tests
+3651 passed, 248 skipped, 17 warnings in 189.17s (0:03:09)

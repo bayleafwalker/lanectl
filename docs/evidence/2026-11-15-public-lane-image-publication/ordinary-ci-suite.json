@@ -1,0 +1,17 @@
+{
+  "argv": [
+    "uv",
+    "run",
+    "--no-sync",
+    "pytest",
+    "-q",
+    "-p",
+    "no:cacheprovider",
+    "--ignore=packages/vuoro-contracts/tests/test_production_generation.py",
+    "--ignore=packages/vuoro-contracts/tests/test_production_generation_regressions.py",
+    "--ignore=packages/vuoro-contracts/tests/test_mcp_projection.py"
+  ],
+  "reason": "Exact existing ordinary test job in .github/workflows/ci.yml; production compiler cases are independently required in contracts-production-toolchain, not new exclusions",
+  "exit": 0,
+  "elapsed_s": 189.769
+}

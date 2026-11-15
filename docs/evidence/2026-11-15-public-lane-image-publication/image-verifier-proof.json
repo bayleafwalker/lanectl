@@ -1,0 +1,16 @@
+{
+  "image": "vuoro-service:lane-publish-20261115",
+  "script_sha256": "abd4ae30526ee4a8ab478186b485314da606adb5de346a3c4832e0828ba92936",
+  "cases": [
+    {
+      "label": "valid",
+      "exit": 0,
+      "expected_manifest_sha256": "d8d0ec671de91be6e1b187c0e77b945d99f63f214ce4aef3fca6389f744fab43"
+    },
+    {
+      "label": "wrong-manifest",
+      "exit": 1,
+      "expected_manifest_sha256": "0000000000000000000000000000000000000000000000000000000000000000"
+    }
+  ]
+}

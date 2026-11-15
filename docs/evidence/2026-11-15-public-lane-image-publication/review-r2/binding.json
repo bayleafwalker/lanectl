@@ -1,0 +1,13 @@
+{
+  "base": "fa7a5371ff2f06b21aaf46d806e2d19e6b105c11",
+  "files": {
+    ".github/workflows/publish-lane-service-image.yaml": "380dce02cf508c9ca8710a8f28b3a75a414956488ddd0b0349d712b5df78ffa0",
+    ".github/workflows/ci.yml": "3f5a0cf9c5bb2f6de2acc2591fe78af544b1dee0463b4b36f839e68b1e45c255",
+    "scripts/publish_lane_image.py": "afd69f999fd85164944ec3beacb370ebd0bcbef71e7fbfc18fb9950777e4571e",
+    "scripts/validate_lane_service_image.py": "abd4ae30526ee4a8ab478186b485314da606adb5de346a3c4832e0828ba92936",
+    "tests/test_lane_image_publication.py": "8c33a117fadb391f845241beea27a79e20e6da826e1309348b471d3e6677a30c",
+    "docs/architecture/lane-event-composition.md": "08e1d22d78a892275fa65c867b4004ed0621760223293cb8c802a77b400830aa"
+  },
+  "route": "review-synthesis/anthropic/claude-sonnet-5-5",
+  "default_publisher_sha256": "21b23af6a34d325a7f0733064f436398566ed4b4a7964b1564726bd55d05a818"
+}

@@ -1,0 +1,19 @@
+{
+  "public_existing_artifact": "ghcr.io/bayleafwalker/vuoro-service@sha256:337b21e7506a935c5b0735058bb6dc3174882f68bb0230920750c886351dcbb9",
+  "index_media_type": "application/vnd.oci.image.index.v1+json",
+  "platforms": [
+    {
+      "architecture": "amd64",
+      "os": "linux"
+    },
+    {
+      "architecture": "unknown",
+      "os": "unknown"
+    }
+  ],
+  "attached_predicate_types": [
+    "https://spdx.dev/Document",
+    "https://slsa.dev/provenance/v1"
+  ],
+  "scope": "format/readback probe only; not qualification of the new lane image or hosted runtime"
+}

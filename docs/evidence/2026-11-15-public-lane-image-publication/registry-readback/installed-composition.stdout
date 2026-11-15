@@ -1,0 +1,1 @@
+{"python": [3, 13, 18], "manifest_sha256": "d8d0ec671de91be6e1b187c0e77b945d99f63f214ce4aef3fca6389f744fab43", "installed_versions": {"sprintctl": "0.28.1", "vuoro-adapter-kit": "0.2.2", "vuoro-schema-runtime": "0.1.0", "auditctl": "0.1.9", "vuoro-workspace": "0.1.1", "lanectl": "0.2.12"}, "verified": true}

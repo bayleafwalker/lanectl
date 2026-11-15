@@ -1,0 +1,247 @@
+{
+  "schema": "vuoro-lane-image-publication/v1",
+  "source_sha": "784c0192b2f89afb1d9239d20f2ae408ee10f8d4",
+  "image": "ghcr.io/bayleafwalker/vuoro-service@sha256:15f84e1c7456191bf769f8907938f0f38da9875124e4434bdba2694b8141ec82",
+  "platform": "linux/amd64",
+  "checks": [
+    {
+      "command": [
+        "gh",
+        "attestation",
+        "verify",
+        "oci://ghcr.io/bayleafwalker/vuoro-service@sha256:15f84e1c7456191bf769f8907938f0f38da9875124e4434bdba2694b8141ec82",
+        "--repo",
+        "bayleafwalker/vuoro",
+        "--signer-workflow",
+        "bayleafwalker/vuoro/.github/workflows/publish-lane-service-image.yaml",
+        "--source-digest",
+        "784c0192b2f89afb1d9239d20f2ae408ee10f8d4",
+        "--predicate-type",
+        "https://slsa.dev/provenance/v1",
+        "--source-ref",
+        "refs/heads/main",
+        "--deny-self-hosted-runners"
+      ],
+      "passed": true
+    },
+    {
+      "command": [
+        "docker",
+        "buildx",
+        "imagetools",
+        "inspect",
+        "ghcr.io/bayleafwalker/vuoro-service@sha256:15f84e1c7456191bf769f8907938f0f38da9875124e4434bdba2694b8141ec82",
+        "--raw"
+      ],
+      "passed": true
+    },
+    {
+      "command": [
+        "docker",
+        "buildx",
+        "imagetools",
+        "inspect",
+        "ghcr.io/bayleafwalker/vuoro-service@sha256:a7c5779ebd2d468d9756caeb0ddac0855d34b3f8d21e9fe0f9f6c22eb93b1854",
+        "--raw"
+      ],
+      "passed": true
+    },
+    {
+      "command": [
+        "docker",
+        "pull",
+        "--platform",
+        "linux/amd64",
+        "ghcr.io/bayleafwalker/vuoro-service@sha256:15f84e1c7456191bf769f8907938f0f38da9875124e4434bdba2694b8141ec82"
+      ],
+      "passed": true
+    },
+    {
+      "command": [
+        "docker",
+        "run",
+        "--rm",
+        "-i",
+        "--platform",
+        "linux/amd64",
+        "--entrypoint",
+        "python",
+        "ghcr.io/bayleafwalker/vuoro-service@sha256:15f84e1c7456191bf769f8907938f0f38da9875124e4434bdba2694b8141ec82",
+        "-",
+        "d8d0ec671de91be6e1b187c0e77b945d99f63f214ce4aef3fca6389f744fab43"
+      ],
+      "passed": true
+    },
+    {
+      "command": [
+        "python3",
+        "/home/runner/work/vuoro/vuoro/scripts/validate_service_image.py",
+        "workspace-names"
+      ],
+      "passed": true
+    },
+    {
+      "command": [
+        "docker",
+        "run",
+        "--rm",
+        "-i",
+        "--platform",
+        "linux/amd64",
+        "--entrypoint",
+        "python",
+        "ghcr.io/bayleafwalker/vuoro-service@sha256:15f84e1c7456191bf769f8907938f0f38da9875124e4434bdba2694b8141ec82",
+        "-",
+        "check",
+        "vuoro-adapter-kit",
+        "vuoro-client",
+        "vuoro-contracts",
+        "vuoro-demo",
+        "vuoro-evidence",
+        "vuoro-knowledge",
+        "vuoro-mcp-edge",
+        "vuoro-reconciler",
+        "vuoro-schema-runtime",
+        "vuoro-service",
+        "vuoro-worker",
+        "vuoro-workspace"
+      ],
+      "passed": true
+    },
+    {
+      "command": [
+        "docker",
+        "run",
+        "--rm",
+        "--platform",
+        "linux/amd64",
+        "--entrypoint",
+        "python",
+        "ghcr.io/bayleafwalker/vuoro-service@sha256:15f84e1c7456191bf769f8907938f0f38da9875124e4434bdba2694b8141ec82",
+        "-m",
+        "pip",
+        "check"
+      ],
+      "passed": true
+    },
+    {
+      "command": [
+        "docker",
+        "run",
+        "--rm",
+        "-i",
+        "--platform",
+        "linux/amd64",
+        "--entrypoint",
+        "python",
+        "ghcr.io/bayleafwalker/vuoro-service@sha256:15f84e1c7456191bf769f8907938f0f38da9875124e4434bdba2694b8141ec82",
+        "-"
+      ],
+      "passed": true
+    },
+    {
+      "command": [
+        "docker",
+        "run",
+        "--rm",
+        "--platform",
+        "linux/amd64",
+        "ghcr.io/bayleafwalker/vuoro-service@sha256:15f84e1c7456191bf769f8907938f0f38da9875124e4434bdba2694b8141ec82",
+        "mcp-serve",
+        "--help"
+      ],
+      "passed": true
+    },
+    {
+      "command": [
+        "docker",
+        "buildx",
+        "imagetools",
+        "create",
+        "--tag",
+        "ghcr.io/bayleafwalker/vuoro-service:lane-main",
+        "ghcr.io/bayleafwalker/vuoro-service@sha256:15f84e1c7456191bf769f8907938f0f38da9875124e4434bdba2694b8141ec82"
+      ],
+      "passed": true
+    },
+    {
+      "command": [
+        "docker",
+        "buildx",
+        "imagetools",
+        "inspect",
+        "ghcr.io/bayleafwalker/vuoro-service:lane-main",
+        "--format",
+        "{{.Manifest.Digest}}"
+      ],
+      "passed": true
+    },
+    {
+      "command": [
+        "docker",
+        "buildx",
+        "imagetools",
+        "create",
+        "--tag",
+        "ghcr.io/bayleafwalker/vuoro-service:lane-sha-784c0192b2f89afb1d9239d20f2ae408ee10f8d4",
+        "ghcr.io/bayleafwalker/vuoro-service@sha256:15f84e1c7456191bf769f8907938f0f38da9875124e4434bdba2694b8141ec82"
+      ],
+      "passed": true
+    },
+    {
+      "command": [
+        "docker",
+        "buildx",
+        "imagetools",
+        "inspect",
+        "ghcr.io/bayleafwalker/vuoro-service:lane-sha-784c0192b2f89afb1d9239d20f2ae408ee10f8d4",
+        "--format",
+        "{{.Manifest.Digest}}"
+      ],
+      "passed": true
+    }
+  ],
+  "aliases": [
+    {
+      "tag": "ghcr.io/bayleafwalker/vuoro-service:lane-main",
+      "updated": true,
+      "effect": "updated",
+      "verified": true,
+      "digest": "sha256:15f84e1c7456191bf769f8907938f0f38da9875124e4434bdba2694b8141ec82"
+    },
+    {
+      "tag": "ghcr.io/bayleafwalker/vuoro-service:lane-sha-784c0192b2f89afb1d9239d20f2ae408ee10f8d4",
+      "updated": true,
+      "effect": "updated",
+      "verified": true,
+      "digest": "sha256:15f84e1c7456191bf769f8907938f0f38da9875124e4434bdba2694b8141ec82"
+    }
+  ],
+  "complete": true,
+  "index": {
+    "runtime_digest": "sha256:aaa107d9101356a0b3b34be691bfd502b7eb2dbb54e6ed4df02531c53c58a183",
+    "attestation_manifests": 1,
+    "predicate_types": [
+      "https://slsa.dev/provenance/v1",
+      "https://spdx.dev/Document"
+    ]
+  },
+  "manifest_sha256": "d8d0ec671de91be6e1b187c0e77b945d99f63f214ce4aef3fca6389f744fab43",
+  "installed_composition": {
+    "python": [
+      3,
+      13,
+      18
+    ],
+    "manifest_sha256": "d8d0ec671de91be6e1b187c0e77b945d99f63f214ce4aef3fca6389f744fab43",
+    "installed_versions": {
+      "sprintctl": "0.28.1",
+      "vuoro-adapter-kit": "0.2.2",
+      "vuoro-schema-runtime": "0.1.0",
+      "auditctl": "0.1.9",
+      "vuoro-workspace": "0.1.1",
+      "lanectl": "0.2.12"
+    },
+    "verified": true
+  }
+}

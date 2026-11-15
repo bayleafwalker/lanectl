@@ -1,0 +1,8 @@
+{
+  "phase": "terminal",
+  "unit": "lanectl-attempt-2b2f2aad16872ee07a55edb0.service",
+  "model": "claude-sonnet-5-5",
+  "scope": "read-only public packaging source review; no implementation attempt",
+  "exit": 0,
+  "elapsed_s": 71.46
+}
