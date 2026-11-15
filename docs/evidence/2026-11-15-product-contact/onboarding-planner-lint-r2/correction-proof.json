@@ -1,0 +1,32 @@
+{
+  "original_acceptance_sha256": "70c99c1058cb47d4d0b58be0bf9bb75dd38ce1441e553dcc6674ad02af02da30",
+  "acceptance_sha256": "ca89412670f6aa71085101f4714013d6a6a34f15328f1f64e4e094af3d27af8a",
+  "top_level_import_aliases_equal": true,
+  "all_other_ast_equal": true,
+  "PAGE_SCRIPT_CASES_equal": true,
+  "fix_added_lines": 454,
+  "fix_deleted_lines": 155,
+  "integrator_fix": false,
+  "classification": "planner-owned acceptance lint gap",
+  "prior_attempt_id": "hla-onboarding-expand-a1",
+  "prior_source_sha": "a5da26bb45c061b5af292d6dfb919867ae40b8f7",
+  "prior_seed_sha": "02280751dc9954f1cbc4ad5b27d89110993538ad",
+  "implementation_attempts_consumed": 2,
+  "total_outcome_attempt_limit": 2,
+  "further_implementation_attempts_permitted": 0,
+  "prior_outcome": "rejected by job:ruff; not adopted",
+  "bindings": {
+    "test_onboarding_expand_acceptance.py": "ca89412670f6aa71085101f4714013d6a6a34f15328f1f64e4e094af3d27af8a",
+    "onboarding-unit-contract.test.mjs": "0642c8ec1a4c97f2dec43e338f9c725ed9ebc2c5e77ac149e6b472eeb62d3f33",
+    "qualify_unit.py": "71d4827b86339c03539b04290eac70e2c491061ba3018c1486153a87da5e9834",
+    "qualify_wiring.py": "07c5e86a568436a3b9e623a8c1fb51bd947e336d72fe8f6d657545e7c4826253",
+    "run_wiring_probe.py": "d30353f66360a0eeb4bf686c19350462f1b99398e4038797b51b2d719e71670f",
+    "unit-gate-spec.md": "97ff1eaccff7ca059a89d5121d202b3743a3fdbac96d5c9acde6c306527f8a9c"
+  },
+  "ast_negative_controls": {
+    "changed_function_body_rejected": true,
+    "changed_PAGE_rejected": true
+  },
+  "history_corrected": true,
+  "prior_one_remaining_claim": "incorrect; see ROOT-DISPOSITION.json"
+}

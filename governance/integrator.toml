@@ -4,7 +4,8 @@ revision = 2
 # Task classes whose landing the shadow integrator may plan as "land" on an
 # evaluator accept. Empty = every plan is advisory; promotion is the operator's call.
 autonomous_classes = []
-# Cumulative added + deleted repair lines per attempt and train; excess requires requeue.
+# Repair cap: added + deleted lines, cumulative per attempt and train.
+# Headless measurement covers one train log; coordinator carries totals across rebuilds.
 fix_budget_lines = 30
 # Classes and cumulative size are enforced by the headless integrator only.
 # Interactive land does not enforce them: the coordinator must verify both.

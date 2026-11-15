@@ -1,0 +1,66 @@
+TAP version 13
+# Subtest: freshness strict boundary
+ok 1 - freshness strict boundary
+  ---
+  duration_ms: 1.216195
+  ...
+# Subtest: freshness future invalid absent
+ok 2 - freshness future invalid absent
+  ---
+  duration_ms: 0.11485
+  ...
+# Subtest: required progress ignores optional and duplicates
+ok 3 - required progress ignores optional and duplicates
+  ---
+  duration_ms: 0.14662
+  ...
+# Subtest: all core auto compact
+ok 4 - all core auto compact
+  ---
+  duration_ms: 0.563812
+  ...
+# Subtest: expanded override remains full
+not ok 5 - expanded override remains full
+  ---
+  duration_ms: 0.991595
+  location: '/tmp/hla-onboarding-acceptance-draft-20261114/onboarding-unit-contract.test.mjs:13:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+    
+    + 'badge'
+    - 'full'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 'full'
+  actual: 'badge'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///tmp/hla-onboarding-acceptance-draft-20261114/onboarding-unit-contract.test.mjs:13:50)
+    Test.runInAsyncScope (node:async_hooks:206:9)
+    Test.run (node:internal/test_runner/test:796:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:526:18)
+    Test.postRun (node:internal/test_runner/test:889:19)
+    Test.run (node:internal/test_runner/test:835:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:526:7)
+  ...
+# Subtest: dismissal wins over all
+ok 6 - dismissal wins over all
+  ---
+  duration_ms: 0.09681
+  ...
+# Subtest: manual compact without core
+ok 7 - manual compact without core
+  ---
+  duration_ms: 0.08627
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 6
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 10.098363

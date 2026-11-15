@@ -24,3 +24,14 @@ online backup and a rehearsed quiesced restore before hosted durability claims.
 The wheel is a published release asset; these source proofs become
 cross-host-replicated with canonical Git push. /tmp build contexts and downloads
 remain ephemeral.
+
+
+The optional Vuoro lane composition source subsequently merged in PR325,
+canonicalfa7a5371ff2f06b21aaf46d806e2d19e6b105c11, after all13CIchecks passed.
+The checked head is its ancestor and the canonical tree is identical. Full source
+qualification passed3869tests with153skips; exact implementation74f132a image
+passed11bounded owner/composition groups. Vuoro#2903 accepteddecision483 and
+reservation502 released. Its source worktree and branch were removed. This
+completes bounded source/image qualification only; no image registry publication,
+production deployment, real gateway/fullHTTPboot, persistence proof or authority
+switch occurred. See vuoro-source-adoption.json and Vuoro's retained image proof.

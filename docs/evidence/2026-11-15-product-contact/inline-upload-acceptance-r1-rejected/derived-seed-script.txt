@@ -1,0 +1,16 @@
+import os
+from pathlib import Path
+from packages.pipelines.csv_validation import ColumnType
+from packages.storage.ingestion_config import IngestionConfigRepository
+from packages.storage.ingestion_catalog import (
+    ColumnMappingCreate, ColumnMappingRule, DatasetColumnConfig,
+    DatasetContractConfigCreate, SourceAssetCreate, SourceFreshnessConfigCreate,
+    SourceSystemCreate,
+)
+store = IngestionConfigRepository(Path(os.environ["HOMELAB_ANALYTICS_DATA_DIR"]) / "config.db")
+store.create_source_system(SourceSystemCreate(source_system_id="bank_partner_export", name="Bank Partner Export", source_type="file-drop", transport="filesystem", schedule_mode="manual"))
+store.create_dataset_contract(DatasetContractConfigCreate(dataset_contract_id="household_account_transactions_v1", dataset_name="household_account_transactions", version=1, allow_extra_columns=False, columns=(DatasetColumnConfig("booked_at", ColumnType.DATE), DatasetColumnConfig("account_id", ColumnType.STRING), DatasetColumnConfig("counterparty_name", ColumnType.STRING), DatasetColumnConfig("amount", ColumnType.DECIMAL), DatasetColumnConfig("currency", ColumnType.STRING), DatasetColumnConfig("description", ColumnType.STRING, required=False))))
+store.create_column_mapping(ColumnMappingCreate(column_mapping_id="bank_partner_export_v1", source_system_id="bank_partner_export", dataset_contract_id="household_account_transactions_v1", version=1, rules=(ColumnMappingRule("booked_at", source_column="booking_date"), ColumnMappingRule("account_id", source_column="account_number"), ColumnMappingRule("counterparty_name", source_column="payee"), ColumnMappingRule("amount", source_column="amount_eur"), ColumnMappingRule("currency", default_value="EUR"), ColumnMappingRule("description", source_column="memo"))))
+for identifier, name, enabled in [("bank_partner_transactions", "Bank Partner Transactions", True), ("bank_partner_savings", "Bank Partner Savings", True), ("bank_partner_disabled", "Bank Partner Disabled", False)]:
+    store.create_source_asset(SourceAssetCreate(source_asset_id=identifier, name=name, source_system_id="bank_partner_export", dataset_contract_id="household_account_transactions_v1", column_mapping_id="bank_partner_export_v1", transformation_package_id="builtin_account_transactions", asset_type="dataset", enabled=enabled))
+store.create_source_freshness_config(SourceFreshnessConfigCreate(source_asset_id="bank_partner_transactions", acquisition_mode="manual_export", expected_frequency="ad_hoc", coverage_kind="rolling_period", due_day_of_month=None, expected_window_days=5, freshness_sla_days=40, sensitivity_class="financial", reminder_channel="dashboard", requires_human_action=True))

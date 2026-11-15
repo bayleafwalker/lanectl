@@ -1,0 +1,17 @@
+{
+  "busy_native_dispatch_refused": true,
+  "adapter_exit": 3,
+  "model_requests_observed": 0,
+  "owned_holder_pid_verified": true,
+  "owned_lock_released": true,
+  "global_lane_free_at_snapshot": true,
+  "elapsed_s": 0.525,
+  "checker_falsifiers": {
+    "valid": "accepted",
+    "stale-nonce": "rejected",
+    "wrong-number": "rejected",
+    "foreign-origin": "rejected"
+  },
+  "public_probe_only": true,
+  "governance_changed": false
+}

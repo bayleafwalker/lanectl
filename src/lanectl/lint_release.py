@@ -73,6 +73,8 @@ _FAILED = re.compile(r"\b\d+ (?:failed|errors?)\b")
 # heading naming that test. Splitting on it keeps one test's errors from
 # deciding the classification of every other test in the run.
 _SECTION_HEADING = re.compile(r"^_{5,}\s+.+?\s+_{5,}$")
+_SETUP_ERROR = re.compile(r"^_{5,}\s+ERROR at setup of\b", re.MULTILINE)
+_ASSERTION_RAISED = re.compile(r"^E[ \t]+AssertionError\b", re.MULTILINE)
 
 
 def _passed(output: str) -> bool:
@@ -97,6 +99,10 @@ def _sections(output: str) -> list[str]:
 
 def _classify_one(output: str) -> str:
     if _MISSING_TEST_MODULE.search(output) or _MISSING_TEST_SYMBOL.search(output):
+        return "spec-gap"
+    # A fixture assertion failed before the product test could run. Match the
+    # raised exception, not a quoted AssertionError in another exception's text.
+    if _SETUP_ERROR.search(output) and _ASSERTION_RAISED.search(output):
         return "spec-gap"
     if _DID_NOT_RAISE.search(output):
         return "expected"

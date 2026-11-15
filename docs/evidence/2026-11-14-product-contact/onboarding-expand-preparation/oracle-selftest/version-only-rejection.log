@@ -1,0 +1,5 @@
+Traceback (most recent call last):
+  File "/tmp/hla-onboarding-acceptance-draft-20261114/qualify_unit.py", line 53, in <module>
+    assert y.returncode!=0 and re.search(r'AssertionError|assert ',text) and not re.search(r'ERR_MODULE|SyntaxError|Cannot find module|ModuleNotFoundError',text), f'worker wrapper did not reject {kind} semantically'
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: worker wrapper did not reject freshness semantically

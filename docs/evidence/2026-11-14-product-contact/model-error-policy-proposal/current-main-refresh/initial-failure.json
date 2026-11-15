@@ -1,0 +1,15 @@
+{
+  "command": "uv run pytest -q",
+  "exec_session": 15168,
+  "exit_code": 2,
+  "interrupted_owned_pytest_pid": 1812985,
+  "observed_summary": {
+    "failed": 68,
+    "passed": 800,
+    "elapsed_s": 126.25
+  },
+  "cause_first_reproduced_failure": "systemd-run cannot connect: DBUS_SESSION_BUS_ADDRESS and XDG_RUNTIME_DIR undefined",
+  "independent_first_reproduction": "uv run pytest -x -q --tb=short:1failed1passed; tests/seed/test_end_to_end.py:100; acceptance exit1 before test command ran",
+  "full_raw_log": "not separately captured; original terminal output retained by session",
+  "source_or_test_changes": false
+}

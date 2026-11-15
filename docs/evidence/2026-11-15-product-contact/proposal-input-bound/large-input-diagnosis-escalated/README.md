@@ -1,0 +1,7 @@
+# Retained unsuccessful large-input integration
+
+Installed0.2.14 invoked the unchanged official specification._invoke with the genuine90,104-byte rejected R2 acceptance and native Sonnet5.5. Native process exited0 and wrote a revise response, but its permission-denials list caused the adapter to escalate. Official _invoke raised before returning or performing its post-call source/proposal integrity checks. The exact retained proposal matches the original serialization, but this alone does not qualify successful integration, source invariance, native acceptance, publication or candidate behavior. Raw native denial details are not retained; do not invent a cause or bypass the adapter.
+
+The response confirms known R2 blockers and makes additional static claims. Those claims are diagnostic data, not all findings: independent review is triaging them against actual source and root disposition. In particular, allowing safe no-JS absence of inline controls and preserving an actual mismatched receipt are deliberate requirements; the native response cannot silently reverse them. The stale-preflight cancellation and optional receiptless observation concerns are being repaired as justified planner defects.
+
+No HLA release or implementation attempt was admitted. Actual official large-input integration remains required before LANECTL2906 acceptance. The successful released wheel/source/install proof is independent of this failed call.

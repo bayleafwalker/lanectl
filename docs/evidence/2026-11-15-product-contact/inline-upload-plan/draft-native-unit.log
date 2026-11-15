@@ -1,0 +1,2 @@
+Nov 15 09:55:34 workstation systemd[1474]: Started [systemd-run] /home/bayleaf/.local/bin/claude -p --model claude-opus-5-5 --output-format json --restricted --strict-mcp-config --tools Read,Grep,Glob --allowedTools Read,Grep,Glob --permission-prompts none.
+Nov 15 10:02:21 workstation systemd[1474]: lanectl-attempt-5489448d0e104ac1a907d82e.service: Consumed 4.334s CPU time over 6min 47.139s wall clock time, 512.7M memory peak, 31.7M memory swap peak.

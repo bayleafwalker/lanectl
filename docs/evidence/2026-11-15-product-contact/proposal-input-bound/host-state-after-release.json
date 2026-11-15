@@ -1,0 +1,25 @@
+{
+  "measured_at": "2026-11-15T10:34:53.546158+00:00",
+  "system_failed_units": [],
+  "user_failed_units": [],
+  "tick": {
+    "ActiveState": "inactive",
+    "Result": "success",
+    "ExecMainExitTimestamp": "Sun 2026-11-15 12:27:31 EET",
+    "ExecMainStatus": "0",
+    "ExecStart": "{ path=/home/bayleaf/.local/bin/lanectl ; argv[]=/home/bayleaf/.local/bin/lanectl tick --max 3 ; ignore_errors=no ; start_time=[Sun 2026-11-15 12:27:31 EET] ; stop_time=[Sun 2026-11-15 12:27:31 EET] ; pid=978033 ; code=exited ; status=0 }"
+  },
+  "timer": {
+    "ActiveState": "active",
+    "UnitFileState": "enabled"
+  },
+  "tick_client_realpath": "/home/bayleaf/.local/share/uv/tools/lanectl/bin/lanectl",
+  "qualification_unit": {
+    "LoadState": "loaded",
+    "ActiveState": "inactive",
+    "Result": "success",
+    "User": "lanectl-train"
+  },
+  "new_qualification_train_run": false,
+  "scope": "Current state only. One completed owned R3 diagnostic unit failed an environment guard; terminal evidence retained before targeted cleanup. No broad reset, scheduler disable or claim that historical alerts never occurred."
+}

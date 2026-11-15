@@ -1,0 +1,8 @@
+{
+  "model": "claude-opus-5-5",
+  "source_sha": "b2d0fe393ac0971e906cce275e91f45e94422593",
+  "source_clean": true,
+  "exit_code": 0,
+  "elapsed_s": 451.381,
+  "unit": "lanectl-attempt-42f0d996c36151bfc8f72f31.service"
+}

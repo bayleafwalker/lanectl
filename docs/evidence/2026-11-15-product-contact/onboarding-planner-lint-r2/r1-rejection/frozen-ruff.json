@@ -1,0 +1,1312 @@
+[
+  {
+    "cell": null,
+    "code": "E401",
+    "end_location": {
+      "column": 124,
+      "row": 2
+    },
+    "filename": "/projects/dev/lanectl/backlog/hla-onboarding-expand/files/tests/test_onboarding_expand_acceptance.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "import json\nimport os\nimport shutil\nimport signal\nimport socket\nimport subprocess\nimport sys\nimport tempfile\nimport time\nimport urllib.request\nimport uuid\nimport xml.etree.ElementTree as ET",
+          "end_location": {
+            "column": 124,
+            "row": 2
+          },
+          "location": {
+            "column": 1,
+            "row": 2
+          }
+        }
+      ],
+      "message": "Split imports"
+    },
+    "location": {
+      "column": 1,
+      "row": 2
+    },
+    "message": "Multiple imports on one line",
+    "noqa_row": 2,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/multiple-imports-on-one-line"
+  },
+  {
+    "cell": null,
+    "code": "I001",
+    "end_location": {
+      "column": 14,
+      "row": 4
+    },
+    "filename": "/projects/dev/lanectl/backlog/hla-onboarding-expand/files/tests/test_onboarding_expand_acceptance.py",
+    "fix": {
+      "applicability": "safe",
+      "edits": [
+        {
+          "content": "import json\nimport os\nimport shutil\nimport signal\nimport socket\nimport subprocess\nimport sys\nimport tempfile\nimport time\nimport urllib.request\nimport uuid\nimport xml.etree.ElementTree as ET\nfrom pathlib import Path\n\nimport pytest\n\n",
+          "end_location": {
+            "column": 1,
+            "row": 6
+          },
+          "location": {
+            "column": 1,
+            "row": 2
+          }
+        }
+      ],
+      "message": "Organize imports"
+    },
+    "location": {
+      "column": 1,
+      "row": 2
+    },
+    "message": "Import block is un-sorted or un-formatted",
+    "noqa_row": 2,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/unsorted-imports"
+  },
+  {
+    "cell": null,
+    "code": "E701",
+    "end_location": {
+      "column": 74,
+      "row": 14
+    },
+    "filename": "/projects/dev/lanectl/backlog/hla-onboarding-expand/files/tests/test_onboarding_expand_acceptance.py",
+    "fix": null,
+    "location": {
+      "column": 73,
+      "row": 14
+    },
+    "message": "Multiple statements on one line (colon)",
+    "noqa_row": 14,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon"
+  },
+  {
+    "cell": null,
+    "code": "E701",
+    "end_location": {
+      "column": 20,
+      "row": 63
+    },
+    "filename": "/projects/dev/lanectl/backlog/hla-onboarding-expand/files/tests/test_onboarding_expand_acceptance.py",
+    "fix": null,
+    "location": {
+      "column": 19,
+      "row": 63
+    },
+    "message": "Multiple statements on one line (colon)",
+    "noqa_row": 63,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon"
+  },
+  {
+    "cell": null,
+    "code": "E701",
+    "end_location": {
+      "column": 27,
+      "row": 65
+    },
+    "filename": "/projects/dev/lanectl/backlog/hla-onboarding-expand/files/tests/test_onboarding_expand_acceptance.py",
+    "fix": null,
+    "location": {
+      "column": 26,
+      "row": 65
+    },
+    "message": "Multiple statements on one line (colon)",
+    "noqa_row": 65,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon"
+  },
+  {
+    "cell": null,
+    "code": "E701",
+    "end_location": {
+      "column": 14,
+      "row": 66
+    },
+    "filename": "/projects/dev/lanectl/backlog/hla-onboarding-expand/files/tests/test_onboarding_expand_acceptance.py",
+    "fix": null,
+    "location": {
+      "column": 13,
+      "row": 66
+    },
+    "message": "Multiple statements on one line (colon)",
+    "noqa_row": 66,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon"
+  },
+  {
+    "cell": null,
+    "code": "E701",
+    "end_location": {
+      "column": 17,
+      "row": 70
+    },
+    "filename": "/projects/dev/lanectl/backlog/hla-onboarding-expand/files/tests/test_onboarding_expand_acceptance.py",
+    "fix": null,
+    "location": {
+      "column": 16,
+      "row": 70
+    },
+    "message": "Multiple statements on one line (colon)",
+    "noqa_row": 70,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon"
+  },
+  {
+    "cell": null,
+    "code": "E701",
+    "end_location": {
+      "column": 9,
+      "row": 71
+    },
+    "filename": "/projects/dev/lanectl/backlog/hla-onboarding-expand/files/tests/test_onboarding_expand_acceptance.py",
+    "fix": null,
+    "location": {
+      "column": 8,
+      "row": 71
+    },
+    "message": "Multiple statements on one line (colon)",
+    "noqa_row": 71,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon"
+  },
+  {
+    "cell": null,
+    "code": "E701",
+    "end_location": {
+      "column": 31,
+      "row": 72
+    },
+    "filename": "/projects/dev/lanectl/backlog/hla-onboarding-expand/files/tests/test_onboarding_expand_acceptance.py",
+    "fix": null,
+    "location": {
+      "column": 30,
+      "row": 72
+    },
+    "message": "Multiple statements on one line (colon)",
+    "noqa_row": 72,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon"
+  },
+  {
+    "cell": null,
+    "code": "E701",
+    "end_location": {
+      "column": 9,
+      "row": 73
+    },
+    "filename": "/projects/dev/lanectl/backlog/hla-onboarding-expand/files/tests/test_onboarding_expand_acceptance.py",
+    "fix": null,
+    "location": {
+      "column": 8,
+      "row": 73
+    },
+    "message": "Multiple statements on one line (colon)",
+    "noqa_row": 73,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon"
+  },
+  {
+    "cell": null,
+    "code": "E701",
+    "end_location": {
+      "column": 38,
+      "row": 74
+    },
+    "filename": "/projects/dev/lanectl/backlog/hla-onboarding-expand/files/tests/test_onboarding_expand_acceptance.py",
+    "fix": null,
+    "location": {
+      "column": 37,
+      "row": 74
+    },
+    "message": "Multiple statements on one line (colon)",
+    "noqa_row": 74,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon"
+  },
+  {
+    "cell": null,
+    "code": "E701",
+    "end_location": {
+      "column": 13,
+      "row": 77
+    },
+    "filename": "/projects/dev/lanectl/backlog/hla-onboarding-expand/files/tests/test_onboarding_expand_acceptance.py",
+    "fix": null,
+    "location": {
+      "column": 12,
+      "row": 77
+    },
+    "message": "Multiple statements on one line (colon)",
+    "noqa_row": 77,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon"
+  },
+  {
+    "cell": null,
+    "code": "E701",
+    "end_location": {
+      "column": 35,
+      "row": 78
+    },
+    "filename": "/projects/dev/lanectl/backlog/hla-onboarding-expand/files/tests/test_onboarding_expand_acceptance.py",
+    "fix": null,
+    "location": {
+      "column": 34,
+      "row": 78
+    },
+    "message": "Multiple statements on one line (colon)",
+    "noqa_row": 78,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon"
+  },
+  {
+    "cell": null,
+    "code": "E701",
+    "end_location": {
+      "column": 9,
+      "row": 80
+    },
+    "filename": "/projects/dev/lanectl/backlog/hla-onboarding-expand/files/tests/test_onboarding_expand_acceptance.py",
+    "fix": null,
+    "location": {
+      "column": 8,
+      "row": 80
+    },
+    "message": "Multiple statements on one line (colon)",
+    "noqa_row": 80,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon"
+  },
+  {
+    "cell": null,
+    "code": "E701",
+    "end_location": {
+      "column": 31,
+      "row": 81
+    },
+    "filename": "/projects/dev/lanectl/backlog/hla-onboarding-expand/files/tests/test_onboarding_expand_acceptance.py",
+    "fix": null,
+    "location": {
+      "column": 30,
+      "row": 81
+    },
+    "message": "Multiple statements on one line (colon)",
+    "noqa_row": 81,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon"
+  },
+  {
+    "cell": null,
+    "code": "E701",
+    "end_location": {
+      "column": 13,
+      "row": 84
+    },
+    "filename": "/projects/dev/lanectl/backlog/hla-onboarding-expand/files/tests/test_onboarding_expand_acceptance.py",
+    "fix": null,
+    "location": {
+      "column": 12,
+      "row": 84
+    },
+    "message": "Multiple statements on one line (colon)",
+    "noqa_row": 84,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon"
+  },
+  {
+    "cell": null,
+    "code": "E701",
+    "end_location": {
+      "column": 35,
+      "row": 85
+    },
+    "filename": "/projects/dev/lanectl/backlog/hla-onboarding-expand/files/tests/test_onboarding_expand_acceptance.py",
+    "fix": null,
+    "location": {
+      "column": 34,
+      "row": 85
+    },
+    "message": "Multiple statements on one line (colon)",
+    "noqa_row": 85,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon"
+  },
+  {
+    "cell": null,
+    "code": "E701",
+    "end_location": {
+      "column": 17,
+      "row": 91
+    },
+    "filename": "/projects/dev/lanectl/backlog/hla-onboarding-expand/files/tests/test_onboarding_expand_acceptance.py",
+    "fix": null,
+    "location": {
+      "column": 16,
+      "row": 91
+    },
+    "message": "Multiple statements on one line (colon)",
+    "noqa_row": 91,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon"
+  },
+  {
+    "cell": null,
+    "code": "E701",
+    "end_location": {
+      "column": 28,
+      "row": 97
+    },
+    "filename": "/projects/dev/lanectl/backlog/hla-onboarding-expand/files/tests/test_onboarding_expand_acceptance.py",
+    "fix": null,
+    "location": {
+      "column": 27,
+      "row": 97
+    },
+    "message": "Multiple statements on one line (colon)",
+    "noqa_row": 97,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon"
+  },
+  {
+    "cell": null,
+    "code": "E701",
+    "end_location": {
+      "column": 34,
+      "row": 99
+    },
+    "filename": "/projects/dev/lanectl/backlog/hla-onboarding-expand/files/tests/test_onboarding_expand_acceptance.py",
+    "fix": null,
+    "location": {
+      "column": 33,
+      "row": 99
+    },
+    "message": "Multiple statements on one line (colon)",
+    "noqa_row": 99,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon"
+  },
+  {
+    "cell": null,
+    "code": "E702",
+    "end_location": {
+      "column": 62,
+      "row": 99
+    },
+    "filename": "/projects/dev/lanectl/backlog/hla-onboarding-expand/files/tests/test_onboarding_expand_acceptance.py",
+    "fix": null,
+    "location": {
+      "column": 61,
+      "row": 99
+    },
+    "message": "Multiple statements on one line (semicolon)",
+    "noqa_row": 99,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-semicolon"
+  },
+  {
+    "cell": null,
+    "code": "E702",
+    "end_location": {
+      "column": 28,
+      "row": 100
+    },
+    "filename": "/projects/dev/lanectl/backlog/hla-onboarding-expand/files/tests/test_onboarding_expand_acceptance.py",
+    "fix": null,
+    "location": {
+      "column": 27,
+      "row": 100
+    },
+    "message": "Multiple statements on one line (semicolon)",
+    "noqa_row": 100,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-semicolon"
+  },
+  {
+    "cell": null,
+    "code": "E702",
+    "end_location": {
+      "column": 88,
+      "row": 111
+    },
+    "filename": "/projects/dev/lanectl/backlog/hla-onboarding-expand/files/tests/test_onboarding_expand_acceptance.py",
+    "fix": null,
+    "location": {
+      "column": 87,
+      "row": 111
+    },
+    "message": "Multiple statements on one line (semicolon)",
+    "noqa_row": 111,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-semicolon"
+  },
+  {
+    "cell": null,
+    "code": "E701",
+    "end_location": {
+      "column": 58,
+      "row": 112
+    },
+    "filename": "/projects/dev/lanectl/backlog/hla-onboarding-expand/files/tests/test_onboarding_expand_acceptance.py",
+    "fix": null,
+    "location": {
+      "column": 57,
+      "row": 112
+    },
+    "message": "Multiple statements on one line (colon)",
+    "noqa_row": 112,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon"
+  },
+  {
+    "cell": null,
+    "code": "E702",
+    "end_location": {
+      "column": 51,
+      "row": 118
+    },
+    "filename": "/projects/dev/lanectl/backlog/hla-onboarding-expand/files/tests/test_onboarding_expand_acceptance.py",
+    "fix": null,
+    "location": {
+      "column": 50,
+      "row": 118
+    },
+    "message": "Multiple statements on one line (semicolon)",
+    "noqa_row": 118,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-semicolon"
+  },
+  {
+    "cell": null,
+    "code": "E701",
+    "end_location": {
+      "column": 18,
+      "row": 126
+    },
+    "filename": "/projects/dev/lanectl/backlog/hla-onboarding-expand/files/tests/test_onboarding_expand_acceptance.py",
+    "fix": null,
+    "location": {
+      "column": 17,
+      "row": 126
+    },
+    "message": "Multiple statements on one line (colon)",
+    "noqa_row": 126,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon"
+  },
+  {
+    "cell": null,
+    "code": "E702",
+    "end_location": {
+      "column": 23,
+      "row": 136
+    },
+    "filename": "/projects/dev/lanectl/backlog/hla-onboarding-expand/files/tests/test_onboarding_expand_acceptance.py",
+    "fix": null,
+    "location": {
+      "column": 22,
+      "row": 136
+    },
+    "message": "Multiple statements on one line (semicolon)",
+    "noqa_row": 136,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-semicolon"
+  },
+  {
+    "cell": null,
+    "code": "E702",
+    "end_location": {
+      "column": 78,
+      "row": 138
+    },
+    "filename": "/projects/dev/lanectl/backlog/hla-onboarding-expand/files/tests/test_onboarding_expand_acceptance.py",
+    "fix": null,
+    "location": {
+      "column": 77,
+      "row": 138
+    },
+    "message": "Multiple statements on one line (semicolon)",
+    "noqa_row": 138,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-semicolon"
+  },
+  {
+    "cell": null,
+    "code": "E702",
+    "end_location": {
+      "column": 25,
+      "row": 140
+    },
+    "filename": "/projects/dev/lanectl/backlog/hla-onboarding-expand/files/tests/test_onboarding_expand_acceptance.py",
+    "fix": null,
+    "location": {
+      "column": 24,
+      "row": 140
+    },
+    "message": "Multiple statements on one line (semicolon)",
+    "noqa_row": 140,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-semicolon"
+  },
+  {
+    "cell": null,
+    "code": "E702",
+    "end_location": {
+      "column": 42,
+      "row": 140
+    },
+    "filename": "/projects/dev/lanectl/backlog/hla-onboarding-expand/files/tests/test_onboarding_expand_acceptance.py",
+    "fix": null,
+    "location": {
+      "column": 41,
+      "row": 140
+    },
+    "message": "Multiple statements on one line (semicolon)",
+    "noqa_row": 140,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-semicolon"
+  },
+  {
+    "cell": null,
+    "code": "E702",
+    "end_location": {
+      "column": 58,
+      "row": 142
+    },
+    "filename": "/projects/dev/lanectl/backlog/hla-onboarding-expand/files/tests/test_onboarding_expand_acceptance.py",
+    "fix": null,
+    "location": {
+      "column": 57,
+      "row": 142
+    },
+    "message": "Multiple statements on one line (semicolon)",
+    "noqa_row": 142,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-semicolon"
+  },
+  {
+    "cell": null,
+    "code": "E702",
+    "end_location": {
+      "column": 92,
+      "row": 142
+    },
+    "filename": "/projects/dev/lanectl/backlog/hla-onboarding-expand/files/tests/test_onboarding_expand_acceptance.py",
+    "fix": null,
+    "location": {
+      "column": 91,
+      "row": 142
+    },
+    "message": "Multiple statements on one line (semicolon)",
+    "noqa_row": 142,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-semicolon"
+  },
+  {
+    "cell": null,
+    "code": "E702",
+    "end_location": {
+      "column": 44,
+      "row": 143
+    },
+    "filename": "/projects/dev/lanectl/backlog/hla-onboarding-expand/files/tests/test_onboarding_expand_acceptance.py",
+    "fix": null,
+    "location": {
+      "column": 43,
+      "row": 143
+    },
+    "message": "Multiple statements on one line (semicolon)",
+    "noqa_row": 143,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-semicolon"
+  },
+  {
+    "cell": null,
+    "code": "E701",
+    "end_location": {
+      "column": 38,
+      "row": 144
+    },
+    "filename": "/projects/dev/lanectl/backlog/hla-onboarding-expand/files/tests/test_onboarding_expand_acceptance.py",
+    "fix": null,
+    "location": {
+      "column": 37,
+      "row": 144
+    },
+    "message": "Multiple statements on one line (colon)",
+    "noqa_row": 144,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon"
+  },
+  {
+    "cell": null,
+    "code": "E702",
+    "end_location": {
+      "column": 66,
+      "row": 144
+    },
+    "filename": "/projects/dev/lanectl/backlog/hla-onboarding-expand/files/tests/test_onboarding_expand_acceptance.py",
+    "fix": null,
+    "location": {
+      "column": 65,
+      "row": 144
+    },
+    "message": "Multiple statements on one line (semicolon)",
+    "noqa_row": 144,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-semicolon"
+  },
+  {
+    "cell": null,
+    "code": "E701",
+    "end_location": {
+      "column": 53,
+      "row": 156
+    },
+    "filename": "/projects/dev/lanectl/backlog/hla-onboarding-expand/files/tests/test_onboarding_expand_acceptance.py",
+    "fix": null,
+    "location": {
+      "column": 52,
+      "row": 156
+    },
+    "message": "Multiple statements on one line (colon)",
+    "noqa_row": 156,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon"
+  },
+  {
+    "cell": null,
+    "code": "E701",
+    "end_location": {
+      "column": 51,
+      "row": 157
+    },
+    "filename": "/projects/dev/lanectl/backlog/hla-onboarding-expand/files/tests/test_onboarding_expand_acceptance.py",
+    "fix": null,
+    "location": {
+      "column": 50,
+      "row": 157
+    },
+    "message": "Multiple statements on one line (colon)",
+    "noqa_row": 157,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon"
+  },
+  {
+    "cell": null,
+    "code": "E701",
+    "end_location": {
+      "column": 22,
+      "row": 160
+    },
+    "filename": "/projects/dev/lanectl/backlog/hla-onboarding-expand/files/tests/test_onboarding_expand_acceptance.py",
+    "fix": null,
+    "location": {
+      "column": 21,
+      "row": 160
+    },
+    "message": "Multiple statements on one line (colon)",
+    "noqa_row": 160,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon"
+  },
+  {
+    "cell": null,
+    "code": "E701",
+    "end_location": {
+      "column": 25,
+      "row": 163
+    },
+    "filename": "/projects/dev/lanectl/backlog/hla-onboarding-expand/files/tests/test_onboarding_expand_acceptance.py",
+    "fix": null,
+    "location": {
+      "column": 24,
+      "row": 163
+    },
+    "message": "Multiple statements on one line (colon)",
+    "noqa_row": 163,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon"
+  },
+  {
+    "cell": null,
+    "code": "E702",
+    "end_location": {
+      "column": 106,
+      "row": 165
+    },
+    "filename": "/projects/dev/lanectl/backlog/hla-onboarding-expand/files/tests/test_onboarding_expand_acceptance.py",
+    "fix": null,
+    "location": {
+      "column": 105,
+      "row": 165
+    },
+    "message": "Multiple statements on one line (semicolon)",
+    "noqa_row": 165,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-semicolon"
+  },
+  {
+    "cell": null,
+    "code": "E702",
+    "end_location": {
+      "column": 71,
+      "row": 168
+    },
+    "filename": "/projects/dev/lanectl/backlog/hla-onboarding-expand/files/tests/test_onboarding_expand_acceptance.py",
+    "fix": null,
+    "location": {
+      "column": 70,
+      "row": 168
+    },
+    "message": "Multiple statements on one line (semicolon)",
+    "noqa_row": 168,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-semicolon"
+  },
+  {
+    "cell": null,
+    "code": "E701",
+    "end_location": {
+      "column": 36,
+      "row": 171
+    },
+    "filename": "/projects/dev/lanectl/backlog/hla-onboarding-expand/files/tests/test_onboarding_expand_acceptance.py",
+    "fix": null,
+    "location": {
+      "column": 35,
+      "row": 171
+    },
+    "message": "Multiple statements on one line (colon)",
+    "noqa_row": 171,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon"
+  },
+  {
+    "cell": null,
+    "code": "E701",
+    "end_location": {
+      "column": 21,
+      "row": 174
+    },
+    "filename": "/projects/dev/lanectl/backlog/hla-onboarding-expand/files/tests/test_onboarding_expand_acceptance.py",
+    "fix": null,
+    "location": {
+      "column": 20,
+      "row": 174
+    },
+    "message": "Multiple statements on one line (colon)",
+    "noqa_row": 174,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon"
+  },
+  {
+    "cell": null,
+    "code": "E702",
+    "end_location": {
+      "column": 31,
+      "row": 174
+    },
+    "filename": "/projects/dev/lanectl/backlog/hla-onboarding-expand/files/tests/test_onboarding_expand_acceptance.py",
+    "fix": null,
+    "location": {
+      "column": 30,
+      "row": 174
+    },
+    "message": "Multiple statements on one line (semicolon)",
+    "noqa_row": 174,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-semicolon"
+  },
+  {
+    "cell": null,
+    "code": "E701",
+    "end_location": {
+      "column": 45,
+      "row": 175
+    },
+    "filename": "/projects/dev/lanectl/backlog/hla-onboarding-expand/files/tests/test_onboarding_expand_acceptance.py",
+    "fix": null,
+    "location": {
+      "column": 44,
+      "row": 175
+    },
+    "message": "Multiple statements on one line (colon)",
+    "noqa_row": 175,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon"
+  },
+  {
+    "cell": null,
+    "code": "E701",
+    "end_location": {
+      "column": 34,
+      "row": 178
+    },
+    "filename": "/projects/dev/lanectl/backlog/hla-onboarding-expand/files/tests/test_onboarding_expand_acceptance.py",
+    "fix": null,
+    "location": {
+      "column": 33,
+      "row": 178
+    },
+    "message": "Multiple statements on one line (colon)",
+    "noqa_row": 178,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon"
+  },
+  {
+    "cell": null,
+    "code": "E701",
+    "end_location": {
+      "column": 41,
+      "row": 180
+    },
+    "filename": "/projects/dev/lanectl/backlog/hla-onboarding-expand/files/tests/test_onboarding_expand_acceptance.py",
+    "fix": null,
+    "location": {
+      "column": 40,
+      "row": 180
+    },
+    "message": "Multiple statements on one line (colon)",
+    "noqa_row": 180,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon"
+  },
+  {
+    "cell": null,
+    "code": "E701",
+    "end_location": {
+      "column": 23,
+      "row": 182
+    },
+    "filename": "/projects/dev/lanectl/backlog/hla-onboarding-expand/files/tests/test_onboarding_expand_acceptance.py",
+    "fix": null,
+    "location": {
+      "column": 22,
+      "row": 182
+    },
+    "message": "Multiple statements on one line (colon)",
+    "noqa_row": 182,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon"
+  },
+  {
+    "cell": null,
+    "code": "E702",
+    "end_location": {
+      "column": 23,
+      "row": 188
+    },
+    "filename": "/projects/dev/lanectl/backlog/hla-onboarding-expand/files/tests/test_onboarding_expand_acceptance.py",
+    "fix": null,
+    "location": {
+      "column": 22,
+      "row": 188
+    },
+    "message": "Multiple statements on one line (semicolon)",
+    "noqa_row": 188,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-semicolon"
+  },
+  {
+    "cell": null,
+    "code": "E702",
+    "end_location": {
+      "column": 35,
+      "row": 188
+    },
+    "filename": "/projects/dev/lanectl/backlog/hla-onboarding-expand/files/tests/test_onboarding_expand_acceptance.py",
+    "fix": null,
+    "location": {
+      "column": 34,
+      "row": 188
+    },
+    "message": "Multiple statements on one line (semicolon)",
+    "noqa_row": 188,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-semicolon"
+  },
+  {
+    "cell": null,
+    "code": "E702",
+    "end_location": {
+      "column": 45,
+      "row": 188
+    },
+    "filename": "/projects/dev/lanectl/backlog/hla-onboarding-expand/files/tests/test_onboarding_expand_acceptance.py",
+    "fix": null,
+    "location": {
+      "column": 44,
+      "row": 188
+    },
+    "message": "Multiple statements on one line (semicolon)",
+    "noqa_row": 188,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-semicolon"
+  },
+  {
+    "cell": null,
+    "code": "E702",
+    "end_location": {
+      "column": 55,
+      "row": 188
+    },
+    "filename": "/projects/dev/lanectl/backlog/hla-onboarding-expand/files/tests/test_onboarding_expand_acceptance.py",
+    "fix": null,
+    "location": {
+      "column": 54,
+      "row": 188
+    },
+    "message": "Multiple statements on one line (semicolon)",
+    "noqa_row": 188,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-semicolon"
+  },
+  {
+    "cell": null,
+    "code": "E702",
+    "end_location": {
+      "column": 41,
+      "row": 193
+    },
+    "filename": "/projects/dev/lanectl/backlog/hla-onboarding-expand/files/tests/test_onboarding_expand_acceptance.py",
+    "fix": null,
+    "location": {
+      "column": 40,
+      "row": 193
+    },
+    "message": "Multiple statements on one line (semicolon)",
+    "noqa_row": 193,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-semicolon"
+  },
+  {
+    "cell": null,
+    "code": "E702",
+    "end_location": {
+      "column": 77,
+      "row": 194
+    },
+    "filename": "/projects/dev/lanectl/backlog/hla-onboarding-expand/files/tests/test_onboarding_expand_acceptance.py",
+    "fix": null,
+    "location": {
+      "column": 76,
+      "row": 194
+    },
+    "message": "Multiple statements on one line (semicolon)",
+    "noqa_row": 194,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-semicolon"
+  },
+  {
+    "cell": null,
+    "code": "E701",
+    "end_location": {
+      "column": 62,
+      "row": 195
+    },
+    "filename": "/projects/dev/lanectl/backlog/hla-onboarding-expand/files/tests/test_onboarding_expand_acceptance.py",
+    "fix": null,
+    "location": {
+      "column": 61,
+      "row": 195
+    },
+    "message": "Multiple statements on one line (colon)",
+    "noqa_row": 195,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon"
+  },
+  {
+    "cell": null,
+    "code": "E701",
+    "end_location": {
+      "column": 21,
+      "row": 199
+    },
+    "filename": "/projects/dev/lanectl/backlog/hla-onboarding-expand/files/tests/test_onboarding_expand_acceptance.py",
+    "fix": null,
+    "location": {
+      "column": 20,
+      "row": 199
+    },
+    "message": "Multiple statements on one line (colon)",
+    "noqa_row": 199,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon"
+  },
+  {
+    "cell": null,
+    "code": "E702",
+    "end_location": {
+      "column": 98,
+      "row": 201
+    },
+    "filename": "/projects/dev/lanectl/backlog/hla-onboarding-expand/files/tests/test_onboarding_expand_acceptance.py",
+    "fix": null,
+    "location": {
+      "column": 97,
+      "row": 201
+    },
+    "message": "Multiple statements on one line (semicolon)",
+    "noqa_row": 201,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-semicolon"
+  },
+  {
+    "cell": null,
+    "code": "E701",
+    "end_location": {
+      "column": 13,
+      "row": 210
+    },
+    "filename": "/projects/dev/lanectl/backlog/hla-onboarding-expand/files/tests/test_onboarding_expand_acceptance.py",
+    "fix": null,
+    "location": {
+      "column": 12,
+      "row": 210
+    },
+    "message": "Multiple statements on one line (colon)",
+    "noqa_row": 210,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon"
+  },
+  {
+    "cell": null,
+    "code": "E701",
+    "end_location": {
+      "column": 37,
+      "row": 211
+    },
+    "filename": "/projects/dev/lanectl/backlog/hla-onboarding-expand/files/tests/test_onboarding_expand_acceptance.py",
+    "fix": null,
+    "location": {
+      "column": 36,
+      "row": 211
+    },
+    "message": "Multiple statements on one line (colon)",
+    "noqa_row": 211,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon"
+  },
+  {
+    "cell": null,
+    "code": "E702",
+    "end_location": {
+      "column": 42,
+      "row": 214
+    },
+    "filename": "/projects/dev/lanectl/backlog/hla-onboarding-expand/files/tests/test_onboarding_expand_acceptance.py",
+    "fix": null,
+    "location": {
+      "column": 41,
+      "row": 214
+    },
+    "message": "Multiple statements on one line (semicolon)",
+    "noqa_row": 214,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-semicolon"
+  },
+  {
+    "cell": null,
+    "code": "E701",
+    "end_location": {
+      "column": 38,
+      "row": 215
+    },
+    "filename": "/projects/dev/lanectl/backlog/hla-onboarding-expand/files/tests/test_onboarding_expand_acceptance.py",
+    "fix": null,
+    "location": {
+      "column": 37,
+      "row": 215
+    },
+    "message": "Multiple statements on one line (colon)",
+    "noqa_row": 215,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon"
+  },
+  {
+    "cell": null,
+    "code": "E701",
+    "end_location": {
+      "column": 41,
+      "row": 217
+    },
+    "filename": "/projects/dev/lanectl/backlog/hla-onboarding-expand/files/tests/test_onboarding_expand_acceptance.py",
+    "fix": null,
+    "location": {
+      "column": 40,
+      "row": 217
+    },
+    "message": "Multiple statements on one line (colon)",
+    "noqa_row": 217,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon"
+  },
+  {
+    "cell": null,
+    "code": "E701",
+    "end_location": {
+      "column": 14,
+      "row": 218
+    },
+    "filename": "/projects/dev/lanectl/backlog/hla-onboarding-expand/files/tests/test_onboarding_expand_acceptance.py",
+    "fix": null,
+    "location": {
+      "column": 13,
+      "row": 218
+    },
+    "message": "Multiple statements on one line (colon)",
+    "noqa_row": 218,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon"
+  },
+  {
+    "cell": null,
+    "code": "E701",
+    "end_location": {
+      "column": 30,
+      "row": 221
+    },
+    "filename": "/projects/dev/lanectl/backlog/hla-onboarding-expand/files/tests/test_onboarding_expand_acceptance.py",
+    "fix": null,
+    "location": {
+      "column": 29,
+      "row": 221
+    },
+    "message": "Multiple statements on one line (colon)",
+    "noqa_row": 221,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon"
+  },
+  {
+    "cell": null,
+    "code": "E701",
+    "end_location": {
+      "column": 37,
+      "row": 223
+    },
+    "filename": "/projects/dev/lanectl/backlog/hla-onboarding-expand/files/tests/test_onboarding_expand_acceptance.py",
+    "fix": null,
+    "location": {
+      "column": 36,
+      "row": 223
+    },
+    "message": "Multiple statements on one line (colon)",
+    "noqa_row": 223,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon"
+  },
+  {
+    "cell": null,
+    "code": "E701",
+    "end_location": {
+      "column": 15,
+      "row": 225
+    },
+    "filename": "/projects/dev/lanectl/backlog/hla-onboarding-expand/files/tests/test_onboarding_expand_acceptance.py",
+    "fix": null,
+    "location": {
+      "column": 14,
+      "row": 225
+    },
+    "message": "Multiple statements on one line (colon)",
+    "noqa_row": 225,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon"
+  },
+  {
+    "cell": null,
+    "code": "E702",
+    "end_location": {
+      "column": 43,
+      "row": 233
+    },
+    "filename": "/projects/dev/lanectl/backlog/hla-onboarding-expand/files/tests/test_onboarding_expand_acceptance.py",
+    "fix": null,
+    "location": {
+      "column": 42,
+      "row": 233
+    },
+    "message": "Multiple statements on one line (semicolon)",
+    "noqa_row": 233,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-semicolon"
+  },
+  {
+    "cell": null,
+    "code": "E701",
+    "end_location": {
+      "column": 11,
+      "row": 235
+    },
+    "filename": "/projects/dev/lanectl/backlog/hla-onboarding-expand/files/tests/test_onboarding_expand_acceptance.py",
+    "fix": null,
+    "location": {
+      "column": 10,
+      "row": 235
+    },
+    "message": "Multiple statements on one line (colon)",
+    "noqa_row": 235,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon"
+  },
+  {
+    "cell": null,
+    "code": "E702",
+    "end_location": {
+      "column": 37,
+      "row": 236
+    },
+    "filename": "/projects/dev/lanectl/backlog/hla-onboarding-expand/files/tests/test_onboarding_expand_acceptance.py",
+    "fix": null,
+    "location": {
+      "column": 36,
+      "row": 236
+    },
+    "message": "Multiple statements on one line (semicolon)",
+    "noqa_row": 236,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-semicolon"
+  },
+  {
+    "cell": null,
+    "code": "E702",
+    "end_location": {
+      "column": 65,
+      "row": 239
+    },
+    "filename": "/projects/dev/lanectl/backlog/hla-onboarding-expand/files/tests/test_onboarding_expand_acceptance.py",
+    "fix": null,
+    "location": {
+      "column": 64,
+      "row": 239
+    },
+    "message": "Multiple statements on one line (semicolon)",
+    "noqa_row": 239,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-semicolon"
+  },
+  {
+    "cell": null,
+    "code": "E701",
+    "end_location": {
+      "column": 25,
+      "row": 240
+    },
+    "filename": "/projects/dev/lanectl/backlog/hla-onboarding-expand/files/tests/test_onboarding_expand_acceptance.py",
+    "fix": null,
+    "location": {
+      "column": 24,
+      "row": 240
+    },
+    "message": "Multiple statements on one line (colon)",
+    "noqa_row": 240,
+    "severity": "error",
+    "url": "https://docs.astral.sh/ruff/rules/multiple-statements-on-one-line-colon"
+  }
+]

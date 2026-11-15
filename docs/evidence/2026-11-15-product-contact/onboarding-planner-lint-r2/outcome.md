@@ -1,0 +1,46 @@
+# DRAFT — onboarding checklist Expand after core sources become fresh
+
+Status: draft for independent review; work item ID: HLA #2904 (sprint 580). Author: first-party coordinator; native Opus supplied planning only, not acceptance authorship. Base: homelab-analytics b2d0fe393ac0971e906cce275e91f45e94422593. Separate from #1597 and exhausted #1593 boundary work. Automatic collapse already exists; #1597's current description should be corrected by the tracker owner without enlarging its original acceptance. Its unit-test requirement remains until real unit evidence lands.
+
+## Outcome
+When required account_transactions and subscriptions are fresh, the dashboard initially shows the existing compact badge automatically. Clicking Expand must reveal the actual full checklist even while both remain fresh. An explicit expansion is in-memory for this mounted component: it remains open through source-prop changes, resets on remount/reload, and does not introduce a stored preference. Reload with both core fresh again yields the badge. Minimise clears the session override and stores the existing `compact` value; Dismiss remains persistent and wins over all other states. Storage access errors retain session functionality. The mounted SSR/hydration gate, storage key and values, current markup/accessibility, freshness policy, next suggestion, role and as-of handling stay intact.
+
+Passive initial/transition behavior is unchanged: none, partial, or optional-only core sources show full when not manually compacted; all required core fresh auto-compacts without a click. Freshness keeps the existing strict less-than-seven-days test, including future timestamps treated fresh and invalid/null/empty dates treated not fresh. No auth, API, transport, data, generated contracts, role, as-of, CSS, dependencies, package/lockfile, Makefile or manifest modifications.
+
+## Scope and unit contract
+Allowed worker paths: `apps/web/frontend/components/onboarding-checklist.js`, `apps/web/frontend/lib/onboarding-checklist-state.mjs`, narrowly scoped freshness calculation in `apps/web/frontend/app/page.js`, new focused built-in Node unit file under `apps/web/frontend/unit/`, a small new pytest runner under `tests/` that invokes Node 20 and fails rather than skips when unavailable, and narrowly relevant docs if needed. All worker additions/deletions, including regression tests and docs, count against M700 (added + deleted); max two attempts remains unchanged. No fixed future line count is asserted.
+
+A production-used pure helper is justified to give the existing freshness/progress/view rules a unit-testable shared boundary, not to manufacture a base failure. It may expose `freshDatasetNames(rows, nowMs)`, `checklistProgress(sources, freshDatasets)` and `checklistView({dismissed,compact,userExpanded,allCoreActive})`; component/page consume the actual helpers. Import freshness helper under an alias because `page.js` already declares `freshDatasetNames`. Do not import ESM `.js` source definitions from the `.mjs` helper; pass source definitions explicitly. Preserve current semantics exactly, including duplicate input names, empty source list behavior, and timestamp parsing; avoid changing unrelated calculations.
+
+The worker's meaningful Node built-in unit tests must check strict 7-day boundary (one millisecond either side and equality), future, invalid and absent timestamps, required versus optional progress and counts, compact/dismiss precedence, session expansion, and passive auto-collapse. Mutation controls must actually fail for changed `<` to `<=`, optional counted required, ignoring override, and dismissal precedence. Use a pytest wrapper to make normal Python check execute the actual unit tests; no package or build scripts changed. Independently exercise the real component; helper absence must never serve as the base negative control.
+
+## Draft frozen acceptance
+`tests/test_onboarding_expand_acceptance.py` is independently authored, not a worker regression test. It starts a real isolated Next copy with the actual component and browser, uses post-action awaited state, captures raw output and JUnit before asserting, checks all named cases with no skips, fingerprints all tracked paths, and owns/verifies Next process-group cleanup. Fixtures supply source names only, not replacement logic. It tests no/partial/optional/all core/all sources, passive automatic compact, incomplete manual minimise/expand and reload, dismiss/reload/clear, all-core Expand, reload to passive compact, Minimise after override, live source transitions, and storage errors. Base proof and results must show all passive/persistence controls green and the only red cases fail on the post-Expand heading. Acceptance must remain byte-identical across base/candidate; do not treat the absence of helper or infrastructure failure as evidence of defect.
+
+## Validation and delivery
+Independently review the draft and source, retain actual base-negative and mutation evidence; run frozen exact CLI on candidate and validate full named JUnit/no skip, plus worker unit and mutation controls. Verify real-page freshness, role and past-as-of behavior on controlled fixtures. Run architecture contract and complete `make verify-fast` with the same 55 existing matched Playwright 1.59.1 Ubuntu visual checks and unaltered baselines/tolerances; record actual inner completion and logs before assertions. Run fresh required native specialist review and product-intention pass. Integration owner alone registers/refines tracker, freezes/reviews/publishes release, and handles normal train, dev/health, PR/CI and canonical landing. No hosted or whole-product completion is implied.
+
+
+The independent unit and production-wiring candidate gates and their executable commands are binding as specified in `unit-gate-spec.md`. Candidate-positive and candidate-derived mutation results remain unobserved until a real candidate exists. Earlier native advice to change package scripts or omit Python tests is superseded by this packet.
+
+
+Planner correction R2 after R1 a1 was rejected. The planner-owned frozen
+acceptance carried 71 Ruff errors (E401:1, I001:1, E701:43, E702:26).
+No worker product failure is established by that lint rejection. Formatting and
+splitting/sorting identical imports corrects it; every other AST node, including
+all function bodies and PAGE/SCRIPT/CASES, remains identical. This is 454 added
+plus 155 deleted lines, so it is not a bounded integrator fix. No policy change,
+suppression, gate waiver or promotion of rejected a1 is authorized.
+
+This genuine planner revision requires fresh byte-bound native review, ordinary
+base-negative qualification and guarded publication. R1's one actual attempt,
+source, native completion and rejection remain history. Although runtime caps
+are per revision, this outcome retains a total limit of TWO implementation
+attempts across R1 and R2: only ONE further actual native attempt may be admitted.
+If it fails, park; do not use revision changes to obtain further retries. Reusing
+a1 ideas does not confer its passing decision: run normal fresh native gates.
+
+All original product scope, M700 worker-line budget, independent unit/mutation/
+wiring gates, real-page/role/as-of/auth/accessibility checks, full Make/55 matched
+visual checks, native specialist review, train/dev/PR/CI and canonical adoption
+requirements remain binding. No product acceptance or adoption is claimed here.

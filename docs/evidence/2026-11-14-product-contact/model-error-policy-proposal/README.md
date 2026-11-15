@@ -34,3 +34,8 @@ Root intention pass: the ladder keeps autonomous policy changes out of lanes,
 retains class-specific promotion and truthful ruled/model-clean attribution.
 This operator-selected preparation leaves autonomous_classes empty. Git-pushed
 proposal evidence is cross-host-replicated; served work remains authoritative.
+
+Current-main refresh (2026-11-15): see [retained review and verification](current-main-refresh/README.md).
+Canonical c40b639 was merged into this draft without conflict;1142tests pass.
+The skill now states the standing permission and coordinator accounting across
+train rebuilds. Canonical revision1 remains unchanged and no activation is approved.

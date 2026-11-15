@@ -1,0 +1,14 @@
+{
+  "service_inactive": "accepted",
+  "service_active": "rejected",
+  "service_activating": "rejected",
+  "service_deactivating": "rejected",
+  "service_failed": "rejected",
+  "service_unknown": "rejected",
+  "interrupted_after_publication_with_false_local_flag": "authoritative ready state parked before timer restoration",
+  "parking_failure": "timer remains held",
+  "binding_reviewed outcome_reviewed base": "accepted",
+  "binding_changed outcome_reviewed base": "rejected",
+  "binding_reviewed outcome_changed base": "rejected",
+  "extra_attempt": "rejected"
+}

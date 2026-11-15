@@ -39,3 +39,8 @@ passes its focused tests and typecheck but is NOT qualified: actual numstat is
 The worker incorrectly reported30 by counting insertions only. No approval,
 train, retry, landing or adoption is authorized by that result. Preserve its
 red/green proof and failed budget finding; do not compress code to evade the cap.
+
+Current-main refresh (2026-11-15): see [retained review and verification](current-main-refresh/README.md).
+Canonical c40b639 was merged into this draft without conflict;1142tests pass.
+The skill now states the standing permission and coordinator accounting across
+train rebuilds. Canonical revision1 remains unchanged and no activation is approved.

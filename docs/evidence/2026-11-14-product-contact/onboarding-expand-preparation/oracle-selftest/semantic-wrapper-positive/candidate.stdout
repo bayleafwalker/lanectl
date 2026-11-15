@@ -1,0 +1,45 @@
+TAP version 13
+# Subtest: freshness strict boundary
+ok 1 - freshness strict boundary
+  ---
+  duration_ms: 1.240205
+  ...
+# Subtest: freshness future invalid absent
+ok 2 - freshness future invalid absent
+  ---
+  duration_ms: 0.11357
+  ...
+# Subtest: required progress ignores optional and duplicates
+ok 3 - required progress ignores optional and duplicates
+  ---
+  duration_ms: 0.13891
+  ...
+# Subtest: all core auto compact
+ok 4 - all core auto compact
+  ---
+  duration_ms: 0.11792
+  ...
+# Subtest: expanded override remains full
+ok 5 - expanded override remains full
+  ---
+  duration_ms: 0.516092
+  ...
+# Subtest: dismissal wins over all
+ok 6 - dismissal wins over all
+  ---
+  duration_ms: 0.08864
+  ...
+# Subtest: manual compact without core
+ok 7 - manual compact without core
+  ---
+  duration_ms: 0.079651
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 9.008688

@@ -1,0 +1,10 @@
+{
+  "measured_at": "2026-11-15T08:53:13.248188+00:00",
+  "proposed_release_id": "hla-source-row-upload",
+  "existing_release_records": [],
+  "existing_event_count": 0,
+  "attempts_used": 0,
+  "state": "no event record",
+  "preparation_only": true,
+  "total_outcome_attempt_limit": 2
+}

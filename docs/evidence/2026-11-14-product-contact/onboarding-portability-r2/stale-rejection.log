@@ -1,0 +1,5 @@
+Traceback (most recent call last):
+  File "/tmp/hla-onboarding-acceptance-draft-20261114/run_wiring_probe.py", line 22, in <module>
+    assert actual==expected,'baseline fingerprint does not match exact candidate checkout'
+           ^^^^^^^^^^^^^^^^
+AssertionError: baseline fingerprint does not match exact candidate checkout

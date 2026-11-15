@@ -1,0 +1,1 @@
+{"unit": "lanectl-attempt-42f0d996c36151bfc8f72f31.service", "model": "claude-opus-5-5", "base": "b2d0fe393ac0971e906cce275e91f45e94422593", "native_stdio": "owned files managed by systemd; survives supervisor loss"}

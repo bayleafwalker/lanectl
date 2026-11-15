@@ -1,0 +1,7 @@
+{
+  "command": "/projects/dev/homelab-analytics/.venv/bin/ruff check --no-cache --config /projects/dev/homelab-analytics/pyproject.toml /tmp/hla-inline-upload-acceptance-r5-20261115/tests/test_hla1587_acceptance.py",
+  "observed_exit_code": 0,
+  "observed_stdout": "All checks passed!\n",
+  "test_sha256": "38354937708ffe7f9699c836e41e65abca603b7f354c92cba5f0a482263162d3",
+  "provenance": "Actual tool result retained by the integration owner; no source change afterward."
+}

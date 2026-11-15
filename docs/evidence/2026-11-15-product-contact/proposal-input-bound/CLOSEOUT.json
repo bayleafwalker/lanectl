@@ -1,0 +1,38 @@
+{
+  "measured_at": "2026-11-15T10:47:16.210494+00:00",
+  "work": "lanectl#2906",
+  "reservation": 506,
+  "version": "0.2.14",
+  "tag": "v0.2.14",
+  "source_commit": "0781dbd9ba42d3f106a96cbd0502a5cb4b3a5574",
+  "reviewed_core_source": "3b3f9294a63078c62b3667863b7ac8291a6c387e",
+  "integrated_tests_passed": 1140,
+  "independent_native_source_review": "claude-sonnet-5-5 CLEAR/no blockers",
+  "wheel_sha256": "8d5f716d92a18d4ecc8497a76ce98e4548d26b101925c8ed0e9d711739a8fa38",
+  "wheel_bytes": 225976,
+  "two_clean_offline_builds_byte_equal": true,
+  "tagged_and_installed_runtime_files_equal": 62,
+  "public_assets_readback_equal": true,
+  "actual_official_large_input_call": {
+    "model": "opencode-go/deepseek-v4-pro",
+    "proposal_bytes": 114114,
+    "proposal_sha256": "f07864ff00a88e9bb6fd2ed6ae2c65e6f15fa9f447dc75b506b1d5f4a641d5c5",
+    "outcome": "done",
+    "exit_code": 0,
+    "elapsed_s": 225.845,
+    "review_verdict": "revise",
+    "response_bytes": 5376,
+    "returned_and_post_call_guards_passed": true,
+    "focus": "Rejected R3 no-JS form-owner coverage; not final HLA review"
+  },
+  "bounds": {
+    "proposal": 262144,
+    "response": 65536,
+    "intent": 16384
+  },
+  "source_worktree_retired_after_isolated_bundle_restore": true,
+  "policy_or_attempt_authority_change": false,
+  "hla_publication": false,
+  "hla_candidate": "UNOBSERVED",
+  "evidence_classification": "Pushed Git cross-host-replicated; served work durable-authoritative; original /tmp scratch host-local."
+}

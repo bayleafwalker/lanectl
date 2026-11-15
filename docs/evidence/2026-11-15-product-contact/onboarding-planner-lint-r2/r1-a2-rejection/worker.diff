@@ -1,0 +1,359 @@
+diff --git a/apps/web/frontend/app/page.js b/apps/web/frontend/app/page.js
+index ee74116..a31e9ff 100755
+--- a/apps/web/frontend/app/page.js
++++ b/apps/web/frontend/app/page.js
+@@ -6,6 +6,7 @@ import { HistoryTag, NoHistory, currentRead, historyNote } from "@/components/as
+ import { Explain } from "@/components/explain-server";
+ import { ResponsiveTable } from "@/components/responsive-table";
+ import { OnboardingChecklist } from "@/components/onboarding-checklist";
++import { freshDatasetNames as computeFreshDatasetNames } from "@/lib/onboarding-checklist-state.mjs";
+ import { ONBOARDING_SOURCES } from "@/lib/onboarding-sources";
+ import { SparklineChart } from "@/components/sparkline-chart";
+ import { stateIndicatorBadge } from "@/lib/state-indicators";
+@@ -151,13 +152,7 @@ export default async function DashboardPage({ searchParams }) {
+     .reduce((sum, r) => sum + Number(r.monthly_equivalent || 0), 0);
+ 
+   // Onboarding checklist: compute fresh datasets and next suggestion
+-  const freshDatasetNames = freshnessDatasets
+-    .filter((ds) => {
+-      if (!ds.landed_at) return false;
+-      const diffDays = (Date.now() - new Date(ds.landed_at)) / (1000 * 60 * 60 * 24);
+-      return diffDays < 7;
+-    })
+-    .map((ds) => ds.dataset_name);
++  const freshDatasetNames = computeFreshDatasetNames(freshnessDatasets, Date.now());
+ 
+   const nextSuggestion = ONBOARDING_SOURCES.find((s) => !freshDatasetNames.includes(s.dataset)) || null;
+ 
+diff --git a/apps/web/frontend/components/onboarding-checklist.js b/apps/web/frontend/components/onboarding-checklist.js
+index 31b1d82..73f4e5f 100755
+--- a/apps/web/frontend/components/onboarding-checklist.js
++++ b/apps/web/frontend/components/onboarding-checklist.js
+@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
+ import Link from "next/link";
+ 
+ import { ONBOARDING_SOURCES } from "@/lib/onboarding-sources";
++import { checklistProgress, checklistView } from "@/lib/onboarding-checklist-state.mjs";
+ 
+ const DISMISS_KEY = "onboarding_checklist_dismissed";
+ 
+@@ -11,6 +12,7 @@ const DISMISS_KEY = "onboarding_checklist_dismissed";
+ export function OnboardingChecklist({ freshDatasets, nextSuggestion }) {
+   const [dismissed, setDismissed] = useState(false);
+   const [compact, setCompact] = useState(false);
++  const [userExpanded, setUserExpanded] = useState(false);
+   const [mounted, setMounted] = useState(false);
+ 
+   useEffect(() => {
+@@ -40,6 +42,7 @@ export function OnboardingChecklist({ freshDatasets, nextSuggestion }) {
+       // ignore
+     }
+     setCompact(true);
++    setUserExpanded(false);
+   }
+ 
+   function expand() {
+@@ -50,24 +53,22 @@ export function OnboardingChecklist({ freshDatasets, nextSuggestion }) {
+     }
+     setCompact(false);
+     setDismissed(false);
++    setUserExpanded(true);
+   }
+ 
+   // Avoid hydration mismatch by not rendering until mounted
+   if (!mounted) return null;
+-  if (dismissed) return null;
+-
+-  const steps = ONBOARDING_SOURCES.map((s) => ({
+-    ...s,
+-    active: freshDatasets.includes(s.dataset),
+-  }));
+-  const activeCount = steps.filter((s) => s.active).length;
+-  const requiredDone = steps.filter((s) => s.required && s.active).length;
+-  const requiredTotal = steps.filter((s) => s.required).length;
+-  const allCoreActive = requiredDone >= requiredTotal;
++
++  const { steps, activeCount, requiredDone, requiredTotal, allCoreActive } = checklistProgress(
++    ONBOARDING_SOURCES,
++    freshDatasets
++  );
+   const allActive = activeCount >= steps.length;
++  const view = checklistView({ dismissed, compact, userExpanded, allCoreActive });
++
++  if (view === "hidden") return null;
+ 
+-  // Compact badge: show when all core sources are active
+-  if (compact || allCoreActive) {
++  if (view === "badge") {
+     return (
+       <article className="panel section" style={{ padding: "10px 16px" }}>
+         <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+diff --git a/apps/web/frontend/lib/onboarding-checklist-state.mjs b/apps/web/frontend/lib/onboarding-checklist-state.mjs
+new file mode 100644
+index 0000000..b553f88
+--- /dev/null
++++ b/apps/web/frontend/lib/onboarding-checklist-state.mjs
+@@ -0,0 +1,65 @@
++/**
++ * Shared onboarding checklist rules.
++ *
++ * Pure functions so the dashboard page, the checklist component, and Node unit
++ * tests use one definition of freshness, progress, and visible view. Source
++ * definitions are passed in explicitly; this module deliberately imports no
++ * app source so it stays usable outside the Next runtime.
++ */
++
++const FRESH_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
++
++/**
++ * Names of datasets whose latest landing is strictly inside the 7-day window.
++ * Missing, null, empty, and unparseable timestamps are not fresh; future
++ * timestamps are fresh because the elapsed time is negative.
++ *
++ * @param {{dataset_name: string, landed_at?: string|null}[]} rows
++ * @param {number} nowMs
++ * @returns {string[]}
++ */
++export function freshDatasetNames(rows, nowMs) {
++  return rows
++    .filter((row) => {
++      if (!row.landed_at) return false;
++      return nowMs - new Date(row.landed_at).getTime() < FRESH_WINDOW_MS;
++    })
++    .map((row) => row.dataset_name);
++}
++
++/**
++ * Progress for an explicit source definition list. Fresh names that do not
++ * match a source (and repeated names) do not inflate counts.
++ *
++ * @param {{dataset: string, required?: boolean}[]} sources
++ * @param {string[]} freshDatasets
++ */
++export function checklistProgress(sources, freshDatasets) {
++  const active = new Set(freshDatasets);
++  const steps = sources.map((source) => ({ ...source, active: active.has(source.dataset) }));
++  const activeCount = steps.filter((step) => step.active).length;
++  const requiredDone = steps.filter((step) => step.required && step.active).length;
++  const requiredTotal = steps.filter((step) => step.required).length;
++  return {
++    steps,
++    activeCount,
++    requiredDone,
++    requiredTotal,
++    allCoreActive: requiredDone >= requiredTotal,
++  };
++}
++
++/**
++ * Dismissal persists over every other state; a session expansion overrides
++ * automatic and manual compaction; otherwise compaction (manual or automatic
++ * from complete core sources) shows the badge.
++ *
++ * @param {{dismissed: boolean, compact: boolean, userExpanded: boolean, allCoreActive: boolean}} state
++ * @returns {"hidden"|"badge"|"full"}
++ */
++export function checklistView({ dismissed, compact, userExpanded, allCoreActive }) {
++  if (dismissed) return "hidden";
++  if (userExpanded) return "full";
++  if (compact || allCoreActive) return "badge";
++  return "full";
++}
+diff --git a/apps/web/frontend/unit/onboarding-checklist-state.test.mjs b/apps/web/frontend/unit/onboarding-checklist-state.test.mjs
+new file mode 100644
+index 0000000..93dffc0
+--- /dev/null
++++ b/apps/web/frontend/unit/onboarding-checklist-state.test.mjs
+@@ -0,0 +1,113 @@
++import assert from "node:assert/strict";
++import { test } from "node:test";
++
++import {
++  checklistProgress,
++  checklistView,
++  freshDatasetNames,
++} from "../lib/onboarding-checklist-state.mjs";
++
++const NOW = Date.UTC(2026, 10, 14, 12);
++const DAY = 24 * 60 * 60 * 1000;
++
++const SOURCES = [
++  { dataset: "account_transactions", required: true },
++  { dataset: "subscriptions", required: true },
++  { dataset: "contract_prices", required: false },
++  { dataset: "budgets", required: false },
++  { dataset: "loan_repayments", required: false },
++];
++
++test("freshness keeps a strict seven day boundary", () => {
++  const rows = [
++    { dataset_name: "inside", landed_at: new Date(NOW - 7 * DAY + 1).toISOString() },
++    { dataset_name: "equal", landed_at: new Date(NOW - 7 * DAY).toISOString() },
++    { dataset_name: "outside", landed_at: new Date(NOW - 7 * DAY - 1).toISOString() },
++  ];
++  assert.deepEqual(freshDatasetNames(rows, NOW), ["inside"]);
++});
++
++test("freshness treats future timestamps as fresh and unusable timestamps as stale", () => {
++  const rows = [
++    { dataset_name: "future", landed_at: new Date(NOW + DAY).toISOString() },
++    { dataset_name: "invalid", landed_at: "not a timestamp" },
++    { dataset_name: "null", landed_at: null },
++    { dataset_name: "empty", landed_at: "" },
++    { dataset_name: "absent" },
++  ];
++  assert.deepEqual(freshDatasetNames(rows, NOW), ["future"]);
++});
++
++test("progress separates required sources from optional sources", () => {
++  const progress = checklistProgress(SOURCES, ["account_transactions", "contract_prices"]);
++  assert.equal(progress.activeCount, 2);
++  assert.equal(progress.requiredDone, 1);
++  assert.equal(progress.requiredTotal, 2);
++  assert.equal(progress.allCoreActive, false);
++  assert.deepEqual(
++    progress.steps.map((step) => [step.dataset, step.active]),
++    [
++      ["account_transactions", true],
++      ["subscriptions", false],
++      ["contract_prices", true],
++      ["budgets", false],
++      ["loan_repayments", false],
++    ]
++  );
++});
++
++test("progress ignores duplicate and unknown fresh names", () => {
++  const progress = checklistProgress(SOURCES, [
++    "account_transactions",
++    "account_transactions",
++    "not_a_source",
++  ]);
++  assert.equal(progress.activeCount, 1);
++  assert.equal(progress.requiredDone, 1);
++  assert.equal(progress.requiredTotal, 2);
++  assert.equal(progress.allCoreActive, false);
++});
++
++test("progress reports complete core sources and the empty source list", () => {
++  const complete = checklistProgress(SOURCES, ["account_transactions", "subscriptions"]);
++  assert.equal(complete.allCoreActive, true);
++  assert.equal(complete.activeCount, 2);
++  const empty = checklistProgress([], []);
++  assert.equal(empty.activeCount, 0);
++  assert.equal(empty.requiredDone, 0);
++  assert.equal(empty.requiredTotal, 0);
++  assert.equal(empty.allCoreActive, true);
++});
++
++test("view keeps dismissal above every other state", () => {
++  assert.equal(
++    checklistView({ dismissed: true, compact: true, userExpanded: true, allCoreActive: true }),
++    "hidden"
++  );
++});
++
++test("view keeps the session expansion above compaction", () => {
++  assert.equal(
++    checklistView({ dismissed: false, compact: false, userExpanded: true, allCoreActive: true }),
++    "full"
++  );
++  assert.equal(
++    checklistView({ dismissed: false, compact: true, userExpanded: true, allCoreActive: false }),
++    "full"
++  );
++});
++
++test("view auto-compacts passively and honours manual compaction", () => {
++  assert.equal(
++    checklistView({ dismissed: false, compact: false, userExpanded: false, allCoreActive: true }),
++    "badge"
++  );
++  assert.equal(
++    checklistView({ dismissed: false, compact: true, userExpanded: false, allCoreActive: false }),
++    "badge"
++  );
++  assert.equal(
++    checklistView({ dismissed: false, compact: false, userExpanded: false, allCoreActive: false }),
++    "full"
++  );
++});
+diff --git a/tests/test_onboarding_checklist_unit.py b/tests/test_onboarding_checklist_unit.py
+new file mode 100644
+index 0000000..f3ff109
+--- /dev/null
++++ b/tests/test_onboarding_checklist_unit.py
+@@ -0,0 +1,73 @@
++"""Run the onboarding checklist state unit tests under Node 20.
++
++The dashboard rules live in a browser/Node ESM module, so the focused checks are
++Node built-in tests. This wrapper makes the normal Python suite execute them and
++fails (never skips) when a Node 20 runtime is unavailable.
++"""
++
++from __future__ import annotations
++
++import os
++import shutil
++import subprocess
++from pathlib import Path
++
++HELPER = Path("apps/web/frontend/lib/onboarding-checklist-state.mjs")
++UNIT_TEST = Path("apps/web/frontend/unit/onboarding-checklist-state.test.mjs")
++PINNED_FALLBACK = "/projects/dev/homelab-analytics/.tooling/node-v20.20.1-linux-x64/bin/node"
++
++
++def _repo_root() -> Path:
++    """Locate the checkout under test.
++
++    The working directory wins when it holds the helper: candidate-copy gates
++    run this wrapper from an owned copy (and may pass an absolute wrapper path),
++    and the mutated helper in that copy must be the one exercised.
++    """
++    here = Path(__file__).resolve()
++    for candidate in (Path.cwd(), *here.parents):
++        if (candidate / HELPER).is_file():
++            return candidate
++    return here.parents[1]
++
++
++def _node_binary(root: Path) -> str:
++    override = os.environ.get("HLA_NODE")
++    if override:
++        probe = subprocess.run([override, "--version"], capture_output=True, text=True)
++        if probe.returncode != 0 or not probe.stdout.startswith("v20."):
++            raise AssertionError(
++                f"Node 20 unavailable through HLA_NODE={override}: "
++                f"exit={probe.returncode} stdout={probe.stdout!r} stderr={probe.stderr!r}"
++            )
++        return override
++    candidates = [
++        shutil.which("node"),
++        *[str(path) for path in sorted((root / ".tooling").glob("node-v20*/bin/node"))],
++        PINNED_FALLBACK,
++    ]
++    for candidate in candidates:
++        if not candidate or not Path(candidate).is_file():
++            continue
++        probe = subprocess.run([candidate, "--version"], capture_output=True, text=True)
++        if probe.returncode == 0 and probe.stdout.startswith("v20."):
++            return candidate
++    raise AssertionError("Node 20 is required to run the onboarding checklist unit tests")
++
++
++def test_onboarding_checklist_state_unit() -> None:
++    root = _repo_root()
++    unit_test = root / UNIT_TEST
++    if not unit_test.is_file():
++        raise AssertionError(f"missing Node unit test: {unit_test}")
++    node = _node_binary(root)
++    result = subprocess.run(
++        [node, str(unit_test)],
++        cwd=root,
++        capture_output=True,
++        text=True,
++        timeout=120,
++    )
++    output = result.stdout + result.stderr
++    if result.returncode != 0:
++        raise AssertionError(f"Node unit tests failed (exit {result.returncode}):\n{output}")

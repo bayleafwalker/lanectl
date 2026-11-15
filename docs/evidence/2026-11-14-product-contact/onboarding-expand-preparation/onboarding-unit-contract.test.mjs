@@ -1,0 +1,15 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { pathToFileURL } from 'node:url';
+const file = process.env.HLA_HELPER_PATH;
+if (!file) throw Error('HLA_HELPER_PATH required');
+const {freshDatasetNames,checklistProgress,checklistView} = await import(pathToFileURL(file));
+const now=Date.UTC(2026,10,14,12), day=86400000;
+const sources=[{dataset:'account_transactions',required:true},{dataset:'subscriptions',required:true},{dataset:'contract_prices'},{dataset:'budgets'},{dataset:'loan_repayments'}];
+test('freshness strict boundary',()=>{const rows=[{dataset_name:'near',landed_at:new Date(now-7*day+1).toISOString()},{dataset_name:'equal',landed_at:new Date(now-7*day).toISOString()},{dataset_name:'old',landed_at:new Date(now-7*day-1).toISOString()}];assert.deepEqual(freshDatasetNames(rows,now),['near']);});
+test('freshness future invalid absent',()=>{const rows=[{dataset_name:'future',landed_at:new Date(now+day).toISOString()},{dataset_name:'bad',landed_at:'invalid'},{dataset_name:'null',landed_at:null},{dataset_name:'empty',landed_at:''}];assert.deepEqual(freshDatasetNames(rows,now),['future']);});
+test('required progress ignores optional and duplicates',()=>{const p=checklistProgress(sources,['account_transactions','account_transactions','contract_prices','budgets','loan_repayments','unknown']);assert.equal(p.activeCount,4);assert.equal(p.requiredDone,1);assert.equal(p.requiredTotal,2);assert.equal(p.allCoreActive,false);});
+test('all core auto compact',()=>{const p=checklistProgress(sources,['account_transactions','subscriptions']);assert.equal(p.allCoreActive,true);assert.equal(checklistView({dismissed:false,compact:false,userExpanded:false,allCoreActive:p.allCoreActive}),'badge');});
+test('expanded override remains full',()=>assert.equal(checklistView({dismissed:false,compact:false,userExpanded:true,allCoreActive:true}),'full'));
+test('dismissal wins over all',()=>assert.equal(checklistView({dismissed:true,compact:true,userExpanded:true,allCoreActive:true}),'hidden'));
+test('manual compact without core',()=>assert.equal(checklistView({dismissed:false,compact:true,userExpanded:false,allCoreActive:false}),'badge'));

@@ -1,0 +1,66 @@
+TAP version 13
+# Subtest: freshness strict boundary
+ok 1 - freshness strict boundary
+  ---
+  duration_ms: 1.147063
+  ...
+# Subtest: freshness future invalid absent
+ok 2 - freshness future invalid absent
+  ---
+  duration_ms: 0.11034
+  ...
+# Subtest: required progress ignores optional and duplicates
+ok 3 - required progress ignores optional and duplicates
+  ---
+  duration_ms: 0.182891
+  ...
+# Subtest: all core auto compact
+ok 4 - all core auto compact
+  ---
+  duration_ms: 0.680241
+  ...
+# Subtest: expanded override remains full
+not ok 5 - expanded override remains full
+  ---
+  duration_ms: 0.958703
+  location: '/projects/dev/lanectl/docs/evidence/2026-11-15-product-contact/onboarding-planner-lint-r2/onboarding-unit-contract.test.mjs:13:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly equal:
+    + actual - expected
+    
+    + 'badge'
+    - 'full'
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected: 'full'
+  actual: 'badge'
+  operator: 'strictEqual'
+  stack: |-
+    TestContext.<anonymous> (file:///projects/dev/lanectl/docs/evidence/2026-11-15-product-contact/onboarding-planner-lint-r2/onboarding-unit-contract.test.mjs:13:50)
+    Test.runInAsyncScope (node:async_hooks:206:9)
+    Test.run (node:internal/test_runner/test:796:25)
+    Test.processPendingSubtests (node:internal/test_runner/test:526:18)
+    Test.postRun (node:internal/test_runner/test:889:19)
+    Test.run (node:internal/test_runner/test:835:12)
+    async Test.processPendingSubtests (node:internal/test_runner/test:526:7)
+  ...
+# Subtest: dismissal wins over all
+ok 6 - dismissal wins over all
+  ---
+  duration_ms: 0.09285
+  ...
+# Subtest: manual compact without core
+ok 7 - manual compact without core
+  ---
+  duration_ms: 0.07855
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 6
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 9.798621

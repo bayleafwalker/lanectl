@@ -1,0 +1,18 @@
+{
+  "completed=False,state=ready,attempts=0,park_fails=False": [
+    "park",
+    "restore-timer",
+    "record-timer-state"
+  ],
+  "completed=False,state=ready,attempts=0,park_fails=True": [
+    "park"
+  ],
+  "completed=True,state=ready,attempts=0,park_fails=False": [
+    "restore-timer",
+    "record-timer-state"
+  ],
+  "completed=True,state=claimed,attempts=1,park_fails=False": [
+    "restore-timer",
+    "record-timer-state"
+  ]
+}

@@ -1,0 +1,137 @@
+commit 0aa42a008a85a6e62aa16586e864978f6e1b4bce
+Author:     Juha Huotari <juhahuotari@outlook.com>
+AuthorDate: Sat Nov 14 23:11:30 2026 +0200
+Commit:     Juha Huotari <juhahuotari@outlook.com>
+CommitDate: Sat Nov 14 23:11:30 2026 +0200
+
+    fix(lint): reject setup assertion errors as base failure evidence
+---
+ pyproject.toml                             |  2 +-
+ src/lanectl/lint_release.py                |  6 +++
+ tests/stage8/test_base_lint_setup_phase.py | 82 ++++++++++++++++++++++++++++++
+ 3 files changed, 89 insertions(+), 1 deletion(-)
+
+diff --git a/pyproject.toml b/pyproject.toml
+index dede17a..c905820 100644
+--- a/pyproject.toml
++++ b/pyproject.toml
+@@ -1,6 +1,6 @@
+ [project]
+ name = "lanectl"
+-version = "0.2.12"
++version = "0.2.13"
+ description = "Autonomous implementation lanes: deterministic admission, gates and trains around cheap workers"
+ requires-python = ">=3.13"
+ dependencies = []
+diff --git a/src/lanectl/lint_release.py b/src/lanectl/lint_release.py
+index 333459d..b60b847 100644
+--- a/src/lanectl/lint_release.py
++++ b/src/lanectl/lint_release.py
+@@ -73,6 +73,8 @@ _FAILED = re.compile(r"\b\d+ (?:failed|errors?)\b")
+ # heading naming that test. Splitting on it keeps one test's errors from
+ # deciding the classification of every other test in the run.
+ _SECTION_HEADING = re.compile(r"^_{5,}\s+.+?\s+_{5,}$")
++_SETUP_ERROR = re.compile(r"^_{5,}\s+ERROR at setup of\b", re.MULTILINE)
++_ASSERTION_RAISED = re.compile(r"^E[ \t]+AssertionError\b", re.MULTILINE)
+ 
+ 
+ def _passed(output: str) -> bool:
+@@ -98,6 +100,10 @@ def _sections(output: str) -> list[str]:
+ def _classify_one(output: str) -> str:
+     if _MISSING_TEST_MODULE.search(output) or _MISSING_TEST_SYMBOL.search(output):
+         return "spec-gap"
++    # A fixture assertion failed before the product test could run. Match the
++    # raised exception, not a quoted AssertionError in another exception's text.
++    if _SETUP_ERROR.search(output) and _ASSERTION_RAISED.search(output):
++        return "spec-gap"
+     if _DID_NOT_RAISE.search(output):
+         return "expected"
+     if any(p.search(output) for p in _SPEC_GAP):
+diff --git a/tests/stage8/test_base_lint_setup_phase.py b/tests/stage8/test_base_lint_setup_phase.py
+new file mode 100644
+index 0000000..6b70a2e
+--- /dev/null
++++ b/tests/stage8/test_base_lint_setup_phase.py
+@@ -0,0 +1,82 @@
++"""Base failure must reach product assertions, not fail a fixture assertion."""
++from pathlib import Path
++import json
++import subprocess
++import sys
++
++import pytest
++
++from lanectl import cli, specification
++from lanectl.config import load_release
++from lanectl.lint_release import classify_failure
++from tests.stage8.test_specification import fake_adapter, make
++
++
++SETUP = '''import pytest
++@pytest.fixture
++def unavailable():
++    assert False, "locked frontend modules unavailable"
++def test_fixture(unavailable):
++    assert True
++'''
++CALL = 'def test_product():\n    assert 1 == 2, "product behavior absent"\n'
++
++
++def run_pytest(tmp_path, source):
++    (tmp_path / 'test_subject.py').write_text(source)
++    result = subprocess.run(
++        [sys.executable, '-m', 'pytest', '-q', '--tb=short', '-p', 'no:cacheprovider'],
++        cwd=tmp_path, capture_output=True, text=True, timeout=30)
++    assert result.returncode == 1, result.stdout + result.stderr
++    return result.stdout + result.stderr
++
++
++@pytest.mark.parametrize('source,expected', [
++    (SETUP, 'spec-gap'), (CALL, 'expected'), (SETUP + CALL, 'spec-gap')],
++    ids=['setup-assertion', 'call-assertion', 'mixed-phases'])
++def test_real_pytest_setup_call_and_mixed_phases(tmp_path, source, expected):
++    output = run_pytest(tmp_path, source)
++    if source != CALL:
++        assert 'ERROR at setup of test_fixture' in output
++    assert classify_failure(output) == expected, output
++
++
++def test_real_setup_missing_product_import_retains_expected_contract(tmp_path):
++    source = SETUP.replace('assert False, "locked frontend modules unavailable"',
++                           'import product_feature_not_implemented_21903')
++    output = run_pytest(tmp_path, source)
++    assert 'ModuleNotFoundError' in output
++    assert classify_failure(output) == 'expected'
++
++
++def test_setup_import_is_not_reclassified_by_assertion_word_in_source(tmp_path):
++    source = SETUP.replace('assert False, "locked frontend modules unavailable"',
++                           'raise ImportError("feature absent; AssertionError is only text")')
++    output = run_pytest(tmp_path, source)
++    assert classify_failure(output) == 'expected'
++
++
++def test_recorded_fresh_clone_setup_errors_are_not_a_semantic_base_failure():
++    root = Path(__file__).resolve().parents[2]
++    output = (root / 'docs/evidence/2026-11-14-product-contact/'
++              'onboarding-native-review-and-fresh-base/official-base-lint.log').read_text()
++    assert '16 errors' in output and 'Node20/locked modules unavailable' in output
++    assert classify_failure(output) == 'spec-gap'
++
++
++def test_real_base_lint_records_fixture_problem_and_refuses_publication(estate):
++    def adapter(**kwargs):
++        result = fake_adapter(**kwargs)
++        if 'adversarial reviewer' not in kwargs['prompt']:
++            response = {'outcome': 'Add product behavior',
++                        'tests': {'tests/test_acc_spec.py': SETUP}}
++            (kwargs['worktree'] / '.lanectl-spec/response.json').write_text(json.dumps(response))
++        return result
++
++    release = make(estate, adapter_fn_override=adapter)
++    evidence = json.loads((release / 'specification.json').read_text())
++    assert evidence['lint_problems'] == ['spec-gap: tests/test_acc_spec.py']
++    assert specification.validate_for_publish(release)
++    assert cli.main(['backlog', 'publish', 'spec-sub']) == 1
++    assert load_release(release).draft
++    assert not any(e['type'] == 'release.published' for e in estate[2].read())

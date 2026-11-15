@@ -1,0 +1,65 @@
+{
+  "measured_at": "2026-11-15T12:00:54.866176+00:00",
+  "official_invoke_returned": true,
+  "model": "local/worker-fast",
+  "response": {
+    "verdict": "accept",
+    "reason": "trusted_proposal_bytes (119745) is well within max_trusted_proposal_bytes (262144). The separate-bound rule correctly isolates the input bound from the output bound (max_model_response_bytes) and intent bound (max_intent_bytes), which are semantically unrelated constraints.",
+    "trivial_pass": "A shared-bound check that incorrectly compared trusted_proposal_bytes against max_model_response_bytes would reject any value above 65536. Since 119745 > 65536, the proposal would wrongly fail the shared-bound check even though it is a valid input proposal under the correct max_trusted_proposal_bytes bound of 262144.",
+    "checks": [
+      "probe_nonce: local-route-815f921af7c0",
+      "trusted_proposal_bytes=119745 <= max_trusted_proposal_bytes=262144 => pass",
+      "max_trusted_proposal_bytes (decimal input bound) = 262144",
+      "First invalid trusted-input byte count (max_trusted_proposal_bytes + 1) = 262145",
+      "Wrong shared-bound check would flag first-invalid at 65537 (> max_model_response_bytes)"
+    ]
+  },
+  "usage": {
+    "input_tokens": 2822,
+    "output_tokens": 961,
+    "reasoning_tokens": 0,
+    "cache_read_tokens": 6183,
+    "cache_write_tokens": 0,
+    "cost_usd": 0.0,
+    "steps": 3
+  },
+  "elapsed_s": 27.94,
+  "wire_metadata": [
+    {
+      "url": "http://127.0.0.1:8020/v1/chat/completions",
+      "method": "POST",
+      "request_bytes": 2902,
+      "request_sha256": "d18b9f97a930aa379001a267034aca358a8a36c5a429969db93fe4e7ee30c261",
+      "model": "worker-fast",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8020/v1/chat/completions",
+      "method": "POST",
+      "request_bytes": 10710,
+      "request_sha256": "c170ed9585a0dd88a7623be3f9aa473bb5c30db58b93f58743acfd9ae7db7088",
+      "model": "worker-fast",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8020/v1/chat/completions",
+      "method": "POST",
+      "request_bytes": 11432,
+      "request_sha256": "290686b923049c14cb218b548db182cf59025b4e03abcf4c9562855b0b862621",
+      "model": "worker-fast",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:8020/v1/chat/completions",
+      "method": "POST",
+      "request_bytes": 14152,
+      "request_sha256": "e0085237fdee37aafe50d0ac36716d17458b370a27fcf8537b315f02c9545cad",
+      "model": "worker-fast",
+      "status": 200
+    }
+  ],
+  "prompt_and_credentials_not_in_wire_log": true,
+  "operational_scope": "Real native local model read/write and pinned loopback relay only; no product, GPU quality, private/restricted work or routing promotion claim.",
+  "governance_changed": false,
+  "source_probe_commit": "54c764a05eba64f623417738fa46a2e0fa93f8a2"
+}

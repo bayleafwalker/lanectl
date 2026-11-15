@@ -1,0 +1,8 @@
+Traceback (most recent call last):
+  File "/tmp/hla-onboarding-planner-lint-20261115/publish-and-run.py", line 27, in <module>
+    one_remaining(view.attempts)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "/tmp/hla-onboarding-planner-lint-20261115/publish-and-run.py", line 25, in one_remaining
+    assert len(attempts) == 1 and attempts[0]['attempt_id'] == prior, 'outcome retry budget changed'
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: outcome retry budget changed

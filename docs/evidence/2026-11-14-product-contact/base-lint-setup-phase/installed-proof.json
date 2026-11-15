@@ -1,0 +1,10 @@
+{
+  "distribution": "0.2.13",
+  "release_commit": "fbe25b507bc99b5b57668af85f8bae1be038bd92",
+  "runtime_files_equal": 62,
+  "installed_path": "/home/bayleaf/.local/share/uv/tools/lanectl/lib/python3.13/site-packages/lanectl",
+  "recorded_invalid_setup_classification": "spec-gap",
+  "actual_corrected_base_classification": "expected",
+  "observed_corrected_base": "11passed5semanticfailed0errors0skips",
+  "policy_activated": false
+}

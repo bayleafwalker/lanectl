@@ -1,0 +1,5 @@
+Traceback (most recent call last):
+  File "/tmp/hla-onboarding-acceptance-draft-20261114/qualify_unit.py", line 18, in <module>
+    assert r.returncode==0 and all(re.search(r'^ok \d+ - '+re.escape(n)+r'$',r.stdout,re.M) for n in expected)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError

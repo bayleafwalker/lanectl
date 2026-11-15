@@ -1,0 +1,17 @@
+{
+  "reviewed_source": "3b3f9294a63078c62b3667863b7ac8291a6c387e",
+  "canonical_source": "127207b",
+  "source_and_tests_byte_equal": {
+    "src/lanectl/specification.py": "818c5acba172c823e7b35f4498191ecc333a0843bab02581eeb680e6c43f3f26",
+    "tests/stage8/test_specification.py": "f6376daa961958579620f914eb9a874ef285f6037b0da03c805440cbd3601ab1"
+  },
+  "native_model": "claude-sonnet-5-5",
+  "native_verdict": "clear; no blockers",
+  "worker_full_tests": 1140,
+  "integrated_full_tests": 1140,
+  "model_response_limit_bytes": 65536,
+  "trusted_proposal_limit_bytes": 262144,
+  "intent_limit_bytes": 16384,
+  "response_and_authority_rules_unchanged": true,
+  "actual_official_large_review": "pending after release/install; unit adapters are not integration proof"
+}

@@ -1,0 +1,11 @@
+claimed hla-onboarding-expand-a1 -> opencode-go/deepseek-v4-pro
+hla-onboarding-expand-a1 [opencode-go/deepseek-v4-pro] -> rejected: job:ruff: exit 1: ruff :: ed cases passed without skips');return 0
+    |                                                                ^
+240 | if __name__=='__main__': raise SystemExit(main())
+    |
+
+E701 Multiple statements on one line (colon)
+   --> tests/test_onboarding_expand_acceptance.py:240:24
+    |
+238 |     assert not any(list(root.iter(tag)) for tag in ('skipped','failure','error'))
+239

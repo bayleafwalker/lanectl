@@ -1,0 +1,5 @@
+Traceback (most recent call last):
+  File "/tmp/hla-inline-upload-official-r5-20261115/prepare.py", line 22, in <module>
+    assert hashlib.sha256(outcome).hexdigest() == args.outcome_sha256
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError

@@ -1,0 +1,6 @@
+{
+  "valid": "accepted",
+  "stale-nonce": "rejected",
+  "wrong-number": "rejected",
+  "foreign-origin": "rejected"
+}

@@ -1,0 +1,12 @@
+{
+  "README.md": "697b9690767b242e30406a4fd31d632258ba37e2552cfd8f9c056a6dbbcf5fdc",
+  "SHA256SUMS": "8178ebc7a9144e48cbef44f046726a486cdc86adbcb395e1e95c1e4e2fd8c13a",
+  "build.py": "56fc0368620db57294590a48979234037039fa81d9caa1978b16f6a0fa108fcc",
+  "build1.log": "f39d7f2ee475e0a51376bd06f239b2577f4a9c834c804aae37ba4081ca44531a",
+  "build2.log": "8b4709cbd87f8060ff62dfa28d293a4fc45009e70f909857d72def2793af09f0",
+  "download-readback.json": "2ca629c871f84643363a3b6293ad0abebdd2c3950d4c05a7cd7838d530c830d3",
+  "installed-proof.json": "18d03e51a49c2af126177b5f131d4adea285cadbee621c4f27ffb8db6b3c7da8",
+  "lanectl-0.2.14-artifact.json": "ddde652939c4dec5cd1fdffcaa9d5c250ef8f4c1b9a8f6667ae00b8704ba5aed",
+  "release-notes.md": "0bad8a83e4b3c9a39068e5821da997a30ef1bf9a73dbfe23097351c6ac48cdc3",
+  "sandbox-failed-build1.log": "377d12569924c04d4c99ce9a1c7e1a20d9da7bfa0a0a91d24060bf6f25e0bb5d"
+}

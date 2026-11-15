@@ -1,0 +1,11 @@
+{
+  "canonical_base": "c40b6395fe61df48c72b3c20de18d4fd4cff53ed",
+  "paths": {
+    "governance/integrator.toml": "10af44c7357ace4d67337ab2b32e03a8d4e869ccc324330f7c69754863a2eef0",
+    ".claude/skills/lane-integrator/SKILL.md": "9f2fd19fc289c7322bb169feaa3d6440d85ab4a3260b8b010cd6251d93d567f6",
+    "tests/stage8/test_model_error_repair_policy.py": "c1aefdf72697dbb81465937250a570a35f6e19e536c362c72cbb440826f11b50",
+    "docs/plans/2026-11-10-productive-life-ladder.md": "a4fb95d0ca475690b76e63e6a064f53b636443e2452d87202803cec1f8d2a63b"
+  },
+  "canonical_activated": false,
+  "preparation_only": true
+}

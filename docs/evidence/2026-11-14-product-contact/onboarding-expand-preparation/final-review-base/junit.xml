@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="5" skipped="0" tests="16" time="27.708" timestamp="2026-11-14T22:42:11.152557+02:00" hostname="workstation"><testcase classname="tests.test_onboarding_expand_acceptance" name="test_onboarding[initial]" time="27.648" /><testcase classname="tests.test_onboarding_expand_acceptance" name="test_onboarding[partial]" time="0.000" /><testcase classname="tests.test_onboarding_expand_acceptance" name="test_onboarding[optional]" time="0.000" /><testcase classname="tests.test_onboarding_expand_acceptance" name="test_onboarding[auto_core]" time="0.000" /><testcase classname="tests.test_onboarding_expand_acceptance" name="test_onboarding[auto_all]" time="0.000" /><testcase classname="tests.test_onboarding_expand_acceptance" name="test_onboarding[manual_incomplete]" time="0.000" /><testcase classname="tests.test_onboarding_expand_acceptance" name="test_onboarding[dismiss]" time="0.000" /><testcase classname="tests.test_onboarding_expand_acceptance" name="test_onboarding[dismiss_compact]" time="0.000" /><testcase classname="tests.test_onboarding_expand_acceptance" name="test_onboarding[storage_failure_incomplete]" time="0.000" /><testcase classname="tests.test_onboarding_expand_acceptance" name="test_onboarding[expand_core]" time="0.000"><failure message="AssertionError: locator.waitFor: Timeout 3000ms exceeded.&#10;  Call log:&#10;  #x1B[2m  - waiting for locator('article').getByRole('heading', { name: 'Get started — connect your data sources' }) to be visible#x1B[22m&#10;  &#10;assert False">case = 'expand_core'
+observations = {'auto_all': {'ok': True}, 'auto_core': {'ok': True}, 'dismiss': {'ok': True}, 'dismiss_after_override': {'error': "lo....getByRole('heading', { name: 'Get started — connect your data sources' }) to be visible\x1b[22m\n", 'ok': False}, ...}
+
+    @pytest.mark.parametrize('case',CASES)
+    def test_onboarding(case, observations):
+&gt;       assert observations[case]['ok'], observations[case].get('error')
+E       AssertionError: locator.waitFor: Timeout 3000ms exceeded.
+E         Call log:
+E         #x1B[2m  - waiting for locator('article').getByRole('heading', { name: 'Get started — connect your data sources' }) to be visible#x1B[22m
+E         
+E       assert False
+
+tests/test_onboarding_expand_acceptance.py:205: AssertionError</failure></testcase><testcase classname="tests.test_onboarding_expand_acceptance" name="test_onboarding[expand_then_minimise]" time="0.000"><failure message="AssertionError: locator.waitFor: Timeout 3000ms exceeded.&#10;  Call log:&#10;  #x1B[2m  - waiting for locator('article').getByRole('heading', { name: 'Get started — connect your data sources' }) to be visible#x1B[22m&#10;  &#10;assert False">case = 'expand_then_minimise'
+observations = {'auto_all': {'ok': True}, 'auto_core': {'ok': True}, 'dismiss': {'ok': True}, 'dismiss_after_override': {'error': "lo....getByRole('heading', { name: 'Get started — connect your data sources' }) to be visible\x1b[22m\n", 'ok': False}, ...}
+
+    @pytest.mark.parametrize('case',CASES)
+    def test_onboarding(case, observations):
+&gt;       assert observations[case]['ok'], observations[case].get('error')
+E       AssertionError: locator.waitFor: Timeout 3000ms exceeded.
+E         Call log:
+E         #x1B[2m  - waiting for locator('article').getByRole('heading', { name: 'Get started — connect your data sources' }) to be visible#x1B[22m
+E         
+E       assert False
+
+tests/test_onboarding_expand_acceptance.py:205: AssertionError</failure></testcase><testcase classname="tests.test_onboarding_expand_acceptance" name="test_onboarding[expand_source_transition]" time="0.000"><failure message="AssertionError: locator.waitFor: Timeout 3000ms exceeded.&#10;  Call log:&#10;  #x1B[2m  - waiting for locator('article').getByRole('heading', { name: 'Get started — connect your data sources' }) to be visible#x1B[22m&#10;  &#10;assert False">case = 'expand_source_transition'
+observations = {'auto_all': {'ok': True}, 'auto_core': {'ok': True}, 'dismiss': {'ok': True}, 'dismiss_after_override': {'error': "lo....getByRole('heading', { name: 'Get started — connect your data sources' }) to be visible\x1b[22m\n", 'ok': False}, ...}
+
+    @pytest.mark.parametrize('case',CASES)
+    def test_onboarding(case, observations):
+&gt;       assert observations[case]['ok'], observations[case].get('error')
+E       AssertionError: locator.waitFor: Timeout 3000ms exceeded.
+E         Call log:
+E         #x1B[2m  - waiting for locator('article').getByRole('heading', { name: 'Get started — connect your data sources' }) to be visible#x1B[22m
+E         
+E       assert False
+
+tests/test_onboarding_expand_acceptance.py:205: AssertionError</failure></testcase><testcase classname="tests.test_onboarding_expand_acceptance" name="test_onboarding[unknown_stored]" time="0.000" /><testcase classname="tests.test_onboarding_expand_acceptance" name="test_onboarding[dismiss_after_override]" time="0.000"><failure message="AssertionError: locator.waitFor: Timeout 3000ms exceeded.&#10;  Call log:&#10;  #x1B[2m  - waiting for locator('article').getByRole('heading', { name: 'Get started — connect your data sources' }) to be visible#x1B[22m&#10;  &#10;assert False">case = 'dismiss_after_override'
+observations = {'auto_all': {'ok': True}, 'auto_core': {'ok': True}, 'dismiss': {'ok': True}, 'dismiss_after_override': {'error': "lo....getByRole('heading', { name: 'Get started — connect your data sources' }) to be visible\x1b[22m\n", 'ok': False}, ...}
+
+    @pytest.mark.parametrize('case',CASES)
+    def test_onboarding(case, observations):
+&gt;       assert observations[case]['ok'], observations[case].get('error')
+E       AssertionError: locator.waitFor: Timeout 3000ms exceeded.
+E         Call log:
+E         #x1B[2m  - waiting for locator('article').getByRole('heading', { name: 'Get started — connect your data sources' }) to be visible#x1B[22m
+E         
+E       assert False
+
+tests/test_onboarding_expand_acceptance.py:205: AssertionError</failure></testcase><testcase classname="tests.test_onboarding_expand_acceptance" name="test_onboarding[storage_failure_dismiss]" time="0.000" /><testcase classname="tests.test_onboarding_expand_acceptance" name="test_onboarding[storage_failure]" time="0.000"><failure message="AssertionError: locator.waitFor: Timeout 3000ms exceeded.&#10;  Call log:&#10;  #x1B[2m  - waiting for locator('article').getByRole('heading', { name: 'Get started — connect your data sources' }) to be visible#x1B[22m&#10;  &#10;assert False">case = 'storage_failure'
+observations = {'auto_all': {'ok': True}, 'auto_core': {'ok': True}, 'dismiss': {'ok': True}, 'dismiss_after_override': {'error': "lo....getByRole('heading', { name: 'Get started — connect your data sources' }) to be visible\x1b[22m\n", 'ok': False}, ...}
+
+    @pytest.mark.parametrize('case',CASES)
+    def test_onboarding(case, observations):
+&gt;       assert observations[case]['ok'], observations[case].get('error')
+E       AssertionError: locator.waitFor: Timeout 3000ms exceeded.
+E         Call log:
+E         #x1B[2m  - waiting for locator('article').getByRole('heading', { name: 'Get started — connect your data sources' }) to be visible#x1B[22m
+E         
+E       assert False
+
+tests/test_onboarding_expand_acceptance.py:205: AssertionError</failure></testcase></testsuite></testsuites>

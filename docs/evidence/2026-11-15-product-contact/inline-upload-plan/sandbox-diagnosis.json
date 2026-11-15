@@ -1,0 +1,9 @@
+{
+  "stopped_owned_test_pid": 52125,
+  "signal": "SIGTERM via pidfd",
+  "reason": "minimal in-process FastAPI TestClient hangs under same tool sandbox; exact outside-sandbox probe returns200",
+  "sandbox_probe": "bounded8seconds, faulthandler5seconds; request waits in anyio portal/TestClient",
+  "host_probe": "exit0 HTTP200 body ok=true",
+  "test_source_or_timeout_modified": false,
+  "stopped_test_is_not_a_pass": true
+}

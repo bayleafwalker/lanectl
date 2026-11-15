@@ -254,3 +254,102 @@ files match that release, and the installed readback returned observed with
 zero ready items. A synthetic invalid runner was refused with HTTP 401; see
 [installed evidence](../evidence/2026-11-14-product-contact/owner-catalog-compatibility/rollout.json). No claim, grant, profile, deployment
 or event-authority change was made.
+
+
+### 14November source composition and independent product packet
+
+VuoroPR325 landed the optional lanectl0.2.12/Python3.13composition after13CIchecks,
+native independent review,3869source tests and11bounded exact-image probes.
+[Adoption proof](../evidence/2026-11-14-product-contact/released-wheel-and-hosted-prerequisites/vuoro-source-adoption.json)
+records canonical ancestry and identical checked tree. Vuoro2903 is accepted;
+production hosting, persistence and JSONL authority remain unchanged.
+
+Independent HLA2904 addresses completed-core onboarding Expand; automatic
+collapse already exists on canonicalb2. The original1597unitcriterion remains.
+Its [frozen preparation packet](../evidence/2026-11-14-product-contact/onboarding-expand-preparation/README.md)
+passed independent gate review and actual base proof11controls/5semantic failures,
+no skips/errors. Native adversarial review and all candidate/product delivery
+proof remain pending; this adds no completed product item or boundary retry.
+
+
+### 14November base evidence and ordinary onboarding implementation
+
+Actual fresh-clone qualification exposed16setuperrors that the old base classifier
+accepted as expected. Lanectl2905 fixed setup AssertionError phase handling,
+released and installed0.2.13 after1127tests and independent native review;62runtime
+files and all3public assets were byte-verified. [Proof](../evidence/2026-11-14-product-contact/base-lint-setup-phase/README.md)
+retains real red/publication controls and conservative classification limits.
+
+The separately repaired onboarding acceptance received renewed nativeGoProaccept.
+Ordinary base and publication runs each show11controlsPASS/5semanticExpandFAIL,
+no errors or skips. HLA2904 releaseR1 was guarded-published and its first native
+Pro attempt completed, as qualified below. [Packet](../evidence/2026-11-14-product-contact/onboarding-portability-r2/README.md).
+PolicyPR7 remains a prepared standing model-error proposal; canonicalauthorityv1
+and empty autonomous classes are unchanged. This adds no evidence-clock exit.
+
+### 15 November planner acceptance lint correction
+
+Onboarding a1 completed natively at source `a5da26b`; normal diff, base-negative
+and frozen browser gates passed, but Ruff rejected 71 style errors in the
+planner-owned frozen acceptance. The attempt remains rejected and R1 is now
+parked so the enabled tick cannot dispatch the unchanged broken packet. Source,
+native completion, original release and rejection history are
+[preserved](../evidence/2026-11-15-product-contact/onboarding-planner-lint-r2/README.md).
+
+The planner correction passes target Ruff, preserves all non-import AST and
+normalized import aliases, and reproduces exactly 11 passing base controls and
+five semantic Expand failures with no errors/skips. At 609 added-plus-deleted
+planner lines it exceeds the integrator allowance and requires a genuine R2
+with new byte-bound independent review and guarded publication. Native review
+accepted the corrected bytes, but the live admission preflight refused: the tick
+had already admitted Flash a2 overnight. A2 timed out at2700s and was rejected;
+both total attempts are consumed. Root had relied on the stale handoff's count
+when preparing R2 and has corrected that error in Git and served work state.
+No R2 was published and no new worker launched. Canonical R1 is unchanged and
+parked; the prepared scratch specification is explicitly invalidated. A new
+revision must not be used to obtain a third attempt. No attempt promotion or
+policy activation occurred.
+
+An independent diagnostic audit of preserved a1 passed the seven helper contract
+tests, four helper faults, actual worker wrapper and its four semantic faults
+and Node-execution negative control. That does not qualify a new candidate.
+Full Make/55 visuals, real-page behavior, native specialist review, train/dev,
+PR/CI and canonical adoption remain required before product acceptance.
+
+The original intended backlog was then read from the served store. HLA1592's
+four-kind horizon still needs explicit contracts for approval deadlines and
+reader-safe due exports; dates cannot be invented from creation time or expected
+source arrival. The independent existing HLA1587 source-row upload item is now
+active under reservation505. [Discovery and planning evidence](../evidence/2026-11-15-product-contact/inline-upload-plan/README.md)
+retains its actual six-test backend baseline and the first native Opus plan.
+The first draft needed correction because configured ingestion already accepts
+XLSX and JSON even when detection supplies no matching candidate. Native follow-up
+completed successfully; the owner disposition also corrects unsafe upstream
+messages and unsupported inference from latest-run snapshots. A private
+production-Next/real-API bootstrap exercised existing supported-format and role
+controls; its [partial readiness archive](../evidence/2026-11-15-product-contact/inline-upload-bootstrap/README.md)
+preserves all measured limits. Consolidated independent acceptance is still being
+qualified on the unchanged base before any implementation release. No additional
+onboarding attempt was authorized. A fresh live-ledger check found zero existing
+records for the proposed source-upload release; this is preparation, not admission.
+
+Both attempted served `sprintctl render` commands were refused as operation
+unavailable. No local database fallback was used; served work remains
+authoritative and the measured changes are retained in Git. This is a snapshot
+tooling gap, not product completion or a reason to widen authority.
+
+
+## Progress (2026-11-15)
+
+Installed lanectl 0.2.14 closes served #2906 with accepted decision 485 and reservation 506 released. Trusted review input has an independent 256 KiB bound before dispatch; model output stays 64 KiB and intent 16 KiB. All 1,140 tests and independent native source review passed. Two clean exact-tag offline wheels, 62 runtime files, public asset readbacks and installed bytes match. An actual official native review of a 114,114-byte proposal completed with revise for a real acceptance gap. That qualifies input handling. [Closeout](../evidence/2026-11-15-product-contact/proposal-input-bound/CLOSEOUT.json).
+
+Original HLA #1587 inline stale-row upload is independently specified over canonical API b2d0fe3. The first-party Terra R5 acceptance has 92 named cases: 35 controls pass and 57 fail for missing inline routes, row controls or availability explanations, with no errors or skips. Native and genuinely native-unavailable Docker runs, official base qualification and guarded publication recheck match case for case. Independent static and full native GoPro reviews accepted the frozen bytes. [Preparation evidence](../evidence/2026-11-15-product-contact/inline-upload-acceptance-r5/README.md).
+
+Release `hla-source-row-upload` R1 was guarded-published and pushed at `03d9614`, then its first native Go Flash implementation was claimed at 11:26 UTC. At the 11:39 UTC ledger reading, a1 remained active with one actual claim and no finished result. The timer was restored and enabled. This is a timestamped observation: read the live ledger before deciding any retry or revision. Maximum two actual implementation attempts and M700 remain unchanged; planner repairs did not consume or renew that budget. Candidate green, all delivery gates, train/dev health, CI and canonical feature adoption remain unobserved.
+
+Onboarding #2904 R1 exhausted both Pro and Flash attempts; corrected planning did not authorize another publication or attempt. Attention-boundary R2 remains exhausted. Model-error repair permission is only [draft PR #7](https://github.com/bayleafwalker/lanectl/pull/7), with canonical authority still revision 1, spec-gap/gate-gap classes, cumulative 30 lines and no autonomous classes. No source or preparation establishes an autonomous week, hosted claim-to-outcome, restricted local-pool landing or unchanged self-filed release exit.
+
+
+The first inline-upload model later timed out after 2,700.2 seconds. Its 685-line source passed all five recorded gates, but independent immutable-source review found stale row cells, lost receipt qualifications, wrong-preview relabeling, catalog reads that fail open and superficial helper tests. It remains rejected. The integrator recorded these original-outcome findings before the remaining normal R1 retry. The second claim started at 12:26 UTC on Go Pro with that bounded feedback, without changing the specification, M700, two-attempt cap or policy. [First-result evidence](../evidence/2026-11-15-product-contact/inline-upload-a1-rejected/REVIEW.md).
+
+An independent local-route prerequisite is now observed: OpenCode 2.2.6 and installed lanectl 0.2.14 completed a real `local/worker-fast` file read/write probe in 27.94 seconds. Four observed relay requests went to the explicit loopback model and returned 200. A held inference lock refused native dispatch with exit 3 and no model request, and the owned lock released. This is operational wiring evidence, not private-product quality, GPU attestation, a routing promotion or the restricted-release landing exit. [Local readiness](../evidence/2026-11-15-local-route-readiness/README.md).

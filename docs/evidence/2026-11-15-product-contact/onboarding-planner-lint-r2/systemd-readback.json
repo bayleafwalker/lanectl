@@ -1,0 +1,24 @@
+{
+  "measured_at": "2026-11-15T07:40:37.923035+00:00",
+  "actions": "read-only; no reset, disable or service restart",
+  "system_failed": {
+    "returncode": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  "user_failed": {
+    "returncode": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  "tick": {
+    "returncode": 0,
+    "stdout": "ActiveState=active\nUnitFileState=enabled\n",
+    "stderr": ""
+  },
+  "review": {
+    "returncode": 0,
+    "stdout": "ActiveState=inactive\nSubState=dead\nMainPID=0\n",
+    "stderr": ""
+  }
+}

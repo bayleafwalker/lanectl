@@ -1,0 +1,187 @@
+const work = process.env.WORK_DIR;
+const { chromium } = require(work + "/frontend/node_modules/playwright");
+const assert = require("node:assert/strict");
+const base = process.env.WEB_BASE;
+const mode = process.env.CASE_ID;
+const aid = "bank_partner_transactions";
+const bid = "bank_partner_savings";
+const aName = "Bank Partner Transactions";
+const bName = "Bank Partner Savings";
+const result = {case: mode, steps: []};
+function step(name, data) { result.steps.push({name, data}); console.log("STEP", name, JSON.stringify(data)); }
+async function login(browser, role, options = {}) {
+const context = await browser.newContext(options);
+const page = await context.newPage();
+await page.goto(base + "/login");
+await page.fill("#username", "acceptance-" + role);
+await page.fill("#password", "local-test-password-123");
+await Promise.all([page.waitForURL(url => !url.pathname.startsWith("/login")), page.click("button[type=submit]")]);
+return {context, page};
+}
+async function row(page, name) {
+const row = page.getByRole("row").filter({hasText: name});
+assert.equal(await row.count(), 1, "expected exactly one named source row: " + name);
+return row;
+}
+async function href(row) {
+const link = row.locator('a[href^="/runs/"]');
+assert.equal(await link.count(), 1, "expected exactly one run link in row");
+return await link.getAttribute("href");
+}
+async function prepare(page, name, filename) {
+const r = await row(page, name);
+const preflight = page.waitForResponse(response => response.url().includes("/dry-run") && response.request().method() === "POST");
+await r.locator('input[type="file"]').setInputFiles(work + "/" + filename);
+await preflight;
+return r;
+}
+(async () => {
+const browser = await chromium.launch({headless: true, args: ["--no-sandbox"]});
+try {
+if (mode === "positive") {
+const admin = await login(browser, "admin");
+await admin.page.goto(base + "/sources");
+const ar = await row(admin.page, aName);
+const br = await row(admin.page, bName);
+const ah = await href(ar);
+const bh = await href(br);
+step("row-hrefs", {a: ah, b: bh, expectedA: process.env.RUN_A, expectedB: process.env.RUN_B});
+assert.equal(ah, "/runs/" + process.env.RUN_A);
+assert.equal(bh, "/runs/" + process.env.RUN_B);
+await admin.page.goto(base + "/upload");
+const form = admin.page.locator('form[action="/upload/configured-csv"]');
+await form.locator('select[name="source_asset_id"]').selectOption(aid);
+await form.locator('input[name="file"]').setInputFiles(work + "/normal.csv");
+const [response] = await Promise.all([admin.page.waitForResponse(r => r.url().includes("/upload/configured-csv") && r.request().method() === "POST"), form.getByRole("button", {name: "Upload file"}).click()]);
+step("ordinary-upload", {status: response.status(), location: response.headers().location});
+assert.equal(response.status(), 303);
+await admin.page.waitForURL(/\/ingest-summary\//);
+await admin.context.close();
+const reader = await login(browser, "reader");
+await reader.page.goto(base + "/sources");
+await reader.page.waitForURL(url => url.pathname === "/");
+step("reader-url", reader.page.url());
+assert.equal(new URL(reader.page.url()).pathname, "/");
+await reader.context.close();
+const operator = await login(browser, "operator");
+await operator.page.goto(base + "/sources");
+const text = await operator.page.locator("body").innerText();
+step("operator", text);
+assert.match(text, /couldn't load|something went wrong/i);
+await operator.context.close();
+} else if (mode === "RP-nojs") {
+const {context, page} = await login(browser, "admin", {javaScriptEnabled: false});
+await page.goto(base + "/sources");
+assert.equal(new URL(page.url()).pathname, "/sources");
+const rawRows = page.locator("tr").filter({hasText: aName});
+const rawCount = await rawRows.count();
+step("no-js-dom", {rawCount, html: await page.content()});
+assert.equal(rawCount, 1, "seeded row absent from raw no-JS DOM; inline behavior unobservable");
+const posts = [];
+const harmless = [];
+await page.route("**/*", async route => {
+if (route.request().method() !== "POST") { await route.continue(); return; }
+const path = new URL(route.request().url()).pathname;
+const changes = /^(\/sources\/|\/ingest\/|\/upload\/)/.test(path) && !path.endsWith("/dry-run");
+(changes ? posts : harmless).push(path);
+await route.abort();
+});
+let attempted = 0;
+for (const form of await rawRows.locator("form").all()) {
+for (const file of await form.locator('input[type="file"]').all()) {
+if (await file.isEnabled()) await file.setInputFiles(work + "/inline.csv");
+}
+for (const field of await form.locator('input[required]:not([type="file"]):not([type="hidden"])').all()) {
+if (await field.isVisible() && await field.isEnabled() && !(await field.inputValue())) await field.fill("synthetic");
+}
+for (const submit of await form.locator('button:not([type]),button[type="submit"],input[type="submit"]').all()) {
+if (await submit.isVisible() && await submit.isEnabled()) { attempted++; await submit.click({timeout: 3000}); }
+}
+}
+await page.waitForTimeout(250);
+step("no-js", {rowVisible: await rawRows.isVisible(), attempted, posts, harmless});
+assert.deepEqual(posts, [], "native row control attempted mutation without JS preflight");
+await context.close();
+} else {
+const {context, page} = await login(browser, "admin");
+await page.goto(base + "/sources");
+await page.evaluate(() => {window.__hla1587_marker = "same-page";});
+const ar = await row(page, aName);
+const br = await row(page, bName);
+const beforeA = await href(ar);
+const beforeB = await href(br);
+const named = ar.getByRole("button", {name: "Upload to " + aName});
+assert.equal(await named.count(), 1, "missing inline upload control on named row");
+const requests = [];
+page.on("request", request => {
+if (request.method() === "POST" && request.url().includes("/sources/")) requests.push(request.url());
+});
+if (mode === "RP7") {
+const disabled = await row(page, "Bank Partner Disabled");
+assert.equal(await disabled.locator('input[type="file"]').count(), 0);
+assert.equal(await disabled.getByRole("button", {name: /upload/i}).count(), 0);
+} else if (mode === "RP10") {
+await prepare(page, aName, "aria.csv");
+const live = ar.locator('[aria-live]');
+assert.ok(await live.count());
+await named.click();
+await live.getByText(/landed|uploaded/i).waitFor({timeout: 10000});
+assert.equal(requests.filter(url => url.endsWith("/upload")).length, 1);
+} else {
+let filename = mode === "RP2-xlsx" ? "unique.xlsx" : mode === "RP2-json" ? "unique.json" : mode === "RP3" ? "invalid.csv" : "inline.csv";
+if (mode === "RP4") filename = "duplicate.csv";
+if (mode === "RP5") {
+let delayed = false;
+const dryResponses = [];
+page.on("response", response => {
+if (response.url().includes("/sources/") && response.url().endsWith("/dry-run")) dryResponses.push(response.request().postData() || "");
+});
+await page.route("**/sources/**/dry-run", async route => {
+if (!delayed) { delayed = true; await new Promise(resolve => setTimeout(resolve, 1200)); }
+await route.continue();
+});
+await ar.locator('input[type="file"]').setInputFiles(work + "/invalid.csv");
+await ar.locator('input[type="file"]').setInputFiles(work + "/inline.csv");
+await page.waitForTimeout(1600);
+assert.equal(dryResponses.length, 2, "both real preflights must finish");
+assert.match(dryResponses[0], /inline.csv/);
+assert.match(dryResponses[1], /invalid.csv/);
+assert.ok(await named.isEnabled(), "older nonready preview replaced the latest ready file");
+} else {
+await prepare(page, mode === "RP4" ? bName : aName, filename);
+}
+if (mode === "RP3") {
+assert.ok(await named.isDisabled());
+assert.match(await ar.innerText(), /issue|required|invalid/i);
+assert.equal(requests.filter(url => url.endsWith("/upload")).length, 0);
+} else {
+const target = mode === "RP4" ? br : ar;
+const button = target.getByRole("button", {name: "Upload to " + (mode === "RP4" ? bName : aName)});
+await button.waitFor({state: "visible"});
+if (mode === "RP6") {
+await page.route("**/sources/**/upload", async route => {await new Promise(resolve => setTimeout(resolve, 800)); await route.continue();});
+await button.dblclick();
+} else {
+await button.click();
+}
+await page.waitForTimeout(2000);
+assert.equal(requests.filter(url => url.endsWith("/upload")).length, 1);
+assert.equal(new URL(page.url()).pathname, "/sources");
+assert.equal(await page.evaluate(() => window.__hla1587_marker), "same-page");
+const text = await target.innerText();
+if (mode === "RP4") assert.match(text, /duplicate|already/i);
+else {
+assert.match(text, /landed|uploaded/i);
+assert.notEqual(await href(ar), beforeA);
+assert.equal(await href(br), beforeB);
+}
+}
+}
+step("feature-observation", {mode, requests, beforeA, beforeB, url: page.url()});
+await context.close();
+}
+} finally {
+await browser.close();
+console.log("RESULT", JSON.stringify(result));
+}
+})().catch(error => {console.error(error.stack || String(error)); process.exit(1);});

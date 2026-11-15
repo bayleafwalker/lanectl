@@ -1,0 +1,9 @@
+{
+  "base_only_fetched": "45c46d88941c21cce252f64393379be9324db971",
+  "restored": "3b3f9294a63078c62b3667863b7ac8291a6c387e",
+  "runtime_and_tests_equal_canonical": true,
+  "no_alternates": true,
+  "fsck_strict_exit": 0,
+  "bundle_verify": "The bundle contains this ref:\n3b3f9294a63078c62b3667863b7ac8291a6c387e refs/heads/codex/spec-review-input-bound-20261115\nThe bundle requires this ref:\n45c46d88941c21cce252f64393379be9324db971 \nThe bundle uses this hash algorithm: sha1\n/projects/dev/lanectl/docs/evidence/2026-11-15-product-contact/proposal-input-bound/reviewed-source.bundle is okay\n",
+  "isolated_directory_removed": true
+}

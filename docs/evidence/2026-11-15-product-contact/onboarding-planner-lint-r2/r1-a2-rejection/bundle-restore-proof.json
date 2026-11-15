@@ -1,0 +1,11 @@
+{
+  "bundle_sha256": "b144f916612249b02aedaef97babb3d0c5be0406a84d1ba95c38b2f5485aa324",
+  "restored_heads": {
+    "hla-onboarding-expand-a1": "a5da26bb45c061b5af292d6dfb919867ae40b8f7",
+    "hla-onboarding-expand-a2": "c6936969f3191f57609839526441cd521539d7c7"
+  },
+  "fsck_exit": 0,
+  "base_prerequisite": "b2d0fe393ac0971e906cce275e91f45e94422593",
+  "no_alternates": true,
+  "owned_restore_removed": true
+}

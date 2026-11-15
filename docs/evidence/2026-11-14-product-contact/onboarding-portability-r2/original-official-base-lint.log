@@ -1,0 +1,468 @@
+EEEEEEEEEEEEEEEE                                                         [100%]
+==================================== ERRORS ====================================
+__________________ ERROR at setup of test_onboarding[initial] __________________
+
+    @pytest.fixture(scope='module')
+    def observations():
+        OUT.mkdir(parents=True,exist_ok=True)
+        before=snapshot();result=None;errors=[]
+        try:
+            result=_observations()
+        except BaseException as exc:
+            errors.append(f'primary: {type(exc).__name__}: {exc}')
+        finally:
+            try:
+                after=snapshot()
+                if after!=before: errors.append('tracked source changed')
+                (OUT/'outer-invariance.txt').write_text('tracked source unchanged\n' if after==before else 'tracked source CHANGED\n')
+            except BaseException as exc: errors.append(f'outer invariance: {exc}')
+            (OUT/'aggregate-errors.txt').write_text('\n'.join(errors)+'\n' if errors else 'none\n')
+>       if errors: raise AssertionError('; '.join(errors))
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: primary: AssertionError: Node20/locked modules unavailable
+E       assert (True and False)
+E        +  where True = is_file()
+E        +    where is_file = PosixPath('/projects/dev/homelab-analytics/.tooling/node-v20.20.1-linux-x64/bin/node').is_file
+E        +      where PosixPath('/projects/dev/homelab-analytics/.tooling/node-v20.20.1-linux-x64/bin/node') = Path('/projects/dev/homelab-analytics/.tooling/node-v20.20.1-linux-x64/bin/node')
+E        +  and   False = is_file()
+E        +    where is_file = (PosixPath('/tmp/lanectl-base-gj9vn8__/wt/apps/web/frontend/node_modules') / 'next/package.json').is_file
+
+tests/test_onboarding_expand_acceptance.py:200: AssertionError
+__________________ ERROR at setup of test_onboarding[partial] __________________
+
+    @pytest.fixture(scope='module')
+    def observations():
+        OUT.mkdir(parents=True,exist_ok=True)
+        before=snapshot();result=None;errors=[]
+        try:
+            result=_observations()
+        except BaseException as exc:
+            errors.append(f'primary: {type(exc).__name__}: {exc}')
+        finally:
+            try:
+                after=snapshot()
+                if after!=before: errors.append('tracked source changed')
+                (OUT/'outer-invariance.txt').write_text('tracked source unchanged\n' if after==before else 'tracked source CHANGED\n')
+            except BaseException as exc: errors.append(f'outer invariance: {exc}')
+            (OUT/'aggregate-errors.txt').write_text('\n'.join(errors)+'\n' if errors else 'none\n')
+>       if errors: raise AssertionError('; '.join(errors))
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: primary: AssertionError: Node20/locked modules unavailable
+E       assert (True and False)
+E        +  where True = is_file()
+E        +    where is_file = PosixPath('/projects/dev/homelab-analytics/.tooling/node-v20.20.1-linux-x64/bin/node').is_file
+E        +      where PosixPath('/projects/dev/homelab-analytics/.tooling/node-v20.20.1-linux-x64/bin/node') = Path('/projects/dev/homelab-analytics/.tooling/node-v20.20.1-linux-x64/bin/node')
+E        +  and   False = is_file()
+E        +    where is_file = (PosixPath('/tmp/lanectl-base-gj9vn8__/wt/apps/web/frontend/node_modules') / 'next/package.json').is_file
+
+tests/test_onboarding_expand_acceptance.py:200: AssertionError
+_________________ ERROR at setup of test_onboarding[optional] __________________
+
+    @pytest.fixture(scope='module')
+    def observations():
+        OUT.mkdir(parents=True,exist_ok=True)
+        before=snapshot();result=None;errors=[]
+        try:
+            result=_observations()
+        except BaseException as exc:
+            errors.append(f'primary: {type(exc).__name__}: {exc}')
+        finally:
+            try:
+                after=snapshot()
+                if after!=before: errors.append('tracked source changed')
+                (OUT/'outer-invariance.txt').write_text('tracked source unchanged\n' if after==before else 'tracked source CHANGED\n')
+            except BaseException as exc: errors.append(f'outer invariance: {exc}')
+            (OUT/'aggregate-errors.txt').write_text('\n'.join(errors)+'\n' if errors else 'none\n')
+>       if errors: raise AssertionError('; '.join(errors))
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: primary: AssertionError: Node20/locked modules unavailable
+E       assert (True and False)
+E        +  where True = is_file()
+E        +    where is_file = PosixPath('/projects/dev/homelab-analytics/.tooling/node-v20.20.1-linux-x64/bin/node').is_file
+E        +      where PosixPath('/projects/dev/homelab-analytics/.tooling/node-v20.20.1-linux-x64/bin/node') = Path('/projects/dev/homelab-analytics/.tooling/node-v20.20.1-linux-x64/bin/node')
+E        +  and   False = is_file()
+E        +    where is_file = (PosixPath('/tmp/lanectl-base-gj9vn8__/wt/apps/web/frontend/node_modules') / 'next/package.json').is_file
+
+tests/test_onboarding_expand_acceptance.py:200: AssertionError
+_________________ ERROR at setup of test_onboarding[auto_core] _________________
+
+    @pytest.fixture(scope='module')
+    def observations():
+        OUT.mkdir(parents=True,exist_ok=True)
+        before=snapshot();result=None;errors=[]
+        try:
+            result=_observations()
+        except BaseException as exc:
+            errors.append(f'primary: {type(exc).__name__}: {exc}')
+        finally:
+            try:
+                after=snapshot()
+                if after!=before: errors.append('tracked source changed')
+                (OUT/'outer-invariance.txt').write_text('tracked source unchanged\n' if after==before else 'tracked source CHANGED\n')
+            except BaseException as exc: errors.append(f'outer invariance: {exc}')
+            (OUT/'aggregate-errors.txt').write_text('\n'.join(errors)+'\n' if errors else 'none\n')
+>       if errors: raise AssertionError('; '.join(errors))
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: primary: AssertionError: Node20/locked modules unavailable
+E       assert (True and False)
+E        +  where True = is_file()
+E        +    where is_file = PosixPath('/projects/dev/homelab-analytics/.tooling/node-v20.20.1-linux-x64/bin/node').is_file
+E        +      where PosixPath('/projects/dev/homelab-analytics/.tooling/node-v20.20.1-linux-x64/bin/node') = Path('/projects/dev/homelab-analytics/.tooling/node-v20.20.1-linux-x64/bin/node')
+E        +  and   False = is_file()
+E        +    where is_file = (PosixPath('/tmp/lanectl-base-gj9vn8__/wt/apps/web/frontend/node_modules') / 'next/package.json').is_file
+
+tests/test_onboarding_expand_acceptance.py:200: AssertionError
+_________________ ERROR at setup of test_onboarding[auto_all] __________________
+
+    @pytest.fixture(scope='module')
+    def observations():
+        OUT.mkdir(parents=True,exist_ok=True)
+        before=snapshot();result=None;errors=[]
+        try:
+            result=_observations()
+        except BaseException as exc:
+            errors.append(f'primary: {type(exc).__name__}: {exc}')
+        finally:
+            try:
+                after=snapshot()
+                if after!=before: errors.append('tracked source changed')
+                (OUT/'outer-invariance.txt').write_text('tracked source unchanged\n' if after==before else 'tracked source CHANGED\n')
+            except BaseException as exc: errors.append(f'outer invariance: {exc}')
+            (OUT/'aggregate-errors.txt').write_text('\n'.join(errors)+'\n' if errors else 'none\n')
+>       if errors: raise AssertionError('; '.join(errors))
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: primary: AssertionError: Node20/locked modules unavailable
+E       assert (True and False)
+E        +  where True = is_file()
+E        +    where is_file = PosixPath('/projects/dev/homelab-analytics/.tooling/node-v20.20.1-linux-x64/bin/node').is_file
+E        +      where PosixPath('/projects/dev/homelab-analytics/.tooling/node-v20.20.1-linux-x64/bin/node') = Path('/projects/dev/homelab-analytics/.tooling/node-v20.20.1-linux-x64/bin/node')
+E        +  and   False = is_file()
+E        +    where is_file = (PosixPath('/tmp/lanectl-base-gj9vn8__/wt/apps/web/frontend/node_modules') / 'next/package.json').is_file
+
+tests/test_onboarding_expand_acceptance.py:200: AssertionError
+_____________ ERROR at setup of test_onboarding[manual_incomplete] _____________
+
+    @pytest.fixture(scope='module')
+    def observations():
+        OUT.mkdir(parents=True,exist_ok=True)
+        before=snapshot();result=None;errors=[]
+        try:
+            result=_observations()
+        except BaseException as exc:
+            errors.append(f'primary: {type(exc).__name__}: {exc}')
+        finally:
+            try:
+                after=snapshot()
+                if after!=before: errors.append('tracked source changed')
+                (OUT/'outer-invariance.txt').write_text('tracked source unchanged\n' if after==before else 'tracked source CHANGED\n')
+            except BaseException as exc: errors.append(f'outer invariance: {exc}')
+            (OUT/'aggregate-errors.txt').write_text('\n'.join(errors)+'\n' if errors else 'none\n')
+>       if errors: raise AssertionError('; '.join(errors))
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: primary: AssertionError: Node20/locked modules unavailable
+E       assert (True and False)
+E        +  where True = is_file()
+E        +    where is_file = PosixPath('/projects/dev/homelab-analytics/.tooling/node-v20.20.1-linux-x64/bin/node').is_file
+E        +      where PosixPath('/projects/dev/homelab-analytics/.tooling/node-v20.20.1-linux-x64/bin/node') = Path('/projects/dev/homelab-analytics/.tooling/node-v20.20.1-linux-x64/bin/node')
+E        +  and   False = is_file()
+E        +    where is_file = (PosixPath('/tmp/lanectl-base-gj9vn8__/wt/apps/web/frontend/node_modules') / 'next/package.json').is_file
+
+tests/test_onboarding_expand_acceptance.py:200: AssertionError
+__________________ ERROR at setup of test_onboarding[dismiss] __________________
+
+    @pytest.fixture(scope='module')
+    def observations():
+        OUT.mkdir(parents=True,exist_ok=True)
+        before=snapshot();result=None;errors=[]
+        try:
+            result=_observations()
+        except BaseException as exc:
+            errors.append(f'primary: {type(exc).__name__}: {exc}')
+        finally:
+            try:
+                after=snapshot()
+                if after!=before: errors.append('tracked source changed')
+                (OUT/'outer-invariance.txt').write_text('tracked source unchanged\n' if after==before else 'tracked source CHANGED\n')
+            except BaseException as exc: errors.append(f'outer invariance: {exc}')
+            (OUT/'aggregate-errors.txt').write_text('\n'.join(errors)+'\n' if errors else 'none\n')
+>       if errors: raise AssertionError('; '.join(errors))
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: primary: AssertionError: Node20/locked modules unavailable
+E       assert (True and False)
+E        +  where True = is_file()
+E        +    where is_file = PosixPath('/projects/dev/homelab-analytics/.tooling/node-v20.20.1-linux-x64/bin/node').is_file
+E        +      where PosixPath('/projects/dev/homelab-analytics/.tooling/node-v20.20.1-linux-x64/bin/node') = Path('/projects/dev/homelab-analytics/.tooling/node-v20.20.1-linux-x64/bin/node')
+E        +  and   False = is_file()
+E        +    where is_file = (PosixPath('/tmp/lanectl-base-gj9vn8__/wt/apps/web/frontend/node_modules') / 'next/package.json').is_file
+
+tests/test_onboarding_expand_acceptance.py:200: AssertionError
+______________ ERROR at setup of test_onboarding[dismiss_compact] ______________
+
+    @pytest.fixture(scope='module')
+    def observations():
+        OUT.mkdir(parents=True,exist_ok=True)
+        before=snapshot();result=None;errors=[]
+        try:
+            result=_observations()
+        except BaseException as exc:
+            errors.append(f'primary: {type(exc).__name__}: {exc}')
+        finally:
+            try:
+                after=snapshot()
+                if after!=before: errors.append('tracked source changed')
+                (OUT/'outer-invariance.txt').write_text('tracked source unchanged\n' if after==before else 'tracked source CHANGED\n')
+            except BaseException as exc: errors.append(f'outer invariance: {exc}')
+            (OUT/'aggregate-errors.txt').write_text('\n'.join(errors)+'\n' if errors else 'none\n')
+>       if errors: raise AssertionError('; '.join(errors))
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: primary: AssertionError: Node20/locked modules unavailable
+E       assert (True and False)
+E        +  where True = is_file()
+E        +    where is_file = PosixPath('/projects/dev/homelab-analytics/.tooling/node-v20.20.1-linux-x64/bin/node').is_file
+E        +      where PosixPath('/projects/dev/homelab-analytics/.tooling/node-v20.20.1-linux-x64/bin/node') = Path('/projects/dev/homelab-analytics/.tooling/node-v20.20.1-linux-x64/bin/node')
+E        +  and   False = is_file()
+E        +    where is_file = (PosixPath('/tmp/lanectl-base-gj9vn8__/wt/apps/web/frontend/node_modules') / 'next/package.json').is_file
+
+tests/test_onboarding_expand_acceptance.py:200: AssertionError
+________ ERROR at setup of test_onboarding[storage_failure_incomplete] _________
+
+    @pytest.fixture(scope='module')
+    def observations():
+        OUT.mkdir(parents=True,exist_ok=True)
+        before=snapshot();result=None;errors=[]
+        try:
+            result=_observations()
+        except BaseException as exc:
+            errors.append(f'primary: {type(exc).__name__}: {exc}')
+        finally:
+            try:
+                after=snapshot()
+                if after!=before: errors.append('tracked source changed')
+                (OUT/'outer-invariance.txt').write_text('tracked source unchanged\n' if after==before else 'tracked source CHANGED\n')
+            except BaseException as exc: errors.append(f'outer invariance: {exc}')
+            (OUT/'aggregate-errors.txt').write_text('\n'.join(errors)+'\n' if errors else 'none\n')
+>       if errors: raise AssertionError('; '.join(errors))
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: primary: AssertionError: Node20/locked modules unavailable
+E       assert (True and False)
+E        +  where True = is_file()
+E        +    where is_file = PosixPath('/projects/dev/homelab-analytics/.tooling/node-v20.20.1-linux-x64/bin/node').is_file
+E        +      where PosixPath('/projects/dev/homelab-analytics/.tooling/node-v20.20.1-linux-x64/bin/node') = Path('/projects/dev/homelab-analytics/.tooling/node-v20.20.1-linux-x64/bin/node')
+E        +  and   False = is_file()
+E        +    where is_file = (PosixPath('/tmp/lanectl-base-gj9vn8__/wt/apps/web/frontend/node_modules') / 'next/package.json').is_file
+
+tests/test_onboarding_expand_acceptance.py:200: AssertionError
+________________ ERROR at setup of test_onboarding[expand_core] ________________
+
+    @pytest.fixture(scope='module')
+    def observations():
+        OUT.mkdir(parents=True,exist_ok=True)
+        before=snapshot();result=None;errors=[]
+        try:
+            result=_observations()
+        except BaseException as exc:
+            errors.append(f'primary: {type(exc).__name__}: {exc}')
+        finally:
+            try:
+                after=snapshot()
+                if after!=before: errors.append('tracked source changed')
+                (OUT/'outer-invariance.txt').write_text('tracked source unchanged\n' if after==before else 'tracked source CHANGED\n')
+            except BaseException as exc: errors.append(f'outer invariance: {exc}')
+            (OUT/'aggregate-errors.txt').write_text('\n'.join(errors)+'\n' if errors else 'none\n')
+>       if errors: raise AssertionError('; '.join(errors))
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: primary: AssertionError: Node20/locked modules unavailable
+E       assert (True and False)
+E        +  where True = is_file()
+E        +    where is_file = PosixPath('/projects/dev/homelab-analytics/.tooling/node-v20.20.1-linux-x64/bin/node').is_file
+E        +      where PosixPath('/projects/dev/homelab-analytics/.tooling/node-v20.20.1-linux-x64/bin/node') = Path('/projects/dev/homelab-analytics/.tooling/node-v20.20.1-linux-x64/bin/node')
+E        +  and   False = is_file()
+E        +    where is_file = (PosixPath('/tmp/lanectl-base-gj9vn8__/wt/apps/web/frontend/node_modules') / 'next/package.json').is_file
+
+tests/test_onboarding_expand_acceptance.py:200: AssertionError
+___________ ERROR at setup of test_onboarding[expand_then_minimise] ____________
+
+    @pytest.fixture(scope='module')
+    def observations():
+        OUT.mkdir(parents=True,exist_ok=True)
+        before=snapshot();result=None;errors=[]
+        try:
+            result=_observations()
+        except BaseException as exc:
+            errors.append(f'primary: {type(exc).__name__}: {exc}')
+        finally:
+            try:
+                after=snapshot()
+                if after!=before: errors.append('tracked source changed')
+                (OUT/'outer-invariance.txt').write_text('tracked source unchanged\n' if after==before else 'tracked source CHANGED\n')
+            except BaseException as exc: errors.append(f'outer invariance: {exc}')
+            (OUT/'aggregate-errors.txt').write_text('\n'.join(errors)+'\n' if errors else 'none\n')
+>       if errors: raise AssertionError('; '.join(errors))
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: primary: AssertionError: Node20/locked modules unavailable
+E       assert (True and False)
+E        +  where True = is_file()
+E        +    where is_file = PosixPath('/projects/dev/homelab-analytics/.tooling/node-v20.20.1-linux-x64/bin/node').is_file
+E        +      where PosixPath('/projects/dev/homelab-analytics/.tooling/node-v20.20.1-linux-x64/bin/node') = Path('/projects/dev/homelab-analytics/.tooling/node-v20.20.1-linux-x64/bin/node')
+E        +  and   False = is_file()
+E        +    where is_file = (PosixPath('/tmp/lanectl-base-gj9vn8__/wt/apps/web/frontend/node_modules') / 'next/package.json').is_file
+
+tests/test_onboarding_expand_acceptance.py:200: AssertionError
+_________ ERROR at setup of test_onboarding[expand_source_transition] __________
+
+    @pytest.fixture(scope='module')
+    def observations():
+        OUT.mkdir(parents=True,exist_ok=True)
+        before=snapshot();result=None;errors=[]
+        try:
+            result=_observations()
+        except BaseException as exc:
+            errors.append(f'primary: {type(exc).__name__}: {exc}')
+        finally:
+            try:
+                after=snapshot()
+                if after!=before: errors.append('tracked source changed')
+                (OUT/'outer-invariance.txt').write_text('tracked source unchanged\n' if after==before else 'tracked source CHANGED\n')
+            except BaseException as exc: errors.append(f'outer invariance: {exc}')
+            (OUT/'aggregate-errors.txt').write_text('\n'.join(errors)+'\n' if errors else 'none\n')
+>       if errors: raise AssertionError('; '.join(errors))
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: primary: AssertionError: Node20/locked modules unavailable
+E       assert (True and False)
+E        +  where True = is_file()
+E        +    where is_file = PosixPath('/projects/dev/homelab-analytics/.tooling/node-v20.20.1-linux-x64/bin/node').is_file
+E        +      where PosixPath('/projects/dev/homelab-analytics/.tooling/node-v20.20.1-linux-x64/bin/node') = Path('/projects/dev/homelab-analytics/.tooling/node-v20.20.1-linux-x64/bin/node')
+E        +  and   False = is_file()
+E        +    where is_file = (PosixPath('/tmp/lanectl-base-gj9vn8__/wt/apps/web/frontend/node_modules') / 'next/package.json').is_file
+
+tests/test_onboarding_expand_acceptance.py:200: AssertionError
+______________ ERROR at setup of test_onboarding[unknown_stored] _______________
+
+    @pytest.fixture(scope='module')
+    def observations():
+        OUT.mkdir(parents=True,exist_ok=True)
+        before=snapshot();result=None;errors=[]
+        try:
+            result=_observations()
+        except BaseException as exc:
+            errors.append(f'primary: {type(exc).__name__}: {exc}')
+        finally:
+            try:
+                after=snapshot()
+                if after!=before: errors.append('tracked source changed')
+                (OUT/'outer-invariance.txt').write_text('tracked source unchanged\n' if after==before else 'tracked source CHANGED\n')
+            except BaseException as exc: errors.append(f'outer invariance: {exc}')
+            (OUT/'aggregate-errors.txt').write_text('\n'.join(errors)+'\n' if errors else 'none\n')
+>       if errors: raise AssertionError('; '.join(errors))
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: primary: AssertionError: Node20/locked modules unavailable
+E       assert (True and False)
+E        +  where True = is_file()
+E        +    where is_file = PosixPath('/projects/dev/homelab-analytics/.tooling/node-v20.20.1-linux-x64/bin/node').is_file
+E        +      where PosixPath('/projects/dev/homelab-analytics/.tooling/node-v20.20.1-linux-x64/bin/node') = Path('/projects/dev/homelab-analytics/.tooling/node-v20.20.1-linux-x64/bin/node')
+E        +  and   False = is_file()
+E        +    where is_file = (PosixPath('/tmp/lanectl-base-gj9vn8__/wt/apps/web/frontend/node_modules') / 'next/package.json').is_file
+
+tests/test_onboarding_expand_acceptance.py:200: AssertionError
+__________ ERROR at setup of test_onboarding[dismiss_after_override] ___________
+
+    @pytest.fixture(scope='module')
+    def observations():
+        OUT.mkdir(parents=True,exist_ok=True)
+        before=snapshot();result=None;errors=[]
+        try:
+            result=_observations()
+        except BaseException as exc:
+            errors.append(f'primary: {type(exc).__name__}: {exc}')
+        finally:
+            try:
+                after=snapshot()
+                if after!=before: errors.append('tracked source changed')
+                (OUT/'outer-invariance.txt').write_text('tracked source unchanged\n' if after==before else 'tracked source CHANGED\n')
+            except BaseException as exc: errors.append(f'outer invariance: {exc}')
+            (OUT/'aggregate-errors.txt').write_text('\n'.join(errors)+'\n' if errors else 'none\n')
+>       if errors: raise AssertionError('; '.join(errors))
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: primary: AssertionError: Node20/locked modules unavailable
+E       assert (True and False)
+E        +  where True = is_file()
+E        +    where is_file = PosixPath('/projects/dev/homelab-analytics/.tooling/node-v20.20.1-linux-x64/bin/node').is_file
+E        +      where PosixPath('/projects/dev/homelab-analytics/.tooling/node-v20.20.1-linux-x64/bin/node') = Path('/projects/dev/homelab-analytics/.tooling/node-v20.20.1-linux-x64/bin/node')
+E        +  and   False = is_file()
+E        +    where is_file = (PosixPath('/tmp/lanectl-base-gj9vn8__/wt/apps/web/frontend/node_modules') / 'next/package.json').is_file
+
+tests/test_onboarding_expand_acceptance.py:200: AssertionError
+__________ ERROR at setup of test_onboarding[storage_failure_dismiss] __________
+
+    @pytest.fixture(scope='module')
+    def observations():
+        OUT.mkdir(parents=True,exist_ok=True)
+        before=snapshot();result=None;errors=[]
+        try:
+            result=_observations()
+        except BaseException as exc:
+            errors.append(f'primary: {type(exc).__name__}: {exc}')
+        finally:
+            try:
+                after=snapshot()
+                if after!=before: errors.append('tracked source changed')
+                (OUT/'outer-invariance.txt').write_text('tracked source unchanged\n' if after==before else 'tracked source CHANGED\n')
+            except BaseException as exc: errors.append(f'outer invariance: {exc}')
+            (OUT/'aggregate-errors.txt').write_text('\n'.join(errors)+'\n' if errors else 'none\n')
+>       if errors: raise AssertionError('; '.join(errors))
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: primary: AssertionError: Node20/locked modules unavailable
+E       assert (True and False)
+E        +  where True = is_file()
+E        +    where is_file = PosixPath('/projects/dev/homelab-analytics/.tooling/node-v20.20.1-linux-x64/bin/node').is_file
+E        +      where PosixPath('/projects/dev/homelab-analytics/.tooling/node-v20.20.1-linux-x64/bin/node') = Path('/projects/dev/homelab-analytics/.tooling/node-v20.20.1-linux-x64/bin/node')
+E        +  and   False = is_file()
+E        +    where is_file = (PosixPath('/tmp/lanectl-base-gj9vn8__/wt/apps/web/frontend/node_modules') / 'next/package.json').is_file
+
+tests/test_onboarding_expand_acceptance.py:200: AssertionError
+______________ ERROR at setup of test_onboarding[storage_failure] ______________
+
+    @pytest.fixture(scope='module')
+    def observations():
+        OUT.mkdir(parents=True,exist_ok=True)
+        before=snapshot();result=None;errors=[]
+        try:
+            result=_observations()
+        except BaseException as exc:
+            errors.append(f'primary: {type(exc).__name__}: {exc}')
+        finally:
+            try:
+                after=snapshot()
+                if after!=before: errors.append('tracked source changed')
+                (OUT/'outer-invariance.txt').write_text('tracked source unchanged\n' if after==before else 'tracked source CHANGED\n')
+            except BaseException as exc: errors.append(f'outer invariance: {exc}')
+            (OUT/'aggregate-errors.txt').write_text('\n'.join(errors)+'\n' if errors else 'none\n')
+>       if errors: raise AssertionError('; '.join(errors))
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: primary: AssertionError: Node20/locked modules unavailable
+E       assert (True and False)
+E        +  where True = is_file()
+E        +    where is_file = PosixPath('/projects/dev/homelab-analytics/.tooling/node-v20.20.1-linux-x64/bin/node').is_file
+E        +      where PosixPath('/projects/dev/homelab-analytics/.tooling/node-v20.20.1-linux-x64/bin/node') = Path('/projects/dev/homelab-analytics/.tooling/node-v20.20.1-linux-x64/bin/node')
+E        +  and   False = is_file()
+E        +    where is_file = (PosixPath('/tmp/lanectl-base-gj9vn8__/wt/apps/web/frontend/node_modules') / 'next/package.json').is_file
+
+tests/test_onboarding_expand_acceptance.py:200: AssertionError
+=========================== short test summary info ============================
+ERROR tests/test_onboarding_expand_acceptance.py::test_onboarding[initial] - ...
+ERROR tests/test_onboarding_expand_acceptance.py::test_onboarding[partial] - ...
+ERROR tests/test_onboarding_expand_acceptance.py::test_onboarding[optional]
+ERROR tests/test_onboarding_expand_acceptance.py::test_onboarding[auto_core]
+ERROR tests/test_onboarding_expand_acceptance.py::test_onboarding[auto_all]
+ERROR tests/test_onboarding_expand_acceptance.py::test_onboarding[manual_incomplete]
+ERROR tests/test_onboarding_expand_acceptance.py::test_onboarding[dismiss] - ...
+ERROR tests/test_onboarding_expand_acceptance.py::test_onboarding[dismiss_compact]
+ERROR tests/test_onboarding_expand_acceptance.py::test_onboarding[storage_failure_incomplete]
+ERROR tests/test_onboarding_expand_acceptance.py::test_onboarding[expand_core]
+ERROR tests/test_onboarding_expand_acceptance.py::test_onboarding[expand_then_minimise]
+ERROR tests/test_onboarding_expand_acceptance.py::test_onboarding[expand_source_transition]
+ERROR tests/test_onboarding_expand_acceptance.py::test_onboarding[unknown_stored]
+ERROR tests/test_onboarding_expand_acceptance.py::test_onboarding[dismiss_after_override]
+ERROR tests/test_onboarding_expand_acceptance.py::test_onboarding[storage_failure_dismiss]
+ERROR tests/test_onboarding_expand_acceptance.py::test_onboarding[storage_failure]
+16 errors in 0.24s
