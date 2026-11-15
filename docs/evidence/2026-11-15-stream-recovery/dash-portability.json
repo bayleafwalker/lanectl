@@ -1,0 +1,46 @@
+{
+  "actual_dash_proof_seam": "Local proof wrapper changed only the generated fake executable shebang from /bin/sh to the measured dash binary. Adapter implementations and existing test functions/assertions were unchanged. The same12tests ran before and after fixture repair.",
+  "case": "JSON fake provider stdout with literal escaped newlines",
+  "expected_utf8_hex": "7b22726573756c74223a2022626c6f636b65645c6e44495350415443485f4f5554434f4d453a20455343414c415445445c6e455343414c4154494f4e5f524541534f4e3a2073636f706520746f6f20736d616c6c227d0a",
+  "logs_sha256": {
+    "lanectl-2910-dash-targeted-green.log": "1a1e85790799597a6a17b27beae7eeba624a17af21ae1a25004053fadf3bed3d",
+    "lanectl-2910-dash-targeted-red.log": "f39162d2d5e1d4ce8a385f24f42bca5ef401bbdd8e3064f79b9b8853bc15034a",
+    "lanectl-2910-host-shell-targeted.log": "959a04e104b63fe407fd2f094f6a81ef7c20d45807a74d56da6673598ef5f660"
+  },
+  "original_local_proof_sha256": "3713e2468d829db610fba62d1652bafe36f27b644e01d23977b3e00e72419de3",
+  "portable_printf": {
+    "bash": {
+      "stdout_equals_literal_json": true,
+      "stdout_hex": "7b22726573756c74223a2022626c6f636b65645c6e44495350415443485f4f5554434f4d453a20455343414c415445445c6e455343414c4154494f4e5f524541534f4e3a2073636f706520746f6f20736d616c6c227d0a",
+      "valid_json": true
+    },
+    "dash": {
+      "stdout_equals_literal_json": true,
+      "stdout_hex": "7b22726573756c74223a2022626c6f636b65645c6e44495350415443485f4f5554434f4d453a20455343414c415445445c6e455343414c4154494f4e5f524541534f4e3a2073636f706520746f6f20736d616c6c227d0a",
+      "valid_json": true
+    }
+  },
+  "proof_seam_sha256": "f965999a7fcf6bbc8905860db7ff8b85ec1d86d4d5e845cb8288809f0d7ef96a",
+  "repair_commit": "32a4a503d7ec74ad885f37005581d128fffb0ea6",
+  "scope": "Only fake provider JSON echo replaced by portable printf in two existing stage1 test files; every assertion retained; total full population unchanged1217.",
+  "shells": {
+    "bash": {
+      "binary_sha256": "a57cf8f229cfddf8e5517696fc7f3fd8aaeff38daf552dee0e910277d06a8cd9",
+      "stdout_equals_literal_json": true,
+      "stdout_hex": "7b22726573756c74223a2022626c6f636b65645c6e44495350415443485f4f5554434f4d453a20455343414c415445445c6e455343414c4154494f4e5f524541534f4e3a2073636f706520746f6f20736d616c6c227d0a",
+      "valid_json": true
+    },
+    "dash": {
+      "binary_sha256": "fd6ba322510afa91aa846d4940dfbeb5f6f810fb38c814db663120bf4b863743",
+      "stdout_equals_literal_json": false,
+      "stdout_hex": "7b22726573756c74223a2022626c6f636b65640a44495350415443485f4f5554434f4d453a20455343414c415445440a455343414c4154494f4e5f524541534f4e3a2073636f706520746f6f20736d616c6c227d0a",
+      "valid_json": false
+    }
+  },
+  "source_commit": "0155dc0498077e7ab2301a5137acdfe7d7f59637",
+  "test_proof": {
+    "post_repair_actual_dash": "12passed; every original assertion retained",
+    "post_repair_host_bin_sh": "12passed",
+    "pre_repair_actual_dash": "2failed10passed; same two assertions as Ubuntu"
+  }
+}

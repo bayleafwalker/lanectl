@@ -1,0 +1,34 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+__________ test_closed_candidate_must_still_be_wal_before_publication __________
+
+owner = [owned SQLite fixture; local path/object address omitted]
+tmp_path = [owned temporary directory omitted]
+monkeypatch = [local pytest fixture object address omitted]
+
+    def test_closed_candidate_must_still_be_wal_before_publication(
+        owner, tmp_path, monkeypatch
+    ):
+        source, store = owner
+        store.append("ws", "repo", "control", "p", "batch-0001", 0, [event()])
+        artifact, destination = tmp_path / "snapshot.lane", tmp_path / "restored.sqlite"
+        recovery.backup(source, artifact)
+        original_artifact, original_source = artifact.read_bytes(), rows(source)
+        prepare = recovery._prepare_wal
+        measured_headers = []
+
+        def rewrite_mode(path):
+            prepare(path)
+            with closing(sqlite3.connect(path)) as db:
+                assert db.execute("PRAGMA journal_mode=DELETE").fetchone() == ("delete",)
+            measured_headers.append(path.read_bytes()[:20])
+
+        monkeypatch.setattr(recovery, "_prepare_wal", rewrite_mode)
+>       with pytest.raises(recovery.RecoveryError, match="closed-candidate-not-wal"):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE RecoveryError
+
+tests/stage9/test_stream_recovery.py:1123: Failed
+=========================== short test summary info ============================
+FAILED tests/stage9/test_stream_recovery.py::test_closed_candidate_must_still_be_wal_before_publication
+1 failed, 76 deselected in 0.25s

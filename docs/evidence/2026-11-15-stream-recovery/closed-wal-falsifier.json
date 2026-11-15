@@ -1,0 +1,15 @@
+{
+  "closed_header_hex": "53514c69746520666f726d617420330010000101",
+  "falsifier": "_prepare_wal runs normally then SQLite journal_mode=DELETE before returning",
+  "final_regression": "test_closed_candidate_must_still_be_wal_before_publication: actual DELETE rewrite, targeted RecoveryError, destination absent, artifact/source rows unchanged",
+  "fixed_by_commit": "7cf63655b57ac8de757a533aa45a7074cae27065",
+  "original_local_proof_sha256": "aeabe851484e3ac52180bece3cce170a35ddcd4feedc4c977d78c590c1e0b729",
+  "read_write_versions": [
+    1,
+    1
+  ],
+  "red_log_sha256": "e61f47f3a53b5b447f32e6f96bb852372e05c516bc704afeb53126b0fc6263fc",
+  "restore_published": true,
+  "source_commit": "d4aeb3d6d02483b7991a436090f35ff7a9419337",
+  "source_sha256": "2665d810dbe885406322255f8d26bd5a769cc1543648171744fb58b9388f24aa"
+}

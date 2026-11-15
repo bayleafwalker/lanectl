@@ -1,0 +1,3 @@
+FAILED tests/stage1/test_acc_opencode_native.py::test_run_opencode_success_escalation_and_timeout - AssertionError: assert ('done' == 'escalated'
+FAILED tests/stage1/test_claude_adapter.py::test_run_claude_escalates_even_when_the_cli_exits_nonzero - AssertionError: assert 'failed' == 'escalated'
+2 failed, 1215 passed in 163.33s (0:02:43)

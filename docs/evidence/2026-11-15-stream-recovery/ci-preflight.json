@@ -1,0 +1,48 @@
+{
+  "durability": "session-local",
+  "fixture_repair_commit": "32a4a503d7ec74ad885f37005581d128fffb0ea6",
+  "host_policy_changes": false,
+  "hosted_ci": {
+    "diagnosis": "Existing fake provider scripts emitted JSON with echo. Actual dash expands literal backslash-n within strings into byte0a, making invalid JSON; bash preserves it. No production adapter failure was masked or tolerated.",
+    "evidence_origin": "Integrating agent observation; preparer did not invoke hosted API.",
+    "failures": [
+      "tests/stage1/test_acc_opencode_native.py::test_run_opencode_success_escalation_and_timeout",
+      "tests/stage1/test_claude_adapter.py::test_run_claude_escalates_even_when_the_cli_exits_nonzero"
+    ],
+    "head_commit": "0155dc0498077e7ab2301a5137acdfe7d7f59637",
+    "job_id": 132943468646,
+    "original_local_job_log_sha256": "1d97d9273b43ced1c4a52a373edb363081e837602765cabfd4c616b27be14d08",
+    "run_id": 43757100960,
+    "status": "FAILED:2failed,1215passed in163.33s; setup and real namespace/deadline/stop preflight passed.",
+    "url": "https://github.com/bayleafwalker/lanectl/actions/runs/43757100960"
+  },
+  "negative_control": {
+    "checker_exit": 1,
+    "failure": "supposed readonly touch succeeded; checker rejected",
+    "inner_exit": 81,
+    "mutation": "only this disposable probe Sandbox mode none"
+  },
+  "original_local_proof_sha256": "8786a1a7112f569286299e9cf4f20f1d5c0b836530975362c6a069df84de0531",
+  "positive": {
+    "exit": 0,
+    "inaccessible_read_refused": true,
+    "oneshot_timeout_nonzero": true,
+    "readonly_write_refused": true,
+    "real_systemd": true,
+    "stopped_oneshot_nonzero": true,
+    "writable_write_observed": true
+  },
+  "preflight_sha256": "8db6f6794a1e24275987490964bf694b8d27606924a4ae956e4af4a685d92119",
+  "replacement_ci_status": "Pending; integrating owner will push fixture-only printf correction and version metadata, then require full actual Ubuntu population.",
+  "replacement_release_metadata_commit": "3a3229b1ccbcbbb0dd2c41408e57241af7c6bf70",
+  "replacement_release_version": "0.2.15",
+  "schema": "lanectl.ci-preflight-proof/v1",
+  "source_commit": "0155dc0498077e7ab2301a5137acdfe7d7f59637",
+  "syntax": {
+    "all_run_blocks": "bash -n exit0",
+    "python": "compile succeeded",
+    "yaml": "PyYAML parsed"
+  },
+  "ubuntu_qualification": "First actual full run failed; no final Ubuntu full-suite pass claimed.",
+  "workflow_sha256": "36cb4830cb57e827db258b33c64c624a0e297d6b1b0909fdd787d9c0217e05ec"
+}

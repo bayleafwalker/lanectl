@@ -1,0 +1,43 @@
+{
+  "additional_pre_final_repairs": [
+    "Actual owned SHM hardlink canary demonstrated read-only SQLite mmap writes to redirected companion; source SHM now refused before SQLite opens unsafe companion. Read-only WAL alias alone showed no write violation and was not over-refused.",
+    "Restored snapshot originally remained DELETE mode; private-candidate WAL preparation added without changing source owner mode.",
+    "One early full rerun had a test-only fresh-event timestamp mismatch; replay fixture now reuses exact acknowledged event."
+  ],
+  "attribution": "These are earlier runs/sources, never rebound to7cf. Original local files remain retained; only public-safe selected facts and hashes are published.",
+  "final_errors": 0,
+  "final_full_passes": 1217,
+  "final_skips": 0,
+  "final_source_commit": "7cf63655b57ac8de757a533aa45a7074cae27065",
+  "initial_environment_failure": {
+    "all_failure_causes": "Not individually established; subsequent complete actual-host suite passed without weakening tests.",
+    "failed": 109,
+    "helper_sha256": "ead195b63cc79d43c40607ed266ccc26441f0555b58af750831c48da843e9701",
+    "original_local_summary_sha256": "8305c9054c4e2241dd786b73932c7059686e08c4e14bff3e0a0fec18151ce90c",
+    "passed": 1083,
+    "seconds": 140.21,
+    "verified_first_failure": "Missing user bus environment; explicit bus access then refused inside execution sandbox. Actual host bus active."
+  },
+  "prior_sources": [
+    {
+      "disposition": "Superseded: malformed null/list event envelope gave unstructured AttributeError; explicit envelope refusal added.",
+      "full_passes": 1200,
+      "helper_sha256": "f2c80ad3223820428530d7c1f6c758ab794d407f2a1538482e94f760e52e30fa",
+      "original_local_summary_sha256": "35c5ee55e7d9b4c9da905a0e0f1484299552c2e4448ea93e5ec3d4769de24f31"
+    },
+    {
+      "disposition": "Held: coherent principal rewrite preserved counts/heads. Fixed by complete streamed logical-row comparison before/after WAL preparation.",
+      "full_passes": 1215,
+      "helper_sha256": "84ead7d0e37e18deb4926e85cfd5ab7dc8f32668a2e0385d4ec3fa9d914b277d",
+      "original_local_summary_sha256": "a8f71014d0e7dea924da5ccd72f651bf4479e44ee6aa4bb478f830ed15380785",
+      "source_commit": "630ed68625eb96d31afc9ba2149481ef093dfefc"
+    },
+    {
+      "disposition": "Native CLEAR then measured closed-WAL falsifier accepted DELETE mode. Fixed by7cf closed header verification; original proofs retained.",
+      "full_passes": 1216,
+      "helper_sha256": "2665d810dbe885406322255f8d26bd5a769cc1543648171744fb58b9388f24aa",
+      "original_local_manifest_sha256": "5c9691155aaf11c7dbe90c0d5ecb45915db5c4f8bbd2b7420496dda3e7210cd5",
+      "source_commit": "d4aeb3d6d02483b7991a436090f35ff7a9419337"
+    }
+  ]
+}

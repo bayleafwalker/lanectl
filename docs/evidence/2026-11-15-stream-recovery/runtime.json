@@ -1,0 +1,119 @@
+{
+  "authority_state_absent": true,
+  "cli_backup_process": {
+    "artifact": "OWNED_FIXTURE/snapshot.lane",
+    "artifact_sha256": "23f23baba789904f00ac0edcc6adf108452ceb029118133b4fc71a643c1562cb",
+    "authority_changed": false,
+    "counts": {
+      "lane_batches": 3,
+      "lane_events": 3
+    },
+    "heads": [
+      {
+        "repo": "repo-a",
+        "revision": 1,
+        "stream": "control",
+        "workspace": "ws-a"
+      },
+      {
+        "repo": "repo-b",
+        "revision": 1,
+        "stream": "other",
+        "workspace": "ws-a"
+      },
+      {
+        "repo": "repo-a",
+        "revision": 1,
+        "stream": "control",
+        "workspace": "ws-b"
+      }
+    ],
+    "ok": true,
+    "operation": "backup",
+    "owner_schema": 1,
+    "payload_sha256": "51844307740386002a578709d519701dae4a40dda7c5c4c4a9eb5a4bbe12979a",
+    "quiescence": "not-asserted",
+    "schema": "lanectl.stream-recovery-receipt/v1"
+  },
+  "cli_restore_process": {
+    "artifact": "OWNED_FIXTURE/snapshot.lane",
+    "artifact_sha256": "23f23baba789904f00ac0edcc6adf108452ceb029118133b4fc71a643c1562cb",
+    "authority_changed": false,
+    "counts": {
+      "lane_batches": 3,
+      "lane_events": 3
+    },
+    "database": "OWNED_FIXTURE/restored.sqlite",
+    "heads": [
+      {
+        "repo": "repo-a",
+        "revision": 1,
+        "stream": "control",
+        "workspace": "ws-a"
+      },
+      {
+        "repo": "repo-b",
+        "revision": 1,
+        "stream": "other",
+        "workspace": "ws-a"
+      },
+      {
+        "repo": "repo-a",
+        "revision": 1,
+        "stream": "control",
+        "workspace": "ws-b"
+      }
+    ],
+    "journal_mode": "wal",
+    "ok": true,
+    "operation": "restore",
+    "owner_schema": 1,
+    "payload_sha256": "51844307740386002a578709d519701dae4a40dda7c5c4c4a9eb5a4bbe12979a",
+    "quiescence": "not-asserted",
+    "restored_database_sha256": "5868c4aad7a35150e52cf1aae35ef02e46bbe13d2cc327d0b44ada5af419215f",
+    "schema": "lanectl.stream-recovery-receipt/v1"
+  },
+  "committed_uncheckpointed_wal": true,
+  "fixture": "OWNED_FIXTURE",
+  "fixture_durability": "session-local",
+  "kernel_fault": {
+    "errno": 22,
+    "injection": "real kernel fsync(/dev/null) error",
+    "phase": "parent-fsync",
+    "published": "OWNED_FIXTURE/parent-sync-failed.lane",
+    "success_receipt": false
+  },
+  "main-file-only-copy_falsified": true,
+  "normalization": "Only owned temporary fixture path replaced with OWNED_FIXTURE; synthetic scopes, hashes, receipts and measured results retained.",
+  "original_artifact_usable_after_fault": true,
+  "original_local_proof_sha256": "32351ad6bcb1be94584ecc553a23b2a1c066a9a24e3cb21f6c4654b41380e417",
+  "owned_candidates_remaining": [],
+  "proof_kind": "actual independent native Python/CLI processes; no OCI, hosted, installation or authority qualification",
+  "reopen_process": {
+    "all_rows_sha256": "8dc248860a64a3528fb0c0f91396404615e92d251786f4d56be31985dbfd88bb",
+    "changed_content_refusal": "idempotency-conflict",
+    "journal_mode_after": "wal",
+    "journal_mode_before": "wal",
+    "next_batch": {
+      "count": 1,
+      "previous_revision": 1,
+      "replayed": false,
+      "revision": 2
+    },
+    "replay": {
+      "count": 1,
+      "previous_revision": 0,
+      "replayed": true,
+      "revision": 1
+    },
+    "scoped_heads": [
+      2,
+      1,
+      1,
+      0
+    ]
+  },
+  "source_logical_sha256": "8dc248860a64a3528fb0c0f91396404615e92d251786f4d56be31985dbfd88bb",
+  "source_sha256": "bdfe3c71bea4ef2c64e69f554c4ba96f7d3707fe4e1dd76ec84662537cf5cf41",
+  "writer_process": true
+}

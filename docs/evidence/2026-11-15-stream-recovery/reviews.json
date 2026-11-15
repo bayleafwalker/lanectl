@@ -1,0 +1,55 @@
+{
+  "first_party_independent_review": {
+    "checked": "closed header magic and both WAL versions before hash/fsync/link; existing full-row digest retained",
+    "evidence_origin": "Integrating agent reported independent Sage final-source review CLEAR; this preparer did not rerun it.",
+    "helper_sha256": "bdfe3c71bea4ef2c64e69f554c4ba96f7d3707fe4e1dd76ec84662537cf5cf41",
+    "source_commit": "7cf63655b57ac8de757a533aa45a7074cae27065",
+    "verdict": "CLEAR"
+  },
+  "normalization": "Native result text and allowlisted execution/source fields only. Session/UUID/auth/credential metadata omitted; raw envelope hashes retained for local audit.",
+  "reviews": [
+    {
+      "exit_code": 0,
+      "is_error": false,
+      "kind": "native static source review",
+      "model": "claude-sonnet-5-5",
+      "native_duration_s": 297.509,
+      "original_native_envelope_sha256": "0bfd6dda398e01f944d6340308f626c1800092827abfb4b8f1e7544ee6dc2d78",
+      "original_source_binding_sha256": "22a46d299c47e79117eae39038fc54fa6e7913e015fe196b9aa663b2ff8008da",
+      "permission_denials": 0,
+      "review_text": "native-d4a.md",
+      "runtime_independently_executed_by_reviewer": false,
+      "source_commit": "d4aeb3d6d02483b7991a436090f35ff7a9419337",
+      "source_files_sha256": {
+        "docs/architecture/vuoro-coordination.md": "2bd840abfbf50f0640766da4db8c1460c2181b066820e413813aa5707be05cae",
+        "src/lanectl/cli.py": "c68f23f86333240e9abad375e4def3ca340d9f833488596a1fa1dab48948dd78",
+        "src/lanectl/stream_recovery.py": "2665d810dbe885406322255f8d26bd5a769cc1543648171744fb58b9388f24aa",
+        "src/lanectl/stream_store.py": "c970ee95062d4a099b32bafb05e034f7671431d18402bc01db73a00b5b01506d",
+        "tests/stage9/test_stream_recovery.py": "7d91f9662e02892b4b2d3069a7e404cdfa1b04bfb73b83e5919cc36933b888d4"
+      },
+      "verdict": "CLEAR"
+    },
+    {
+      "exit_code": 0,
+      "is_error": false,
+      "kind": "native static source review",
+      "model": "claude-sonnet-5-5",
+      "native_duration_s": 26.792,
+      "original_native_envelope_sha256": "04e075d05a6f236016329f4ae656a2a73c036d0953297832f4ebd2c102db8e46",
+      "original_source_binding_sha256": "95a6ae3687363e96700b401f8e218d1e837223f7ac1e646ee6873bf6f6816ae7",
+      "permission_denials": 0,
+      "review_text": "native-7cf.md",
+      "runtime_independently_executed_by_reviewer": false,
+      "source_commit": "7cf63655b57ac8de757a533aa45a7074cae27065",
+      "source_files_sha256": {
+        "docs/architecture/vuoro-coordination.md": "2bd840abfbf50f0640766da4db8c1460c2181b066820e413813aa5707be05cae",
+        "src/lanectl/cli.py": "c68f23f86333240e9abad375e4def3ca340d9f833488596a1fa1dab48948dd78",
+        "src/lanectl/stream_recovery.py": "bdfe3c71bea4ef2c64e69f554c4ba96f7d3707fe4e1dd76ec84662537cf5cf41",
+        "src/lanectl/stream_store.py": "c970ee95062d4a099b32bafb05e034f7671431d18402bc01db73a00b5b01506d",
+        "tests/stage9/test_stream_recovery.py": "a5cc94680c19d2f567849d5f8493f88d98fb8ce8c34eb01f61c0e6b58c67121b"
+      },
+      "verdict": "CLEAR"
+    }
+  ],
+  "scope": "Static reviews do not independently reproduce runtime/test claims. d4a CLEAR predates the concrete closed-WAL falsifier;7cf bounded recheck reviews that correction."
+}

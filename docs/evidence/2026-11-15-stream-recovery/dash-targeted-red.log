@@ -1,0 +1,61 @@
+..F....F....                                                             [100%]
+=================================== FAILURES ===================================
+_______________ test_run_opencode_success_escalation_and_timeout _______________
+
+tmp_path = PosixPath('OWNED_FIXTURE')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at OBJECT_ADDRESS>
+
+    def test_run_opencode_success_escalation_and_timeout(tmp_path, monkeypatch):
+        escalate = '{"type":"text","part":{"type":"text","text":"cannot\\nDISPATCH_OUTCOME: ESCALATED\\nESCALATION_REASON: scope too small"}}'
+        bindir = _fake_opencode(tmp_path, f"""
+    case "$*" in
+      *ESCALATE*) echo '{escalate}' ;;
+      *SLEEP*) sleep 30 ;;
+      *) cat "{FIXTURE}" ;;
+    esac
+    """)
+        monkeypatch.setenv("PATH", f"{bindir}{os.pathsep}{os.environ['PATH']}")
+        wt = tmp_path / "wt"
+        wt.mkdir()
+        kw = dict(model="opencode-go/deepseek-v4.1-flash", worktree=wt, timeout_s=5, external=True)
+
+        ok = run_opencode(prompt="do it", status_file=tmp_path / "a.json", **kw)
+        assert (ok.outcome, ok.exit_code, ok.usage["output_tokens"]) == ("done", 0, 2)
+        rec = json.loads((tmp_path / "a.json").read_text())
+        assert rec["outcome"] == "done" and rec["usage"]["input_tokens"] == 8510
+
+        esc = run_opencode(prompt="ESCALATE", status_file=tmp_path / "b.json", **kw)
+>       assert esc.outcome == "escalated" and esc.escalation_reason == "scope too small"
+E       AssertionError: assert ('done' == 'escalated'
+E
+E         - escalated
+E         + done)
+
+tests/stage1/test_acc_opencode_native.py:57: AssertionError
+__________ test_run_claude_escalates_even_when_the_cli_exits_nonzero ___________
+
+tmp_path = PosixPath('OWNED_FIXTURE')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at OBJECT_ADDRESS>
+
+    def test_run_claude_escalates_even_when_the_cli_exits_nonzero(tmp_path, monkeypatch):
+        payload = {**RESULT, "is_error": True,
+                   "result": "blocked\nDISPATCH_OUTCOME: ESCALATED\nESCALATION_REASON: needs a schema"}
+        bindir = _fake_claude(tmp_path, "echo '%s'\nexit 7\n" % json.dumps(payload))
+        _env(tmp_path, monkeypatch, bindir)
+        wt = tmp_path / "wt"
+        wt.mkdir()
+
+        result = run_claude(model="claude-haiku-5-5", worktree=wt, prompt="p",
+                            status_file=tmp_path / "s.json", timeout_s=10, external=False)
+
+>       assert result.outcome == "escalated"
+E       AssertionError: assert 'failed' == 'escalated'
+E
+E         - escalated
+E         + failed
+
+tests/stage1/test_claude_adapter.py:98: AssertionError
+=========================== short test summary info ============================
+FAILED tests/stage1/test_acc_opencode_native.py::test_run_opencode_success_escalation_and_timeout
+FAILED tests/stage1/test_claude_adapter.py::test_run_claude_escalates_even_when_the_cli_exits_nonzero
+2 failed, 10 passed in 1.20s

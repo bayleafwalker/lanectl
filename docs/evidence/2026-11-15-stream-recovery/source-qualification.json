@@ -1,0 +1,56 @@
+{
+  "ci_change": "workflow only after tested7cf owner source; source hashes above remain exact",
+  "ci_source_commit": "0155dc0498077e7ab2301a5137acdfe7d7f59637",
+  "local_results": {
+    "focused": "77 passed in9.70s",
+    "format": "2 files already formatted",
+    "full": "1217 passed in169.55s; require_escalated for real host systemd user bus and loopback",
+    "lint": "All checks passed!",
+    "whitespace": "exit0"
+  },
+  "normalization": "Local command/tool/worktree/bus paths omitted. Commands above are portable reproduction forms, not verbatim local executions; source/test hashes retained.",
+  "original_local_manifest_sha256": "2bb02b52af145ba5446a8166e4020b7081e4847ab276e0cd3446cfc26b35fbe0",
+  "portable_reproduction_commands": [
+    "uv sync --frozen --python 3.13.16",
+    "uv run --frozen --no-sync pytest -q tests/stage9/test_stream_recovery.py",
+    "uv run --frozen --no-sync pytest -q --junitxml=junit.xml",
+    "PYTHONPATH=src .venv/bin/python docs/evidence/2026-11-15-stream-recovery/runtime-harness.py /tmp/OWNED_NEW_PROOF.json"
+  ],
+  "release_metadata": {
+    "canonical_complete_ci": "Replacement full Ubuntu run pending; no released wheel, published tag, external installation or hosted activation claimed.",
+    "commit": "3a3229b1ccbcbbb0dd2c41408e57241af7c6bf70",
+    "lock_check": "Integrating agent reports uv lock --check --offline passed; prior sandbox cache failure retained locally.",
+    "scope": "pyproject.toml project version and uv.lock lanectl package version only; implementation helper remains exact7cf source hash.",
+    "version": "0.2.15"
+  },
+  "repair": "Verify the closed private SQLite main-file header read and write versions are both WAL (2) after final data/mode preparation and before hashing/fsync/exclusive publication.",
+  "runtime_precondition": "Linux real systemd user manager/bus and functioning mount namespaces; .github/workflows/ci.yml provisions and proves actual isolation before complete tests",
+  "schema": "lanectl.stream-recovery-source-qualification/v1",
+  "source_commit": "7cf63655b57ac8de757a533aa45a7074cae27065",
+  "source_kind": "public owner-source recovery, schema1; not release or hosted qualification",
+  "source_sha256": {
+    "docs/architecture/vuoro-coordination.md": "2bd840abfbf50f0640766da4db8c1460c2181b066820e413813aa5707be05cae",
+    "src/lanectl/cli.py": "c68f23f86333240e9abad375e4def3ca340d9f833488596a1fa1dab48948dd78",
+    "src/lanectl/stream_recovery.py": "bdfe3c71bea4ef2c64e69f554c4ba96f7d3707fe4e1dd76ec84662537cf5cf41",
+    "src/lanectl/stream_store.py": "c970ee95062d4a099b32bafb05e034f7671431d18402bc01db73a00b5b01506d",
+    "tests/stage9/test_stream_recovery.py": "a5cc94680c19d2f567849d5f8493f88d98fb8ce8c34eb01f61c0e6b58c67121b"
+  },
+  "subsequent_test_fixture_commit": "32a4a503d7ec74ad885f37005581d128fffb0ea6",
+  "subsequent_test_fixture_scope": "Portable printf only in two stage1 fixtures; owner source and77 recovery tests unchanged; full actual Ubuntu result pending.",
+  "tests": {
+    "focused": {
+      "errors": 0,
+      "failures": 0,
+      "skipped": 0,
+      "tests": 77,
+      "time_s": 8.852
+    },
+    "full": {
+      "errors": 0,
+      "failures": 0,
+      "skipped": 0,
+      "tests": 1217,
+      "time_s": 169.502
+    }
+  }
+}
