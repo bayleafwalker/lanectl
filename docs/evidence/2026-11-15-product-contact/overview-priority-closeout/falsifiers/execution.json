@@ -1,0 +1,31 @@
+{
+  "source_commit": "8652b1b73aa809ff1e137b982e69faf5c7533647",
+  "source_sha256_before": {
+    "packages/domains/overview/priority.py": "e4348833c4f893954868378000cdab44a50b555a421e23211e8104f6aabbfcdd",
+    "apps/web/frontend/lib/overview-priority.js": "0bdf663b5a5fba42fc9c1cf4992ea87f1d60815c9f3724a7159aba7e645af061",
+    "packages/application/use_cases/morning_brief_sections.py": "00c4cca591ecd2a42b390a1c582762f53a5b6bddc989bfb2e6746815e8ad00d5",
+    "packages/application/use_cases/morning_brief.py": "df506e7d1da91d0b98175e87da487c006a7e3d38a67627e5a1d3d398409b8270",
+    "packages/domains/overview/pipelines/overview_models.py": "04698f6f6b00935c43c1c8557c8a31d9dbd0a9d219efed8d955a47f6753d16b0"
+  },
+  "source_sha256_after": {
+    "packages/domains/overview/priority.py": "e4348833c4f893954868378000cdab44a50b555a421e23211e8104f6aabbfcdd",
+    "apps/web/frontend/lib/overview-priority.js": "0bdf663b5a5fba42fc9c1cf4992ea87f1d60815c9f3724a7159aba7e645af061",
+    "packages/application/use_cases/morning_brief_sections.py": "00c4cca591ecd2a42b390a1c582762f53a5b6bddc989bfb2e6746815e8ad00d5",
+    "packages/application/use_cases/morning_brief.py": "df506e7d1da91d0b98175e87da487c006a7e3d38a67627e5a1d3d398409b8270",
+    "packages/domains/overview/pipelines/overview_models.py": "04698f6f6b00935c43c1c8557c8a31d9dbd0a9d219efed8d955a47f6753d16b0"
+  },
+  "source_unchanged": true,
+  "commands": [
+    {
+      "name": "python",
+      "returncode": 0,
+      "elapsed_s": 1.189
+    },
+    {
+      "name": "javascript",
+      "returncode": 0,
+      "elapsed_s": 0.151
+    }
+  ],
+  "sandbox_guard_completion": true
+}

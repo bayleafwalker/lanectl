@@ -1,0 +1,236 @@
+{
+  "normalization": "Machine/environment paths only for result/log/probe copies; explicitly allowlisted JSON derivations omit operational payloads. Original reviews, bundles, numstats and served readback retain exact bytes.",
+  "files": [
+    {
+      "selected": "source/a1.bundle",
+      "original_evidence_name": "source.bundle",
+      "original_sha256": "1f48b710d1127758869ba7e767b4d75b96695c3ad4dfec68d9d55125225cac31",
+      "transformation": "unchanged bytes",
+      "selected_sha256": "1f48b710d1127758869ba7e767b4d75b96695c3ad4dfec68d9d55125225cac31"
+    },
+    {
+      "selected": "source/a1.numstat",
+      "original_evidence_name": "candidate.numstat",
+      "original_sha256": "0bdbcbc616641514f660c6969fd83088b21b99628b48c38b8be8df77a0cd364b",
+      "transformation": "unchanged bytes",
+      "selected_sha256": "0bdbcbc616641514f660c6969fd83088b21b99628b48c38b8be8df77a0cd364b"
+    },
+    {
+      "selected": "source/a2.bundle",
+      "original_evidence_name": "source.bundle",
+      "original_sha256": "cf48df0b7fc54d216739ff3a46555709b524b21f3d0373f0df0d5f8998fcfc90",
+      "transformation": "unchanged bytes",
+      "selected_sha256": "cf48df0b7fc54d216739ff3a46555709b524b21f3d0373f0df0d5f8998fcfc90"
+    },
+    {
+      "selected": "source/a2.numstat",
+      "original_evidence_name": "source.numstat",
+      "original_sha256": "c66d8577ca65265f8370a11f2d1c13640f2177aa19856bac5a1948fca60f3556",
+      "transformation": "unchanged bytes",
+      "selected_sha256": "c66d8577ca65265f8370a11f2d1c13640f2177aa19856bac5a1948fca60f3556"
+    },
+    {
+      "selected": "source/a1-binding.json",
+      "original_evidence_name": "proof.json",
+      "original_sha256": "fef65aa97d54707f59f274faec5b70199aaceb8fccda2ecbc8f311d1e8aa29fe",
+      "transformation": "allowlisted public derivation",
+      "selected_sha256": "53dbde928276103e51ca126342f8c6e432554efe39f188dd111d740cdee03de7"
+    },
+    {
+      "selected": "source/a1-original-restore-proof.json",
+      "original_evidence_name": "isolated-restore-proof.json",
+      "original_sha256": "c65e4263d1bfc5638152f760f91b2cf2ee9b41ff37b2d0a7ff88ab2837667986",
+      "transformation": "allowlisted public derivation",
+      "selected_sha256": "a670a2fc6c49a196a047a70f7b9de0a3671c7823eaeceb91c0a332c64d7a35a7"
+    },
+    {
+      "selected": "source/a2-binding-and-original-restore-proof.json",
+      "original_evidence_name": "retention.json",
+      "original_sha256": "6cbfdef41a76e1b941b43f0a84902442592175a71f23ae4c4046ad2c5788205b",
+      "transformation": "allowlisted public derivation",
+      "selected_sha256": "2fda724b5ceaa0f60bcb2e25188ec40e185af8dfd898480614c39a29d3f50161"
+    },
+    {
+      "selected": "runtime/a1-acceptance-population.json",
+      "original_evidence_name": "actual-acceptance-population.json",
+      "original_sha256": "217cb7906550977f6831ee1904c51a0979aed415cde93146ee37e9cec3ef6c70",
+      "transformation": "unchanged bytes",
+      "selected_sha256": "217cb7906550977f6831ee1904c51a0979aed415cde93146ee37e9cec3ef6c70"
+    },
+    {
+      "selected": "runtime/a1-original-gates.json",
+      "original_evidence_name": "a1-ruling-events.json",
+      "original_sha256": "ac4c1549f22b6ac5295904709e437e16bf88c5746aafbdd37ba0cffc10b6bd05",
+      "transformation": "only five public gate.result data; operational event payloads omitted",
+      "selected_sha256": "f5549885b84861f3a6192827faccf7e85ee638c12156d28d444646c4dfffe3df"
+    },
+    {
+      "selected": "runtime/a2-acceptance-population.json",
+      "original_evidence_name": "classified-population.json",
+      "original_sha256": "cbf5909dc0faa29e6359beb2ef34d0ee5de38c7e121e679f926c40061cc40715",
+      "transformation": "case population preserved; process argv/machine paths omitted",
+      "selected_sha256": "14ba9b528db5e4df9e03753c4801e3b71f834dd352389d8a3a9c240a2313e7ab"
+    },
+    {
+      "selected": "source/a2-source-binding.json",
+      "original_evidence_name": "binding.json",
+      "original_sha256": "1296fef66f9cdc5673801f7da56e43ba47037ee385e93272915e287010b274f6",
+      "transformation": "stable source/model/gate fields; stale runtime status retained in original review prose, not reused as current result",
+      "selected_sha256": "7605f263de9f4a5027f1cc72946679d5e6f33b6aeac477b56914cb263768b9aa"
+    },
+    {
+      "selected": "reviews/pack-boundary.parsed.json",
+      "original_evidence_name": "pack-boundary.parsed.json",
+      "original_sha256": "fcb75a884c4e9dda7f9393d9a495fb8e04ebf22e52a95677722130743e4da327",
+      "transformation": "unchanged bytes",
+      "selected_sha256": "fcb75a884c4e9dda7f9393d9a495fb8e04ebf22e52a95677722130743e4da327"
+    },
+    {
+      "selected": "reviews/stratum-coherence.parsed.json",
+      "original_evidence_name": "stratum-coherence.parsed.json",
+      "original_sha256": "bfd87f0392df535be4f1089590f7e4516fa9de004e83be2f82caea2494d94cdd",
+      "transformation": "unchanged bytes",
+      "selected_sha256": "bfd87f0392df535be4f1089590f7e4516fa9de004e83be2f82caea2494d94cdd"
+    },
+    {
+      "selected": "reviews/semantic-ownership.parsed.json",
+      "original_evidence_name": "semantic-ownership.parsed.json",
+      "original_sha256": "bf16051c53bd87c74dec7a0d3e88b4d2111bd67119f0572ce8389b130b0e3275",
+      "transformation": "unchanged bytes",
+      "selected_sha256": "bf16051c53bd87c74dec7a0d3e88b4d2111bd67119f0572ce8389b130b0e3275"
+    },
+    {
+      "selected": "reviews/god-class-file-size.parsed.json",
+      "original_evidence_name": "god-class-file-size.parsed.json",
+      "original_sha256": "56a8b720e6af2f45da92c31a5bcd7121fdcd604ac01db8b72fe2a6cf28a7dd49",
+      "transformation": "unchanged bytes",
+      "selected_sha256": "56a8b720e6af2f45da92c31a5bcd7121fdcd604ac01db8b72fe2a6cf28a7dd49"
+    },
+    {
+      "selected": "reviews/repetition-vs-abstraction.parsed.json",
+      "original_evidence_name": "repetition-vs-abstraction.parsed.json",
+      "original_sha256": "b5f097785596cea1b64477c851c64dc98d40f6300dddb35e162af3c730e36109",
+      "transformation": "unchanged bytes",
+      "selected_sha256": "b5f097785596cea1b64477c851c64dc98d40f6300dddb35e162af3c730e36109"
+    },
+    {
+      "selected": "reviews/test-quality.parsed.json",
+      "original_evidence_name": "test-quality.parsed.json",
+      "original_sha256": "732ac258fb255c8170a78a67dafbb26a4ff3a4a1eff6f12df76ebfb79213477c",
+      "transformation": "unchanged bytes",
+      "selected_sha256": "732ac258fb255c8170a78a67dafbb26a4ff3a4a1eff6f12df76ebfb79213477c"
+    },
+    {
+      "selected": "reviews/suppression-drift.parsed.json",
+      "original_evidence_name": "suppression-drift.parsed.json",
+      "original_sha256": "d040e323905132c428aad4d9d061e9712924d3116564332511ad00c2123ff08f",
+      "transformation": "unchanged bytes",
+      "selected_sha256": "d040e323905132c428aad4d9d061e9712924d3116564332511ad00c2123ff08f"
+    },
+    {
+      "selected": "reviews/routing-and-results.json",
+      "original_evidence_name": "results.json",
+      "original_sha256": "20c4d38f59f575af73dfd6a4d55fe6731003fa963a1ee0b7feea72cc16762709",
+      "transformation": "only model/role/source/outcome/timing; transient unit identity removed",
+      "selected_sha256": "81de4eeb970a4317d57e4223b2aec369c2510e33daae7b7e2061eed020ca706e"
+    },
+    {
+      "selected": "runtime/full-make.json",
+      "original_evidence_name": "FINAL.json",
+      "original_sha256": "0931f4fc1a0ec25112a59dfb688d5ec82834de6256445ff89667e019c99ea80b",
+      "transformation": "public source/check/count/cleanup fields; full environment, paths and process identities excluded",
+      "selected_sha256": "105779bf6c6e288b366972141f5eacc02b82806aa33883396a3570baacfdde25"
+    },
+    {
+      "selected": "runtime/visual-case-source-binding.json",
+      "original_evidence_name": "visual-source-binding.json",
+      "original_sha256": "10e5a380fdd8fdf0bc8c02b55c89a63460e34f52d4494b43db00cb94c4ab3a93",
+      "transformation": "unchanged bytes",
+      "selected_sha256": "10e5a380fdd8fdf0bc8c02b55c89a63460e34f52d4494b43db00cb94c4ab3a93"
+    },
+    {
+      "selected": "runtime/full-make.log",
+      "original_evidence_name": "verify-fast.log",
+      "original_sha256": "9087aee75f26121de46f076a314113702c807d5defa7caf0caadb96003b81103",
+      "transformation": "only verification checkout absolute path normalized to $CHECKOUT",
+      "selected_sha256": "588a084c9f9e0992d016ae762825adc8a44da0f6d87b4c4969f767d1ac557d75"
+    },
+    {
+      "selected": "falsifiers/confirmed-results.json",
+      "original_evidence_name": "hla2908-review-falsifiers-20261115.json",
+      "original_sha256": "f8344c37a224ec5742795491c74c9420e7f2f6c2719ca494e40f931836678464",
+      "transformation": "exact results/limits/source hashes; only evidence/check-out paths normalized, execution environment and operational metadata omitted",
+      "selected_sha256": "747d81f91c5f3e4a912ce24eb29c5ed3b52e05fdcea344206606a02cfea824e9"
+    },
+    {
+      "selected": "falsifiers/rows.json",
+      "original_evidence_name": "rows.json",
+      "original_sha256": "7daf78ebf763badd11f5d516a3d4262dec006fc122ae0149f0ec6cc776107aab",
+      "transformation": "only machine/check-out/evidence paths normalized",
+      "selected_sha256": "7daf78ebf763badd11f5d516a3d4262dec006fc122ae0149f0ec6cc776107aab"
+    },
+    {
+      "selected": "falsifiers/python.stdout",
+      "original_evidence_name": "python.stdout",
+      "original_sha256": "15e83a8f147608c792a0282d3b7ede305350ee93aea3982f269e9941f84dafbc",
+      "transformation": "only machine/check-out/evidence paths normalized",
+      "selected_sha256": "9863c7dc3bf7927d2fe979c741eb1dd4ebb48db7f3da30a041e317a92355a7dc"
+    },
+    {
+      "selected": "falsifiers/python.stderr",
+      "original_evidence_name": "python.stderr",
+      "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "transformation": "only machine/check-out/evidence paths normalized",
+      "selected_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "selected": "falsifiers/javascript.stdout",
+      "original_evidence_name": "javascript.stdout",
+      "original_sha256": "874583ad66e32c8cdcacf36da13a44cbe4428f132e0087b8db6f830e8c6f22e1",
+      "transformation": "only machine/check-out/evidence paths normalized",
+      "selected_sha256": "874583ad66e32c8cdcacf36da13a44cbe4428f132e0087b8db6f830e8c6f22e1"
+    },
+    {
+      "selected": "falsifiers/javascript.stderr",
+      "original_evidence_name": "javascript.stderr",
+      "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "transformation": "only machine/check-out/evidence paths normalized",
+      "selected_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "selected": "falsifiers/probe.py",
+      "original_evidence_name": "probe.py",
+      "original_sha256": "2e08c995f709ea24f45026d6aa54050f5ec9798803fcec58e465de9e772e253c",
+      "transformation": "only evidence-directory path made relative to this file",
+      "selected_sha256": "dbb5da1396ada7019f0afb7c892bdbd3fda6b93af650273387ed2c5c7ce2a441"
+    },
+    {
+      "selected": "falsifiers/probe.cjs",
+      "original_evidence_name": "probe.cjs",
+      "original_sha256": "6357ec7c7964db2a886f5c8f42ebb11f5d2aef3503fe22edc1404fc82ceb478d",
+      "transformation": "only checkout/evidence paths made configurable or relative",
+      "selected_sha256": "25c3ab26737e29cd2b78617282e70a8e87dfa42a3b4f37dc1e88deace3bd9b7e"
+    },
+    {
+      "selected": "falsifiers/execution.json",
+      "original_evidence_name": "execution.json",
+      "original_sha256": "3e9efd15fb5d391bbf9b257204bfaac3e20dd503b0172b751d8ac9ea77fe466e",
+      "transformation": "runtime outcome and exact source hashes; environment-bearing command strings excluded",
+      "selected_sha256": "dcc3351eab5246e22bea3c47182899481d66387a806c59b8f42a8f8d9f76c42c"
+    },
+    {
+      "selected": "state/disposition.json",
+      "original_evidence_name": "hla2908-review-disposition-20261115.json",
+      "original_sha256": "ad09d86516ca1a6d6447c9b3d332bac75fda2a06d505e23170ed5b0e805bebd1",
+      "transformation": "public disposition fields; raw decision event payloads and decision identifier omitted",
+      "selected_sha256": "ec951b6ed5fbb940f4d658c107862290d3f10b81cdede96e4550055a81dd2e01"
+    },
+    {
+      "selected": "state/served-blocked-readback.json",
+      "original_evidence_name": "hla2908-served-blocked-20261115.json",
+      "original_sha256": "fea96369a404ea6cc954961a2b27982a5ad71cdf56348a8f1084ccbd6573759f",
+      "transformation": "unchanged bytes",
+      "selected_sha256": "fea96369a404ea6cc954961a2b27982a5ad71cdf56348a8f1084ccbd6573759f"
+    }
+  ]
+}

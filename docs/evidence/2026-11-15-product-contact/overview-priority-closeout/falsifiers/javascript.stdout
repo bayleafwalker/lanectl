@@ -1,0 +1,50 @@
+{
+  "node": "v20.20.1",
+  "esbuild_version": "0.25.12",
+  "actual_source_sha256": "0bdf663b5a5fba42fc9c1cf4992ea87f1d60815c9f3724a7159aba7e645af061",
+  "input": [
+    {
+      "item_id": "emoji-row",
+      "item_type": "anomaly",
+      "title": "😀",
+      "detail": "Synthetic Unicode priority probe",
+      "severity": 3,
+      "source_domain": "finance"
+    },
+    {
+      "item_id": "fullwidth-row",
+      "item_type": "anomaly",
+      "title": "Ａ",
+      "detail": "Synthetic Unicode priority probe",
+      "severity": 3,
+      "source_domain": "finance"
+    }
+  ],
+  "ordered_ids": [
+    "emoji-row",
+    "fullwidth-row"
+  ],
+  "reversed_input_ordered_ids": [
+    "emoji-row",
+    "fullwidth-row"
+  ],
+  "actual_compare_emoji_fullwidth": -1,
+  "title_code_points": {
+    "emoji-row": [
+      128512
+    ],
+    "fullwidth-row": [
+      65313
+    ]
+  },
+  "title_utf16_code_units": {
+    "emoji-row": [
+      55357,
+      56832
+    ],
+    "fullwidth-row": [
+      65313
+    ]
+  },
+  "source_values_unchanged": true
+}

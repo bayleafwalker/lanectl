@@ -1,0 +1,85 @@
+{
+  "findings": [
+    {
+      "specialist": "test-quality",
+      "severity": "advisory",
+      "file": "tests/test_overview_priority.py",
+      "line": 783,
+      "finding": "test_ties_break_in_field_order and the JS 'ties break in item_type, title, item_id, detail, source_domain order' test do not prove the stated field order. In the item_type and title cases, the item_id order matches the expected order (a before z). Both cases would also pass if item_id were compared before item_type or title. So these tests cannot catch a reordering of TIE_FIELDS in `_TIE_FIELDS` or `TIE_FIELDS`. Only the detail and source_domain cases isolate their field, because the earlier fields are held equal.",
+      "evidence": "tests/test_overview_priority.py:785-798 and apps/web/frontend/unit/overview-priority.test.cjs:510-531. The item_type case uses ids z/contract_review against a/anomaly. The title case uses ids z/zebra against a/apple. The sorted-by-id order equals the sorted-by-field order in both. The spec requires `item_type`, then `title`, then `item_id`, then `detail`, then `source_domain`.",
+      "recommendation": "Use rows where the earlier field and the later field disagree. For example, give id 'a' item_type 'z_type' and id 'z' item_type 'a_type', and expect z first. Add the same for title against item_id and for item_id against detail. Apply this in both the Python and node suites.",
+      "blocker": false
+    },
+    {
+      "specialist": "test-quality",
+      "severity": "advisory",
+      "file": "apps/web/frontend/unit/overview-priority.test.cjs",
+      "line": 510,
+      "finding": "No test uses a non-ASCII string, so neither suite checks the 'code-point string order' requirement. The JS `compareText` uses `<` and `>`, which compare UTF-16 code units. Python `str` comparison uses code points. Astral characters (surrogate pairs) sort differently from U+E000–U+FFFF characters in JS and Python. The Python and JS orderings can therefore diverge on real data, and no test would show it. The required cross-surface consistency is only asserted through ASCII fixtures.",
+      "evidence": "overview-priority.js:360-369 (`sa < sb`) against priority.py:683-686 and the sorted() key. Neither tests/test_overview_priority.py nor the .cjs file has a non-ASCII or astral case. The helper's header comment claims code-point order.",
+      "recommendation": "Add a paired test with an astral character such as U+1F600 against U+FF5E, run on both sides. Either make the JS compare by code point or document the intended behaviour. Also add a case with mixed case and punctuation to fix the expected order independently of the implementation.",
+      "blocker": false
+    },
+    {
+      "specialist": "test-quality",
+      "severity": "advisory",
+      "file": "tests/test_overview_priority.py",
+      "line": 852,
+      "finding": "The new Python tests cover only the warehouse read of get_open_attention_items and the briefing attention section. The candidate also changes the published and prefer-published-with-fallback reads, the /reports/attention-items route's post-projection sort, the assistant operations headline (the new 'none carries a recognized priority' branch), and the removal of the SQL ORDER BY. None of these has an in-diff test. The assistant headline branch, the attention-only historical projection and snapshot immutability, and the empty-history case are the main untested paths. Surface-wide consistency across OperatingPicture, Home, FirstAnswer, IngestSummary, Review, Console, Wallboard and the assistant is only asserted in prose.",
+      "evidence": "The diff adds only tests/test_overview_priority.py (188 lines), tests/test_overview_priority_unit.py (33 lines) and the .cjs helper test. assistant_routes.py:376-392 and report_routes.py:1119-1131 have no matching new tests. tests/test_overview_priority_gate.py exists in the snapshot but is not in the diff. The task describes it as separate protected frozen evidence, and its results are unobserved, since the full make is still RUNNING_UNOBSERVED.",
+      "recommendation": "Rely on the independent gate only after its results are observed. Otherwise add small in-diff tests: one for the assistant headline with unknown severity first, and one for the /reports/attention-items order for an as_of snapshot and for the published and fallback modes. Do not report these paths as covered until then. I executed no tests.",
+      "blocker": false
+    },
+    {
+      "specialist": "test-quality",
+      "severity": "advisory",
+      "file": "apps/web/frontend/unit/overview-priority.test.cjs",
+      "line": 568,
+      "finding": "The frontend tests exercise only lib/overview-priority.js. The consumer behaviour changes have no component or page tests. The wallboard warning threshold (valid 2 or 3 only), the severity pill change from `=== 1` to `=== 3` on Home, FirstAnswer and IngestSummary, the new 'unranked' pill on Home, and the console S1/S2/S3 and OperatingPicture label wiring are not asserted anywhere in the diff. The severity pill flip is an inversion of the meaning of the number. The story fixtures were also swapped (1 and 3) to match it, so visual baselines would pass or fail without any assertion on semantics. The `severityRank` and `attentionLabel` tests restate the implementation's own mapping, with no independent source for it other than comments.",
+      "evidence": "wallboard-view.js lines 100-107, app/page.js lines 544-566, first-answer/page.js lines 243-248, ingest-summary page lines 237-243 and stories/support/fixtures.jsx lines 51-70 are changed with no matching unit or component test. The .cjs test imports only lib/overview-priority.js.",
+      "recommendation": "Add unit coverage for the wallboard `urgent` filter (valid 2 or 3 counts, 7 and null do not). Add coverage for the warn-pill predicate and for operating-picture `attentionMeta`, ideally by extracting the predicate into the shared helper. Otherwise rely on the independent gate and state that explicitly.",
+      "blocker": false
+    },
+    {
+      "specialist": "test-quality",
+      "severity": "advisory",
+      "file": "tests/test_overview_priority.py",
+      "line": 811,
+      "finding": "test_null_tie_fields_sort_after_present_strings sets item_type, title, detail and source_domain to null together in one row. It cannot show that each field independently sorts null last. It also does not cover the item_id null case, which is in the tie list. A bug in `_text` or `compareText` for a single field would be masked by the other fields. The JS test has the same shape. Nothing tests that a null in an earlier field sorts after a present string in the same field when later fields would decide the other way.",
+      "evidence": "tests/test_overview_priority.py:811-816 and overview-priority.test.cjs:548-554. The null row has all of its tie fields null, and the comparison is decided at the first field.",
+      "recommendation": "Parametrize over each tie field, with the null in only that field and the other fields chosen so the order would flip if null sorted first. Add an empty-string case to pin that '' is not treated as null.",
+      "blocker": false
+    },
+    {
+      "specialist": "test-quality",
+      "severity": "watchlist",
+      "file": "tests/test_overview_priority_unit.py",
+      "line": 913,
+      "finding": "The pytest wrapper fails closed (pytest.fail, no skip) when node or esbuild is missing, and it checks the exit code. It does not check that any node:test cases actually ran. A suite file that was emptied, or whose tests were all filtered out, would still exit 0. This is the only guard against a 'skipped' node suite. A 'wrapper fail-closed / no skip' requirement is stated, and this covers it only partly. Node's reporter output is not parsed.",
+      "evidence": "tests/test_overview_priority_unit.py:913-931 asserts only `result.returncode == 0`. It does not inspect the TAP summary for pass counts or for skipped/todo counts.",
+      "recommendation": "Assert on the node output that the pass count is at least the expected number and that skipped and todo counts are 0. The reporter can be set with `--test-reporter=tap` for this.",
+      "blocker": false
+    },
+    {
+      "specialist": "test-quality",
+      "severity": "watchlist",
+      "file": "tests/test_api_app.py",
+      "line": 1,
+      "finding": "Size review, from all-tracked-text-size-watchlist.json. The diff touches none of the five named calibration-anchor test files, so there is no new growth in them. These unchanged tracked test files remain over 600 lines (pre-existing debt): tests/test_api_app.py 2909, tests/control_plane_test_support.py 1876, tests/test_worker_cli.py 1703, tests/test_adapter_contracts.py 1587, tests/test_architecture_contract.py 1509 and tests/test_api_main.py 1373. tests/test_overview_priority_gate.py is 1884 lines. It is outside the diff and is protected evidence, so I did not review it for quality. New test files are under 600 lines and well split: tests/test_overview_priority.py 188, tests/test_overview_priority_unit.py 33 and overview-priority.test.cjs 148. Production files over 600 lines that the diff touches are pre-existing: apps/api/routes/report_routes.py 1263 (grows by about 6 lines), packages/application/use_cases/morning_brief_sections.py 809 (net about -3 lines) and apps/web/frontend/app/page.js 658 (net about +1 line). The new growth is minimal. The pre-existing debt remains, and this review did not split it.",
+      "evidence": "all-tracked-text-size-watchlist.json entries and binding.json source_file_hashes line counts. I did not read the whole inventory for other tracked files over 600 lines, and I did not verify each count independently.",
+      "recommendation": "No action is needed for this candidate on the test side. Track the existing over-600 files as debt. Keep new overview tests out of the large anchor files, as this diff does.",
+      "blocker": false
+    },
+    {
+      "specialist": "test-quality",
+      "severity": "watchlist",
+      "file": "binding.json",
+      "line": 121,
+      "finding": "Coverage and evidence limits. This was a static review. I executed no tests and observed no results. The full make with the 55 unchanged visuals is RUNNING_UNOBSERVED. The 53-case independent gate and the GoPro lane gates are reported but were not independently verified here. I found no empty or trivially true assertion added by the diff, so there is no blocker. I did not review the contents of tests/test_overview_priority_gate.py.",
+      "evidence": "binding.json full_make_and55_visuals = RUNNING_UNOBSERVED. The only added tests are the three files listed above.",
+      "recommendation": "Require the full make and the independent gate results before treating the confidence as established. Product-intention and semantic-ownership traceability: priority.py and overview-priority.js are the single owners of the 3/2/1 ordering rule. The Python and JS copies are parallel implementations that are tested separately and not tied to one shared spec. Console S1/S2/S3, the briefing warning/notice/info mapping and the wallboard valid 2/3 threshold are preserved in code. The helper unit tests cover only the S1/S2/S3 and OperatingPicture label mappings and the briefing mapping. The wallboard threshold and assistant headline are untested in the diff, as noted above.",
+      "blocker": false
+    }
+  ],
+  "trailing": "\n```"
+}

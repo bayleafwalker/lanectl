@@ -1,0 +1,73 @@
+{
+  "source_commit": "8652b1b73aa809ff1e137b982e69faf5c7533647",
+  "command": "make verify-fast",
+  "returncode": 0,
+  "elapsed_s": 966.026,
+  "setup": [
+    {
+      "name": "node-version",
+      "returncode": 0,
+      "elapsed_s": 0.053
+    },
+    {
+      "name": "uv-sync",
+      "returncode": 0,
+      "elapsed_s": 3.588
+    },
+    {
+      "name": "npm-ci",
+      "returncode": 0,
+      "elapsed_s": 5.393
+    }
+  ],
+  "actual_summary_lines": [
+    "All checks passed!",
+    "Success: no issues found in 403 source files",
+    "2768 passed, 35 deselected, 5 warnings, 120 subtests passed in 890.57s (0:14:50)",
+    "60 passed in 6.93s",
+    "21 passed in 0.07s",
+    "14 passed in 0.03s",
+    "101 passed in 2.00s",
+    "  55 passed (27.1s)",
+    "1 chart(s) linted, 0 chart(s) failed"
+  ],
+  "visual_55_passed": true,
+  "actual_visual_last_run": {
+    "status": "passed",
+    "failedTests": []
+  },
+  "visual_test_config_and_baselines_identical_to_base": true,
+  "source_invariants": {
+    "candidate": {
+      "head": "8652b1b73aa809ff1e137b982e69faf5c7533647",
+      "tracked_count": 1310,
+      "content_and_literal_mode_unchanged": true,
+      "changed_paths": [],
+      "tracked_status": "",
+      "error_log_read": false,
+      "content_guard_falsified": true,
+      "mode_guard_falsified": true
+    },
+    "canonical": {
+      "head": "82dbd9477029d6fda7df67edc617f45a1a4ceb59",
+      "tracked_count": 1304,
+      "content_and_literal_mode_unchanged": true,
+      "changed_paths": [],
+      "tracked_status": "",
+      "error_log_read": false,
+      "content_guard_falsified": true,
+      "mode_guard_falsified": true
+    }
+  },
+  "observed_owned_process_count": 28,
+  "all_observed_owned_processes_absent": true,
+  "storybook_port_closed_after": true,
+  "sandbox_completion_guard": true,
+  "bootstrap_failure_preserved_original_sha256": "725f50a6eb00558618dca23935e7f1150718b60d057d799f665ccc553f958fbe",
+  "bootstrap_runtime_only_correction": "Explicit system CA bundle for the owned Python downloader",
+  "raw_full_make_log_sha256": "9087aee75f26121de46f076a314113702c807d5defa7caf0caadb96003b81103",
+  "review_scope": "runtime verifier; same agent authored external acceptance, no independent semantic review claimed",
+  "normal_train_executed": false,
+  "dev_smoke_executed": false,
+  "source_or_baseline_edits": false
+}

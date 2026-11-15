@@ -1,0 +1,16 @@
+{
+  "schema": "lanectl.hla2908-source-retention/v1",
+  "source_commit": "8652b1b73aa809ff1e137b982e69faf5c7533647",
+  "seed": "6075e9eab5dd83841cb10894b99480fee8a6f810",
+  "base": "82dbd9477029d6fda7df67edc617f45a1a4ceb59",
+  "bundle_sha256": "cf48df0b7fc54d216739ff3a46555709b524b21f3d0373f0df0d5f8998fcfc90",
+  "payload_size_bytes": 32079,
+  "candidate_added_plus_deleted": 651,
+  "restore": "fresh empty bare repo fetched base only, candidate andseed absent before bundle import, exact head restored, strict fsck exit0",
+  "absent_before_import": {
+    "6075e9eab5dd83841cb10894b99480fee8a6f810": true,
+    "8652b1b73aa809ff1e137b982e69faf5c7533647": true
+  },
+  "adoption": false,
+  "state": "parked after review contract failure"
+}

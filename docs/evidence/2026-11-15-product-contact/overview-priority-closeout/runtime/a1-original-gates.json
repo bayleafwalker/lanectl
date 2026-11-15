@@ -1,0 +1,34 @@
+{
+  "gates": [
+    {
+      "attempt_id": "hla-overview-priority-a1",
+      "gate": "diff-policy",
+      "passed": true,
+      "violations": []
+    },
+    {
+      "attempt_id": "hla-overview-priority-a1",
+      "gate": "fail-on-base",
+      "passed": true,
+      "violations": []
+    },
+    {
+      "attempt_id": "hla-overview-priority-a1",
+      "gate": "acceptance-on-base",
+      "passed": true,
+      "violations": []
+    },
+    {
+      "attempt_id": "hla-overview-priority-a1",
+      "gate": "acceptance",
+      "passed": true,
+      "violations": []
+    },
+    {
+      "attempt_id": "hla-overview-priority-a1",
+      "gate": "job:ruff",
+      "passed": true,
+      "violations": []
+    }
+  ]
+}

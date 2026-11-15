@@ -1,0 +1,122 @@
+{
+  "candidate_commit": "8652b1b73aa809ff1e137b982e69faf5c7533647",
+  "seed_commit": "6075e9eab5dd83841cb10894b99480fee8a6f810",
+  "base_commit": "82dbd9477029d6fda7df67edc617f45a1a4ceb59",
+  "added_plus_deleted": 651,
+  "changed_files": [
+    "apps/api/routes/assistant_routes.py",
+    "apps/api/routes/report_routes.py",
+    "apps/web/frontend/app/first-answer/page.js",
+    "apps/web/frontend/app/ingest-summary/[runId]/page.js",
+    "apps/web/frontend/app/operating-picture/page.js",
+    "apps/web/frontend/app/page.js",
+    "apps/web/frontend/app/review/page.js",
+    "apps/web/frontend/components/console-view.js",
+    "apps/web/frontend/components/operating-picture-view.js",
+    "apps/web/frontend/components/wallboard-view.js",
+    "apps/web/frontend/lib/overview-priority.js",
+    "apps/web/frontend/stories/support/fixtures.jsx",
+    "apps/web/frontend/unit/overview-priority.test.cjs",
+    "packages/application/use_cases/morning_brief_sections.py",
+    "packages/domains/overview/pipelines/attention_records.py",
+    "packages/domains/overview/priority.py",
+    "tests/test_overview_priority.py",
+    "tests/test_overview_priority_unit.py"
+  ],
+  "source_file_hashes": [
+    {
+      "path": "apps/api/routes/assistant_routes.py",
+      "sha256": "fb034e93cfefc0a722409aafb8e1a82282081f292e054e548b043b822ee293b3",
+      "lines": 574
+    },
+    {
+      "path": "apps/api/routes/report_routes.py",
+      "sha256": "2c81a5e55e03f33bd6c78522fc39325754f0129d4651bd614fb248303bc8d5fa",
+      "lines": 1263
+    },
+    {
+      "path": "apps/web/frontend/app/first-answer/page.js",
+      "sha256": "7b6d10a2f88a1f988ff4a298fe04242bf436fa7725998c58bfd1d7215ca23930",
+      "lines": 329
+    },
+    {
+      "path": "apps/web/frontend/app/ingest-summary/[runId]/page.js",
+      "sha256": "57558f78d02bff14864c4f0cb146661dd9b8fcb829a7610a4caa8c008f0d60d9",
+      "lines": 276
+    },
+    {
+      "path": "apps/web/frontend/app/operating-picture/page.js",
+      "sha256": "1a78d290d6401adab280e2824bb1095c3f8c13b26ccfbcb29f39d49b02fe9398",
+      "lines": 243
+    },
+    {
+      "path": "apps/web/frontend/app/page.js",
+      "sha256": "1396677f465782db6bd464732790f315bde780e9fd622c8075918995ee29a1a3",
+      "lines": 658
+    },
+    {
+      "path": "apps/web/frontend/app/review/page.js",
+      "sha256": "8fe6d1733222611e5aef14a101fecc335194526b6d82a99d1fdf459ababfad78",
+      "lines": 221
+    },
+    {
+      "path": "apps/web/frontend/components/console-view.js",
+      "sha256": "4a9d9bf37592637e510f60db84250dcc8471c4932ef9820bf9cb60063939941e",
+      "lines": 399
+    },
+    {
+      "path": "apps/web/frontend/components/operating-picture-view.js",
+      "sha256": "a37272c288bf7dd6bf56428c840548b51ae134c82a1395aeb5aa6995a34041b1",
+      "lines": 213
+    },
+    {
+      "path": "apps/web/frontend/components/wallboard-view.js",
+      "sha256": "a6a9f5498154b3edaac5b13e78232597c6133eed7af18446ea005f637ba06db6",
+      "lines": 229
+    },
+    {
+      "path": "apps/web/frontend/lib/overview-priority.js",
+      "sha256": "0bdf663b5a5fba42fc9c1cf4992ea87f1d60815c9f3724a7159aba7e645af061",
+      "lines": 69
+    },
+    {
+      "path": "apps/web/frontend/stories/support/fixtures.jsx",
+      "sha256": "31784061a41502fd82697bcf6c6f4420007b52d8774b2727fb562b6f682b9379",
+      "lines": 124
+    },
+    {
+      "path": "apps/web/frontend/unit/overview-priority.test.cjs",
+      "sha256": "091e78c99ed4affbb7b2140fdca381205517e39396143879393809a74416c9e3",
+      "lines": 148
+    },
+    {
+      "path": "packages/application/use_cases/morning_brief_sections.py",
+      "sha256": "00c4cca591ecd2a42b390a1c582762f53a5b6bddc989bfb2e6746815e8ad00d5",
+      "lines": 809
+    },
+    {
+      "path": "packages/domains/overview/pipelines/attention_records.py",
+      "sha256": "c3e5a68827962bf97554470fd50faaee16b508ac881b0a3e252bd7d828d3d01a",
+      "lines": 177
+    },
+    {
+      "path": "packages/domains/overview/priority.py",
+      "sha256": "e4348833c4f893954868378000cdab44a50b555a421e23211e8104f6aabbfcdd",
+      "lines": 60
+    },
+    {
+      "path": "tests/test_overview_priority.py",
+      "sha256": "57eeebbe58a83b08d2edd95c09520a4d4d83f7b56013cfffa3c16e737944348c",
+      "lines": 188
+    },
+    {
+      "path": "tests/test_overview_priority_unit.py",
+      "sha256": "ae6222f625d689d13e576625d70890cf3bc43c397f267a4c1bb85b044d005b1d",
+      "lines": 33
+    }
+  ],
+  "native_model": "opencode-go/deepseek-v4-pro",
+  "native_done_exit0": true,
+  "five_lane_gates": "passed",
+  "reviewer_model": "claude-sonnet-5-5"
+}

@@ -1,0 +1,65 @@
+{
+  "findings": [
+    {
+      "specialist": "repetition-vs-abstraction",
+      "severity": "advisory",
+      "file": "packages/application/use_cases/morning_brief_sections.py",
+      "line": 256,
+      "finding": "The briefing still classifies severity with its own coercion, `_ATTENTION_SEVERITY.get(int(row.get(\"severity\") or 1), INFO)`, next to the new canonical ordering. The patch moves only the sort (line ~238) onto `sort_overview_attention`. The two rules disagree on non-canonical values. The canonical helper treats the string \"3\", `True` and `3.0` as unknown, so they sort last. The briefing coerces them through `int()` and can show \"3\" as WARNING while it sits in the unranked tail. `int()` on a non-numeric string such as \"high\" would raise. `None` and `0` become 1, which is INFO, so that case happens to agree.",
+      "evidence": "morning_brief_sections.py:211 (`_ATTENTION_SEVERITY`) and :256 (`int(row.get(\"severity\") or 1)`) against `packages/domains/overview/priority.py` `recognized_priority`/`attention_priority_rank` (`type(severity) is int`). The new brief test covers only int 7 as an unknown value, so the divergence is untested.",
+      "recommendation": "Map severity through the shared helper, for example `recognized_priority(row.get(\"severity\"))` with a lookup that defaults to INFO, so ordering and labeling share one definition of a recognized priority. Add a test with a string or bool severity.",
+      "blocker": false
+    },
+    {
+      "specialist": "repetition-vs-abstraction",
+      "severity": "advisory",
+      "file": "apps/web/frontend/lib/overview-priority.js",
+      "line": 1,
+      "finding": "The same ordering and recognized-priority rules are implemented twice: once in `packages/domains/overview/priority.py` and once in `lib/overview-priority.js`. The rank table, the tie-field list and order, and the null-last comparison are all duplicated. Each copy has its own near-identical test suite. Nothing links the two, so a future change to a tie field or rank could update one and not the other. A cross-language duplicate may be unavoidable, but the patch adds no shared contract.",
+      "evidence": "`TIE_FIELDS = [item_type, title, item_id, detail, source_domain]` in the JS file against `_TIE_FIELDS` in priority.py. Rank mapping 3→0, 2→1, 1→2, else 3 in both. `tests/test_overview_priority.py` and `unit/overview-priority.test.cjs` assert the same cases separately.",
+      "recommendation": "Either move the ordering to the API so the frontend does not re-sort (the backend now sorts in the reports route), or add one shared golden fixture that both test suites load. Document the Python module as canonical and the JS file as a mirror of it.",
+      "blocker": false
+    },
+    {
+      "specialist": "repetition-vs-abstraction",
+      "severity": "advisory",
+      "file": "apps/api/routes/report_routes.py",
+      "line": 1127,
+      "finding": "The sort is now applied in several layers. `get_open_attention_items` in attention_records.py sorts. The `/reports/attention-items` route sorts again. Every frontend page then runs `sortAttentionItems` once more. The route re-sorts because the as-of snapshot path bypasses `get_open_attention_items`, so the `_rows_as_of` result is not covered. Re-sorting an already sorted list is idempotent and harmless. The cost is that one ordering rule is invoked in many places with no single enforcement point, and the assistant route relies on callers having sorted already.",
+      "evidence": "report_routes.py:1119-1131 (`payload[\"rows\"] = sort_overview_attention(...)`); attention_records.py:87-98; assistant_routes.py:379-382 (comment: \"attention_rows arrive in canonical priority order\"); seven `sortAttentionItems` call sites in the frontend.",
+      "recommendation": "Apply the ordering in the shared access layer that includes the as-of snapshot reader. Then the assistant route and the briefing can rely on it without a comment-only contract. For the assistant, call `sort_overview_attention` or a `top_attention` helper explicitly instead of trusting `attention_rows[0]`.",
+      "blocker": false
+    },
+    {
+      "specialist": "repetition-vs-abstraction",
+      "severity": "watchlist",
+      "file": "packages/domains/overview/pipelines/transformation_overview.py",
+      "line": 359,
+      "finding": "This is unchanged pre-existing code, and the patch does not touch it. `get_open_attention_items(store)` and the mart-refresh INSERT still order in SQL with `ORDER BY severity DESC, item_type, title`. SQL `DESC` puts out-of-range values such as 7 before 3, which contradicts the new canonical order. The facade method in attention_records.py was changed to sort in Python, but this lower-level reader remains a second ordering implementation. Any caller that bypasses the facade still sees the old order.",
+      "evidence": "transformation_overview.py:348 and :359. attention_records.py now passes `\"\"` as the order clause and calls `sort_overview_attention`.",
+      "recommendation": "Route this reader through `sort_overview_attention`, or remove the SQL ORDER BY. Also confirm no other caller reads the mart directly and bypasses the canonical order.",
+      "blocker": false
+    },
+    {
+      "specialist": "repetition-vs-abstraction",
+      "severity": "watchlist",
+      "file": "apps/api/routes/report_routes.py",
+      "line": 53,
+      "finding": "This is pre-existing code, not new in the patch. report_routes.py still imports from the legacy `packages.pipelines.household_reporting` re-export path. The patch adds no star re-exports and no new facade dependencies. The new imports (`packages.domains.overview.priority`) use the canonical implementation path.",
+      "evidence": "report_routes.py:53 (`from packages.pipelines.household_reporting import (...)`) is unchanged context in the diff. The new import at line 32 is canonical.",
+      "recommendation": "No action for this candidate. Keep it as legacy-facade debt for a separate migration.",
+      "blocker": false
+    },
+    {
+      "specialist": "repetition-vs-abstraction",
+      "severity": "advisory",
+      "file": "ALL-tracked-text-size-watchlist.json",
+      "line": 1,
+      "finding": "Coverage gap. The size-watchlist file named in the assignment is not in the review directory or the checkout, so I could not do the size inventory. This is not my specialist's main scope. I did not check the SQLite/PostgreSQL adapter pairs under packages/storage/ because the patch does not change that directory. I did not run or observe any tests. The full make with 55 visuals is reported as still running. This is a static review of the diff and the files it touches.",
+      "evidence": "A glob for ALL-tracked-text-size-watchlist.json found nothing. The patch touches no packages/storage or packages/pipelines facade files. binding.json reports full_make_and55_visuals as RUNNING_UNOBSERVED.",
+      "recommendation": "Have the size role confirm the watchlist is available. The changed files are large: report_routes.py is 1263 lines, morning_brief_sections.py is 809, and app/page.js is 658.",
+      "blocker": false
+    }
+  ],
+  "trailing": "\n\n**Traceability.** The change serves one requirement: a single canonical overview-attention order of 3, 2, 1, then unknowns last, with the specified tie order. `packages/domains/overview/priority.py` is the correct owner for that rule, since it sits in the overview domain and is imported by its canonical path. No new star re-exports or legacy-facade imports were added, so there are no blockers. The findings above are places where the one rule is not yet applied everywhere: the briefing's severity labeling at line 256, the unchanged SQL ordering, and the JS mirror of the Python module. I did not verify test results or runtime behavior."
+}

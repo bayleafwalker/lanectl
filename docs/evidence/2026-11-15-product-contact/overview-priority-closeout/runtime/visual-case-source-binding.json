@@ -1,0 +1,101 @@
+{
+  "source_commit": "8652b1b73aa809ff1e137b982e69faf5c7533647",
+  "visual_case_count": 55,
+  "visual_case_names": [
+    "ops-console.spec.js / console admin stays accessible / chromium",
+    "ops-console.spec.js / console reader stays accessible / chromium",
+    "ops-console.spec.js / console nothing-yet stays accessible / chromium",
+    "ops-console.spec.js / heat grid full stays accessible / chromium",
+    "ops-console.spec.js / heat grid sparse stays accessible / chromium",
+    "ops-console.spec.js / heat grid date-only stays accessible / chromium",
+    "ops-console.spec.js / heat grid empty stays accessible / chromium",
+    "ops-console.spec.js / console fits one 1440x900 screen without scrolling / chromium",
+    "ops-console.spec.js / F1-F5 focus panels and Ctrl+K opens the shared command palette / chromium",
+    "ops-console.spec.js / console stacks at phone width without horizontal scroll / chromium",
+    "storybook-ui.spec.js / app shell story stays accessible and visually stable / chromium",
+    "storybook-ui.spec.js / retro shell story stays accessible and visually stable / chromium",
+    "storybook-ui.spec.js / msw-backed story resolves mocked response / chromium",
+    "storybook-ui.spec.js / upload wizard enforces accept/retry gating before upload / chromium",
+    "storybook-ui.spec.js / policy template refuses submission until required inputs are supplied / chromium",
+    "storybook-ui.spec.js / operating picture v2 story shows the grouped net in the hero / chromium",
+    "ui-innovation.spec.js / cashflow sankey demo-month renders flows and stays accessible / chromium",
+    "ui-innovation.spec.js / cashflow sankey categorised-with-occasional renders flows and stays accessible / chromium",
+    "ui-innovation.spec.js / cashflow sankey focused-payee renders flows and stays accessible / chromium",
+    "ui-innovation.spec.js / cashflow sankey overspent renders flows and stays accessible / chromium",
+    "ui-innovation.spec.js / cashflow sankey sparse renders flows and stays accessible / chromium",
+    "ui-innovation.spec.js / cashflow sankey payees are keyboard reachable links / chromium",
+    "ui-innovation.spec.js / cashflow sankey draws nothing when no money has been published / chromium",
+    "ui-innovation.spec.js / cashflow bucket-ledger lists the buckets and stays accessible / chromium",
+    "ui-innovation.spec.js / cashflow bucket-ledger-overspent lists the buckets and stays accessible / chromium",
+    "ui-innovation.spec.js / cashflow bucket-ledger-sparse lists the buckets and stays accessible / chromium",
+    "ui-innovation.spec.js / briefing mixed renders every section and stays accessible / chromium",
+    "ui-innovation.spec.js / briefing nothing-trusted-yet renders every section and stays accessible / chromium",
+    "ui-innovation.spec.js / cashflow flow list is the narrow-screen alternative / chromium",
+    "ui-innovation.spec.js / wallboard standard stays accessible / chromium",
+    "ui-innovation.spec.js / wallboard compact stays accessible / chromium",
+    "ui-innovation.spec.js / wallboard nothing-connected stays accessible / chromium",
+    "ui-innovation.spec.js / wallboard standard lays out the kiosk grid / chromium",
+    "ui-innovation.spec.js / wallboard compact mode hides the event feed and hotkey hint / chromium",
+    "ui-innovation.spec.js / wallboard refresh pauses while hidden and refreshes on return / chromium",
+    "ui-innovation.spec.js / wallboard refresh ticks without focus but not while hidden or hovered / chromium",
+    "ui-innovation.spec.js / wallboard panel service-tile-up renders / chromium",
+    "ui-innovation.spec.js / wallboard panel devices renders / chromium",
+    "ui-innovation.spec.js / wallboard panel events renders / chromium",
+    "ui-innovation.spec.js / wallboard panel power renders / chromium",
+    "ui-innovation.spec.js / wallboard panel power-ambiguous renders / chromium",
+    "ui-innovation.spec.js / app shell rail groups the nav, marks the current page and stays accessible / chromium",
+    "ui-innovation.spec.js / app shell collapses to a menu button at phone width / chromium",
+    "ui-innovation.spec.js / state panels expose one alert and polite statuses / chromium",
+    "ui-innovation.spec.js / command palette opens with the keyboard and follows the highlighted link / chromium",
+    "ui-wave-3.spec.js / explain opens from the keyboard and closes with Escape / chromium",
+    "ui-wave-3.spec.js / explain closes on an outside click / chromium",
+    "ui-wave-3.spec.js / explain says when the lineage walk left older runs out / chromium",
+    "ui-wave-3.spec.js / explain says nothing about truncation for a whole graph / chromium",
+    "ui-wave-3.spec.js / explain lineage-unavailable stays accessible when open / chromium",
+    "ui-wave-3.spec.js / explain wallboard stays accessible when open / chromium",
+    "ui-wave-3.spec.js / explain panel stays inside a phone-width viewport / chromium",
+    "ui-wave-3.spec.js / responsive table is a table on wide screens and slips at phone width / chromium",
+    "ui-wave-3.spec.js / as-of scrubber marks the viewed month and shows gaps as inert / chromium",
+    "ui-wave-3.spec.js / sparkline month labels stay readable and never overlap at any card width / chromium"
+  ],
+  "visual_test_config_and_baseline_sources": [
+    {
+      "path": "apps/web/frontend/playwright.config.js",
+      "mode": "100755",
+      "sha256": "80ffdd766d7008eb0386d503577fe81926316a3da1807cc26efcfd4520b89a41"
+    },
+    {
+      "path": "apps/web/frontend/playwright/ops-console.spec.js",
+      "mode": "100644",
+      "sha256": "dd16371cc7ae6667d8cb2b202dc255b26ad6162eb487c8297fc028de6cbdae4d"
+    },
+    {
+      "path": "apps/web/frontend/playwright/storybook-ui.spec.js",
+      "mode": "100755",
+      "sha256": "e8dca57f16c7602fc818f866cd5f23c0b16d3936956e1ff66e8d5859d8c628bc"
+    },
+    {
+      "path": "apps/web/frontend/playwright/storybook-ui.spec.js-snapshots/app-shell-admin-control-chromium-linux.png",
+      "mode": "100755",
+      "sha256": "d0db1bbb25864a3a8dd38e2a88e6f78803b797f12788eb5bf584d622eea2db11"
+    },
+    {
+      "path": "apps/web/frontend/playwright/storybook-ui.spec.js-snapshots/retro-shell-admin-control-chromium-linux.png",
+      "mode": "100755",
+      "sha256": "d3e7d239c76731e42b361dd741ecbb137ed6eccbee7a4c04c3cd9c0b942a0972"
+    },
+    {
+      "path": "apps/web/frontend/playwright/ui-innovation.spec.js",
+      "mode": "100644",
+      "sha256": "38105f20b2fba313426cd9d2001bad237d1afe1f1323ae89bb5f3264512d4b04"
+    },
+    {
+      "path": "apps/web/frontend/playwright/ui-wave-3.spec.js",
+      "mode": "100644",
+      "sha256": "09c1ae6d61f0230b06b29321e466634fc3c5cdbd8e34356e9ff67134abea7d7f"
+    }
+  ],
+  "all_identical_to_base": true,
+  "no_skips_requested": true,
+  "snapshots_updated": false
+}

@@ -1,0 +1,355 @@
+{
+  "status": "CONFIRMED_FACTUAL_COUNTEREXAMPLES",
+  "author_role": "External acceptance author providing bounded runtime diagnosis; no independent semantic review claimed",
+  "source_commit": "8652b1b73aa809ff1e137b982e69faf5c7533647",
+  "source_bindings": {
+    "packages/domains/overview/priority.py": "e4348833c4f893954868378000cdab44a50b555a421e23211e8104f6aabbfcdd",
+    "apps/web/frontend/lib/overview-priority.js": "0bdf663b5a5fba42fc9c1cf4992ea87f1d60815c9f3724a7159aba7e645af061",
+    "packages/application/use_cases/morning_brief_sections.py": "00c4cca591ecd2a42b390a1c582762f53a5b6bddc989bfb2e6746815e8ad00d5",
+    "packages/application/use_cases/morning_brief.py": "df506e7d1da91d0b98175e87da487c006a7e3d38a67627e5a1d3d398409b8270",
+    "packages/domains/overview/pipelines/overview_models.py": "04698f6f6b00935c43c1c8557c8a31d9dbd0a9d219efed8d955a47f6753d16b0"
+  },
+  "source_hashes_unchanged_after": true,
+  "all_candidate_tracked_content_and_literal_modes_unchanged": true,
+  "candidate_tracked_count": 1310,
+  "error_log_unread": true,
+  "unicode_case": {
+    "same_input_file": "$EVIDENCE/falsifiers/rows.json",
+    "rows_sha256": "7daf78ebf763badd11f5d516a3d4262dec006fc122ae0149f0ec6cc776107aab",
+    "actual_python": {
+      "input": [
+        {
+          "item_id": "emoji-row",
+          "item_type": "anomaly",
+          "title": "😀",
+          "detail": "Synthetic Unicode priority probe",
+          "severity": 3,
+          "source_domain": "finance"
+        },
+        {
+          "item_id": "fullwidth-row",
+          "item_type": "anomaly",
+          "title": "Ａ",
+          "detail": "Synthetic Unicode priority probe",
+          "severity": 3,
+          "source_domain": "finance"
+        }
+      ],
+      "code_points": {
+        "emoji-row": [
+          128512
+        ],
+        "fullwidth-row": [
+          65313
+        ]
+      },
+      "ordered_ids": [
+        "fullwidth-row",
+        "emoji-row"
+      ],
+      "reversed_input_ordered_ids": [
+        "fullwidth-row",
+        "emoji-row"
+      ],
+      "source_values_unchanged": true
+    },
+    "actual_javascript": {
+      "node": "v20.20.1",
+      "esbuild_version": "0.25.12",
+      "actual_source_sha256": "0bdf663b5a5fba42fc9c1cf4992ea87f1d60815c9f3724a7159aba7e645af061",
+      "input": [
+        {
+          "item_id": "emoji-row",
+          "item_type": "anomaly",
+          "title": "😀",
+          "detail": "Synthetic Unicode priority probe",
+          "severity": 3,
+          "source_domain": "finance"
+        },
+        {
+          "item_id": "fullwidth-row",
+          "item_type": "anomaly",
+          "title": "Ａ",
+          "detail": "Synthetic Unicode priority probe",
+          "severity": 3,
+          "source_domain": "finance"
+        }
+      ],
+      "ordered_ids": [
+        "emoji-row",
+        "fullwidth-row"
+      ],
+      "reversed_input_ordered_ids": [
+        "emoji-row",
+        "fullwidth-row"
+      ],
+      "actual_compare_emoji_fullwidth": -1,
+      "title_code_points": {
+        "emoji-row": [
+          128512
+        ],
+        "fullwidth-row": [
+          65313
+        ]
+      },
+      "title_utf16_code_units": {
+        "emoji-row": [
+          55357,
+          56832
+        ],
+        "fullwidth-row": [
+          65313
+        ]
+      },
+      "source_values_unchanged": true
+    },
+    "different_orders_confirmed": true,
+    "expected_code_point_order": [
+      "fullwidth-row",
+      "emoji-row"
+    ],
+    "code_points": {
+      "U+FF21": 65313,
+      "U+1F600": 128512
+    },
+    "source_of_expectation": "Candidate helper docstrings claim code-point order; numeric Unicode scalar values establish the order independently.",
+    "input_order_is_not_cause": true,
+    "warehouse_schema_accepts_exact_rows": true,
+    "scope": "Actual production pure helpers, JS loaded by esbuild; no rewritten comparator and no UI/API response simulation. No deployed UI observation claimed."
+  },
+  "briefing_provider_cases": [
+    {
+      "label": "known3",
+      "input_severity": 3,
+      "input_python_type": "int",
+      "actual_canonical_recognized_priority": 3,
+      "actual_canonical_rank": 0,
+      "returned": {
+        "summary": "1 open attention item.",
+        "items": [
+          {
+            "item_id": "attention:known3",
+            "severity": "warning",
+            "headline": "Synthetic known3",
+            "claim_status": "confirmed"
+          }
+        ]
+      }
+    },
+    {
+      "label": "known2",
+      "input_severity": 2,
+      "input_python_type": "int",
+      "actual_canonical_recognized_priority": 2,
+      "actual_canonical_rank": 1,
+      "returned": {
+        "summary": "1 open attention item.",
+        "items": [
+          {
+            "item_id": "attention:known2",
+            "severity": "notice",
+            "headline": "Synthetic known2",
+            "claim_status": "confirmed"
+          }
+        ]
+      }
+    },
+    {
+      "label": "known1",
+      "input_severity": 1,
+      "input_python_type": "int",
+      "actual_canonical_recognized_priority": 1,
+      "actual_canonical_rank": 2,
+      "returned": {
+        "summary": "1 open attention item.",
+        "items": [
+          {
+            "item_id": "attention:known1",
+            "severity": "info",
+            "headline": "Synthetic known1",
+            "claim_status": "confirmed"
+          }
+        ]
+      }
+    },
+    {
+      "label": "unknown7",
+      "input_severity": 7,
+      "input_python_type": "int",
+      "actual_canonical_recognized_priority": null,
+      "actual_canonical_rank": 3,
+      "returned": {
+        "summary": "1 open attention item.",
+        "items": [
+          {
+            "item_id": "attention:unknown7",
+            "severity": "info",
+            "headline": "Synthetic unknown7",
+            "claim_status": "confirmed"
+          }
+        ]
+      }
+    },
+    {
+      "label": "string3",
+      "input_severity": "3",
+      "input_python_type": "str",
+      "actual_canonical_recognized_priority": null,
+      "actual_canonical_rank": 3,
+      "returned": {
+        "summary": "1 open attention item.",
+        "items": [
+          {
+            "item_id": "attention:string3",
+            "severity": "warning",
+            "headline": "Synthetic string3",
+            "claim_status": "confirmed"
+          }
+        ]
+      }
+    },
+    {
+      "label": "string_high",
+      "input_severity": "high",
+      "input_python_type": "str",
+      "actual_canonical_recognized_priority": null,
+      "actual_canonical_rank": 3,
+      "exception": {
+        "type": "ValueError",
+        "message": "invalid literal for int() with base 10: 'high'"
+      },
+      "traceback": "Traceback (most recent call last):\n  File \"$EVIDENCE/falsifiers/probe.py\", line 30, in <module>\n    section = build_attention_section(inputs)\n              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"$CHECKOUT/packages/application/use_cases/morning_brief_sections.py\", line 253, in build_attention_section\n    items = tuple(\n            ^^^^^^\n  File \"$CHECKOUT/packages/application/use_cases/morning_brief_sections.py\", line 256, in <genexpr>\n    severity=_ATTENTION_SEVERITY.get(int(row.get(\"severity\") or 1), BriefSeverity.INFO),\n                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nValueError: invalid literal for int() with base 10: 'high'\n"
+    },
+    {
+      "label": "boolean_true",
+      "input_severity": true,
+      "input_python_type": "bool",
+      "actual_canonical_recognized_priority": null,
+      "actual_canonical_rank": 3,
+      "returned": {
+        "summary": "1 open attention item.",
+        "items": [
+          {
+            "item_id": "attention:boolean_true",
+            "severity": "info",
+            "headline": "Synthetic boolean_true",
+            "claim_status": "confirmed"
+          }
+        ]
+      }
+    },
+    {
+      "label": "null",
+      "input_severity": null,
+      "input_python_type": "NoneType",
+      "actual_canonical_recognized_priority": null,
+      "actual_canonical_rank": 3,
+      "returned": {
+        "summary": "1 open attention item.",
+        "items": [
+          {
+            "item_id": "attention:null",
+            "severity": "info",
+            "headline": "Synthetic null",
+            "claim_status": "confirmed"
+          }
+        ]
+      }
+    }
+  ],
+  "briefing_confirmed_mismatches": [
+    "String severity \"3\" is canonical-unknown/rank3 but actual briefing emits warning.",
+    "String severity \"high\" is canonical-unknown/rank3 but actual briefing raises ValueError."
+  ],
+  "briefing_confirmed_neutral_controls": [
+    "True is canonical-unknown and actual briefing emits info.",
+    "None is canonical-unknown and actual briefing emits info.",
+    "Integer7 is canonical-unknown and actual briefing emits info."
+  ],
+  "typed_warehouse_sql_probe": {
+    "engine": "DuckDB",
+    "version": "1.5.1",
+    "schema_from_actual_source": [
+      [
+        "item_id",
+        "VARCHAR NOT NULL"
+      ],
+      [
+        "item_type",
+        "VARCHAR NOT NULL"
+      ],
+      [
+        "title",
+        "VARCHAR NOT NULL"
+      ],
+      [
+        "detail",
+        "VARCHAR NOT NULL"
+      ],
+      [
+        "severity",
+        "INTEGER NOT NULL"
+      ],
+      [
+        "source_domain",
+        "VARCHAR NOT NULL"
+      ]
+    ],
+    "unicode_rows_accepted": [
+      [
+        "emoji-row",
+        "😀",
+        3
+      ],
+      [
+        "fullwidth-row",
+        "Ａ",
+        3
+      ]
+    ],
+    "severity_inputs": [
+      {
+        "label": "string3",
+        "input_severity": "3",
+        "input_python_type": "str",
+        "stored_severity": 3,
+        "stored_python_type": "int"
+      },
+      {
+        "label": "string_high",
+        "input_severity": "high",
+        "input_python_type": "str",
+        "exception": {
+          "type": "ConversionException",
+          "message": "Conversion Error: Could not convert string 'high' to INT32"
+        }
+      },
+      {
+        "label": "boolean_true",
+        "input_severity": true,
+        "input_python_type": "bool",
+        "stored_severity": 1,
+        "stored_python_type": "int"
+      },
+      {
+        "label": "null",
+        "input_severity": null,
+        "input_python_type": "NoneType",
+        "exception": {
+          "type": "ConstraintException",
+          "message": "Constraint Error: NOT NULL constraint failed: owned_attention.severity"
+        }
+      }
+    ]
+  },
+  "reachability_limits": [
+    "Unicode counterexample uses ordinary integer3 severity and Unicode VARCHAR titles; the exact rows were accepted by an in-memory DuckDB table using the production column definitions.",
+    "Briefing raw string/bool/None inputs are injected only through real data-only BriefInputs/PublicationInput/ConfidenceEvidence; no production functions are mocked.",
+    "The production current mart declares severity INTEGER NOT NULL. In the measured DuckDB seam, \"3\" stores as integer3, True as integer1, \"high\" is rejected, and None is rejected; these results do not establish raw malformed values reaching an ordinary typed current SQL publication read.",
+    "Postgres coercion, deployed publication reads, historical malformed JSON reachability and the reviewer float3.0/JSON edge case were not measured here. No deployed outage is claimed."
+  ],
+  "actions_not_taken": [
+    "No candidate/source/test/baseline/permission edits.",
+    "No repair, native implementation attempt, waiver, tracker update, PR, publish, land, train or deploy."
+  ]
+}

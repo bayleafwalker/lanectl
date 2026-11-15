@@ -1,0 +1,20 @@
+{
+  "item": "homelab-analytics#2908",
+  "status": "blocked",
+  "terminal_decision": null,
+  "active_reservations_count": 0,
+  "events": [
+    {
+      "id": 6785,
+      "event_type": "blocker",
+      "created_at": "2026-11-15T20:19:50.749759Z"
+    },
+    {
+      "id": 6786,
+      "event_type": "reservation.released",
+      "created_at": "2026-11-15T20:19:52.172204Z"
+    }
+  ],
+  "reservation510_release": "Observed successful served release at2026-11-15T20:19:52Z; statusreleased",
+  "durability": "served durable-authoritative; thisselectedreadback session-local"
+}

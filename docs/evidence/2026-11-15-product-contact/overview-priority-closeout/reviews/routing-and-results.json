@@ -1,0 +1,93 @@
+[
+  {
+    "phase": "terminal",
+    "role": "pack-boundary",
+    "model": "claude-sonnet-5-5",
+    "source_commit": "8652b1b73aa809ff1e137b982e69faf5c7533647",
+    "exit": 0,
+    "elapsed_s": 25.778,
+    "permission_denials": 0,
+    "is_error": false,
+    "model_usage": [
+      "claude-sonnet-5-5"
+    ]
+  },
+  {
+    "phase": "terminal",
+    "role": "stratum-coherence",
+    "model": "claude-sonnet-5-5",
+    "source_commit": "8652b1b73aa809ff1e137b982e69faf5c7533647",
+    "exit": 0,
+    "elapsed_s": 36.907,
+    "permission_denials": 0,
+    "is_error": false,
+    "model_usage": [
+      "claude-sonnet-5-5"
+    ]
+  },
+  {
+    "phase": "terminal",
+    "role": "semantic-ownership",
+    "model": "claude-sonnet-5-5",
+    "source_commit": "8652b1b73aa809ff1e137b982e69faf5c7533647",
+    "exit": 0,
+    "elapsed_s": 81.148,
+    "permission_denials": 0,
+    "is_error": false,
+    "model_usage": [
+      "claude-sonnet-5-5"
+    ]
+  },
+  {
+    "phase": "terminal",
+    "role": "god-class-file-size",
+    "model": "claude-sonnet-5-5",
+    "source_commit": "8652b1b73aa809ff1e137b982e69faf5c7533647",
+    "exit": 0,
+    "elapsed_s": 52.011,
+    "permission_denials": 0,
+    "is_error": false,
+    "model_usage": [
+      "claude-sonnet-5-5"
+    ]
+  },
+  {
+    "phase": "terminal",
+    "role": "repetition-vs-abstraction",
+    "model": "claude-sonnet-5-5",
+    "source_commit": "8652b1b73aa809ff1e137b982e69faf5c7533647",
+    "exit": 0,
+    "elapsed_s": 48.409,
+    "permission_denials": 0,
+    "is_error": false,
+    "model_usage": [
+      "claude-sonnet-5-5"
+    ]
+  },
+  {
+    "phase": "terminal",
+    "role": "test-quality",
+    "model": "claude-sonnet-5-5",
+    "source_commit": "8652b1b73aa809ff1e137b982e69faf5c7533647",
+    "exit": 0,
+    "elapsed_s": 65.007,
+    "permission_denials": 0,
+    "is_error": false,
+    "model_usage": [
+      "claude-sonnet-5-5"
+    ]
+  },
+  {
+    "phase": "terminal",
+    "role": "suppression-drift",
+    "model": "claude-sonnet-5-5",
+    "source_commit": "8652b1b73aa809ff1e137b982e69faf5c7533647",
+    "exit": 0,
+    "elapsed_s": 14.422,
+    "permission_denials": 0,
+    "is_error": false,
+    "model_usage": [
+      "claude-sonnet-5-5"
+    ]
+  }
+]

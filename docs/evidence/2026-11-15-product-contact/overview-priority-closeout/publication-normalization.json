@@ -1,0 +1,8 @@
+{
+  "prepared_manifest_sha256": "4d61e9af6e827392613e1890434f5000436bdef6f0413dfcc9a5bf5b3c8f8180",
+  "file": "runtime/full-make.log",
+  "prepared_log_sha256": "588a084c9f9e0992d016ae762825adc8a44da0f6d87b4c4969f767d1ac557d75",
+  "publication_log_sha256": "fdedbab6a9f4d32d440c98c7b6f00d1e24bd2e229d0eb6336f5b740acd564a35",
+  "change": "Removed trailing whitespace on3lines only; results unchanged; original staging copy retained.",
+  "review_files_changed": false
+}

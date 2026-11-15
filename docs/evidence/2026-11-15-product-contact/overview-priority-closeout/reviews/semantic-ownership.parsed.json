@@ -1,0 +1,55 @@
+{
+  "findings": [
+    {
+      "specialist": "semantic-ownership",
+      "severity": "advisory",
+      "file": "packages/application/use_cases/morning_brief_sections.py",
+      "line": 256,
+      "finding": "The briefing still maps the raw severity with its own table (`_ATTENTION_SEVERITY.get(int(row.get('severity') or 1), INFO)`). It does not use the new canonical `recognized_priority` or `attention_priority_rank`. The patch re-sorts this section canonically but leaves a second interpretation of the same field in place. The two now disagree on non-int values. The sort treats \"3\", 3.0 and True as unknown, so they go last. The briefing coerces them through `int()`, so \"3\" and 3.0 become WARNING and True becomes INFO. A non-numeric string such as \"high\" would raise ValueError in the briefing. The overview domain owns the priority semantics, but this consumer still has its own parsing.",
+      "evidence": "Diff replaces only the `sorted(...)` call in `build_attention_section`. `_ATTENTION_SEVERITY` (lines 211-215) and the `int(row.get(\"severity\") or 1)` mapping at line 256 are untouched. `priority.py` says booleans and strings are never recognized. The new briefing test only covers ints 7/1/2/3. It has no case for string, float or bool severities.",
+      "recommendation": "Derive the briefing `BriefSeverity` from `recognized_priority(row.get('severity'))`, mapping None to INFO. Add a briefing test for \"3\", 3.0, True and \"high\". Then the sort order and the severity label come from one owner.",
+      "blocker": false
+    },
+    {
+      "specialist": "semantic-ownership",
+      "severity": "advisory",
+      "file": "apps/web/frontend/lib/overview-priority.js",
+      "line": 360,
+      "finding": "The canonical rule is implemented twice, in Python (`packages/domains/overview/priority.py`) and in JS, with no parity check. The two disagree on edge cases that the docs and docstrings call canonical. (1) Both state 'code-point string order'. JS `sa < sb` compares UTF-16 code units, while Python compares code points. Astral characters such as emoji sort differently from BMP characters above U+D800, for example U+FF21. (2) Python rejects float 3.0 as unknown (`type(severity) is int`). JS accepts it, because after JSON parsing 3.0 is the integer 3. The Python and JS sorts can therefore order the same rows differently. The JS sort feeds the Home, FirstAnswer, OperatingPicture, Review, Console and IngestSummary screens, so they could disagree with the API/briefing/assistant order.",
+      "evidence": "JS `compareText` uses `<` and `>` on `String(a)` and `String(b)`. Python `_text` returns `(False, str(value))`, which sorts by code point. Python `attention_priority_rank` requires `type(severity) is int`. JS `attentionPriorityRank` requires `typeof === 'number'` and `Number.isInteger`. The JS tests and Python tests use separate, non-shared fixtures with ASCII-only strings.",
+      "recommendation": "Either make the JS comparator code-point aware (compare via `Array.from` or `codePointAt`), or soften the 'code-point' claim in the docs and docstrings. Add one shared golden fixture, ideally JSON, that both the Python and node suites load. It should include astral characters and float-valued severities. Also record that the JS module mirrors `packages/domains/overview/priority.py`. That should be stated as an explicit ownership relationship, not just implied.",
+      "blocker": false
+    },
+    {
+      "specialist": "semantic-ownership",
+      "severity": "advisory",
+      "file": "packages/domains/overview/manifest.py",
+      "line": 100,
+      "finding": "The severity scale (3=high, 2=medium, 1=low; unknown values are unranked) now governs ordering, labels and warning thresholds across API, briefing, assistant and every web screen. It is documented only in a SQL comment (`overview_models.py:25`) and in the new `priority.py` docstring. The published `open_attention_items` contract still describes `severity` only as 'Priority level for the attention item.' It gives no scale, direction, recognized set or ordering semantics. Consumers had already diverged. Several screens treated 1 as most urgent, and the published read ordered ascending while the warehouse read ordered descending. This patch fixes that divergence on the consumer side only. The shared contract that the fix depends on is still not stated in the publication contract or docs. `semantic-contracts.md` says a promoted semantic must update the requirements and publication contract in the same change.",
+      "evidence": "`manifest.py:100-102` has `status_field(\"Priority level for the attention item.\")` and the schema version remains 1.0.0. `overview_models.py:25` has `# 1=low, 2=medium, 3=high`. The patch changes no manifest, docs or generated contract file. It does flip the front-end meaning of 1 and 3 in `first-answer/page.js`, `ingest-summary/[runId]/page.js`, `app/page.js` and the story fixtures.",
+      "recommendation": "Document the scale in the severity field description, and state that row order is canonical (3, 2, 1, then unknowns), in the publication contract or the architecture docs. No schema version bump is needed, because the field type is unchanged. Note in the change record that front-end screens were corrected to the producer's scale. This is advisory only, because the producer scale itself did not change.",
+      "blocker": false
+    },
+    {
+      "specialist": "semantic-ownership",
+      "severity": "advisory",
+      "file": "packages/domains/overview/pipelines/transformation_overview.py",
+      "line": 356,
+      "finding": "A second producer-side reader of `mart_open_attention_items` keeps the old order. `get_open_attention_items(store)` still uses `ORDER BY severity DESC, item_type, title`. The same ordering is repeated in the refresh INSERT at line 348. It is registered through `OVERVIEW_MART_READERS` in `mart_reads.py`, as the `_read_mart` source. The patch fixes order only in the `ReportingService` facade (`attention_records.get_open_attention_items`) and in the route and briefing wiring. Any caller that reads through the mart reader registry directly, or the store function, gets a different tie order. It also places unknown severities such as 7 first, because DESC puts 7 above 3. That is exactly the 'unknown outranks real priorities' behavior the patch removes elsewhere.",
+      "evidence": "`transformation_overview.py:356-360` was unchanged by the diff. `attention_records.py` now calls `service._read_mart(...)` and then `sort_overview_attention`. The diff adds no test of the registry reader directly. The new warehouse test goes only through `ReportingService`.",
+      "recommendation": "Confirm that no other consumer calls the registry reader or the store function directly. If any does, either apply `sort_overview_attention` there or document the facade as the only canonical-order entry point. Do not leave two competing orderings of the same publication without saying so.",
+      "blocker": false
+    },
+    {
+      "specialist": "semantic-ownership",
+      "severity": "watchlist",
+      "file": "apps/api/routes/report_routes.py",
+      "line": 1119,
+      "finding": "Traceability and coverage statement. No blocker was found. (a) Canonical facts and dimensions: attention ordering and priority semantics are owned by `packages/domains/overview/priority.py`, which is imported by the application, API and reporting layers. The JS copy mirrors it (see the parity finding). (b) Category governance: `item_type`, `source_domain` and `title` are used only as sort tie-breakers. No category handling was added, so the `category_id` path is not bypassed. (c) Contract change: there is no change to field units or nullability, and no new fields. The row order of the published read changed. It was `ORDER BY severity, item_type`, ascending, so low first, and it is now canonical high-first. This order is not declared as sortable or ordered in the publication contract, so I do not treat it as a version-bump regression. Human-readable consumers that relied on ascending order would see the change. (d) The individual-record API (`attention_record_routes.py`, `get_attention_record`) is unchanged, as the task requires. (e) Limits of this review: it is static only. No tests were run. The full make with the 55 visuals is reported as RUNNING and unobserved, so the screen-level effect of the severity flip (1 and 3) is untested here. `all-tracked-text-size-watchlist.json` is not in the review directory. That file is for the size role, so I did not use it. Traceability: the product intent that every screen and API answers with the same high-first order, with unknowns neutral, visible and last, is implemented in `report_routes.py:1119-1131`, `attention_records.py`, `morning_brief_sections.py`, `assistant_routes.py:376-392` and the web consumers. The briefing severity mapping and the JS parity are the two places where that single-owner intent is not fully realized.",
+      "evidence": "Patch hunks for `report_routes.py` (re-sort after `_rows_as_of`, so historical snapshot rows are re-sorted), `assistant_routes.py` (uses `attention_rows[0]` and `recognized_priority`), the web components and the tests. `binding.json` records `full_make_and55_visuals` as `RUNNING_UNOBSERVED`.",
+      "recommendation": "No action beyond the advisory findings above. Treat the full make and visual results as pending evidence before relying on the screen-level semantics.",
+      "blocker": false
+    }
+  ],
+  "trailing": "\n```"
+}

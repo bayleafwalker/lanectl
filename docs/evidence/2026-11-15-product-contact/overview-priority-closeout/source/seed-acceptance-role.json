@@ -1,0 +1,18 @@
+{
+  "artifact": "tests/test_overview_priority_gate.py",
+  "lines": 1884,
+  "adapter_sha256": "659bc7989349a24c24d0d4b508ec2fb0cf9a108dc8b72205914f6ac0251f0062",
+  "bound_test_sha256": "bffa379ba2823106620572f52deac584aa7ee0711d20054f107e27b8ed93dcae",
+  "case_count": 53,
+  "role": "frozen first-party seed acceptance artifact, not native candidate implementation",
+  "candidate_diff_boundaries": {
+    "a1": "45db10004f33b8a51a03cb93990b314fea411fc1..8556f11ec6f85b2bee9b83c68a72ef8fce623d7a",
+    "a2": "6075e9eab5dd83841cb10894b99480fee8a6f810..8652b1b73aa809ff1e137b982e69faf5c7533647"
+  },
+  "candidate_added_plus_deleted": {
+    "a1": 681,
+    "a2": 651
+  },
+  "original_budget": 700,
+  "changed_or_weakened_for_closeout": false
+}

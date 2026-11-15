@@ -1,0 +1,75 @@
+{
+  "findings": [
+    {
+      "specialist": "god-class-file-size",
+      "severity": "blocker",
+      "file": "apps/api/routes/report_routes.py",
+      "line": 1119,
+      "finding": "This file grew in this scope (1257 to 1263 lines, +6) and is now more than twice the size of the next-largest file in apps/api/routes. The next-largest is action_proposal_routes.py at 621 lines, and 2x that is 1242. By the rule as written this is a blocker. The growth is small, and the file was already past the 2x line at base (1257 > 1242), so most of the debt is pre-existing. The scope added a sort import and a 6-line post-retrieval sort inside get_attention_items. That handler is small, but it is nested in register_report_routes. register_report_routes starts at line 555 and runs to about the end of the file, roughly 700 lines. That is far past the 80-line function threshold.",
+      "evidence": "all-tracked-text-size-watchlist.json: report_routes.py lines=1263, base_lines=1257, changed=true. action_proposal_routes.py is 621 and unchanged, and it is the only other file over 600 in that directory. candidate.patch hunks at @@ -29 and @@ -1118 show the import and the sort call. grep shows `def register_report_routes(` at line 555 and `async def get_attention_items` at line 1119.",
+      "recommendation": "Don't pile more route logic into this file. Move the attention and priority-ordering handlers, or the whole attention/recent-changes report group, into a focused module such as attention_report_routes.py, registered from register_report_routes. Then split the remaining ~700-line registrar by report family. The +6 growth alone is small, so a maintainer may reasonably accept it as pre-existing debt with a tracked extraction item.",
+      "blocker": true
+    },
+    {
+      "specialist": "god-class-file-size",
+      "severity": "advisory",
+      "file": "tests/test_overview_priority_gate.py",
+      "line": 1,
+      "finding": "This is a new tracked file of 1884 lines (base_lines null), about three times the 600 LOC threshold. It embeds a ~1,800-line private runner as a string (RUNNER_SOURCE) plus a hash-pinned test payload. It also lists 52 expected case names on a single line, and has 72 defs overall. That is too large to review safely in this form. The file appears in the size inventory and in tests/, but it is not in binding.json changed_files and not in candidate.patch. Its content is therefore outside the bound diff I was given and I could not review it as part of the diff. In tests/ it is smaller than test_api_app.py (2909), so the 2x-next-largest blocker rule does not apply.",
+      "evidence": "all-tracked-text-size-watchlist.json: lines=1884, base_lines=null, changed=true. binding.json lists 18 changed files and this one is not among them. Read of lines 1-60 shows RUNNER_SOURCE, NODE_SHA256, RUNNER_SHA256, TEST_SHA256 and the EXPECTED_CASES list.",
+      "recommendation": "Confirm whether this file is meant to be part of the candidate. The task describes the independent frozen acceptance as separate protected evidence, so it may be intentional. If it is part of the candidate, extract the runner into its own file and keep the hash pin. Also split the cases into focused modules. If it is not, record the binding discrepancy. I am not claiming any execution or test result for this file.",
+      "blocker": false
+    },
+    {
+      "specialist": "god-class-file-size",
+      "severity": "advisory",
+      "file": "apps/web/frontend/app/page.js",
+      "line": 544,
+      "finding": "The file grew in this scope (656 to 658 lines) and is over the 600 LOC threshold. It was already over before this change, so the debt is pre-existing. The attention list now adds an 'unranked' pill and a sortAttentionItems call. The page is not more than twice the size of the next-largest file in apps/web/frontend/app, because control/catalog/page.js is 1575 lines. The DashboardPage component is a single very large function, which is also over the 80-line function threshold. The growth is small and net 2 lines. The ordering logic itself was correctly extracted into lib/overview-priority.js.",
+      "evidence": "all-tracked-text-size-watchlist.json: lines=658, base_lines=656, changed=true. candidate.patch hunk @@ -543,23 +544,24 @@.",
+      "recommendation": "Extract the attention card (the list, warn pill and unranked pill) into a presentational component such as components/attention-list.js. The Operating Picture, Console and Wallboard views already use the shared helper in the same way.",
+      "blocker": false
+    },
+    {
+      "specialist": "god-class-file-size",
+      "severity": "watchlist",
+      "file": "packages/application/use_cases/morning_brief_sections.py",
+      "line": 1,
+      "finding": "This file is over 600 lines at 809 and is changed in this scope. It shrank by 2 lines (811 to 809), so it did not grow. It is a pre-existing offender and is listed for visibility. The sibling morning_brief.py is 875 lines and unchanged.",
+      "evidence": "all-tracked-text-size-watchlist.json: lines=809, base_lines=811, changed=true.",
+      "recommendation": "Plan a split by brief section family. This change reduced size slightly and moved the ordering rule into the shared priority module.",
+      "blocker": false
+    },
+    {
+      "specialist": "god-class-file-size",
+      "severity": "watchlist",
+      "file": "packages/pipelines/reporting_service.py",
+      "line": 1,
+      "finding": "Unchanged pre-existing production offenders in the high-priority areas. packages/pipelines/reporting_service.py is 1533 lines. In packages/storage, control_plane.py is 908, execution_control_plane.py is 899, sqlite_control_plane_schema.py is 780, source_contract_catalog.py is 740, sqlite_asset_definition_catalog.py is 734, postgres_asset_definition_catalog.py is 671 and backup_bundle.py is 613. In packages/pipelines, upload_dry_run.py is 619 and config_preflight.py is 613. In domain packs, finance/pipelines/scenario_service.py is 1114, homelab/pipelines/ha_policy.py is 1154, overview/pipelines/transformation_overview.py is 885, and utilities/pipelines/battery_plan_outcome.py is 746. None of these grew in this scope.",
+      "evidence": "all-tracked-text-size-watchlist.json: each of these has changed=false and lines equal to base_lines. The inventory covers 1290 regular tracked files and was built without path or extension filtering.",
+      "recommendation": "Keep them on the watchlist. The candidate adds no growth to storage, pipelines or the domain packs. The only new domain-pack code is the small, focused packages/domains/overview/priority.py at 60 lines, which is an appropriate extraction.",
+      "blocker": false
+    },
+    {
+      "specialist": "god-class-file-size",
+      "severity": "watchlist",
+      "file": "apps/web/frontend/app/control/catalog/page.js",
+      "line": 1,
+      "finding": "Other unchanged production files over 600 lines. apps/api/auth_policies.py is 1142, apps/api/app.py is 908, apps/worker/control_plane.py is 645, packages/application/use_cases/{pack_lifecycle 960, morning_brief 875, control_terminal 872, decision_ledger 865}.py are all over the threshold. Frontend sources are over the threshold too: control/catalog/page.js is 1575, control/execution/page.js is 1229, lib/backend.ts is 1517, transformation-catalog-panel.js is 601 and upload-detection-wizard.js is 607. packages/demo/bundle.py is 1410 and seeder.py is 744. In platform and shared, action_proposals 792, external_registry 770, settings 697, oidc_provider 680, publication_compare 624 and publication_contracts 623 are over. The remaining 600+ files are generated or data assets: api.d.ts, openapi.json, publication-contracts.json and .ts, package-lock.json, uv.lock, Grafana dashboards, SQL migrations, CSS, docs and test files. Test files are not production. The largest are test_api_app.py at 2909, test_worker_cli.py at 1703 and test_web_auth.py at 1661. All of these are unchanged except as noted above.",
+      "evidence": "all-tracked-text-size-watchlist.json files_over600 entries with changed=false. Entries come from the complete inventory, with no filtering by pathname or extension.",
+      "recommendation": "Keep them on the watchlist. The generated artifacts should be treated as non-reviewable output and be regenerated, not hand-split. I did not execute anything, and I did not count the unchanged files against this candidate.",
+      "blocker": false
+    },
+    {
+      "specialist": "god-class-file-size",
+      "severity": "advisory",
+      "file": "candidate.patch",
+      "line": 1,
+      "finding": "No new function crossed 80 lines in the production files I reviewed. The new helpers are small: priority.py is 60 lines total, with helper functions of roughly 3 to 8 lines. overview-priority.js is 69 lines and sortAttentionItems is a one-liner. The bounded changes to assistant_routes.py (574 lines), attention_records.py (177) and morning_brief_sections.py are small edits. No class exceeds 15 methods. No new class mixes imports from more than three distinct packages. I could not measure the nested length of build_attention_section or the rest of register_report_routes from the diff alone. The remaining per-function coverage is therefore unverified. The reported gates (native DONE0, five lane gates, independent 53-case gate) are claimed by the binding and I did not run them. The full make with 55 visuals is RUNNING_UNOBSERVED.",
+      "evidence": "binding.json source_file_hashes line counts: priority.py 60, overview-priority.js 69, attention_records.py 177, assistant_routes.py 574. The overview-priority unit test is 148 lines and tests/test_overview_priority.py is 188 lines. Both are new and under 600. candidate.patch shows the new functions.",
+      "recommendation": "No extraction is needed for the new code. The ordering rule is intentionally implemented twice, in Python and in JS, with matching tie fields. That is outside this specialist's scope. Product-intention traceability for the size role: the candidate keeps ownership of the attention-priority semantics in one small module per language (packages/domains/overview/priority.py and apps/web/frontend/lib/overview-priority.js), and consumers (assistant, brief, report route, attention_records, Console, Wallboard, Operating Picture, Home, FirstAnswer, IngestSummary, Review) call it instead of re-implementing sorting. That matches the stated intent of one canonical order before truncation. The only size concerns are the pre-existing oversized hosts listed above, report_routes.py (a blocker by the rule) and app/page.js.",
+      "blocker": false
+    }
+  ],
+  "trailing": "\n```"
+}

@@ -1,0 +1,18 @@
+{
+  "base_sha": "82dbd9477029d6fda7df67edc617f45a1a4ceb59",
+  "seed_sha": "45db10004f33b8a51a03cb93990b314fea411fc1",
+  "head_sha": "8556f11ec6f85b2bee9b83c68a72ef8fce623d7a",
+  "branch": "lane/hla-overview-priority-a1",
+  "candidate_files": 18,
+  "added_plus_deleted": 681,
+  "model": "opencode-go/deepseek-v4.1-flash",
+  "native_outcome": "failed",
+  "exit": 124,
+  "elapsed_s": 2700.2,
+  "all_five_gates_passed": true,
+  "decision": "rejected",
+  "infra": false,
+  "remaining_original_attempts": 1,
+  "adopted": false,
+  "bundle_sha256": "1f48b710d1127758869ba7e767b4d75b96695c3ad4dfec68d9d55125225cac31"
+}

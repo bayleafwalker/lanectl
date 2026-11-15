@@ -1,0 +1,55 @@
+{
+  "findings": [
+    {
+      "specialist": "stratum-coherence",
+      "severity": "advisory",
+      "file": "apps/web/frontend/lib/overview-priority.js",
+      "line": 1,
+      "finding": "The surface stratum now holds a second, hand-maintained copy of the overview attention priority semantics. The new JS file defines the 3/2/1 scale, the unknown/out-of-range rule and the item_type/title/item_id/detail/source_domain tie order. These duplicate the product-pack rule in packages/domains/overview/priority.py. Seven pages and components re-sort API rows with this copy: first-answer, ingest-summary, operating-picture, home page, review, console-view and wallboard-view. The same file adds S1/S2/S3 and urgent/soon/watch label mapping. The stratum map says surfaces are thin and render only. The API already returns rows in canonical order from the reporting service and the /reports/attention-items route, so the client re-sort looks redundant. The diff adds no ADR or classification note that explicitly places this ordering in the web surface.",
+      "evidence": "candidate.patch adds apps/web/frontend/lib/overview-priority.js (attentionPriorityRank, compareAttention, sortAttentionItems, severityRank, attentionLabel). It mirrors packages/domains/overview/priority.py (_PRIORITY_RANK, _TIE_FIELDS, sort_overview_attention). docs/architecture/stratum-map.md says Surfaces are 'Thin: accept requests, auth/authz, call use-case entrypoints, serialize/render/publish'. A grep of docs/ found no mention of this helper or its ownership.",
+      "recommendation": "Add a classification note or ADR stating that the JS helper is a presentation-only mirror of the overview pack's order, or drop client-side re-sorting and consume the API order. If the mirror stays, add a parity test so the two implementations cannot drift. Keep only presentation mapping (severity to S1/S2/S3 and to pill labels) in the surface.",
+      "blocker": false
+    },
+    {
+      "specialist": "stratum-coherence",
+      "severity": "advisory",
+      "file": "apps/api/routes/report_routes.py",
+      "line": 1131,
+      "finding": "The route handler, a surface, re-applies the product-pack ordering after retrieval: payload['rows'] = sort_overview_attention(payload['rows']). The reporting service's get_open_attention_items already sorts in the overview pack, and this second sort sits in the route. The comment says it exists to cover the attention-only historical projection from _rows_as_of. That puts semantic ordering policy in the surface instead of in a use-case or reporting-service entrypoint. This route also gains a second direct surface-to-product-pack import.",
+      "evidence": "candidate.patch hunk @@ -1118,11 +1119,16 @@ adds 'from packages.domains.overview.priority import sort_overview_attention' and the post-retrieval sort in get_attention_items. packages/domains/overview/pipelines/attention_records.py:get_open_attention_items now sorts as well. docs/architecture/stratum-map.md puts packages/application/ as the mandatory orchestration seam between product packs and surfaces.",
+      "recommendation": "Move the as-of/historical ordering into the reporting service or a packages/application use case so the route only serializes. If the existing direct apps/api to packages/domains imports are accepted precedent (report_routes already imports finance and utilities pipelines), record that in the stratum map or an ADR rather than extending it silently.",
+      "blocker": false
+    },
+    {
+      "specialist": "stratum-coherence",
+      "severity": "advisory",
+      "file": "apps/api/routes/assistant_routes.py",
+      "line": 15,
+      "finding": "The assistant route, a surface, now imports packages.domains.overview.priority directly. It uses recognized_priority to decide in route code whether the top attention row has a valid priority, and it picks the answer wording from that result. Priority validity and headline selection are semantic logic. They now live in a surface file instead of behind packages/application or the reporting service. The route also relies on an implicit contract, 'attention_rows arrive in canonical priority order', that it does not enforce.",
+      "evidence": "candidate.patch adds the import and replaces the raw max() with attention_rows[0] plus a recognized_priority(...) branch in _build_operations_answer. Other apps/ files already import packages.domains.overview (export_contracts.py:12, attention_record_routes.py:29), so there is precedent. No ADR or map entry covers the apps-to-overview-pack dependency.",
+      "recommendation": "Expose a 'top attention item' or headline helper from the overview pack or a use case and have the route call that. Alternatively, note in the stratum map that apps/api may import overview-pack pure helpers.",
+      "blocker": false
+    },
+    {
+      "specialist": "stratum-coherence",
+      "severity": "watchlist",
+      "file": "docs/architecture/stratum-map.md",
+      "line": 37,
+      "finding": "The new packages/domains/overview/priority.py is placed in the overview product pack, which is consistent with the pack's role. The map's overview row lists only scenario_models_overview.py and scenario_service_overview.py, and nothing records priority.py as the shared pack-owned ordering contract that surfaces and packages/application consume. The map's rule 'update this file first' is unmet for this cross-stratum consumption.",
+      "evidence": "Diff touches no docs. packages/application/use_cases/morning_brief_sections.py (application/surfaces stratum) and two apps/api routes now import packages.domains.overview.priority. The overview row in the map has no entry for it.",
+      "recommendation": "Add one line to the overview row of stratum-map.md naming priority.py as the canonical attention-priority contract, with its consumers and the allowed import direction.",
+      "blocker": false
+    },
+    {
+      "specialist": "stratum-coherence",
+      "severity": "watchlist",
+      "file": "packages/pipelines/",
+      "line": 1,
+      "finding": "Coverage note: the diff adds no new files to the transitional packages/pipelines/ or the ambiguous packages/connectors/ scaffold, and it adds no new packages/ directory. The only added Python module sits in the classified overview pack. I found no blocker-level stratum violation. The candidate's tests import packages.pipelines.reporting_service and transformation_service, which are existing transitional modules. This review is static: I ran no commands or tests, and I did not independently re-check the AST import rules in tests/test_architecture_contract.py against the new imports.",
+      "evidence": "binding.json changed_files has 18 paths, none under packages/connectors/ and none new under packages/pipelines/. Stratum-map rules for packages/pipelines/ and packages/connectors/ were read. The full-make and 55-visuals run is RUNNING_UNOBSERVED, so the architecture-contract test result is not observed.",
+      "recommendation": "Confirm that tests/test_architecture_contract.py passes in the full-make run before acceptance. No stratum action is needed for the transitional or scaffold packages.",
+      "blocker": false
+    }
+  ],
+  "trailing": "\n```\n\n**Traceability.** The change serves the one product intention of a single canonical attention-priority order. It runs 3, then 2, then 1, with unknown values last and visible. Every reader (warehouse, published, briefing, assistant and the screens) is meant to agree on it.\n\n- **Semantic owner:** `packages/domains/overview/priority.py` in the overview product pack. That is a coherent home for the rule.\n- **Consumers:** the overview reporting records, `packages/application` morning brief and the API routes. The application and route consumers are allowed by the existing precedent of apps importing the pack.\n- **Duplicated rule:** the JS helper copies the rule into the web surface. That is the main coherence risk, and it needs an explicit ownership decision.\n- **Not covered:** the tie order, severity thresholds, fixture changes and test quality are out of scope for this role. Execution results were not observed."
+}

@@ -1,0 +1,8 @@
+{
+  "source_bundle_sha256": "1f48b710d1127758869ba7e767b4d75b96695c3ad4dfec68d9d55125225cac31",
+  "only_base_fetched_first": "82dbd9477029d6fda7df67edc617f45a1a4ceb59",
+  "seed_and_candidate_absent_before_bundle": true,
+  "bundle_verified": true,
+  "restored_head": "8556f11ec6f85b2bee9b83c68a72ef8fce623d7a",
+  "strict_fsck_exit": 0
+}

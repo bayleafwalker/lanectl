@@ -1,0 +1,18 @@
+[
+  {
+    "item_id": "emoji-row",
+    "item_type": "anomaly",
+    "title": "😀",
+    "detail": "Synthetic Unicode priority probe",
+    "severity": 3,
+    "source_domain": "finance"
+  },
+  {
+    "item_id": "fullwidth-row",
+    "item_type": "anomaly",
+    "title": "Ａ",
+    "detail": "Synthetic Unicode priority probe",
+    "severity": 3,
+    "source_domain": "finance"
+  }
+]

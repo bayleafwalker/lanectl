@@ -1,0 +1,47 @@
+{
+  "replayed_normalized_probes": {
+    "python": {
+      "exit": 0,
+      "exact_results_match_original_after_path_normalization": true
+    },
+    "javascript": {
+      "exit": 0,
+      "exact_results_match_original_after_path_normalization": true
+    }
+  },
+  "gitleaks_version": "8.30.1",
+  "scanner_positive_control": {
+    "exit": 1,
+    "detected": true,
+    "rule_ids": [
+      "github-pat"
+    ]
+  },
+  "source_scans": [
+    {
+      "attempt": "a1",
+      "range": "82dbd9477029d6fda7df67edc617f45a1a4ceb59..8556f11ec6f85b2bee9b83c68a72ef8fce623d7a",
+      "includes_seed_and_native_candidate": true,
+      "exit": 0,
+      "findings": 0
+    },
+    {
+      "attempt": "a2",
+      "range": "82dbd9477029d6fda7df67edc617f45a1a4ceb59..8652b1b73aa809ff1e137b982e69faf5c7533647",
+      "includes_seed_and_native_candidate": true,
+      "exit": 0,
+      "findings": 0
+    }
+  ],
+  "selected_files_scan": {
+    "exit": 0,
+    "findings": 0,
+    "default_builtin_rules": true,
+    "no_secret_allow_comments_or_ignore_entries": true,
+    "final_selection_including_manifest_rechecked_before_handoff": true
+  },
+  "path_and_identity_scan": {
+    "text_files_checked": true,
+    "absolute_machine_paths_or_raw_runtime_identity_fields_found": false
+  }
+}
