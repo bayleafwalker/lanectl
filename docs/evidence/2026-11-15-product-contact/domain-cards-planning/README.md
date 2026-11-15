@@ -1,6 +1,7 @@
 # Domain-card planning, not implementation
 
-Existing HLA1590 is reserved507, active and still at canonicalb2d0fe3.
+Existing HLA1590 planning used reservation507 at canonicalb2d0fe3.
+The reservation is released and the item remains blocked on reporting prerequisites.
 Native Opus5.5 completed its original read-only supervised run in553.063s with
 exit0, sole actual model claude-opus-5-5 and no permission denials. No product
 source, acceptance, release or candidate was created. Tracked HLA status remains
@@ -13,9 +14,9 @@ currency inference, budget expansion or deliberate coverage cuts. The native
 1,450–1,750-line estimate is unmeasured and excludes additional homelab contracts;
 it does not prove feasibility or impossibility under the current M700 policy.
 
-Owner clarification about active-domain meaning is pending: loaded capability
-packs owning sources (Finance/Utilities/Homelab), or explicit workspace enablement.
-No answer has been assumed. Currency-preserving reporting, actual populated
+The operator selected loaded capability packs owning sources, currently
+Finance, Utilities and Homelab. Membership is resolved; no-data loaded domains
+remain enumerable. Currency-preserving reporting, actual populated
 homelab history/attention, and consistent current-row priority remain genuine
 contract/prerequisite questions. Failed report reads cannot establish empty data.
 All original checks, two-attempt cap and normal delivery gates remain required.
@@ -33,6 +34,6 @@ may proceed without interpreting it as an Expand2904 retry.
 
 Operator decision received2026-11-15: active domains are loaded capability packs
 that own sources, currently Finance, Utilities and Homelab. The explicit decision
-in owner-decision-active-domains.json supersedes the pending membership question
-above and the native plan's unadopted proposal status. Other reporting and budget
+in owner-decision-active-domains.json supersedes the native plan's original
+unadopted proposal status. Other reporting and budget
 feasibility prerequisites remain open; no implementation has started.

@@ -363,7 +363,7 @@ The same-row inline-upload outcome and all delivery gates remain incomplete.
 
 The next separate original pending item is HLA1590: one card per active domain,
 with a real headline metric, trend and its top attention item, plus a truthful
-empty state. Served reservation507 owns native read-only planning over canonical
+empty state. Served reservation507 owned native read-only planning over canonical
 b2d0fe3. This is planning only: no release, implementation or product completion.
 Missing domain/metric/ranking contracts must be resolved from actual reporting
 semantics; freshness-only cards or global attention do not satisfy the outcome.
@@ -373,15 +373,37 @@ is established.
 
 Native domain-card planning has now completed with actual Opus5.5 exit0 in
 553.063s. The [planning disposition](../evidence/2026-11-15-product-contact/domain-cards-planning/plan.md)
-keeps the full outcome but is not implementation-ready: active-domain authority,
-currency-safe reporting, populated homelab history/attention and priority require
+keeps the full outcome but is not implementation-ready: currency-safe reporting,
+populated homelab history/attention and priority require
 contracts or genuine prerequisites. The native1,450–1,750-line estimate is
 unmeasured and includes no additional homelab contracts; no M700 waiver or
-unsupported-facet substitute was adopted. Active-domain clarification is pending
-with the operator. No release or implementation attempt has started for1590.
+unsupported-facet substitute was adopted. Reservation507 is released. No release
+or implementation attempt has started for1590.
 
 The operator resolved active membership on November15: loaded capability packs
 that own sources, currently Finance, Utilities and Homelab. No-data active
 domains remain enumerable. The [recorded decision](../evidence/2026-11-15-product-contact/domain-cards-planning/owner-decision-active-domains.json)
 settles membership; currency-safe reports and populated-homelab trend/attention,
 priority consistency and complete-outcome feasibility remain prerequisites.
+
+
+### November 15 existing-rule unit coverage accepted
+
+HLA1597 is accepted by served decision486, reservation508 released. The existing
+automatic core-source collapse rule now has meaningful real-component coverage
+from two new test files,159addedlines underS250, with no product changes.
+[PR86](https://github.com/bayleafwalker/homelab-analytics/pull/86) merged as
+82dbd9477029d6fda7df67edc617f45a1a4ceb59 after full local Make and all four CI
+jobs passed. All55visual checks kept their existing baselines. Ten unit cases
+pass; disabling only auto-collapse causes exactly three semantic failures and
+seven controls pass. Four independent Python wrapper failure probes also reject.
+[Source-bound closeout](../evidence/2026-11-15-product-contact/onboarding-auto-collapse-unit/closeout.json)
+retains actual two native Sonnet implementations, eleven read-only reviews,
+original incomplete findings and local runtime/invocation failures. This is
+existing-rule coverage, with no new lanectl release or ruled product-class count.
+Exhausted Expand2904, upload1587 and attention1593 outcomes remain unadopted.
+
+At15:41UTC, bayleaf's user manager reported no failed units; lanectl-tick.timer
+was active/waiting, and its17:29:52EET tick exited0. The only failed system unit
+was home-manager-bayleaf.service, the existing concurrent activation conflict.
+No broad reset or unrelated restart was performed.
