@@ -1,0 +1,38 @@
+id = "hla-observed-backup-visibility"
+repo = "homelab-analytics"
+base_sha = "82dbd9477029d6fda7df67edc617f45a1a4ceb59"
+revision = 1
+draft = true
+title = "Keep observed backups visible before their first success"
+task_class = "product-api"
+size = "S"
+data_class = "public"
+work = "homelab-analytics#2914"
+work_complete = true
+
+outcome = """
+Keep every backup target with observed runs visible through the existing reporting/API path,
+even before its first successful backup. Existing nullable last_backup_at and age remain unknown
+without a success, is_stale remains true, last_status describes the latest observed attempt,
+and backup_count_7d counts the observed recent runs. For a target with a success followed by a
+failed retry, preserve its successful recovery-point timestamp and size, and existing 24-hour
+freshness behavior, while reporting the latest attempt status.
+
+Preserve the existing valid-empty response versus unavailable-publication error distinction and
+published-store isolation. No configured-job inventory or zero-observation coverage is inferred.
+Do not invent a cadence, threshold, FX rule or never-successful size value. Preserve the current
+successful started_at baseline; the separate manifest completed_at discrepancy is disclosed,
+not redefined here. The built-in homelab file-promotion path remains explicitly unsupported;
+this outcome concerns the supported load_backup_runs -> refresh -> publication -> API path.
+
+Independent acceptance was authored separately from implementation. Implementers own the design
+and repair; the tests and original failures remain protected. This is a new correctness outcome,
+not completion of domain cards or Homelab attention, and it does not reopen parked experiments.
+"""
+
+[scope]
+paths = ["packages/domains/homelab/**", "tests/**", "docs/**"]
+
+[acceptance]
+files = ["tests/test_acc_observed_backup_visibility.py"]
+exec = ["uv run --no-sync python -m pytest -q -p no:cacheprovider tests/test_acc_observed_backup_visibility.py"]
