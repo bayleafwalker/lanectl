@@ -1,0 +1,16 @@
+{
+  "schema": "lanectl.resident-profile/v1",
+  "resident_id": "writer-one",
+  "workspace": "/var/lib/resident/workspace",
+  "state_dir": "/var/lib/lanectl/resident",
+  "context_scope": {
+    "resident": "writer-one",
+    "project": "stories",
+    "branch": "canon"
+  },
+  "artifact_roots": ["drafts", "canon"],
+  "require_source_recheck": true,
+  "execution": {
+    "enabled": false
+  }
+}

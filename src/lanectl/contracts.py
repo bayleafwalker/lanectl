@@ -26,6 +26,13 @@ DECISIONS = ("candidate", "rejected", "parked", "landed")
 WORK_REF = re.compile(r"[a-z0-9][a-z0-9-]*#[1-9][0-9]*")
 
 EVENT_TYPES: dict[str, tuple[str, ...]] = {
+    # Resident episodes have their own admission and evidence contract. They do
+    # not manufacture WorkReleases or enter the code landing state machine.
+    "resident.initialized": ("resident_id", "workspace", "state_dir", "generation"),
+    "resident.wake": ("resident_id", "wake_id", "generation", "context_sha256", "profile_sha256", "episode_id", "status"),
+    "resident.episode.started": ("resident_id", "episode_id", "wake_id", "generation", "context_sha256", "profile_sha256", "runner_process"),
+    "resident.episode.finished": ("resident_id", "episode_id", "generation", "outcome", "stop_reason", "checkpoint_sha256"),
+    "resident.generation.fenced": ("resident_id", "previous_generation", "generation", "reason"),
     "release.published": ("release_id", "revision"),
     "release.publication.invalidated": ("release_id", "revision", "target_event_sha256", "reason", "evidence_ref"),
     "item.claimed": ("attempt_id", "lane", "model", "worker"),
@@ -115,6 +122,9 @@ def validate_event_parts(etype: str, data: dict, item_id: str | None) -> None:
         raise ContractError(f"{etype} missing {missing}")
     if item_id is not None:
         check_id("item_id", item_id)
+    if etype.startswith("resident."):
+        from .resident_contract import validate_resident_event
+        validate_resident_event(etype, data, item_id)
     if etype == "release.published" and "provenance" in data:
         if data["provenance"] not in ("guarded-publish", "nondraft-observation"):
             raise ContractError("invalid publication provenance")

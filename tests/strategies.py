@@ -149,6 +149,25 @@ def _units() -> st.SearchStrategy[dict]:
 
 def _data_for(etype: str) -> st.SearchStrategy[dict]:
     """A complete required payload for ``etype`` (extras are added by callers)."""
+    if etype.startswith("resident."):
+        # Resident events do not enter the WorkRelease item projection.
+        base = {"resident_id": ids("resident"), "generation": st.integers(min_value=1, max_value=1000)}
+        digest = st.from_regex(r"[0-9a-f]{64}", fullmatch=True)
+        if etype == "resident.initialized":
+            return st.fixed_dictionaries({**base, "workspace": st.just("/workspace"), "state_dir": st.just("/state")})
+        if etype == "resident.generation.fenced":
+            return st.fixed_dictionaries({**base, "reason": st.just("replace qualified runtime")}).map(
+                lambda row: dict(row, previous_generation=row["generation"], generation=row["generation"] + 1))
+        common = {**base, "episode_id": ids("episode")}
+        if etype == "resident.episode.finished":
+            return st.fixed_dictionaries({**common, "outcome": st.just("interrupted"),
+                                          "stop_reason": st.just("timeout"), "checkpoint_sha256": digest})
+        common.update(wake_id=ids("wake"), context_sha256=digest, profile_sha256=digest)
+        if etype == "resident.wake":
+            return st.fixed_dictionaries({**common, "status": st.sampled_from(("admitted", "duplicate", "busy", "refused"))})
+        if etype == "resident.episode.started":
+            return st.fixed_dictionaries({**common, "runner_process": st.just({"pid": 123}),
+                                          "child_process": st.just({"pid": 124})})
     if etype == "release.published":
         return st.fixed_dictionaries({
             "release_id": ids("release"),
@@ -355,6 +374,8 @@ def valid_events(draw) -> dict:
     data = dict(draw(_DATA_BY_TYPE[etype]))
     data.update(draw(_extras(EVENT_TYPES[etype])))
     item_id = draw(st.one_of(st.none(), ids("item")))
+    if etype.startswith("resident."):
+        item_id = None
     if etype == "release.publication.invalidated":
         item_id = data["release_id"]
     if item_id is not None:
