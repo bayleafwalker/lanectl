@@ -51,6 +51,7 @@ def test_worker_prompt_lists_repo_protected_paths(tmp_path):
 def test_run_gates_treats_repo_protected_paths_as_protected(tmp_path, monkeypatch):
     repo = _repo(tmp_path, protected_paths=("infra/**",))
     claim = runner.Claim(_rel(), repo, _lane(protected_paths=()), "item-1-a1", "lane/model", "w")
+    monkeypatch.setattr(runner, "load_lane", lambda _: claim.lane)
     monkeypatch.setattr(diffpolicy, "collect",
                         lambda *a, **k: [diffpolicy.FileChange("M", "infra/main.tf", 1, 0, ["x"])])
     gates = runner.run_gates(claim, tmp_path, SHA, "b" * 40, {}, "done")
