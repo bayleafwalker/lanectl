@@ -22,9 +22,9 @@ timeout_s = 900
 landing = "pr"     # GitHub PR + CI; tracker items close on merge
 path = "/projects/dev/homelab-analytics"
 main = "main"
-setup_cmd = "uv sync -q --extra dev"
+setup_cmd = "bash tools/dev-setup.sh"
 test_cmd = "uv run --no-sync python -m pytest -q -p no:cacheprovider {files}"
-check_cmd = "uv run --no-sync ruff check . && uv run --no-sync python -m pytest -q -p no:cacheprovider -m 'not slow'"
+check_cmd = "bash tools/dev-check.sh"
 worktree_root = "/projects/dev/_wt/lanes"
 protected_paths = [".github/**", ".agents/**", ".claude/**", ".project/**", "AGENTS.md", "CLAUDE.md",
                    "charts/**", "infra/**", "migrations/**", "githooks/**", "requirements/**", "uv.lock",
