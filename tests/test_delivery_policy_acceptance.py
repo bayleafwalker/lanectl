@@ -2,6 +2,8 @@
 
 import subprocess
 
+import pytest
+
 from lanectl import evaluator
 from tests.seed.test_end_to_end import estate  # noqa: F401
 
@@ -557,3 +559,74 @@ def test_conflicting_claim_binding_cannot_override_publication(estate):
         == []
     )
     assert log.read() == before
+
+
+@pytest.mark.parametrize("finished", [False, True])
+def test_legacy_consumers_follow_each_claims_retained_policy(estate, tmp_path, finished):
+    """Independent consumer oracle: later legacy claims may have different limits."""
+    import os
+    import re
+    from datetime import datetime, timedelta, timezone
+    from pathlib import Path
+
+    from lanectl.config import load_lane
+    from lanectl.events import EventLog, project_items
+    from lanectl.reap import reap
+    from tests.seed.test_end_to_end import SUB_TEST
+
+    repo, release, log = estate
+    item = "synthetic-two-policies"
+    release(item, SUB_TEST)
+    home = Path(os.environ["LANECTL_HOME"])
+    lane_file = home / "governance/lanes/implement.toml"
+    original = lane_file.read_text()
+    git(home, "init", "-q", "-b", "main")
+    lanes = []
+    for revision, budget, attempts in ((2, 250, 2), (3, 500, 3)):
+        text = re.sub(r"(?m)^revision = .*$", f"revision = {revision}", original)
+        text = re.sub(r"(?m)^max_attempts = .*$", f"max_attempts = {attempts}", text)
+        lane_file.write_text(text.replace("S = 250", f"S = {budget}"))
+        git(home, "add", "governance/lanes/implement.toml")
+        git(home, "-c", "user.name=test", "-c", "user.email=test@example.invalid",
+            "commit", "-qm", str(revision))
+        lanes.append(load_lane("implement"))
+    assert lanes[0].digest != lanes[1].digest
+    seed = git(repo, "rev-parse", "HEAD")
+    (repo / "src/synthetic.py").write_text("x = 1\n" * 400)
+    git(repo, "add", "src/synthetic.py")
+    git(repo, "-c", "user.name=test", "-c", "user.email=test@example.invalid",
+        "commit", "-qm", "synthetic diff")
+    head = git(repo, "rev-parse", "HEAD")
+    log.append("release.published", {"release_id": item, "revision": 1}, item_id=item)
+    for number, lane in enumerate(lanes, 1):
+        aid = f"{item}-a{number}"
+        log.append("item.claimed", {
+            "attempt_id": aid, "lane": "implement", "model": "scripted/model",
+            "worker": "scripted", "release_revision": 1, "lane_revision": lane.revision,
+            "lane_digest": lane.digest, "base_sha": seed,
+        }, item_id=item)
+        if number == 1 or finished:
+            log.append("attempt.finished", {"attempt_id": aid, "outcome": "done",
+                "exit_code": 0, "head_sha": head}, item_id=item)
+            log.append("gate.result", {"attempt_id": aid, "gate": "acceptance",
+                "passed": False, "violations": ["synthetic failure"]}, item_id=item)
+        if number == 1:
+            log.append("decision.recorded", {"attempt_id": aid, "decision": "rejected",
+                "reasons": ["synthetic failure"], "rules_revision": "test"}, item_id=item)
+            log.append("item.requeued", {"reason": "synthetic failure"}, item_id=item)
+    before_reap = log.read()
+    assert reap(log, now=datetime.now(timezone.utc) + timedelta(days=1),
+                older_than_s=60, max_attempts=999) == [aid]
+    assert project_items(log.read())[item].state == "requeued"
+
+    evaluation_log = EventLog(tmp_path / "evaluation.jsonl")
+    for event in before_reap:
+        evaluation_log.append(event["type"], event["data"], item_id=event.get("item_id"))
+    if not finished:
+        evaluation_log.append("attempt.finished", {"attempt_id": aid, "outcome": "done",
+            "exit_code": 0, "head_sha": head}, item_id=item)
+    rules = {"revision": 1, "default": "accept", "rules": [{"name": "size",
+        "feature": "changed_lines_ratio", "op": ">", "value": 1, "verdict": "reject"}]}
+    result = evaluator.evaluate_attempt(evaluation_log, aid, rules)
+    assert result["features"]["changed_lines_ratio"] == 0.8
+    assert result["verdict"] == "accept"
