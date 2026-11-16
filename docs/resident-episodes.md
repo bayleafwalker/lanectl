@@ -6,6 +6,9 @@ publish external effects, close Sprintctl items, or enter the WorkRelease
 acceptance/landing state machine. The existing execution owner may invoke it
 from its timer, completion notification or admitted work path.
 
+The concrete OpenCode Go/local launcher, credential gateway and NixOS service
+composition are documented in [native resident execution](resident-native.md).
+
 ## Ownership and defaults
 
 Start with `contrib/resident/profile.example.json`. It is deliberately disabled
@@ -53,6 +56,8 @@ An enabled profile adds an explicit execution block:
   "argv": ["/nix/store/ACTUAL-PIN/bin/resident-native-launcher"],
   "timeout_s": 2700,
   "executable_sha256": "ACTUAL_64_CHARACTER_SHA256",
+  "cleanup_argv": ["/nix/store/ACTUAL-PIN/bin/resident-native-launcher", "cleanup"],
+  "cleanup_executable_sha256": "ACTUAL_64_CHARACTER_SHA256",
   "qualification_file": "/etc/lanectl/resident-route-qualification.json",
   "qualification_sha256": "ACTUAL_64_CHARACTER_SHA256"
 }
@@ -64,6 +69,14 @@ the existing AgentOps/native adapters and the approved memory tools; it must
 not add an independent scheduler. The maximum episode wall time is 2,700
 seconds. A fresh isolated HOME is supplied, but it is not the credential
 boundary.
+
+For a launcher that starts a separate systemd cgroup, include the protected
+`cleanup_argv` and `cleanup_executable_sha256` pair. The runner verifies it before
+admission and invokes it on every post-launch exit, including cancellation,
+before snapshotting artifacts. Cleanup must finish within 30 seconds and prove
+all owned workers have stopped. A failure retains an unknown occupied slot.
+Recovery repeats that cleanup with the same protected profile even after its
+qualification has expired; it refuses a changed profile for an active episode.
 
 Prepare the protected candidate profile, then inspect:
 

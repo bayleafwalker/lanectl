@@ -1,0 +1,17 @@
+{
+  "schema": "lanectl.resident-gateway/v1",
+  "route": "local/worker-fast",
+  "upstream_base_url": "https://model-peer.example.invalid:8021/v1",
+  "listen_port": 18021,
+  "listen_socket": "/run/lanectl-resident-model/model.sock",
+  "credential_name": "upstream-token",
+  "session_id": "resident-writer-one",
+  "state_file": "/var/lib/lanectl-resident-model/requests.sqlite3",
+  "ca_file": "/etc/lanectl/resident/model-peer-ca.pem",
+  "max_request_bytes": 524288,
+  "max_response_bytes": 8388608,
+  "max_output_tokens": 8192,
+  "timeout_s": 900,
+  "max_requests_per_window": null,
+  "window_s": 3600
+}

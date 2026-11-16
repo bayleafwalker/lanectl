@@ -141,6 +141,57 @@ def test_real_child_checkpoint_contains_exact_bytes_and_provenance(setup):
     assert resident.status(setup["log"], setup["profile"])["active"] == []
 
 
+def add_cleanup(setup, script, *, digest_override=None):
+    raw = json.loads(setup["profile"].read_text())
+    raw["execution"].update(cleanup_argv=[sys.executable, "-c", script],
+        cleanup_executable_sha256=digest_override or digest(Path(sys.executable).resolve().read_bytes()))
+    write_json(setup["profile"], raw)
+    receipt = json.loads(setup["qualification"].read_text())
+    receipt["recipe_sha256"] = resident.describe_profile(setup["profile"])["recipe_sha256"]
+    write_json(setup["qualification"], receipt)
+    raw["execution"]["qualification_sha256"] = digest(setup["qualification"].read_bytes())
+    write_json(setup["profile"], raw)
+
+
+def test_external_sandbox_cleanup_finishes_before_artifact_snapshot(setup):
+    add_cleanup(setup, 'import os,pathlib; (pathlib.Path(os.environ["LANECTL_RESIDENT_RESULT"]).parent.parent / "drafts/story.txt").write_text("after cgroup cleanup")')
+    receipt = run(setup)
+    assert receipt["outcome"] == "done"
+    checkpoint = json.loads(Path(receipt["checkpoint_path"]).read_bytes())
+    assert Path(checkpoint["artifacts"][0]["snapshot_path"]).read_text() == "after cgroup cleanup"
+
+
+def test_failed_external_sandbox_cleanup_retains_unknown_slot(setup):
+    add_cleanup(setup, "raise SystemExit(1)")
+    receipt = run(setup)
+    assert receipt["outcome"] == "unknown"
+    assert receipt["stop_reason"] == "execution_uncertain"
+    checkpoint = json.loads(Path(receipt["checkpoint_path"]).read_bytes())
+    assert checkpoint["artifacts"] == []
+    assert checkpoint["continuation"] == {}
+    assert (setup["workspace"] / "drafts/story.txt").exists()
+    assert resident.status(setup["log"], setup["profile"])["active"]
+    with pytest.raises(resident.ResidentError, match="unfinished"):
+        run(setup, wake="wake-02")
+
+
+def test_cleanup_recipe_is_verified_before_any_native_execution(setup):
+    add_cleanup(setup, "pass", digest_override="0" * 64)
+    with pytest.raises(resident.ResidentError, match="cleanup.*digest"):
+        run(setup)
+    assert not (setup["workspace"] / "drafts").exists()
+
+
+def test_recovery_repeats_external_cleanup_and_refuses_unproven_cgroup(setup, monkeypatch):
+    add_cleanup(setup, "raise SystemExit(1)")
+    run(setup)
+    monkeypatch.setattr(resident.reap, "runner_dead", lambda identity: True)
+    monkeypatch.setattr(resident, "_stop_abandoned", lambda identity: True)
+    receipt = resident.recover(setup["log"], setup["profile"], expected_generation=1)
+    assert receipt["status"] == "uncertain"
+    assert resident.status(setup["log"], setup["profile"])["active"]
+
+
 def test_duplicate_wake_returns_original_episode_without_reexecution(setup):
     first = run(setup)
     (setup["workspace"] / "drafts/story.txt").write_text("manually revised")

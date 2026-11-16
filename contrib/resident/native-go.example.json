@@ -1,0 +1,24 @@
+{
+  "schema": "lanectl.resident-native/v1",
+  "resident_id": "writer-one",
+  "route": "opencode-go/deepseek-v4.1-flash",
+  "workspace": "/var/lib/resident/workspace",
+  "context_scope": {
+    "resident": "writer-one",
+    "project": "stories",
+    "branch": "canon"
+  },
+  "artifact_roots": ["drafts", "canon"],
+  "gateway_base_url": "http://127.0.0.1:18021/v1",
+  "gateway_socket": "/run/lanectl-resident-model/model.sock",
+  "opencode_executable": "/run/current-system/sw/bin/opencode",
+  "opencode_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+  "opencode_config": "/etc/lanectl/resident-opencode/opencode.json",
+  "opencode_config_sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+  "runtime_root": "/run/resident/native",
+  "tool_path": ["/run/current-system/sw/bin"],
+  "timeout_s": 2400,
+  "max_output_bytes": 2097152,
+  "context_tokens": 32768,
+  "output_tokens": 8192
+}

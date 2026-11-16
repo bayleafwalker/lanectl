@@ -190,6 +190,7 @@ def _qualify(p):
     executable = Path(argv[0]).resolve()
     if _digest(_regular_bytes(executable, 256 * 1024 * 1024)) != e["executable_sha256"]:
         raise ResidentError("qualified executable digest changed")
+    _cleanup_command(p)
     qpath = e.get("qualification_file")
     if not isinstance(qpath, str) or not Path(qpath).is_absolute():
         raise ResidentError("protected qualification_file is required")
@@ -215,6 +216,50 @@ def _qualify(p):
             raise
         raise ResidentError("qualification expiry is invalid") from exc
     return argv, float(timeout)
+
+
+def _cleanup_command(p):
+    """A separate sandbox/cgroup needs an explicit protected cleanup owner."""
+    e = p.execution
+    if "cleanup_argv" not in e and "cleanup_executable_sha256" not in e:
+        return None
+    argv = e.get("cleanup_argv")
+    if (not isinstance(argv, list) or not argv or len(argv) > 64
+            or any(not isinstance(arg, str) or "\0" in arg or len(arg) > MAX_RESULT for arg in argv)
+            or not Path(argv[0]).is_absolute()):
+        raise ResidentError("qualified cleanup requires a bounded absolute argv")
+    try:
+        sha256(e.get("cleanup_executable_sha256"), "cleanup_executable_sha256")
+    except ContractError as exc:
+        raise ResidentError(str(exc)) from exc
+    _protected_file(Path(argv[0]))
+    if _digest(_regular_bytes(Path(argv[0]).resolve(), 256 * 1024 * 1024)) != e["cleanup_executable_sha256"]:
+        raise ResidentError("qualified cleanup executable digest changed")
+    return argv
+
+
+def _cleanup_execution(p, episode, generation, context_hash):
+    """Complete host-owned cleanup before reading any worker-written artifact.
+
+The launcher group alone cannot account for a transient system service. A
+failed or changed cleanup owner leaves the episode unknown and its slot held.
+Cleanup remains possible after qualification expiry, using the same protected
+recipe/executable; expiry must not strand a cgroup.
+"""
+    try:
+        argv = _cleanup_command(p)
+        if argv is None:
+            return True
+        environment = {"PATH": "/usr/bin:/bin", "LANG": "C.UTF-8", "LC_ALL": "C.UTF-8",
+                       "LANECTL_RESIDENT_EPISODE": episode,
+                       "LANECTL_RESIDENT_GENERATION": str(generation),
+                       "LANECTL_RESIDENT_CONTEXT_SHA256": context_hash,
+                       "LANECTL_RESIDENT_RESULT": str(_result_path(p, episode))}
+        result = subprocess.run(argv, cwd="/", env=environment, stdin=subprocess.DEVNULL,
+                                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=30)
+        return result.returncode == 0
+    except (OSError, ValueError, subprocess.SubprocessError):
+        return False
 
 
 def _validate_context(p, data):
@@ -590,10 +635,10 @@ def _partial_artifacts(p):
 
 
 def _checkpoint(p, episode, generation, context_hash, profile_hash, work_ref, result=None,
-                result_hash=None, error=None, source_recheck_hash=None):
+                result_hash=None, error=None, source_recheck_hash=None, capture_artifacts=True):
     artifacts, remaining = [], MAX_ARTIFACT_BYTES
     try:
-        names = result["artifacts"] if result is not None else _partial_artifacts(p)
+        names = (result["artifacts"] if result is not None else _partial_artifacts(p)) if capture_artifacts else []
         for name in names:
             data = _artifact_bytes(p, name, remaining)
             remaining -= len(data)
@@ -765,6 +810,8 @@ def run_episode(log, *, profile_path, wake_id, generation, context_path, context
                 # Close the owned process group before capturing any artifacts.
                 if not _cleanup_child(proc, child_identity):
                     stopped = "execution_uncertain"
+                if not _cleanup_execution(p, episode, generation, context_sha256):
+                    stopped = "execution_uncertain"
         outcome, reason = ("interrupted", stopped) if stopped else ("failed", "process_failed")
         if stopped == "launch_failed":
             outcome = "failed"
@@ -772,6 +819,8 @@ def run_episode(log, *, profile_path, wake_id, generation, context_path, context
             outcome = "unknown"
         result = result_hash = None
         try:
+            if outcome == "unknown":
+                raise ResidentError("cleanup is unproven; worker result and artifact capture deferred until recovery")
             result, result_hash = _parse_result(p, episode, generation)
             checkpoint = _checkpoint(p, episode, generation, context_sha256, p.digest, work_ref, result,
                                      result_hash, source_recheck_hash=request.get("source_recheck_sha256"))
@@ -783,7 +832,8 @@ def run_episode(log, *, profile_path, wake_id, generation, context_path, context
             if not stopped and code == 0:
                 outcome, reason = "failed", "invalid_result"
             checkpoint = _checkpoint(p, episode, generation, context_sha256, p.digest, work_ref,
-                                     error=diagnostic, source_recheck_hash=request.get("source_recheck_sha256"))
+                                     error=diagnostic, source_recheck_hash=request.get("source_recheck_sha256"),
+                                     capture_artifacts=outcome != "unknown")
         with log.locked():
             if outcome != "unknown" and _view(log.read(), p)["generation"] != generation:
                 outcome, reason = "interrupted", "stale_generation"
@@ -917,9 +967,13 @@ def recover(log, profile_path, *, expected_generation):
         if not view["active"]:
             return {"status": "idle", "recovered": [], "generation": view["generation"]}
         for attempt in view["active"]:
+            if attempt.get("profile_sha256") != p.digest:
+                return {"status": "uncertain", "recovered": [], "generation": view["generation"]}
             if not reap.runner_dead(attempt.get("runner_process")):
                 return {"status": "uncertain", "recovered": [], "generation": view["generation"]}
             if attempt.get("child_process") and not _stop_abandoned(attempt["child_process"]):
+                return {"status": "uncertain", "recovered": [], "generation": view["generation"]}
+            if not _cleanup_execution(p, attempt["episode_id"], attempt["generation"], attempt["context_sha256"]):
                 return {"status": "uncertain", "recovered": [], "generation": view["generation"]}
         next_generation = fence(log, p.path, expected_generation=expected_generation,
                                 reason="recover proven abandoned resident episode")["generation"]
