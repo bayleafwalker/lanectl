@@ -1,7 +1,7 @@
 id = "hla-observed-backup-visibility"
 repo = "homelab-analytics"
 base_sha = "82dbd9477029d6fda7df67edc617f45a1a4ceb59"
-revision = 1
+revision = 2
 draft = true
 title = "Keep observed backups visible before their first success"
 task_class = "product-api"
@@ -34,5 +34,8 @@ not completion of domain cards or Homelab attention, and it does not reopen park
 paths = ["packages/domains/homelab/**", "tests/**", "docs/**"]
 
 [acceptance]
-files = ["tests/test_acc_observed_backup_visibility.py"]
+files = ["tests/test_acc_observed_backup_visibility.py", "tests/backup_published_qualification.py"]
 exec = ["uv run --no-sync python -m pytest -q -p no:cacheprovider tests/test_acc_observed_backup_visibility.py"]
+
+# The source-bound PostgreSQL qualification in QUALIFICATION.md is mandatory for
+# candidate acceptance in addition to the ordinary focused acceptance command.
