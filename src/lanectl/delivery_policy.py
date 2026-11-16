@@ -46,7 +46,7 @@ def historical(claim):
             continue
         try:
             lane = lane_from_raw(tomllib.loads(blob.stdout.decode()), digest)
-            if lane.revision == revision:
+            if lane.revision == revision and lane.delivery_policy == "legacy":
                 return snapshot(lane)
         except (ValueError, KeyError, UnicodeError):
             return None
@@ -107,7 +107,16 @@ def effective_lane(binding, current):
 
 def claim_binding(events, item_id, claim):
     """A claim can repeat, but never override, the outcome's first binding."""
-    binding = resolve(events, item_id)
+    publication = next((e for e in events if e.get('item_id') == item_id
+                        and e.get('type') == 'release.published'), None)
+    if publication is None:
+        return None
+    # An unbound historical outcome predates frozen policy: each attempt is
+    # governed by the lane bytes it actually recorded, not the first claim's.
+    if 'effective_policy' not in publication['data']:
+        binding = historical(claim)
+    else:
+        binding = resolve(events, item_id)
     repeated = claim.get('effective_policy')
     if binding is None or (repeated is not None and repeated != binding):
         return None

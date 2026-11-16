@@ -68,3 +68,34 @@ def test_bound_policy_does_not_restore_authority():
     assert effective.timeout_s == 1
     with pytest.raises(ValueError, match='effect or sandbox'):
         delivery_policy.effective_lane(binding, replace(lane, effects={'push': 'none'}))
+
+
+def test_unbound_historical_claims_resolve_each_recorded_revision(tmp_path, monkeypatch):
+    import subprocess
+    from lanectl.config import load_lane
+    home = tmp_path / 'history'
+    lane_file = home / 'governance/lanes/implement.toml'
+    lane_file.parent.mkdir(parents=True)
+    source = (delivery_policy.home() / 'governance/lanes/implement.toml').read_text()
+    source = source.replace('delivery_policy = "review-progress"', 'delivery_policy = "legacy"')
+    lane_file.write_text(source.replace('revision = 4', 'revision = 2'))
+    def git(*args):
+        subprocess.run(['git', '-C', str(home), *args], check=True, capture_output=True)
+    git('init', '-q', '-b', 'main')
+    git('add', '.')
+    git('-c', 'user.name=test', '-c', 'user.email=t@example.invalid', 'commit', '-qm', 'old')
+    monkeypatch.setenv('LANECTL_HOME', str(home))
+    old = load_lane('implement')
+    lane_file.write_text(lane_file.read_text().replace('revision = 2', 'revision = 3').replace('max_attempts = 2', 'max_attempts = 3'))
+    git('add', '.')
+    git('-c', 'user.name=test', '-c', 'user.email=t@example.invalid', 'commit', '-qm', 'new')
+    new = load_lane('implement')
+    claim1 = {'lane': 'implement', 'lane_revision': old.revision, 'lane_digest': old.digest}
+    claim2 = {'lane': 'implement', 'lane_revision': new.revision, 'lane_digest': new.digest}
+    events = [dict(type='release.published', item_id='item', data={'release_id': 'item', 'revision': 1}),
+              dict(type='item.claimed', item_id='item', data=claim1),
+              dict(type='item.claimed', item_id='item', data=claim2)]
+    assert delivery_policy.from_binding(delivery_policy.claim_binding(events, 'item', claim1)).max_attempts == 2
+    assert delivery_policy.from_binding(delivery_policy.claim_binding(events, 'item', claim2)).max_attempts == 3
+    claim2['lane_digest'] = 'sha256:0000000000000000'
+    assert delivery_policy.claim_binding(events, 'item', claim2) is None

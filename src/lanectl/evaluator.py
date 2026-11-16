@@ -148,6 +148,7 @@ def _attempt_context(events: list[dict], attempt_id: str) -> dict | None:
     size = (experiment or {}).get("size") or (release.size if release else "M")
     return {"item_id": item_id, "repo_path": repo_path,
             "seed_sha": seed_sha, "head_sha": finished["head_sha"],
+            "policy_mode": lane.delivery_policy,
             "size_budget": (lane.size_budget_lines.get(size) if lane else None),
             "test_globs": (lane.test_globs if lane else ())}
 
@@ -168,10 +169,7 @@ def evaluate_attempt(log, attempt_id: str, rules: dict | None = None) -> dict | 
     ctx = _attempt_context(events, attempt_id)
     if ctx is None:
         return None
-    binding = delivery_policy.resolve(events, ctx["item_id"])
-    if binding is None:
-        return None
-    prospective = delivery_policy.from_binding(binding).delivery_policy == "review-progress"
+    prospective = ctx["policy_mode"] == "review-progress"
     try:
         measured = features(ctx["repo_path"], ctx["seed_sha"], ctx["head_sha"],
                             ctx["size_budget"], ctx["test_globs"])

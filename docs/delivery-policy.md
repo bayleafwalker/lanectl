@@ -13,15 +13,15 @@ terminal attempt parks pending an agent's recorded judgment. The agent uses
 for its judgment. Acceptance, protected paths, resource and effect controls
 remain in force. A new revision does not reopen a terminal outcome.
 
-Historical publications without a snapshot remain legacy. Where the first claim
-records a lane revision and digest, lanectl searches retained Git history for
-matching lane bytes; without matching evidence it leaves policy unresolved and
+Historical publications without a snapshot remain legacy. For each recorded claim with a lane revision and digest, lanectl searches retained
+Git history for matching lane bytes; without matching evidence it leaves policy unresolved and
 refuses decisions that depend on it. Diagnostic ratios with no denominator are
 unavailable. Historical event projections keep their original semantics.
 
 The snapshot is not an authority grant. Admission and execution also apply the
-current lane's restrictions: model eligibility is intersected, path and data
-restrictions are combined, and capacity, timeout and size eligibility use the
+current lane's restrictions: lane routing choices are intersected, while the live
+trusted repository routing overlay retains its existing behavior and data boundary;
+path and data restrictions are combined, and capacity, timeout and size eligibility use the
 stricter limit. Changes to sandbox or effect policies fail closed because they
 cannot be safely ordered. Recovery does not accept recorded gate results when
 current authority has tightened since publication; those checks need to run again.

@@ -56,3 +56,18 @@ def test_run_gates_treats_repo_protected_paths_as_protected(tmp_path, monkeypatc
                         lambda *a, **k: [diffpolicy.FileChange("M", "infra/main.tf", 1, 0, ["x"])])
     gates = runner.run_gates(claim, tmp_path, SHA, "b" * 40, {}, "done")
     assert gates["diff-policy"] == ["protected-path: infra/main.tf"]
+
+
+def test_effective_lane_preserves_live_repo_overlay_and_restricted_filter(tmp_path):
+    from dataclasses import replace
+    from lanectl.delivery_policy import effective_lane, snapshot
+    bound = _lane(routing={'lane/model': 1.0}, allow_restricted=True)
+    current = replace(bound, routing={'lane/model': 2.0, 'new-lane/model': 1.0},
+                      external_models=('claude-outsider',))
+    lane = effective_lane(snapshot(bound), current)
+    repo = _repo(tmp_path, routing={'claude-sonnet-5-5': 1.0, 'claude-outsider': 2.0,
+                                   'opencode-go/other': 1.0})
+    from lanectl.ready import eligible_models
+    assert eligible_models(_rel(), lane, repo) == repo.routing
+    assert eligible_models(_rel(data_class='restricted'), lane, repo) == {'claude-sonnet-5-5': 1.0}
+    assert lane.routing == {'lane/model': 2.0}
