@@ -25,7 +25,11 @@ python /absolute/path/to/lanectl/backlog/hla-observed-backup-visibility/qualify-
 
 A zero exit and an evidence record with the exact candidate commit, clean checkout,
 criterion and harness SHA-256 hashes, PostgreSQL server version, zero exit and a
-passing test are required. Retain the evidence with the candidate review. Re-run
+passing test are required. The runner independently parses pytest JUnit output and
+requires exactly the named published test to execute and pass with no skips, errors
+or failures; a zero process exit alone is insufficient. It hashes both criterion
+files and itself before execution and refuses evidence if any changes during the
+run. Retain the evidence with the candidate review. Re-run
 for any candidate or criterion change; do not rebind old evidence. The harness
 fails if the checkout changes during its run. The test uses the supported loader,
 refresh and publisher, clears the warehouse mart, and verifies rows over strict
@@ -51,3 +55,25 @@ version `170010`, exit 2; test SHA-256 values are
 (ordinary) and `86ae8600e69237892cf1c4e5a18836de04637dddfd2b79f81bbbb314cdb21f92`
 (published). The script SHA-256 is
 `0cb7c20bfeb35b78eed35f8c50c801d7527679c4e6e7c35e0056fcc20645418e`.
+
+
+## Harness repair and controls
+
+The original revision 2 runner at lanectl commit `6f333c4392aedcac78c3484f844a6f05595d452a`
+could mistakenly accept collection-only or skipped runs and recorded hashes only
+after execution. Its red baseline above remains historical evidence of a failure,
+not a passed receipt. The repaired runner uses receipt format v2 and rejects these
+cases. No criterion semantics or original baseline evidence changed.
+
+Run the inexpensive runner controls with a Python environment containing pytest:
+
+```sh
+python /absolute/path/to/lanectl/backlog/hla-observed-backup-visibility/test-qualification-runner.py /absolute/path/to/python-with-pytest
+```
+
+These use a temporary synthetic candidate and test, not PostgreSQL or product
+qualification. The real pytest pass yields a synthetic receipt; real pytest
+`--collect-only` and a skipped test both exit nonzero from the runner without a
+receipt. A child mutation of a criterion likewise exits nonzero without a receipt.
+The control removes its temporary files. A real repaired candidate still requires
+the separate PostgreSQL qualification described above.
