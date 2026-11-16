@@ -24,7 +24,8 @@ def _home(tmp_path, repo, seed, rules):
     home = tmp_path / "home"
     (home / "governance" / "lanes").mkdir(parents=True)
     lane_src = Path(__file__).parents[2] / "governance" / "lanes" / "implement.toml"
-    (home / "governance" / "lanes" / "implement.toml").write_text(lane_src.read_text())
+    (home / "governance" / "lanes" / "implement.toml").write_text(
+        lane_src.read_text().replace('delivery_policy = "review-progress"', 'delivery_policy = "legacy"'))
     (home / "governance" / "evaluator.toml").write_text(rules)
     (home / "governance" / "repos.toml").write_text(textwrap.dedent(f"""
         [repos.target]
@@ -87,6 +88,11 @@ def test_evaluate_attempt_records_once_and_backfill_skips_missing_branch(
     monkeypatch.setenv("LANECTL_STATE", str(tmp_path / "state"))
     log = EventLog()
 
+    from lanectl.config import load_lane
+    from lanectl.delivery_policy import snapshot
+    for item in ("item", "other"):
+        log.append("release.published", {"release_id": item, "revision": 1,
+                   "effective_policy": snapshot(load_lane("implement"))}, item_id=item)
     _append(log, _attempt_events(seed, head))
     # A second gate-accepted attempt whose lane branch was never fetched.
     _append(log, _attempt_events(seed, head, aid="other-a1"))

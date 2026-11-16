@@ -333,12 +333,20 @@ def _publish(args, log=None) -> int:
         if not override:
             return 1
         print(f"lint override: {override}")
-    toml.write_text(_drop_draft(toml.read_text()))
     if log is None:
         from .events import open_log
         log = open_log()
-    log.append("release.published", {"release_id": rel.id, "revision": rel.revision,
-               "provenance": "guarded-publish"}, item_id=rel.id)
+    from . import delivery_policy
+    from .config import load_lane
+    prior = log.read()
+    existing = any(e.get("item_id") == rel.id and e['type'] in ('release.published', 'item.claimed') for e in prior)
+    binding = (delivery_policy.resolve(prior, rel.id) if existing else
+               delivery_policy.snapshot(load_lane(getattr(rel, 'eligible_lanes', ('implement',))[0])))
+    toml.write_text(_drop_draft(toml.read_text()))
+    payload = {"release_id": rel.id, "revision": rel.revision, "provenance": "guarded-publish", "preserve_terminal": True}
+    if binding is not None:
+        payload["effective_policy"] = binding
+    log.append("release.published", payload, item_id=rel.id)
     return 0
 
 

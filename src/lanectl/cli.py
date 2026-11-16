@@ -54,6 +54,12 @@ def main(argv: list[str] | None = None) -> int:
     rj.add_argument("attempt_id")
     rj.add_argument("reason")
     rj.add_argument("--park", action="store_true")
+    pr = sub.add_parser("review-progress", help="record agent judgment after a failed attempt")
+    pr.add_argument("attempt_id")
+    pr.add_argument("judgment", choices=("continue", "stop"))
+    pr.add_argument("--progress", required=True)
+    pr.add_argument("--remaining", required=True)
+    pr.add_argument("--reason", required=True)
     ap = sub.add_parser("approve", help="judgment plane: accept a review-required parked attempt")
     ap.add_argument("attempt_id")
     ap.add_argument("note")
@@ -129,6 +135,9 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     if a.cmd == "approve":
         print(runner.approve(log, a.attempt_id, a.note))
+        return 0
+    if a.cmd == "review-progress":
+        print(runner.review_progress(log, a.attempt_id, a.judgment, a.progress, a.remaining, a.reason))
         return 0
     if a.cmd == "reject":
         print(runner.integrator_reject(log, a.attempt_id, a.reason, a.park))

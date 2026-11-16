@@ -103,7 +103,7 @@ def project_items(events: list[dict]) -> dict[str, ItemView]:
         if t == "release.published":
             if d["revision"] > v.release_revision:
                 v.release_revision = d["revision"]
-                if v.state in ("ready", "requeued", "parked", "rejected"):
+                if v.state in ("ready", "requeued") or (v.state in ("parked", "rejected") and not d.get("preserve_terminal", False)):
                     v.state = "ready"   # a new revision makes a parked item ready again
         elif t == "item.claimed":
             a = dict(d, ts=ev["ts"], item_id=iid)

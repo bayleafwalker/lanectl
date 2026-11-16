@@ -20,6 +20,8 @@ def _crash_after(log, keep_type):
 
 def test_recovered_gate_failure_is_rejected_and_consumes_the_attempt(estate):
     repo, release, log = estate
+    lane_path = Path(__import__("os").environ["LANECTL_HOME"]) / "governance/lanes/implement.toml"
+    lane_path.write_text(lane_path.read_text().replace('delivery_policy = "review-progress"', 'delivery_policy = "legacy"'))
     release("add-sub", SUB_TEST)
     c = runner.admit("implement", log)
     # worker changes nothing: the acceptance test fails, so the gates reject
@@ -38,7 +40,12 @@ def test_recovered_gate_failure_is_rejected_and_consumes_the_attempt(estate):
 
 
 def test_recovered_gate_failure_parks_when_attempts_exhausted(estate):
+    import os
     repo, release, log = estate
+    lane_path = Path(os.environ["LANECTL_HOME"]) / "governance/lanes/implement.toml"
+    lane_path.write_text(lane_path.read_text().replace("max_attempts = 2", "max_attempts = 1"))
+    lane_path = Path(__import__("os").environ["LANECTL_HOME"]) / "governance/lanes/implement.toml"
+    lane_path.write_text(lane_path.read_text().replace('delivery_policy = "review-progress"', 'delivery_policy = "legacy"'))
     release("add-sub", SUB_TEST)
     c = runner.admit("implement", log)
     runner.execute(c, log, adapter_fn=scripted(lambda wt: None))

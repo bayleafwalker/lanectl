@@ -5,7 +5,7 @@ RULES_REVISION = "decision-rules/v3"
 
 
 def decide(gates: dict[str, list[str]], worker_outcome: str, attempts_used: int,
-           max_attempts: int, changed: bool = True) -> tuple[str, list[str], str]:
+           max_attempts: int, changed: bool = True, *, policy_mode: str = "legacy") -> tuple[str, list[str], str]:
     """Return (decision, reasons, follow_up) where follow_up is requeue|requeue-infra|park|none.
 
     - worker failed and changed nothing -> rejected as infra; does not consume an
@@ -17,7 +17,7 @@ def decide(gates: dict[str, list[str]], worker_outcome: str, attempts_used: int,
     - all gates clean               -> candidate (preliminary acceptance)
     """
     if worker_outcome == "failed" and not changed:
-        return "rejected", ["infra: worker failed without changing anything"], "requeue-infra"
+        return "rejected", ["infra: worker failed without changing anything"], ("requeue-infra" if policy_mode == "legacy" else "park")
     review = [f"{g}: {v}" for g, vs in gates.items() for v in vs if v.startswith("protected-review:")]
     reasons = [f"{g}: {v}" for g, vs in gates.items() for v in vs if not v.startswith("protected-review:")]
     if any(v.startswith("protected-path:") for vs in gates.values() for v in vs):
@@ -27,7 +27,7 @@ def decide(gates: dict[str, list[str]], worker_outcome: str, attempts_used: int,
     if worker_outcome != "done":
         reasons.append(f"worker outcome {worker_outcome}")
     if reasons:
-        follow = "requeue" if attempts_used < max_attempts else "park"
+        follow = "requeue" if policy_mode == "legacy" and attempts_used < max_attempts else "park"
         return "rejected", reasons, follow
     if review:   # v3: in-scope governance change, gates clean -> interactive review
         return "parked", ["review-required: all gates passed"] + review, "park"

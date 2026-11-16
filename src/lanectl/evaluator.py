@@ -14,7 +14,7 @@ import subprocess
 import tomllib
 from pathlib import Path
 
-from . import decisions
+from . import decisions, delivery_policy
 from .config import home, load_lane, load_releases, load_repos, match
 
 #: Rule operators accepted by ``evaluate``.  Only these six are policy language.
@@ -61,7 +61,7 @@ def features(repo_path, seed_sha: str, head_sha: str, size_budget, test_globs) -
         parts = line.split("\t")
         if len(parts) >= 2 and match(parts[-1], test_globs):
             new_test_files += 1
-    ratio = changed_lines / size_budget if size_budget else 0.0
+    ratio = changed_lines / size_budget if size_budget else None
     return {"changed_lines": changed_lines, "changed_lines_ratio": ratio,
             "new_test_files": new_test_files, "files_touched": files_touched}
 
@@ -70,7 +70,7 @@ def evaluate(features: dict, rules: dict) -> tuple[str, list[str]]:
     """First matching rule's verdict and name, else the rule set's default."""
     for rule in rules.get("rules", ()):
         feature = rule.get("feature")
-        if feature not in features:
+        if feature not in features or features[feature] is None:
             continue
         op = _OPS.get(rule.get("op"))
         if op is None:
@@ -121,11 +121,10 @@ def _attempt_context(events: list[dict], attempt_id: str) -> dict | None:
     if not seed_sha:
         return None
 
-    lane = None
-    lane_name = (claimed or {}).get("lane") or (release.eligible_lanes[0] if release else "implement")
+    binding = delivery_policy.claim_binding(events, item_id, claimed or {})
     try:
-        lane = load_lane(lane_name)
-    except (OSError, KeyError, ValueError):
+        lane = delivery_policy.from_binding(binding) if binding else None
+    except (ValueError, TypeError, KeyError):
         lane = None
 
     repos = {}
@@ -143,13 +142,13 @@ def _attempt_context(events: list[dict], attempt_id: str) -> dict | None:
             if p.returncode == 0:
                 repo_path = spec.path
                 break
-    if repo_path is None:
+    if repo_path is None or lane is None:
         return None
 
     size = (experiment or {}).get("size") or (release.size if release else "M")
     return {"item_id": item_id, "repo_path": repo_path,
             "seed_sha": seed_sha, "head_sha": finished["head_sha"],
-            "size_budget": (lane.size_budget_lines.get(size, 0) if lane else 0),
+            "size_budget": (lane.size_budget_lines.get(size) if lane else None),
             "test_globs": (lane.test_globs if lane else ())}
 
 
@@ -169,17 +168,21 @@ def evaluate_attempt(log, attempt_id: str, rules: dict | None = None) -> dict | 
     ctx = _attempt_context(events, attempt_id)
     if ctx is None:
         return None
+    binding = delivery_policy.resolve(events, ctx["item_id"])
+    if binding is None:
+        return None
+    prospective = delivery_policy.from_binding(binding).delivery_policy == "review-progress"
     try:
         measured = features(ctx["repo_path"], ctx["seed_sha"], ctx["head_sha"],
                             ctx["size_budget"], ctx["test_globs"])
     except (OSError, RuntimeError):
         return None                 # lane commits are gone; caller reports the skip
-    verdict, reasons = evaluate(measured, rules)
+    verdict, reasons = ("unavailable", ["review-progress requires agent judgment"]) if prospective else evaluate(measured, rules)
     data = {"attempt_id": attempt_id, "evaluator": "rules", "verdict": verdict,
             "rules_revision": f"evaluator/v{rules['revision']}",
             "features": measured, "reasons": reasons}
     log.append("evaluation.recorded", data, item_id=ctx["item_id"])
-    if proposed is None:
+    if proposed is None and not prospective:
         # Preliminary: the gates and the integrator decide what actually lands.
         decisions.acceptance_proposed(
             log, item_id=ctx["item_id"], attempt_id=attempt_id, chosen=verdict,
@@ -216,7 +219,7 @@ def agreement(events: list[dict]) -> dict[str, dict]:
     groups: dict[str, dict] = {}
     for aid, verdict in verdicts.items():
         cls = task_class.get(aid)
-        if cls is None or (aid not in landed and aid not in rejected):
+        if verdict not in ("accept", "reject") or cls is None or (aid not in landed and aid not in rejected):
             continue
         accepted = aid in landed and aid not in rejected and aid not in model_error
         group = groups.setdefault(cls, {"evaluated_ruled": 0, "agreed": 0, "agreement": 0.0})

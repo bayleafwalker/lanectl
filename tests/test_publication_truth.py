@@ -106,6 +106,8 @@ def test_guarded_publish_and_crash_reconciliation(tmp_path, monkeypatch):
     rel.draft = True
     path.write_text('draft = true\n')
     class Crash:
+        def read(self):
+            return []
         def append(self, *args, **kwargs):
             raise RuntimeError('lost before receipt')
     with pytest.raises(RuntimeError):

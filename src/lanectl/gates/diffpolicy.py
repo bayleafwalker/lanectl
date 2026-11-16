@@ -77,7 +77,7 @@ def evaluate(changes: list[FileChange], rel: WorkRelease, lane: LaneRevision,
                     v.append(f"forbidden-pattern: {c.path}: /{pat}/")
                     break
     budget = lane.size_budget_lines.get(rel.size)
-    if budget is not None and total > budget:
+    if lane.delivery_policy == "legacy" and budget is not None and total > budget:
         v.append(f"size-budget: {total} changed lines > {budget} for size {rel.size}")
     return v
 

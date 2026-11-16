@@ -46,6 +46,10 @@ def test_cli_reap_closes_stale_attempt(tmp_path, monkeypatch):
     monkeypatch.setenv("LANECTL_HOME", str(home))
     monkeypatch.setenv("LANECTL_STATE", str(tmp_path / "state"))
     log = EventLog()
+    from lanectl.config import load_lane
+    from lanectl.delivery_policy import snapshot
+    log.append("release.published", {"release_id": "stale", "revision": 1,
+                                    "effective_policy": snapshot(load_lane("implement"))}, item_id="stale")
     _claim(log, "stale", 1)
 
     assert cli.main(["reap", "--older-than", "0"]) == 0

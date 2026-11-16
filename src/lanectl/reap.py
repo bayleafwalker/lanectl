@@ -16,7 +16,7 @@ import hashlib
 import subprocess
 from pathlib import Path
 
-from . import decisions, runner
+from . import decisions, delivery_policy, runner
 from .config import load_lane, load_releases
 from .events import EventLog, ItemView, project_items
 from .gates import decision
@@ -39,6 +39,11 @@ def _recover(log: EventLog, events: list[dict], fin: dict, iid: str,
     aid = fin["attempt_id"]
     claim = next((e["data"] for e in events
                   if e["type"] == "item.claimed" and e["data"]["attempt_id"] == aid), {})
+    binding = delivery_policy.claim_binding(events, iid, claim)
+    if binding is None:
+        return False
+    lane = delivery_policy.from_binding(binding)
+    max_attempts = lane.max_attempts
     seed = fin.get("seed_sha") or claim.get("base_sha")
     if not seed:   # no diff baseline: ``changed`` is unknowable, leave it for a human
         return False
@@ -51,12 +56,24 @@ def _recover(log: EventLog, events: list[dict], fin: dict, iid: str,
         used = runner.attempts_used(project_items(log.read())[iid], revision)
         changed = (fin.get("head_sha") or "") != seed
         dec, reasons, follow = decision.decide(gates, fin.get("outcome", "failed"), used,
-                                               max_attempts, changed)
+                                               max_attempts, changed, policy_mode=lane.delivery_policy)
     else:   # died before gates ran: cannot accept, and must not burn an attempt
         dec, reasons, follow = ("rejected", ["infra: runner died before gates"],
-                                "requeue-infra")
+                                "requeue-infra" if lane.delivery_policy == "legacy" else "park")
+    if dec == "candidate":
+        try:
+            effective = delivery_policy.effective_lane(binding, load_lane(lane.lane))
+        except (OSError, ValueError, KeyError, TypeError):
+            return False
+        # Existing gate records cannot establish newly tightened authority rules.
+        authority = ("size_max", "routing", "caps", "protected_paths", "dependency_manifests",
+                     "test_globs", "forbidden_added_patterns", "external_models", "timeout_s",
+                     "allow_restricted", "effects", "sandbox")
+        if any(getattr(effective, k) != getattr(lane, k) for k in authority):
+            return False
     if not allow_accept and dec == "candidate":
-        dec, reasons, follow = ("rejected", ["infra: abandoned runner; acceptance must be rerun"], "requeue-infra")
+        dec, reasons, follow = ("rejected", ["infra: abandoned runner; acceptance must be rerun"],
+                                "requeue-infra" if lane.delivery_policy == "legacy" else "park")
     decisions.follow_applied(
         log, item_id=iid, attempt_id=aid, follow=follow,
         mechanism=decisions.MECHANISM_REAPER, reasons=reasons)
@@ -110,10 +127,16 @@ def reap(log: EventLog, *, now: datetime, older_than_s: float,
                 continue
             if not _stale(e["ts"], now, older_than_s):
                 continue
+            binding = delivery_policy.claim_binding(events, iid, d)
+            if binding is None:
+                continue
+            lane = delivery_policy.from_binding(binding)
             # same counting as admission: this revision, infra failures excluded
             used = len([a for a in views[iid].attempts if a.get("release_revision") == d.get("release_revision")
                         and not a.get("infra")])
-            if used >= max_attempts:
+            if lane.delivery_policy == "review-progress":
+                follow, reasons = "park", ["abandoned: progress review required"]
+            elif used >= lane.max_attempts:
                 follow, reasons = "park", ["abandoned: attempts exhausted"]
             else:
                 follow, reasons = "requeue", ["abandoned"]
