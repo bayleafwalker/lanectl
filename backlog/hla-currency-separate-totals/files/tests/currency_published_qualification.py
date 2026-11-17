@@ -25,8 +25,10 @@ from packages.storage.run_metadata import RunMetadataRepository
 
 
 def test_currency_published_reporting_survives_warehouse_clear_without_fallback(tmp_path):
-    check_empty_schema(tmp_path / "current-empty", published=True, stale=False)
-    check_empty_schema(tmp_path / "legacy-empty", published=True, stale=True)
+    check_empty_schema(tmp_path / "current-empty", warehouse_shape="current", published_shape="current")
+    check_empty_schema(tmp_path / "legacy-empty", warehouse_shape="current", published_shape="legacy")
+    for shape in ("legacy", "absent"):
+        check_empty_schema(tmp_path / f"{shape}-warehouse", warehouse_shape=shape, published_shape="absent")
     dsn = os.environ["CURRENCY_ACCEPTANCE_POSTGRES_DSN"]
     schema = "currency_acceptance_" + uuid4().hex
     ts = TransformationService(DuckDBStore.memory())

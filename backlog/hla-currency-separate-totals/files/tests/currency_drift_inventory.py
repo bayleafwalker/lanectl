@@ -17,3 +17,6 @@ MARTS = (
     "mart_current_operating_baseline",
     "mart_recent_significant_changes",
 )
+
+PG_HAZARD_TARGET = "mart_household_overview"
+PG_HAZARDS = ("trigger", "row-security", "foreign-key", "ownership", "numeric-typmod")

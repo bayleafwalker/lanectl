@@ -161,7 +161,7 @@ async function projectionMatches(panel, currency, rows, columns = projectionColu
     }
     if (!explicit) return false;
 
-    const headers = Array.from(root.querySelectorAll("thead th"), (cell) => cell.innerText.trim());
+    const headers = Array.from(root.querySelectorAll("thead th"), (cell) => cell.textContent.trim());
     const displayedRows = [...root.querySelectorAll("tbody tr")].filter(visible);
     if (!rows.length || displayedRows.length !== rows.length) return false;
     const value = (text) => {
@@ -216,6 +216,10 @@ test("scenario projection currency oracle rejects ambiguous and missing values",
     await page.setContent(table(label, cell));
     expect(await projectionMatches(panel, "USD", rows, columns)).toBe(expected);
   }
+  await page.setContent(table("Currency USD", "110.00"));
+  await page.addStyleTag({content:"th {text-transform: uppercase;}"});
+  expect(await panel.getByRole("columnheader").innerText()).toBe("SCENARIO EXPENSE");
+  expect(await projectionMatches(panel, "USD", rows, columns)).toBe(true);
   await page.setContent('<article><p>Currency USD</p></article>');
   expect(await projectionMatches(panel, "USD", rows, columns)).toBe(false);
 });

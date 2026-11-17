@@ -6,7 +6,7 @@ from pathlib import Path
 from uuid import uuid4
 
 import psycopg
-from currency_drift_inventory import MARTS
+from currency_drift_inventory import MARTS, PG_HAZARD_TARGET, PG_HAZARDS
 from currency_legacy_oracle import assert_inventory_unchanged, canonical, snapshot_legacy_facts
 from psycopg import sql
 from psycopg.conninfo import make_conninfo
@@ -50,7 +50,7 @@ def assert_refusal_unchanged(returncode, before, after):
     assert before == after, "refusal changed a persisted store"
 
 
-def assert_drift_refusal(result, relation, before, after):
+def assert_target_refusal(result, relation, before, after, reason):
     assert result.returncode != 0, (relation, "refusal returned success", result.stdout, result.stderr)
     assert_refusal_unchanged(result.returncode, before, after)
     assert_no_false_completion(result.stdout)
@@ -65,7 +65,11 @@ def assert_drift_refusal(result, relation, before, after):
     diagnostic = diagnostic.casefold()
     name = rf"(?<![a-z0-9_]){re.escape(relation.casefold())}(?![a-z0-9_])"
     assert re.search(name, diagnostic), "refusal did not identify the affected relation"
-    assert "column" in diagnostic or "schema" in diagnostic, "refusal did not identify schema drift"
+    assert re.search(reason, diagnostic), "refusal did not identify the injected hazard"
+
+
+def assert_drift_refusal(result, relation, before, after):
+    assert_target_refusal(result, relation, before, after, "column|schema")
 
 
 def assert_dependency_preserved(before, after, granted):
@@ -307,3 +311,110 @@ def run_drift_matrix(base_env, command, digest, pg_dump, snapshots, by_currency,
         probe_postgres_drift(relation, warehouse, env, manifest, command, digest, pg_dump, snapshots)
         legacy_publications(dsn, manifest)
         probe_warehouse_drift(relation, warehouse, env, manifest, command, digest, pg_dump, snapshots, by_currency)
+
+
+
+def create_pg_hazard(conn, schema, hazard, role):
+    table = sql.Identifier(schema, PG_HAZARD_TARGET)
+    if hazard == "trigger":
+        function = sql.Identifier(schema, "acceptance_republish_trigger")
+        conn.execute(sql.SQL(
+            "CREATE FUNCTION {}() RETURNS trigger LANGUAGE plpgsql "
+            "AS $$BEGIN RAISE EXCEPTION 'acceptance trigger fired'; END;$$"
+        ).format(function))
+        conn.execute(sql.SQL(
+            "CREATE TRIGGER acceptance_republish_guard BEFORE TRUNCATE ON {} "
+            "FOR EACH STATEMENT EXECUTE FUNCTION {}()"
+        ).format(table, function))
+        definition = conn.execute(
+            "SELECT pg_get_triggerdef(oid) FROM pg_trigger "
+            "WHERE tgrelid = %s::regclass AND tgname = 'acceptance_republish_guard'",
+            (table.as_string(conn),),
+        ).fetchone()
+        assert definition and "BEFORE TRUNCATE" in definition[0], definition
+        return "trigger"
+    if hazard == "row-security":
+        conn.execute(sql.SQL("ALTER TABLE {} ENABLE ROW LEVEL SECURITY").format(table))
+        conn.execute(sql.SQL("CREATE POLICY acceptance_republish_policy ON {} USING (false)").format(table))
+        assert conn.execute(
+            "SELECT c.relrowsecurity FROM pg_class c JOIN pg_policy p ON p.polrelid = c.oid "
+            "WHERE c.oid = %s::regclass AND p.polname = 'acceptance_republish_policy'",
+            (table.as_string(conn),),
+        ).fetchone() == (True,)
+        return r"row[- ]level[- ]security|policy|\brls\b"
+    if hazard == "foreign-key":
+        reference = sql.Identifier(schema, "acceptance_mart_reference")
+        conn.execute(sql.SQL("ALTER TABLE {} ADD UNIQUE (current_month)").format(table))
+        conn.execute(sql.SQL(
+            "CREATE TABLE {} (reference_month text REFERENCES {} (current_month))"
+        ).format(reference, table))
+        inserted = conn.execute(sql.SQL("INSERT INTO {} SELECT current_month FROM {}").format(reference, table))
+        assert inserted.rowcount > 0
+        assert conn.execute("SELECT 1 FROM pg_constraint WHERE confrelid = %s::regclass AND contype = 'f'",
+                            (table.as_string(conn),)).fetchone()
+        return "foreign.key"
+    if hazard == "numeric-typmod":
+        conn.execute(sql.SQL("ALTER TABLE {} ALTER COLUMN cashflow_net TYPE numeric(12,2)").format(table))
+        assert conn.execute(sql.SQL("SELECT count(*) FROM {} WHERE cashflow_net IS NOT NULL").format(table)).fetchone()[0]
+        assert conn.execute(
+            "SELECT numeric_precision, numeric_scale FROM information_schema.columns "
+            "WHERE table_schema = %s AND table_name = %s AND column_name = 'cashflow_net'",
+            (schema, PG_HAZARD_TARGET),
+        ).fetchone() == (12, 2)
+        return "column|schema|precision|numeric|type"
+    assert hazard == "ownership"
+    owner = sql.Identifier(role)
+    conn.execute(sql.SQL("CREATE ROLE {} NOLOGIN").format(owner))
+    conn.execute(sql.SQL("ALTER SCHEMA {} OWNER TO {}").format(sql.Identifier(schema), owner))
+    relations = conn.execute(
+        "SELECT table_name FROM information_schema.tables WHERE table_schema = %s AND table_type = 'BASE TABLE'",
+        (schema,),
+    ).fetchall()
+    for (name,) in relations:
+        if name != PG_HAZARD_TARGET:
+            conn.execute(sql.SQL("ALTER TABLE {} OWNER TO {}").format(sql.Identifier(schema, name), owner))
+    conn.execute(sql.SQL("GRANT SELECT, INSERT, UPDATE, DELETE, TRUNCATE ON {} TO {}").format(table, owner))
+    return r"\b(?:owns?|owner|ownership)\b"
+
+
+def run_pg_hazards(base_env, command, digest, pg_dump, snapshots, legacy_publications):
+    directory = Path(os.environ["CURRENCY_LEGACY_PG_HAZARDS"])
+    dsn = base_env["HOMELAB_ANALYTICS_REPORTING_POSTGRES_DSN"]
+    for hazard in PG_HAZARDS:
+        warehouse = directory / f"{hazard}.duckdb"
+        manifest = json.loads((directory / f"{hazard}.json").read_text())
+        schema = manifest["postgres_schema"]
+        assert manifest["drift_relation"] == PG_HAZARD_TARGET
+        assert digest(warehouse) == manifest["warehouse_sha256"]
+        facts_and_history(warehouse, dsn, manifest, snapshots)
+        legacy_publications(dsn, manifest)
+        role = "currency_hazard_" + uuid4().hex if hazard == "ownership" else None
+        with psycopg.connect(dsn) as conn:
+            reason = create_pg_hazard(conn, schema, hazard, role)
+        try:
+            candidate_dsn = dsn if role is None else make_conninfo(
+                dsn, options=f"-c role={role}"
+            )
+            if role is not None:
+                with psycopg.connect(candidate_dsn) as conn:
+                    assert conn.execute("SELECT current_user, rolsuper FROM pg_roles WHERE rolname = current_user").fetchone() == (role, False)
+                    table = sql.Identifier(schema, PG_HAZARD_TARGET).as_string(conn)
+                    assert conn.execute(
+                        "SELECT pg_has_role(current_user, relowner, 'MEMBER'), "
+                        "has_table_privilege(current_user, oid, 'TRUNCATE') "
+                        "FROM pg_class WHERE oid = %s::regclass", (table,),
+                    ).fetchone() == (False, True)
+            env = dict(base_env, HOMELAB_ANALYTICS_ANALYTICS_DATABASE_PATH=str(warehouse),
+                       HOMELAB_ANALYTICS_REPORTING_POSTGRES_DSN=candidate_dsn,
+                       HOMELAB_ANALYTICS_REPORTING_SCHEMA=schema)
+            before = (digest(warehouse), pg_dump(dsn, schema))
+            for args in (["--check"], []):
+                result = command(args, env, require_success=False)
+                after = (digest(warehouse), pg_dump(dsn, schema))
+                assert_target_refusal(result, PG_HAZARD_TARGET, before, after, reason)
+            facts_and_history(warehouse, dsn, manifest, snapshots)
+        finally:
+            if role is not None:
+                with psycopg.connect(dsn) as conn:
+                    conn.execute(sql.SQL("DROP SCHEMA {} CASCADE").format(sql.Identifier(schema)))
+                    conn.execute(sql.SQL("DROP ROLE {}").format(sql.Identifier(role)))

@@ -25,10 +25,12 @@ from currency_upgrade_adversarial import (
     assert_no_false_completion,
     assert_outage_preserved,
     assert_refusal_unchanged,
+    assert_target_refusal,
     assert_unknown_values_preserved,
     qualify_outage_then_retry,
     run_adversarial,
     run_drift_matrix,
+    run_pg_hazards,
 )
 from fastapi.testclient import TestClient
 from psycopg import sql
@@ -127,9 +129,7 @@ def command(args, env, *, require_success=True):
     return result
 
 
-def verify_historical_ui(app, ui_report):
-    api_port = int(os.environ["CURRENCY_LEGACY_API_PORT"])
-    web_port = int(os.environ["CURRENCY_LEGACY_WEB_PORT"])
+def verify_historical_ui(app, ui_report, *, api_port, web_port):
     for port in (api_port, web_port):
         with socket.socket() as sock:
             sock.bind(("127.0.0.1", port))
@@ -224,14 +224,22 @@ def test_legacy_upgrade_preserves_facts_snapshots_and_published_currency(tmp_pat
         completion = json.loads(result.stdout)
         assert isinstance(completion, dict) and completion, completion
 
+    ports = {
+        1: (int(os.environ["CURRENCY_LEGACY_API_PORT"]), int(os.environ["CURRENCY_LEGACY_WEB_PORT"])),
+        2: (int(os.environ["CURRENCY_LEGACY_RETRY_API_PORT"]), int(os.environ["CURRENCY_LEGACY_RETRY_WEB_PORT"])),
+    }
+    assert len(set(ports[1] + ports[2])) == 4, "first and retry browser fixtures require distinct listeners"
+
     def verify_upgrade(attempt):
+        api_port, web_port = ports[attempt]
         verify_completed_upgrade(manifest, warehouse, dsn, schema, tmp_path,
                                  first_report if attempt == 1 else ui_report,
-                                 clear_warehouse=attempt == 2)
+                                 clear_warehouse=attempt == 2, api_port=api_port, web_port=web_port)
 
     qualify_first_then_retry(run_upgrade, verify_upgrade)
     run_adversarial(env, command, digest, pg_dump, assert_original_snapshots, by_currency, assert_legacy_publications_present)
     run_drift_matrix(env, command, digest, pg_dump, assert_original_snapshots, by_currency, assert_legacy_publications_present)
+    run_pg_hazards(env, command, digest, pg_dump, assert_original_snapshots, assert_legacy_publications_present)
 
 
 def qualify_first_then_retry(run_upgrade, verify_upgrade):
@@ -274,6 +282,8 @@ def test_adversarial_refusal_oracle_rejects_false_success_and_mutation():
     unchanged = ("warehouse", "postgres")
     drift = subprocess.CompletedProcess([], 2, '{"status":"refused","refusals":["unknown columns in mart_household_overview"]}', "")
     assert_drift_refusal(drift, "mart_household_overview", unchanged, unchanged)
+    with pytest.raises(AssertionError):
+        assert_target_refusal(drift, "mart_household_overview", unchanged, unchanged, "trigger")
     for bad_drift in (
         subprocess.CompletedProcess([], 2, "", "command not found"),
         subprocess.CompletedProcess([], 2, "", "unknown columns in mart_household_overview_suffix"),
@@ -324,7 +334,7 @@ def test_adversarial_refusal_oracle_rejects_false_success_and_mutation():
         assert events == [], "retry could mask a damaging first attempt"
 
 
-def verify_completed_upgrade(manifest, warehouse, dsn, schema, tmp_path, ui_report, *, clear_warehouse):
+def verify_completed_upgrade(manifest, warehouse, dsn, schema, tmp_path, ui_report, *, clear_warehouse, api_port, web_port):
     # Verify this completed command's persistent outputs before any app
     # constructor can bootstrap or repair schema.
     pre_app = DuckDBStore.open(str(warehouse), read_only=True)
@@ -372,7 +382,7 @@ def verify_completed_upgrade(manifest, warehouse, dsn, schema, tmp_path, ui_repo
                 verify_current()
             assert_inventory_unchanged(manifest["facts"], snapshot_legacy_facts(store, manifest["facts"]))
             assert_original_snapshots(store, dsn, manifest)
-        verify_historical_ui(app, ui_report)
+        verify_historical_ui(app, ui_report, api_port=api_port, web_port=web_port)
         assert_inventory_unchanged(manifest["facts"], snapshot_legacy_facts(store, manifest["facts"]))
         assert_original_snapshots(store, dsn, manifest)
     finally:

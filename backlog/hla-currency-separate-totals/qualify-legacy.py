@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Owner-side named-unit qualification of an existing reporting-store upgrade."""
 import argparse
+from contextlib import ExitStack
 from dataclasses import replace
 import hashlib
 import json
@@ -9,6 +10,7 @@ from pathlib import Path
 import runpy
 import shlex
 import signal
+import socket
 import subprocess
 import sys
 import tempfile
@@ -19,6 +21,11 @@ import xml.etree.ElementTree as ET
 from lanectl.config import home, load_repos
 from lanectl.events import state_dir
 from lanectl.sandbox import for_train, transport_environment
+
+UI_PORT_KEYS = (
+    'CURRENCY_LEGACY_API_PORT', 'CURRENCY_LEGACY_WEB_PORT',
+    'CURRENCY_LEGACY_RETRY_API_PORT', 'CURRENCY_LEGACY_RETRY_WEB_PORT',
+)
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--checkout', required=True)
@@ -64,10 +71,19 @@ if not args.control:
             candidate = checkout / p.relative_to(root / 'files')
             if not candidate.is_file() or digest(candidate) != digest(p):
                 sys.exit(f'Candidate acceptance file differs: {candidate}')
-    required = ['CURRENCY_LEGACY_POSTGRES_DSN', 'CURRENCY_LEGACY_PG_DUMP',
-                'CURRENCY_LEGACY_API_PORT', 'CURRENCY_LEGACY_WEB_PORT']
+    required = ['CURRENCY_LEGACY_POSTGRES_DSN', 'CURRENCY_LEGACY_PG_DUMP', *UI_PORT_KEYS]
     for key in required:
         if not os.environ.get(key): sys.exit(f'{key} is required')
+    try:
+        ports = tuple(int(os.environ[key]) for key in UI_PORT_KEYS)
+        if len(set(ports)) != 4 or any(not 1 <= port <= 65535 for port in ports):
+            sys.exit('First and retry legacy UI require four distinct loopback ports')
+        with ExitStack() as sockets:
+            for port in ports:
+                listener = sockets.enter_context(socket.socket())
+                listener.bind(('127.0.0.1', port))
+    except (OSError, ValueError) as exc:
+        sys.exit(f'Cannot bind the four legacy UI loopback ports: {exc}')
     if not args.warehouse or not args.manifest or not args.ui_report:
         sys.exit('Existing legacy warehouse, manifest and new UI report path are required')
     warehouse, manifest = Path(args.warehouse).resolve(), Path(args.manifest).resolve()
@@ -112,8 +128,16 @@ if not args.control:
         sys.exit('CURRENCY_LEGACY_DRIFT_MATRIX is required for per-relation drift fixtures')
     matrix = Path(matrix_path).resolve()
     os.environ['CURRENCY_LEGACY_DRIFT_MATRIX'] = str(matrix)
-    for relation in runpy.run_path(str(root / 'files/tests/currency_drift_inventory.py'))['MARTS']:
+    inventory = runpy.run_path(str(root / 'files/tests/currency_drift_inventory.py'))
+    for relation in inventory['MARTS']:
         bind_fixture(relation, matrix / f'{relation}.duckdb', matrix / f'{relation}.json', relation)
+    hazard_path = os.environ.get('CURRENCY_LEGACY_PG_HAZARDS')
+    if not hazard_path:
+        sys.exit('CURRENCY_LEGACY_PG_HAZARDS is required for republish preflight fixtures')
+    hazards = Path(hazard_path).resolve()
+    os.environ['CURRENCY_LEGACY_PG_HAZARDS'] = str(hazards)
+    for hazard in inventory['PG_HAZARDS']:
+        bind_fixture(hazard, hazards / f'{hazard}.duckdb', hazards / f'{hazard}.json', inventory['PG_HAZARD_TARGET'])
     ui_report = Path(args.ui_report)
     first_ui_report = Path(str(ui_report) + '.first')
     if not ui_report.is_absolute() or ui_report.exists() or first_ui_report.exists() or ui_report.is_relative_to(checkout):
@@ -168,8 +192,8 @@ with tempfile.TemporaryDirectory(prefix='.currency-legacy-owner-', dir=checkout)
         payload += {'detached': 'exit 0', 'failure': 'exit 23', 'wait': 'while :; do sleep 1; done'}[args.control]
     else:
         forwarded = ['CURRENCY_LEGACY_POSTGRES_DSN', 'CURRENCY_LEGACY_PG_DUMP',
-                     'CURRENCY_LEGACY_API_PORT', 'CURRENCY_LEGACY_WEB_PORT',
-                     'PLAYWRIGHT_BROWSERS_PATH', 'LD_LIBRARY_PATH', 'CURRENCY_LEGACY_DRIFT_MATRIX',
+                     *UI_PORT_KEYS,
+                     'PLAYWRIGHT_BROWSERS_PATH', 'LD_LIBRARY_PATH', 'CURRENCY_LEGACY_DRIFT_MATRIX', 'CURRENCY_LEGACY_PG_HAZARDS',
                      *[f'CURRENCY_LEGACY_{label}_{kind}' for label in ('WAREHOUSE_DRIFT', 'DRIFT', 'DEPENDENCY', 'OUTAGE') for kind in ('WAREHOUSE', 'MANIFEST')]]
         prefix = ' '.join(f'{key}={shlex.quote(os.environ[key])}' for key in forwarded if os.environ.get(key))
         prefix += f' CURRENCY_LEGACY_WAREHOUSE={shlex.quote(str(warehouse))} CURRENCY_LEGACY_MANIFEST={shlex.quote(str(manifest))} CURRENCY_LEGACY_UI_REPORT={shlex.quote(str(ui_report))}'
@@ -285,4 +309,5 @@ evidence.write_text(json.dumps({'kind': 'hla-currency-legacy-upgrade-qualificati
                                 'legacy_warehouse_before_sha256': seed['warehouse_sha256'], 'adversarial_fixtures': extra_bindings, 'junit_sha256': junit_hash,
                                 'junit_path': str(junit_artifact), 'ui_report_sha256': ui_report_hash,
                                 'first_ui_report_sha256': first_ui_report_hash,
+                                'loopback_ports': dict(zip(UI_PORT_KEYS, ports, strict=True)),
                                 **observation}, indent=2) + '\n')
