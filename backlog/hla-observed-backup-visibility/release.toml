@@ -2,7 +2,6 @@ id = "hla-observed-backup-visibility"
 repo = "homelab-analytics"
 base_sha = "6c018e781186059a6fa6f48d9098c9b2b43a9451"
 revision = 2
-draft = true
 title = "Keep observed backups visible before their first success"
 task_class = "product-api"
 size = "S"
