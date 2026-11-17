@@ -17,17 +17,9 @@ from .capacity import AllocationPolicy, format_ts, project
 from .config import load_releases, load_repos
 from .contracts import ITEM_STATES, ContractError
 from .events import EventLog, project_items
+from .html_style import HEAD_META, STYLE, badge
 from .lanes import CAPS, rows as lane_rows
 from .report import build_report
-
-_STYLE = (
-    "body { font-family: system-ui, sans-serif; margin: 2rem; color: #1b1b1b; }"
-    "h2 { margin-top: 2rem; border-bottom: 1px solid #ccc; } h3 { margin-top: 1.2rem; }"
-    "table { border-collapse: collapse; margin: .5rem 0; }"
-    "th, td { border: 1px solid #ccc; padding: .25rem .5rem; text-align: left; }"
-    "th { background: #f0f0f0; } .muted { color: #666; }"
-)
-
 
 def _esc(value: object) -> str:
     return html.escape(str(value), quote=True)
@@ -37,13 +29,38 @@ def _num(value: object) -> str:
     return "-" if value is None else (f"{value:.3f}" if isinstance(value, float) else str(value))
 
 
-def _table(headers: tuple[str, ...], rows: list[list], empty: str = "none") -> str:
+class _Raw(str):
+    """A cell that is already HTML (a badge); every other cell is escaped."""
+
+
+#: Cell text longer than this is clipped, with the full text one click away.
+_CLIP = 100
+
+
+def _cell(value: object) -> str:
+    if isinstance(value, _Raw):
+        return str(value)
+    text = str(value)
+    if len(text) <= _CLIP:
+        return _esc(text)
+    return (f"<details><summary>{_esc(text[:_CLIP].rstrip())}…</summary>"
+            f"{_esc(text)}</details>")
+
+
+def _table(headers: tuple[str, ...], rows: list[list], empty: str = "none",
+           caption: str = "") -> str:
     if not rows:
         return f'<p class="muted">{_esc(empty)}</p>'
-    head = "".join(f"<th>{_esc(h)}</th>" for h in headers)
-    body = "".join("<tr>" + "".join(f"<td>{_esc(c)}</td>" for c in row) + "</tr>"
+    head = "".join(f'<th scope="col">{_esc(h)}</th>' for h in headers)
+    body = "".join("<tr>" + "".join(f"<td>{_cell(c)}</td>" for c in row) + "</tr>"
                    for row in rows)
-    return f"<table><thead><tr>{head}</tr></thead><tbody>{body}</tbody></table>"
+    cap = f"<caption>{_esc(caption)}</caption>" if caption else ""
+    return (f'<div class="table-wrap"><table>{cap}<thead><tr>{head}</tr></thead>'
+            f"<tbody>{body}</tbody></table></div>")
+
+
+def _state(value: object) -> _Raw:
+    return _Raw(badge(value))
 
 
 def _counts(events: list[dict]) -> dict[str, int]:
@@ -56,7 +73,7 @@ def _counts(events: list[dict]) -> dict[str, int]:
 def _groups(groups: dict) -> list[list]:
     return [[name, g["attempts"], g["gate_accepted"], g["ruled"], g["landed_clean"],
              _num(g["precision"]), _num(g["model_precision"]),
-             "below" if g["below_bar"] else "ok", f"{g['mean_elapsed_s']:.1f}",
+             _state("below" if g["below_bar"] else "ok"), f"{g['mean_elapsed_s']:.1f}",
              ",".join(f"{k}={v}" for k, v in sorted(g["usage"].items())) or "-"]
             for name, g in sorted(groups.items())]
 
@@ -80,16 +97,18 @@ def _shadow_html(report: dict) -> str:
     if s := report.get("shadow_admission"):
         out.append("<h3>Shadow admission</h3>" + _table(
             ("RECORDED", "AGREED", "AGREEMENT"),
-            [[s.get("recorded"), s.get("agreed"), _num(s.get("agreement"))]]))
+            [[s.get("recorded"), s.get("agreed"), _num(s.get("agreement"))]],
+            caption="Shadow admission agreement"))
     if e := report.get("evaluator"):
         out.append("<h3>Evaluator</h3>" + _table(
             ("CLASS", "RULED", "AGREED", "AGREEMENT"),
             [[c, g.get("evaluated_ruled"), g.get("agreed"), _num(g.get("agreement"))]
-             for c, g in sorted(e.items())]))
+             for c, g in sorted(e.items())], caption="Evaluator agreement by class"))
     if l := report.get("landing_shadow"):
         out.append("<h3>Shadow landing</h3>" + _table(
             ("TRAINS", "MATCHED", "AGREEMENT"),
-            [[l.get("trains"), l.get("matched"), _num(l.get("agreement"))]]))
+            [[l.get("trains"), l.get("matched"), _num(l.get("agreement"))]],
+            caption="Shadow landing agreement"))
     return "".join(out)
 
 
@@ -104,7 +123,8 @@ def _capacity_html(events: list[dict], now: datetime) -> str:
             for name, w in windows.items()]
     return (f'<p class="muted">allocation revision {_esc(policy.revision)}</p>'
             + _table(("PROVIDER", "WINDOW", "START", "END", "USED", "REMAINING",
-                      "RESERVED", "BURNABLE", "BURN-DOWN"), rows))
+                      "RESERVED", "BURNABLE", "BURN-DOWN"), rows,
+                      caption="Allocation windows"))
 
 
 def _unavailable(what: str) -> str:
@@ -118,9 +138,9 @@ def _backlog_html(releases, events: list[dict]) -> str:
     open_rows = [r for r in rows if r["state"] != "landed"]
     table = _table(
         ("STATE", "ID", "REPO", "REV", "TRIES", "TITLE"),
-        [[r["state"], r["id"], r["repo"], r["revision"], r["tries"], r["title"]]
+        [[_state(r["state"]), r["id"], r["repo"], r["revision"], r["tries"], r["title"]]
          for r in open_rows],
-        empty="no open releases")
+        empty="no open releases", caption="Open releases")
     return table + f'<p class="muted">{len(rows) - len(open_rows)} landed</p>'
 
 
@@ -136,8 +156,10 @@ def _attention_html(releases, events: list[dict]) -> str:
     for rel in releases:
         if rel.draft:
             rows.append(["draft", rel.id, rel.title])
-    rows.sort(key=lambda row: (row[1], row[0]))
-    return _table(("KIND", "ID", "DETAIL"), rows, empty="nothing needs attention")
+    rows.sort(key=lambda row: (row[0] != "parked", row[1], row[0]))
+    return _table(("KIND", "ID", "DETAIL"),
+                  [[_state(kind), item_id, detail] for kind, item_id, detail in rows],
+                  empty="nothing needs attention", caption="Items waiting on an operator or a train")
 
 
 def _weight(value: float) -> str:
@@ -155,7 +177,7 @@ def _lanes_html(lanes) -> str:
                      *[f"{lane['caps'][cap]['used']}/{lane['caps'][cap]['limit']}"
                        for cap in CAPS]])
     headers = ("LANE", "REVISION", "ROUTING") + tuple(cap.upper() for cap in CAPS)
-    return _table(headers, rows, empty="no lanes")
+    return _table(headers, rows, empty="no lanes", caption="Lane caps and routing")
 
 
 def _governance_html(repos) -> str:
@@ -164,12 +186,12 @@ def _governance_html(repos) -> str:
     rows = [[spec.name, spec.path, spec.main, len(spec.protected_paths),
              spec.data_class_floor] for _, spec in sorted(repos.items())]
     return _table(("NAME", "PATH", "MAIN", "PROTECTED", "DATA_CLASS_FLOOR"), rows,
-                  empty="no repos")
+                  empty="no repos", caption="Configured repositories")
 
 
 #: Section ids in page order, with their nav labels.
 SECTIONS = (
-    ("backlog", "Backlog"), ("attention", "Attention"), ("lanes", "Lanes"),
+    ("attention", "Needs attention"), ("backlog", "Backlog"), ("lanes", "Lanes"),
     ("governance", "Governance"), ("items", "Items by state"), ("report", "Report"),
     ("capacity", "Capacity"), ("triage", "Triage"),
 )
@@ -192,33 +214,39 @@ def render(events: list[dict], now: datetime, *, releases=None, lanes=None,
     report = build_report(events)
     headers = ("ATT", "GATE", "RULED", "CLEAN", "PREC", "MPREC", "FLAG", "MEAN_S", "USAGE")
     report_html = (
-        "<h3>By task class</h3>" + _table(("CLASS",) + headers, _groups(report["by_class"]))
-        + "<h3>By model</h3>" + _table(("MODEL",) + headers, _groups(report["by_model"]))
+        "<h3>By task class</h3>" + _table(("CLASS",) + headers, _groups(report["by_class"]),
+                                            caption="Precision by task class")
+        + "<h3>By model</h3>" + _table(("MODEL",) + headers, _groups(report["by_model"]),
+                                          caption="Precision by model")
         + _shadow_html(report))
     triage = _table(
         ("FINGERPRINT", "SOURCE", "SUMMARY", "COUNT", "FIRST", "LAST"),
         [[p["fingerprint"], p["source"], p["summary"], p["count"],
           p["first_ts"], p["last_ts"]] for p in _triage(events)],
-        empty="no open triage proposals")
+        empty="no open triage proposals", caption="Open triage proposals")
     return f"""<!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
+{HEAD_META}
 <title>lanectl view</title>
-<style>{_STYLE}</style>
+<style>{STYLE}</style>
 </head>
 <body>
+<main>
+<header>
 <h1>lanectl</h1>
-<p class="muted">as of {_esc(format_ts(now))}</p>
+<p class="muted">read-only snapshot as of {_esc(format_ts(now))}</p>
 {_nav()}
-<section id="backlog"><h2>Backlog</h2>{_backlog_html(releases, events)}</section>
+</header>
 <section id="attention"><h2>Needs attention</h2>{_attention_html(releases, events)}</section>
+<section id="backlog"><h2>Backlog</h2>{_backlog_html(releases, events)}</section>
 <section id="lanes"><h2>Lanes</h2>{_lanes_html(lanes)}</section>
 <section id="governance"><h2>Governance</h2>{_governance_html(repos)}</section>
-<section id="items"><h2>Items by state</h2>{_table(("STATE", "ITEMS"), [[s, n] for s, n in _counts(events).items()])}</section>
+<section id="items"><h2>Items by state</h2>{_table(("STATE", "ITEMS"), [[_state(s), n] for s, n in _counts(events).items()], caption="Item counts by state")}</section>
 <section id="report"><h2>Report</h2>{report_html}</section>
 <section id="capacity"><h2>Capacity</h2>{_capacity_html(events, now)}</section>
 <section id="triage"><h2>Triage</h2>{triage}</section>
+</main>
 </body>
 </html>
 """

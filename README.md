@@ -19,6 +19,7 @@ lanectl candidates && lanectl train <repo> && lanectl land <train_id>
 lanectl deploy run <train_id>          # repos with [deploy]: dev deploy + health before land
 lanectl deploy list | reap             # live dev deploys; tear down expired/landed/superseded
 lanectl lanes | report | view --html out.html   # caps, precision and cost, management page
+lanectl tui --repo R                   # read-only Ready/Active/Verification TUI (? keys, --plain for a table)
 lanectl focus <id> [--role integrator]  # attribute this Claude session's usage to a release
 lanectl tick                           # doctor + deploy reap + run (contrib/systemd timer)
 lanectl otel export --out spans.json   # OTLP/JSON spans for an OTel collector

@@ -43,7 +43,7 @@ def test_outage_keeps_cached_owner_rows_and_advances_events_independently():
     assert snapshot["sources"]["owner"]["state"] == "offline"
     assert snapshot["actions_allowed"] is False
     screen = render_screen(snapshot, "Active", width=120, height=24)
-    assert "OWNER OFFLINE" in screen and "actions disabled" in screen
+    assert "owner ✗ offline" in screen and "owner not fresh" in screen
     assert "one" in render_plain_table(snapshot, "Active") and "OWNER OFFLINE" in render_plain_table(snapshot, "Active")
 
 

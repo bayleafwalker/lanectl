@@ -20,11 +20,30 @@ uv run lanectl verify --repo homelab-analytics --item freshness-fix
 uv run lanectl tui --repo homelab-analytics --item freshness-fix --attempt freshness-fix-a1 --view active
 ```
 
-The TUI also has Ready and Verification views, a plain table mode (`--plain`),
-filtering, evidence inspection and source links. The selected release and attempt
-remain selected during refresh. Evidence inspection shows gate results, checked
-and landed commits, deployment expiry, owner evidence and owner acceptance.
+The TUI is read-only and has three views: `1` Ready, `2` Active, `3` Verification.
+Keys: `j`/`k` or arrows move (or scroll an open pane), `PgDn`/`Space` and
+`PgUp`/`b` page, `g`/`G` jump to first/last, `/` filters (Enter applies, Esc
+cancels), `Enter` inspects, `e` shows evidence, `s` shows sources, `r` refreshes,
+`?` lists every key and state, `Esc` closes a pane and `q` quits. The footer
+always fits 80 columns (`? keys · q quit` at minimum). Below 80 columns each row
+stacks onto two lines.
+
+The status line shows `updated 4s ago` and the owner and event source health.
+Local events are re-read each `--refresh` interval (default 15 s) or on `r`; the
+owner is read at most once per interval and backs off after a failure, so `r`
+never polls it faster. States use the shared vocabulary with symbols, so meaning
+never depends on color: `▲ needs you`, `✗ failed`, `◐ running`, `● ok/done`,
+`○ idle/queued`, `◌ unknown/stale`. Color is used on capable terminals and is
+disabled by `--no-color` or `NO_COLOR`.
+
+`--plain`, or any run where stdin or stdout is not a terminal (pipes, CI, `TERM=dumb`),
+prints the same query as an aligned table and exits 0. The selected release and
+attempt remain selected during refresh. Evidence inspection shows gate results,
+checked and landed commits, deployment expiry, owner evidence and owner acceptance.
 Missing, rejected, stale and unknown evidence remain separate states.
+
+Without `governance/vuoro.toml` and a `[repos.NAME]` table the command exits 1 and
+names the file, the table and [Vuoro coordination](architecture/vuoro-coordination.md).
 
 ## Preview and run
 
