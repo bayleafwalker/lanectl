@@ -30,7 +30,7 @@ status = run("git", "status", "--porcelain=v1", "--untracked-files=all")
 if status:
     sys.exit("Candidate checkout must be clean to bind evidence to its commit:\n" + status)
 source = Path(__file__).resolve().parent / "files/tests"
-tests = [source / "test_acc_currency_separate_totals.py", source / "currency_published_qualification.py", source / "test_acc_currency_empty_schema.py"]
+tests = [source / "test_acc_currency_separate_totals.py", source / "currency_published_qualification.py", source / "test_acc_currency_empty_schema.py", source / "test_acc_currency_consumers.py"]
 def digest(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 

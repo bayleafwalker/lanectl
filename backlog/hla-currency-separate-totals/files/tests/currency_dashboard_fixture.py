@@ -14,11 +14,38 @@ from test_acc_currency_separate_totals import KEYS, bill, load, usage
 
 from apps.api.app import create_app
 from packages.domains.finance.pipelines.account_transaction_service import AccountTransactionService
+from packages.domains.finance.pipelines.scenario_service import ensure_scenario_storage
 from packages.pipelines.reporting_service import ReportingAccessMode, ReportingService
 from packages.pipelines.transformation_service import TransformationService
 from packages.storage.duckdb_store import DuckDBStore
 from packages.storage.postgres_reporting import PostgresReportingStore
 from packages.storage.run_metadata import RunMetadataRepository
+
+
+def seed_legacy_cashflows(store):
+    # Save the former shapes. The income delta has a unit, but neither legacy
+    # projection carries the denomination of its baseline or combined values.
+    ensure_scenario_storage(store)
+    for kind, key, unit, delta, income, expense in (
+        ("income", "monthly_income_delta", "EUR", "20", 770, 80),
+        ("expense", "expense_pct_delta", "%", "0.10", 750, 88),
+    ):
+        scenario_id = f"acceptance-legacy-{kind}"
+        store.insert_rows("dim_scenario", [{
+            "scenario_id": scenario_id, "scenario_type": "income_change" if kind == "income" else "expense_shock",
+            "subject_id": "household", "label": f"Historical {kind} projection", "status": "active",
+            "baseline_run_id": None, "created_at": "2025-06-01T00:00:00+00:00",
+        }])
+        store.insert_rows("fact_scenario_assumption", [{
+            "scenario_id": scenario_id, "assumption_key": key, "baseline_value": "0",
+            "override_value": delta, "unit": unit,
+        }])
+        store.insert_rows("proj_income_cashflow", [{
+            "scenario_id": scenario_id, "period": 1, "projected_month": "2025-07",
+            "baseline_income": 750, "scenario_income": income, "baseline_expense": 80,
+            "scenario_expense": expense, "baseline_net": 670, "scenario_net": income - expense,
+            "net_delta": income - expense - 670,
+        }])
 
 
 def main():
@@ -40,6 +67,7 @@ def main():
                 currency = "EUR" if scenario == "scenario-eur" else "USD"
                 load(ts, [(1, currency, 1000), (2, currency, -100)],
                      [bill(1, currency, 100)], [usage(1)])
+                seed_legacy_cashflows(ts.store)
             else:
                 raise ValueError("unknown currency acceptance scenario")
             ts.refresh_publications(extra)

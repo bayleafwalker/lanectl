@@ -96,7 +96,7 @@ try:
     for report in reports:
         for suite in report['suites']:
             walk(suite)
-    expected = {'visible amount oracle rejects larger and hidden values', 'fixture serves every published currency group', 'dashboard visibly retains both cashflow groups', 'dashboard visibly retains both utility groups', 'disjoint household report retains finance and utility units', 'disjoint household visibly retains finance and utility units', 'scenario projection currency oracle rejects ambiguous and missing values', 'scenario projection EUR has coherent currency', 'scenario projection USD has coherent currency'}
+    expected = {'visible amount oracle rejects larger and hidden values', 'fixture serves every published currency group', 'dashboard visibly retains both cashflow groups', 'dashboard visibly retains both utility groups', 'disjoint household report retains finance and utility units', 'disjoint household visibly retains finance and utility units', 'scenario projection currency oracle rejects ambiguous and missing values', 'scenario projection EUR has coherent currency', 'scenario projection USD has coherent currency', 'scenario projection EUR reopens saved income and expense with their currency', 'scenario projection USD reopens saved income and expense with their currency', 'scenario projection EUR leaves missing historical currency unknown'}
     assert sys.argv[2:] == ['0', '0', '0', '0'] and all(not r['errors'] for r in reports)
     assert {x['title'] for x in specs} == expected and len(specs) == len(expected)
     assert sum(r['stats']['expected'] for r in reports) == len(expected)
