@@ -37,29 +37,48 @@ def contains_unavailability(value):
     return isinstance(value, str) and ("unavailable" in value.lower() or "insufficient" in value.lower())
 
 
-def assert_no_household_projection(client, response):
+def scenario_inventory(client):
+    response = client.get("/api/scenarios?include_archived=true")
+    assert response.status_code == 200, (response.status_code, response.text)
+    body = response.json()
+    assert isinstance(body, dict) and isinstance(body.get("rows"), list), body
+    identifiers = []
+    for row in body["rows"]:
+        assert isinstance(row, dict) and isinstance(row.get("scenario_id"), str) and row["scenario_id"], row
+        identifiers.append(row["scenario_id"])
+    assert len(identifiers) == len(set(identifiers)), body
+    return set(identifiers)
+
+
+def assert_no_household_projection(client, response, before):
+    after = scenario_inventory(client)
+    body = response.json()
+    assert isinstance(body, dict), body
+    returned_id = body.get("scenario_id")
+    assert returned_id is None or (isinstance(returned_id, str) and returned_id), body
+    identifiers = after - before
+    if returned_id is not None:
+        identifiers.add(returned_id)
+    # Fetch both public views before evaluating either, even on a refused POST.
+    probes = [(scenario_id, endpoint, row_keys, client.get(f"/api/scenarios/{scenario_id}/{endpoint}"))
+              for scenario_id in sorted(identifiers)
+              for endpoint, row_keys in (("comparison", ("scenario_rows", "variance_rows")), ("cashflow", ("cashflow_rows",)))]
+    for scenario_id, endpoint, row_keys, result in probes:
+        if result.status_code in (404, 409, 422, 503):
+            continue
+        assert result.status_code == 200, (scenario_id, endpoint, result.status_code, result.text)
+        details = result.json()
+        assert all(key in details and details[key] in (None, []) for key in row_keys), (scenario_id, endpoint, details)
+        assert contains_unavailability(details), (scenario_id, endpoint, details)
     if response.status_code in (409, 422, 503):
         return
     assert response.status_code == 200, (response.status_code, response.text)
-    body = response.json()
     assert "months_until_deficit" in body and body["months_until_deficit"] is None, body
     assert contains_unavailability(body), body
-    scenario_id = body.get("scenario_id")
-    if not scenario_id:
-        assert contains_unavailability(body), body
-        return
-    for endpoint, row_keys in (("comparison", ("scenario_rows", "variance_rows")), ("cashflow", ("cashflow_rows",))):
-        result = client.get(f"/api/scenarios/{scenario_id}/{endpoint}")
-        if result.status_code in (404, 409, 422, 503):
-            continue
-        assert result.status_code == 200, (endpoint, result.status_code, result.text)
-        details = result.json()
-        assert all(key in details and details[key] in (None, []) for key in row_keys), (endpoint, details)
-        assert contains_unavailability(details), (endpoint, details)
 
 
-def assert_no_unrepresentable_tariff_scalar(client, response):
-    assert_no_household_projection(client, response)
+def assert_no_unrepresentable_tariff_scalar(client, response, before):
+    assert_no_household_projection(client, response, before)
     if response.status_code in (409, 422, 503):
         return
     body = response.json()
@@ -70,8 +89,9 @@ def assert_no_unrepresentable_tariff_scalar(client, response):
 def test_tariff_shock_cannot_combine_eur_cashflow_with_usd_utility(tmp_path):
     with api(tmp_path) as (ts, client):
         load(ts, [(1, "EUR", 500)], [bill(1, "USD", 100)], [usage(1)])
+        before = scenario_inventory(client)
         response = tariff_response(client)
-        assert_no_household_projection(client, response)
+        assert_no_household_projection(client, response, before)
         if response.status_code == 200 and response.json().get("baseline_monthly_utility_cost") is not None:
             body = response.json()
             assert Decimal(str(body["baseline_monthly_utility_cost"])) == Decimal(100), body
@@ -83,13 +103,15 @@ def test_tariff_shock_cannot_drop_or_blend_utility_currencies(tmp_path):
     with api(tmp_path) as (ts, client):
         load(ts, [(1, "EUR", 500)], [bill(1, "EUR", 100, "eur"), bill(2, "USD", 200, "usd")],
              [usage(1, "eur"), usage(2, "usd")])
-        assert_no_unrepresentable_tariff_scalar(client, tariff_response(client))
+        before = scenario_inventory(client)
+        assert_no_unrepresentable_tariff_scalar(client, tariff_response(client), before)
 
 
 def test_tariff_shock_usage_only_is_not_a_zero_bill(tmp_path):
     with api(tmp_path) as (ts, client):
         load(ts, [(1, "EUR", 500)], [], [usage(1)])
-        assert_no_unrepresentable_tariff_scalar(client, tariff_response(client))
+        before = scenario_inventory(client)
+        assert_no_unrepresentable_tariff_scalar(client, tariff_response(client), before)
 
 
 def test_tariff_shock_same_currency_and_observed_zero_controls(tmp_path):
@@ -186,38 +208,73 @@ def test_tariff_unavailability_oracle_rejects_exposed_and_persisted_blends():
     import pytest
 
     class Comparisons:
-        def __init__(self, comparison, cashflow):
-            self.comparison, self.cashflow = comparison, cashflow
+        def __init__(self, comparison, cashflow, rows=()):
+            self.comparison, self.cashflow, self.rows = comparison, cashflow, rows
+            self.calls = []
 
         def get(self, path):
+            self.calls.append(path)
+            if path == "/api/scenarios?include_archived=true":
+                return httpx.Response(200, json={"rows": list(self.rows)})
             return self.comparison if path.endswith("/comparison") else self.cashflow
 
     unavailable = Comparisons(httpx.Response(409, json={"error": "unavailable"}),
                               httpx.Response(404, json={"detail": "unavailable"}))
     refusal = httpx.Response(422, json={"detail": "unavailable"})
-    assert_no_household_projection(unavailable, refusal)
+    assert scenario_inventory(unavailable) == set()
+    assert_no_household_projection(unavailable, refusal, set())
     safe_usd = httpx.Response(200, json={"scenario_id": "usd-only", "months_until_deficit": None,
                                          "baseline_monthly_utility_cost": 100, "new_monthly_utility_cost": 110,
                                          "annual_additional_cost": 120, "currency": "USD", "projection_status": "unavailable"})
-    assert_no_household_projection(unavailable, safe_usd)
+    assert_no_household_projection(unavailable, safe_usd, set())
     explicit = Comparisons(httpx.Response(200, json={"status": "unavailable", "scenario_rows": [], "variance_rows": []}),
                            httpx.Response(200, json={"status": "unavailable", "cashflow_rows": []}))
-    assert_no_household_projection(explicit, safe_usd)
+    assert_no_household_projection(explicit, safe_usd, set())
     ambiguous = Comparisons(httpx.Response(200, json={"scenario_rows": [], "variance_rows": []}),
                             httpx.Response(200, json={"cashflow_rows": []}))
     with pytest.raises(AssertionError):
-        assert_no_household_projection(ambiguous, safe_usd)
+        assert_no_household_projection(ambiguous, safe_usd, set())
     fields = ("baseline_monthly_utility_cost", "new_monthly_utility_cost", "annual_additional_cost")
     null_header = {key: None for key in fields}
     null_header.update(scenario_id="persisted-blend", months_until_deficit=1)
-    exposed = httpx.Response(200, json=null_header)
     with pytest.raises(AssertionError):
-        assert_no_household_projection(unavailable, exposed)
+        assert_no_household_projection(unavailable, httpx.Response(200, json=null_header), set())
     persisted = Comparisons(httpx.Response(200, json={"scenario_rows": [{"expense": 110}], "variance_rows": []}),
-                            httpx.Response(200, json={"cashflow_rows": [{"expense": 110}]}))
+                            httpx.Response(200, json={"cashflow_rows": [{"expense": 110}]}),
+                            rows=[{"scenario_id": "persisted-blend"}])
     hidden_header = httpx.Response(200, json={**null_header, "months_until_deficit": None, "projection_status": "unavailable"})
     with pytest.raises(AssertionError):
-        assert_no_unrepresentable_tariff_scalar(persisted, hidden_header)
+        assert_no_unrepresentable_tariff_scalar(persisted, hidden_header, set())
+    # Refusal or missing returned ID cannot hide a newly discoverable projection.
+    for result in (refusal, httpx.Response(200, json={"months_until_deficit": None, "projection_status": "unavailable"})):
+        persisted.calls.clear()
+        with pytest.raises(AssertionError):
+            assert_no_household_projection(persisted, result, set())
+        assert "/api/scenarios/persisted-blend/comparison" in persisted.calls
+        assert "/api/scenarios/persisted-blend/cashflow" in persisted.calls
+    metadata = Comparisons(httpx.Response(404, json={"detail": "not found"}),
+                           httpx.Response(409, json={"error": "unavailable"}),
+                           rows=[{"scenario_id": "existing"}])
+    before = scenario_inventory(metadata)
+    assert before == {"existing"}
+    metadata.rows = [{"scenario_id": "existing"}, {"scenario_id": "metadata-only"}]
+    assert_no_household_projection(metadata, refusal, before)
+    assert "/api/scenarios/metadata-only/comparison" in metadata.calls
+    assert "/api/scenarios/metadata-only/cashflow" in metadata.calls
+    assert "/api/scenarios/existing/comparison" not in metadata.calls
+    # A failed or malformed catalogue never means an empty inventory.
+    class BrokenCatalogue:
+        def __init__(self, result):
+            self.result = result
+
+        def get(self, path):
+            return self.result
+
+    for bad in (httpx.Response(503, json={"error": "unavailable"}), httpx.Response(200, json={}),
+                httpx.Response(200, json={"rows": [{"label": "missing id"}]}),
+                httpx.Response(200, json={"rows": [{"scenario_id": "x"}, {"scenario_id": "x"}]})):
+        with pytest.raises(AssertionError):
+            scenario_inventory(BrokenCatalogue(bad))
     for amounts in ((0, 0, 0), (100, 110, 120), (300, 330, 360)):
         with pytest.raises(AssertionError):
-            assert_no_unrepresentable_tariff_scalar(unavailable, httpx.Response(200, json={**dict(zip(fields, amounts, strict=True)), "months_until_deficit": None, "scenario_id": "invalid", "projection_status": "unavailable"}))
+            assert_no_unrepresentable_tariff_scalar(unavailable, httpx.Response(200, json={**dict(zip(fields, amounts, strict=True)), "months_until_deficit": None, "scenario_id": "invalid", "projection_status": "unavailable"}), set())

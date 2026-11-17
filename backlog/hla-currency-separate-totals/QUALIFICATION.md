@@ -1,4 +1,4 @@
-# Currency separation: independent qualification, revision 13
+# Currency separation: independent qualification, revision 14
 
 Operator decision: preserve original denominations and show separate totals per
 currency, without conversion. Work is homelab-analytics#2915; baseline is
@@ -906,3 +906,41 @@ interim JUnit is
 consumer criterion SHA-256 is
 `9d0986cda66648101e842f017b8cac08a87a802f66b7dd641455e42d68aae963`.
 These are historical red controls, not a repaired candidate pass.
+
+
+## Revision 14: discover projections after refused operations
+
+Revision 13 remains bound to commit `8f16bc6abc0501e771fa5cf696a9c5732e6552c6`
+and its original red/control evidence is unchanged. A refused tariff operation
+can still leave a discoverable scenario with a blended projection; likewise a
+200 response without a returned ID must not hide such a scenario. Before each
+incompatible POST the oracle reads the supported scenario catalogue with
+`include_archived=true`; after the POST it reads it again, identifies every new
+scenario and includes any returned ID, regardless of response status. It fetches
+both public comparison and cashflow endpoints for all such IDs before checking
+whether each refuses or explicitly reports unavailable with no projected rows.
+A metadata-only refused scenario is allowed. This does not require rollback,
+particular storage strategy, or changes to unrelated existing scenarios.
+
+The real catalogue must return a parseable list of distinct nonempty IDs; errors,
+missing IDs, malformed responses and duplicate IDs cannot silently mean no new
+scenarios. The positive control parses an existing ID and permits newly created
+metadata with unavailable projection endpoints. Negative controls prove that a
+422 followed by a discoverable blended projection is rejected and that both
+endpoints are called, and prove the same for a 200 response with no returned ID.
+They retain revision 13's null-header, persisted-row, ambiguous-empty and valid
+USD utility-only controls.
+
+Against frozen P2 product `e4303e4b61e73596a5b567af907f11504ba5aaff`, the clean
+acceptance-only scratch child `6f07fdf1de03b60591a0495a1a2a7942def43d3c` differs
+from P2 only in the consumer criterion and its shared test fixture. The actual
+lanectl namespace run produced **7 expected product assertion failures and 4
+passing controls, 0 errors and 0 skips**; target-context Ruff passed. The separate
+source-bound oracle control also passed. Selected host-persistent,
+semi-ephemeral evidence and verified acceptance-only bundle are under
+`/projects/dev/_artifacts/lanectl-resume-20261117/currency-2915-r14-consumer-red/`.
+The final JUnit SHA-256 is
+`758def5665debce4862a978e6d286537815b29251f579fc9cfbae078adc84f3f`;
+the new criterion SHA-256 is
+`a17ea4155f1063c465363dcd55016d0245a3c5c0a20364959b8062ceee50acda`.
+These are historical red/control results, not a repaired candidate pass.
