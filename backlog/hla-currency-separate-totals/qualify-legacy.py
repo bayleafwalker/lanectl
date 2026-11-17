@@ -38,7 +38,7 @@ unit = 'currency-legacy-qualification-' + uuid.uuid4().hex
 print('NAMED_UNIT ' + unit + '.service', flush=True)
 sandbox = replace(for_train(readonly=(str(state_dir().resolve()), str(home().resolve()),
                                     str(Path(repo.path).resolve()),),
-                            writable=(str(checkout),), timeout_s=600), unit=unit)
+                            writable=(str(checkout),), timeout_s=900), unit=unit)
 transport = transport_environment()
 root = Path(__file__).resolve().parent
 tracked = [Path(__file__).resolve(),
@@ -81,7 +81,8 @@ if not args.control:
         sys.exit('Legacy warehouse differs from the sealed original fixture')
     manifest_hash = digest(manifest)
     ui_report = Path(args.ui_report)
-    if not ui_report.is_absolute() or ui_report.exists() or ui_report.is_relative_to(checkout):
+    first_ui_report = Path(str(ui_report) + '.first')
+    if not ui_report.is_absolute() or ui_report.exists() or first_ui_report.exists() or ui_report.is_relative_to(checkout):
         sys.exit('UI report must be a new absolute path outside the checkout')
     report = None
 else:
@@ -169,7 +170,7 @@ with tempfile.TemporaryDirectory(prefix='.currency-legacy-owner-', dir=checkout)
                         problem = 'named unit cgroup was not observable and populated during execution'
                     else:
                         go.touch()
-            deadline = time.monotonic() + 630
+            deadline = time.monotonic() + 930
             while proc.poll() is None and interrupted is None and problem is None and time.monotonic() < deadline:
                 time.sleep(.05)
             if proc.poll() is None:
@@ -233,8 +234,9 @@ with tempfile.TemporaryDirectory(prefix='.currency-legacy-owner-', dir=checkout)
     if not valid: sys.exit('Exact legacy candidate test did not execute and pass; evidence rejected')
     junit_bytes = junit.read_bytes()
     junit_hash = hashlib.sha256(junit_bytes).hexdigest()
-    if not ui_report.is_file(): sys.exit('Legacy browser result missing; evidence rejected')
+    if not ui_report.is_file() or not first_ui_report.is_file(): sys.exit('Both legacy browser results are required; evidence rejected')
     ui_report_hash = digest(ui_report)
+    first_ui_report_hash = digest(first_ui_report)
 # Owner handshake files have now been removed; source binding must still hold.
 if (git('rev-parse', 'HEAD') != sha or git('status', '--porcelain=v1', '--untracked-files=all')
         or hashes != {str(p): digest(p) for p in tracked} or digest(manifest) != manifest_hash):
@@ -246,4 +248,5 @@ evidence.write_text(json.dumps({'kind': 'hla-currency-legacy-upgrade-qualificati
                                 'source_sha256': hashes, 'legacy_manifest_sha256': manifest_hash,
                                 'legacy_warehouse_before_sha256': seed['warehouse_sha256'], 'junit_sha256': junit_hash,
                                 'junit_path': str(junit_artifact), 'ui_report_sha256': ui_report_hash,
+                                'first_ui_report_sha256': first_ui_report_hash,
                                 **observation}, indent=2) + '\n')

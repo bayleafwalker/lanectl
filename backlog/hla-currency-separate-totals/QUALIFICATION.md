@@ -1,4 +1,4 @@
-# Currency separation: independent qualification, revision 6
+# Currency separation: independent qualification, revision 7
 
 Operator decision: preserve original denominations and show separate totals per
 currency, without conversion. Work is homelab-analytics#2915; baseline is
@@ -606,3 +606,38 @@ upgrade test `1409cad42185625cf50ae6c0e4ac7dd326ceed2e19101703218612a41ef30503`;
 UI test `3510486a7ab6425a3eea4a7da28c436feb6c9d9e6d35989b8186ebed081269bd`;
 owner driver `4b4ea466646eb837b8484ef84f4892caa6057296abf86ccf4f9805c0c497fa57`;
 lifecycle controls `de1c0be680e6840577acb9c6edfa11388652f735d3cb3f1d70a6ed394452787a`.
+
+
+## Revision 7: verify the first completed upgrade before retry
+
+Revision 6 remains bound to commit `450ef11c8cb9f8dd6b9b17f7efdd82dd9597d3dc`
+and its recorded evidence above. Its original test inspected persistent output
+only after two commands, so a first run that incorrectly reported completion with
+partial output could be repaired by the second and escape detection. Revision 7
+requires full verification immediately after the first successful completion,
+before the retry can run, and repeats that verification after the retry. Each
+inspection checks the typed fact inventory and old snapshot bytes, exact rebuilt
+warehouse and republished PostgreSQL currency groups, current and historical
+strict PUBLISHED HTTP results, valid-empty versus unavailable history, and the
+real past-month dashboard. The warehouse-clear isolation proof remains after the
+second verification. The first browser report is retained as the supplied UI
+report path plus `.first`; both reports must be newly created and both hashes
+appear in the receipt. The named-unit timeout allows for both browser checks.
+
+A focused real pytest control exercises the same sequencing function: a complete
+first run produces `run, verify-1, run, verify-2`; a first run returning success
+with a partial result fails its verification and the second run never occurs.
+Five focused typed, snapshot, history and sequencing controls passed with no
+skips or errors in the actual namespace; JUnit is `/tmp/currency-r7-controls.xml`
+and raw source-bound runner records are
+`/tmp/lanectl-resume-20261116/hla-independent/currency-2915-r7-{controls,ruff}.{json,stdout,stderr}`.
+The HLA target-context Ruff check passed. This control is not a candidate upgrade
+or proof of an injected cross-store failure; the proposed command still requires
+qualification on an actual repaired candidate.
+
+Revision 7 SHA-256: upgrade test
+`b8e3113139072bc54ca6442efee1d8594349894e6a3364ab617399600441dddc`;
+owner driver
+`3de1659a6023ae90c7179841f03a10efe3701a80032f76fe1df173872044cf81`.
+The seed, typed oracle, history red and UI criterion retain their revision 6
+hashes. Raw `/tmp` paths are session-local.

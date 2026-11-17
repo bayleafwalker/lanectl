@@ -116,7 +116,7 @@ def command(args, env, *, require_success=True):
     return result
 
 
-def verify_historical_ui(app, tmp_path):
+def verify_historical_ui(app, ui_report):
     api_port = int(os.environ["CURRENCY_LEGACY_API_PORT"])
     web_port = int(os.environ["CURRENCY_LEGACY_WEB_PORT"])
     for port in (api_port, web_port):
@@ -128,7 +128,7 @@ def verify_historical_ui(app, tmp_path):
     thread = threading.Thread(target=server.run, daemon=True)
     env = os.environ.copy()
     env.update({"HOMELAB_ANALYTICS_API_BASE_URL": api_url, "CURRENCY_LEGACY_API_URL": api_url,
-                "CURRENCY_LEGACY_WEB_URL": web_url, "PLAYWRIGHT_JSON_OUTPUT_FILE": os.environ["CURRENCY_LEGACY_UI_REPORT"]})
+                "CURRENCY_LEGACY_WEB_URL": web_url, "PLAYWRIGHT_JSON_OUTPUT_FILE": str(ui_report)})
     frontend = Path.cwd() / "apps/web/frontend"
     node = shutil.which("node")
     assert node, "Node is required for the legacy history consumer check"
@@ -155,7 +155,7 @@ def verify_historical_ui(app, tmp_path):
                                  "--grep", "^past household view presents unavailable legacy denomination$"],
                                 cwd=frontend, env=env, capture_output=True, text=True, timeout=120)
         assert result.returncode == 0, (result.stdout, result.stderr)
-        report = json.loads(Path(os.environ["CURRENCY_LEGACY_UI_REPORT"]).read_text())
+        report = json.loads(ui_report.read_text())
         assert not report["errors"] and report["stats"]["expected"] == 1
         assert all(report["stats"][name] == 0 for name in ("skipped", "unexpected", "flaky"))
         specs = [spec for suite in report["suites"] for spec in suite.get("specs", [])]
@@ -204,13 +204,53 @@ def test_legacy_upgrade_preserves_facts_snapshots_and_published_currency(tmp_pat
     assert digest(warehouse) == manifest["warehouse_sha256"]
     assert pg_dump(dsn, schema) == before_pg
     assert check.returncode == 0, ("--check", check.returncode, check.stdout, check.stderr)
-    result = command([], env)
-    completion = json.loads(result.stdout)
-    assert isinstance(completion, dict) and completion, completion
-    retry = command([], env)
-    retry_completion = json.loads(retry.stdout)
-    assert isinstance(retry_completion, dict) and retry_completion, retry_completion
-    # Verify the completed command's persistent outputs before any app
+    ui_report = Path(os.environ["CURRENCY_LEGACY_UI_REPORT"])
+    first_report = Path(str(ui_report) + ".first")
+    assert not first_report.exists() and not ui_report.exists()
+
+    def run_upgrade():
+        result = command([], env)
+        completion = json.loads(result.stdout)
+        assert isinstance(completion, dict) and completion, completion
+
+    def verify_upgrade(attempt):
+        verify_completed_upgrade(manifest, warehouse, dsn, schema, tmp_path,
+                                 first_report if attempt == 1 else ui_report,
+                                 clear_warehouse=attempt == 2)
+
+    qualify_first_then_retry(run_upgrade, verify_upgrade)
+
+
+def qualify_first_then_retry(run_upgrade, verify_upgrade):
+    for attempt in (1, 2):
+        run_upgrade()
+        verify_upgrade(attempt)
+
+
+def test_first_completed_upgrade_is_checked_before_retry():
+    events = []
+
+    def run():
+        events.append("run")
+
+    def complete(attempt):
+        events.append(f"verify-{attempt}")
+
+    qualify_first_then_retry(run, complete)
+    assert events == ["run", "verify-1", "run", "verify-2"]
+    events.clear()
+
+    def partial_first(attempt):
+        events.append(f"verify-{attempt}")
+        assert attempt != 1, "first run left partial output"
+
+    with pytest.raises(AssertionError, match="first run left partial output"):
+        qualify_first_then_retry(run, partial_first)
+    assert events == ["run", "verify-1"]
+
+
+def verify_completed_upgrade(manifest, warehouse, dsn, schema, tmp_path, ui_report, *, clear_warehouse):
+    # Verify this completed command's persistent outputs before any app
     # constructor can bootstrap or repair schema.
     pre_app = DuckDBStore.open(str(warehouse), read_only=True)
     try:
@@ -249,14 +289,15 @@ def test_legacy_upgrade_preserves_facts_snapshots_and_published_currency(tmp_pat
                 empty = client.get("/reports/subscription-summary", params={"as_of": "2026-01"})
                 assert empty.status_code == 200 and empty.json()["as_of_status"] == "snapshot" and empty.json()["rows"] == [] and empty.json()["snapshot"]["row_count"] == 0
             verify_current()
-            # Intentional isolation check only, after candidate republish; no schema repair.
-            for key in KEYS:
-                store.execute(f'DELETE FROM "{key}"')
-                assert store.fetchall(f'SELECT COUNT(*) FROM "{key}"')[0][0] == 0
-            verify_current()
+            if clear_warehouse:
+                # Isolation check after the retry; never repair candidate output.
+                for key in KEYS:
+                    store.execute(f'DELETE FROM "{key}"')
+                    assert store.fetchall(f'SELECT COUNT(*) FROM "{key}"')[0][0] == 0
+                verify_current()
             assert_inventory_unchanged(manifest["facts"], snapshot_legacy_facts(store, manifest["facts"]))
             assert_original_snapshots(store, dsn, manifest)
-        verify_historical_ui(app, tmp_path)
+        verify_historical_ui(app, ui_report)
         assert_inventory_unchanged(manifest["facts"], snapshot_legacy_facts(store, manifest["facts"]))
         assert_original_snapshots(store, dsn, manifest)
     finally:
