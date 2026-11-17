@@ -77,3 +77,27 @@ qualification. The real pytest pass yields a synthetic receipt; real pytest
 receipt. A child mutation of a criterion likewise exits nonzero without a receipt.
 The control removes its temporary files. A real repaired candidate still requires
 the separate PostgreSQL qualification described above.
+
+## Import-order correction
+
+A later HLA target-context lint check found two import-order errors. The only
+criterion-file changes here reorder the existing helper import and separate the
+existing local import groups; acceptance assertions and the criterion revision are
+unchanged. The original revision 1 and 2 source bindings and failures above remain
+historical for their original bytes. In particular, the old PostgreSQL evidence is
+not rebound to the corrected files and never qualifies a candidate. The required
+source-bound PostgreSQL candidate qualification remains mandatory.
+
+With HLA's Ruff 0.15.8 configuration, `ruff check --no-cache --stdin-filename
+ tests/<filename> -` passed both corrected files. On historical HLA source
+`82dbd9477029d6fda7df67edc617f45a1a4ceb59` in the actual lanectl namespace,
+the focused baseline remained 4 expected product failures, 3 controls passing,
+no errors/skips: `/tmp/hla-currency-acceptance-2915-source/backup-import-baseline.xml`
+and `/tmp/lanectl-resume-20261116/hla-independent/backup-import-baseline.{json,stdout}`.
+The published qualification module also imported and collected successfully;
+collection is an import check, not a PostgreSQL qualification.
+
+Corrected SHA-256 values: ordinary test
+`69bfc9b8c33917cfb46bd7db02dd06ac28502c5df3cb19c06b419785db1b8e7e` and
+published test `6123d2ff9bbb37b938ccd4d27aabb68c650885f326c76d7d200c1d8bd73b577f`.
+Raw `/tmp` evidence is session-local.

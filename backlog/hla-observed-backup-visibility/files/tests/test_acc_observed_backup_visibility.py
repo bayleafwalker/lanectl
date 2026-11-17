@@ -149,6 +149,7 @@ def test_added_oracles_reject_wrong_window_order_timestamp_and_size(tmp_path, mo
     """Exercise each added assertion with synthetic good and wrong API rows."""
     import copy
     import sys
+
     import pytest
 
     loaded = []

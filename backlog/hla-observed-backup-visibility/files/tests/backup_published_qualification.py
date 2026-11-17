@@ -7,6 +7,7 @@ from uuid import uuid4
 
 import psycopg
 from fastapi.testclient import TestClient
+from test_acc_observed_backup_visibility import backup_row, utc_instant
 
 from apps.api.app import create_app
 from packages.domains.finance.pipelines.account_transaction_service import AccountTransactionService
@@ -15,7 +16,6 @@ from packages.pipelines.transformation_service import TransformationService
 from packages.storage.duckdb_store import DuckDBStore
 from packages.storage.postgres_reporting import PostgresReportingStore
 from packages.storage.run_metadata import RunMetadataRepository
-from test_acc_observed_backup_visibility import backup_row, utc_instant
 
 
 def test_published_backups_survive_warehouse_clear_and_do_not_fallback(tmp_path):
