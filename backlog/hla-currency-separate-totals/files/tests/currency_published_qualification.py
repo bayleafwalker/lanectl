@@ -4,6 +4,7 @@ from uuid import uuid4
 
 import psycopg
 from fastapi.testclient import TestClient
+from test_acc_currency_empty_schema import check_empty_schema
 from test_acc_currency_separate_totals import (
     KEYS,
     assert_disjoint_household_contributions,
@@ -24,6 +25,8 @@ from packages.storage.run_metadata import RunMetadataRepository
 
 
 def test_currency_published_reporting_survives_warehouse_clear_without_fallback(tmp_path):
+    check_empty_schema(tmp_path / "current-empty", published=True, stale=False)
+    check_empty_schema(tmp_path / "legacy-empty", published=True, stale=True)
     dsn = os.environ["CURRENCY_ACCEPTANCE_POSTGRES_DSN"]
     schema = "currency_acceptance_" + uuid4().hex
     ts = TransformationService(DuckDBStore.memory())

@@ -20,9 +20,9 @@ with tempfile.TemporaryDirectory(prefix='backup-harness-controls-') as d:
     testdir=criterion/'files/tests'
     (testdir/'currency_published_qualification.py').write_text('import os, pytest\n@pytest.mark.skipif(os.environ.get("CONTROL_SKIP") == "1", reason="skip control")\ndef test_currency_published_reporting_survives_warehouse_clear_without_fallback():\n    pass\n')
     make=root/'fake-make'
-    make.write_text('#!/bin/sh\nargs="$2"\njunit="${args##*--junitxml=}"\n'+python+' -m pytest -q -p no:cacheprovider "'+str(testdir/'currency_published_qualification.py')+'" "--junitxml=$junit"\nresult=$?\nif [ "$CONTROL_MUTATE" = 1 ]; then printf "\\n# mutation\\n" >> "'+str(testdir/'test_acc_currency_separate_totals.py')+'"; fi\nexit "$result"\n')
+    make.write_text('#!/bin/sh\nargs="$2"\njunit="${args##*--junitxml=}"\n'+python+' -m pytest -q -p no:cacheprovider "'+str(testdir/'currency_published_qualification.py')+'" "--junitxml=$junit"\nresult=$?\nif [ "$CONTROL_MUTATE" = 1 ]; then printf "\\n# mutation\\n" >> "'+str(testdir/'test_acc_currency_separate_totals.py')+'"; fi\nif [ "$CONTROL_MUTATE_HELPER" = 1 ]; then printf "\\n# mutation\\n" >> "'+str(testdir/'test_acc_currency_empty_schema.py')+'"; fi\nexit "$result"\n')
     make.chmod(0o755)
-    for name, extra, expected in [('pass',{},0),('collect',{'PYTEST_ADDOPTS':'--collect-only'},1),('skip',{'CONTROL_SKIP':'1'},1),('changed',{'CONTROL_MUTATE':'1'},1)]:
+    for name, extra, expected in [('pass',{},0),('collect',{'PYTEST_ADDOPTS':'--collect-only'},1),('skip',{'CONTROL_SKIP':'1'},1),('changed',{'CONTROL_MUTATE':'1'},1),('changed-helper',{'CONTROL_MUTATE_HELPER':'1'},1)]:
         receipt=root/(name+'.json')
         env=os.environ.copy(); env.pop('PYTEST_ADDOPTS',None); env.update({'CURRENCY_ACCEPTANCE_POSTGRES_DSN':'synthetic-only','CURRENCY_ACCEPTANCE_MAKE':str(make),**extra})
         run=subprocess.run(['python',str(criterion/'qualify-published.py'),str(receipt)],cwd=candidate,env=env,text=True,capture_output=True)

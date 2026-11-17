@@ -1,4 +1,4 @@
-# Currency separation: independent qualification, revision 8
+# Currency separation: independent qualification, revision 9
 
 Operator decision: preserve original denominations and show separate totals per
 currency, without conversion. Work is homelab-analytics#2915; baseline is
@@ -663,3 +663,53 @@ raw records use `currency-2915-r7-{controls,ruff}-v2.{json,stdout,stderr}` under
 SHA-256 `80471783f058fef014041cd66bbc2bf173f1575fc39ffbaa3674474f4a4bf0bf`;
 the revision 7 driver and remaining source bindings are unchanged. These paths
 are session-local and no candidate pass is claimed.
+
+
+## Revision 9: empty legacy schema is not valid-empty
+
+Revision 8 and its original evidence remain bound to commit
+`e8e6372ac4be94a46aebf51e51f37ad566cc5d13`. A legacy monthly cashflow
+relation can have no rows and still lack the currency column required for this
+outcome. A row-only check cannot establish its shape. On the actual reporting and
+HTTP path, an empty old-shaped monthly relation must be refused with a handled,
+explanatory schema/currency/upgrade error; an empty current-shaped relation is
+HTTP 200 with empty rows. The focused examples cover this one relation, not every
+monetary guard. The new ordinary checks use real private DuckDB WAREHOUSE reads.
+The mandatory published qualification runs both cases against a private real
+PostgreSQL schema with strict PUBLISHED reads, while its separate DuckDB warehouse
+contains a USD row; it must not fall back. Fixture DDL constructs only synthetic
+old and current shapes and does not repair a product store. Existing first-run,
+retry, typed fact and legacy history requirements remain unchanged.
+
+The canonical published runner hashes the new helper before and after execution,
+in addition to its prior criterion and harness bindings. Its five synthetic
+runner controls passed: actual pass, collection-only refusal, skip refusal,
+existing criterion mutation refusal, and new helper mutation refusal. Raw
+`currency-2915-r9-runner-controls-final.{json,stdout,stderr}` and target-context
+Ruff output `currency-2915-r9-ruff-final.{json,stdout,stderr}` are under
+`/tmp/lanectl-resume-20261116/hla-independent/`.
+
+A historical 82 archive, with owned dependencies, was tested through the real
+API in the actual lanectl namespace with private DuckDB and PostgreSQL 17.10.
+Both current-shaped empty controls passed; both old-shaped empty relations
+incorrectly returned HTTP 200 with `rows=[]` and failed the new assertions.
+JUnit `/tmp/currency-r9-empty-baseline-v3.xml` records **2 expected product
+failures, 2 passing controls, 0 errors and 0 skips**, SHA-256
+`4189daebda38552e054bd58097a3f26d9168f2d41c417235b727e03a43f247e4`.
+Raw `currency-2915-r9-empty-baseline-v3.{json,stdout,stderr}` is in the same
+namespace evidence directory. The relevant historical API, reporting,
+transformation, storage and finance-model source files were individually compared
+byte-for-byte with git source `82dbd9477029d6fda7df67edc617f45a1a4ceb59`.
+The owned PostgreSQL schemas, server and temporary directory were removed. This
+is baseline red evidence, not candidate qualification.
+
+Revision 9 SHA-256: empty-shape acceptance
+`d94cf907cbe04d7405ef2ceb20df3d6a0a89fb7f697fd894faff80615f5aa76b`;
+published test
+`826a37c7d71c1f0f859c2b8cf5f52c83580a77e58bf9c31da10eb40b382d0136`;
+published runner
+`226492237cd96366867499f07e62dedd2e1064a9517d9c090c100ca0c2ef854a`;
+runner controls
+`93fdeb781b2a6e5e2f1ccbc26ed2b1c69585ccce482a2d4d92a8aec067be97e0`.
+Raw `/tmp` paths are session-local. Earlier published, UI and legacy evidence
+remains historical for the original criterion and harness bytes; do not rebind it.
