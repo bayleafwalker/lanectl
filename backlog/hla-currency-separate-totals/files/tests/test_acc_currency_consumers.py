@@ -1,0 +1,154 @@
+"""Independent currency and monetary-evidence checks for report consumers."""
+from decimal import Decimal
+
+from test_acc_currency_separate_totals import api, bill, load, rows, usage
+
+
+def test_unbilled_usage_does_not_dilute_billed_currency_unit_price(tmp_path):
+    with api(tmp_path) as (ts, client):
+        load(ts, [], [bill(1, "EUR", 100, "billed")], [usage(1, "billed"), usage(1, "unbilled")])
+        trend = rows(client, "/reports/utility-cost-trend")
+        eur = [row for row in trend if row.get("currency") == "EUR"]
+        assert len(eur) == 1, trend
+        assert Decimal(str(eur[0]["total_cost"])) == Decimal(100), trend
+        assert Decimal(str(eur[0]["usage_amount"])) == Decimal(100), trend
+        assert Decimal(str(eur[0]["unit_price_effective"])) == Decimal(1), trend
+
+
+
+def test_billed_usage_unit_price_control(tmp_path):
+    with api(tmp_path) as (ts, client):
+        load(ts, [], [bill(1, "EUR", 100, "billed")], [usage(1, "billed")])
+        trend = rows(client, "/reports/utility-cost-trend")
+        assert len(trend) == 1 and trend[0]["currency"] == "EUR", trend
+        assert Decimal(str(trend[0]["usage_amount"])) == Decimal(100), trend
+        assert Decimal(str(trend[0]["unit_price_effective"])) == Decimal(1), trend
+
+
+def tariff_response(client):
+    return client.post("/api/scenarios/tariff-shock", json={"tariff_pct_delta": "0.10", "utility_type": "electricity"})
+
+
+def assert_no_unrepresentable_tariff_scalar(response):
+    if response.status_code in (409, 422, 503):
+        return
+    assert response.status_code == 200, (response.status_code, response.text)
+    body = response.json()
+    fields = ("baseline_monthly_utility_cost", "new_monthly_utility_cost", "annual_additional_cost")
+    assert all(field in body and body[field] is None for field in fields), body
+
+
+def test_tariff_shock_cannot_combine_eur_cashflow_with_usd_utility(tmp_path):
+    with api(tmp_path) as (ts, client):
+        load(ts, [(1, "EUR", 500)], [bill(1, "USD", 100)], [usage(1)])
+        assert_no_unrepresentable_tariff_scalar(tariff_response(client))
+
+
+def test_tariff_shock_cannot_drop_or_blend_utility_currencies(tmp_path):
+    with api(tmp_path) as (ts, client):
+        load(ts, [(1, "EUR", 500)], [bill(1, "EUR", 100, "eur"), bill(2, "USD", 200, "usd")],
+             [usage(1, "eur"), usage(2, "usd")])
+        assert_no_unrepresentable_tariff_scalar(tariff_response(client))
+
+
+def test_tariff_shock_usage_only_is_not_a_zero_bill(tmp_path):
+    with api(tmp_path) as (ts, client):
+        load(ts, [(1, "EUR", 500)], [], [usage(1)])
+        assert_no_unrepresentable_tariff_scalar(tariff_response(client))
+
+
+def test_tariff_shock_same_currency_and_observed_zero_controls(tmp_path):
+    for amount in (100, 0):
+        with api(tmp_path / str(amount)) as (ts, client):
+            load(ts, [(1, "EUR", 500)], [bill(1, "EUR", amount)], [usage(1)])
+            response = tariff_response(client)
+            assert response.status_code == 200, response.text
+            body = response.json()
+            assert Decimal(str(body["baseline_monthly_utility_cost"])) == Decimal(amount)
+            assert Decimal(str(body["new_monthly_utility_cost"])) == Decimal(amount) * Decimal("1.10")
+            assert Decimal(str(body["annual_additional_cost"])) == Decimal(amount) * Decimal("1.20")
+
+
+def test_tariff_shock_single_usd_has_truthful_monetary_unit(tmp_path):
+    with api(tmp_path) as (ts, client):
+        load(ts, [(1, "USD", 500)], [bill(1, "USD", 100)], [usage(1)])
+        response = tariff_response(client)
+        assert response.status_code == 200, response.text
+        body = response.json()
+        assert Decimal(str(body["baseline_monthly_utility_cost"])) == Decimal(100)
+        assert Decimal(str(body["new_monthly_utility_cost"])) == Decimal(110)
+        assumptions = client.get(f"/api/scenarios/{body['scenario_id']}/assumptions")
+        assert assumptions.status_code == 200, assumptions.text
+        monetary = [row for row in assumptions.json()["rows"] if row.get("assumption_key") == "baseline_utility_cost"]
+        assert len(monetary) == 1 and monetary[0]["unit"] == "USD", assumptions.json()
+
+
+def price(contract, component, currency, amount):
+    return {"contract_id": contract, "contract_name": contract, "provider": "Synthetic",
+            "contract_type": "electricity", "price_component": component,
+            "billing_cycle": "per_kwh" if component == "energy" else "monthly",
+            "unit_price": amount, "currency": currency,
+            "quantity_unit": "kWh" if component == "energy" else None,
+            "valid_from": "2025-01-01", "valid_to": None}
+
+
+def energy_assessment(tmp_path, energy_currency, base_currency):
+    with api(tmp_path) as (ts, client):
+        prices = [price("current", "energy", energy_currency, "0.0825"),
+                  price("current", "base_fee", base_currency, "5.99"),
+                  price("quote", "energy", energy_currency, "0.06"),
+                  price("quote", "base_fee", energy_currency, "3.99")]
+        ts.load_contract_prices(prices, run_id="synthetic-prices")
+        bills, usages = [], []
+        for month in range(1, 13):
+            start = f"2025-{month:02d}-01"
+            b = bill(1, energy_currency, 60, "year")
+            b.update(billing_period_start=start, billing_period_end=start, billed_quantity="400", invoice_date=start)
+            u = usage(1, "year")
+            u.update(usage_start=start, usage_end=start, usage_quantity="400")
+            bills.append(b)
+            usages.append(u)
+        ts.load_bills(bills, run_id="synthetic-bills")
+        ts.load_utility_usage(usages, run_id="synthetic-usage")
+        ts.refresh_publications(["mart_contract_price_current", "mart_utility_cost_summary", "mart_utility_cost_trend_monthly"])
+        response = client.get("/control/decisions/definitions/electricity_contract_keep_or_switch/subjects", params={"period": "current"})
+        assert response.status_code == 200, response.text
+        subjects = response.json()["subjects"]
+        assert len(subjects) == 1, subjects
+        return subjects[0]
+
+
+def test_energy_decision_refuses_mixed_contract_components(tmp_path):
+    result = energy_assessment(tmp_path, "EUR", "USD")["snapshot"]["assessment"]
+    assert result["verdict"] == "insufficient_evidence", result
+    assert all(value is None for key, value in result.items() if key.startswith("estimated_annual_")), result
+
+
+def test_energy_decision_single_usd_is_never_labelled_eur(tmp_path):
+    subject = energy_assessment(tmp_path, "USD", "USD")
+    result = subject["snapshot"]["assessment"]
+    assert result["currency"] == "USD", result
+    assert not any(key.startswith("estimated_annual_") and key.endswith("_eur") and value is not None
+                   for key, value in result.items()), result
+    assert any("annual" in key and "current" in key and value is not None for key, value in result.items()), result
+    annual = [value for key, value in subject["baseline"].items() if "annual" in key and isinstance(value, dict) and value.get("value") is not None]
+    assert annual and all(value.get("unit") == "USD/year" for value in annual), subject["baseline"]
+
+
+def test_energy_decision_same_eur_control(tmp_path):
+    result = energy_assessment(tmp_path, "EUR", "EUR")["snapshot"]["assessment"]
+    assert result["verdict"] == "alternative_estimated_cheaper", result
+    assert Decimal(str(result["estimated_annual_cost_current_eur"])) == Decimal("467.88"), result
+    assert Decimal(str(result["estimated_annual_cost_best_alternative_eur"])) == Decimal("335.88"), result
+
+
+def test_tariff_unavailability_oracle_rejects_real_zero_and_dropped_groups():
+    import httpx
+    import pytest
+
+    fields = ("baseline_monthly_utility_cost", "new_monthly_utility_cost", "annual_additional_cost")
+    assert_no_unrepresentable_tariff_scalar(httpx.Response(422, json={"detail": "unavailable"}))
+    assert_no_unrepresentable_tariff_scalar(httpx.Response(200, json={key: None for key in fields}))
+    for amounts in ((0, 0, 0), (100, 110, 120), (300, 330, 360)):
+        with pytest.raises(AssertionError):
+            assert_no_unrepresentable_tariff_scalar(httpx.Response(200, json=dict(zip(fields, amounts, strict=True))))

@@ -1,4 +1,4 @@
-# Currency separation: independent qualification, revision 11
+# Currency separation: independent qualification, revision 12
 
 Operator decision: preserve original denominations and show separate totals per
 currency, without conversion. Work is homelab-analytics#2915; baseline is
@@ -815,3 +815,52 @@ criterion SHA-256 is
 `09782ecfe20232262edd4c704840ed66a718928bd7c3a5323893eec7e3ebcff1`.
 A fresh clean acceptance-only child and all required candidate qualifications
 must be run with the new criterion; no earlier receipt is rebound.
+
+
+## Revision 12: monetary consumer and usage evidence
+
+Revision 11 remains bound to `de2a8aaad720c10640eea621e6b32829bb1fc51e`;
+all original UI, publication and legacy evidence retains its own source and
+criterion bindings. The ordinary acceptance now independently exercises real
+loaders, reporting and public APIs for these additional behaviors:
+
+* A tariff scenario must refuse or make its monetary scalar unavailable when
+  finance and utility denominations differ, utility data contains multiple
+  denominations, or usage exists without a monetary bill. It must preserve
+  correct same-EUR arithmetic and distinguish a real observed zero EUR bill.
+  For a valid all-USD scenario, its existing monetary assumption unit must say
+  USD rather than the generic word `currency`.
+* The electricity contract decision must not sum mixed EUR and USD components
+  into a qualified scalar. An all-USD assessment and its baseline must not
+  label estimated USD amounts as EUR/year; the all-EUR calculation remains a
+  control. These checks use the existing public subject and assessment interface,
+  not a prescribed replacement field layout or conversion policy.
+* A EUR bill of 100 for 100 kWh plus 100 kWh from a separate unbilled meter
+  must not assign that unbilled usage to the EUR group and halve its unit price.
+  The single billed-meter case remains an independent passing control.
+
+On frozen product P2 `e4303e4b61e73596a5b567af907f11504ba5aaff` (same runtime
+product bytes as P1), an acceptance-only clean scratch child
+`92617bd71666aaf6a170d991ca090fb65909575f` contains exactly the new consumer
+criterion and its existing shared fixture. In the actual lanectl namespace it
+produced **7 expected product assertion failures and 4 passing controls, with
+0 errors and 0 skips**. The failures are the three unrepresentable tariff
+cases, all-USD tariff unit, mixed-components decision, all-USD decision unit,
+and the billed/unbilled denominator. Controls cover same-EUR and genuine zero
+tariff results, the same-EUR decision, the billed-only denominator, and the
+false-zero/dropped-group oracle. The control test count is four because the
+same-EUR and zero tariff checks share one case. Target-context Ruff passed.
+
+Selected host-persistent, semi-ephemeral evidence and an acceptance-only Git
+bundle are in
+`/projects/dev/_artifacts/lanectl-resume-20261117/currency-2915-r12-consumer-red/`.
+The JUnit SHA-256 is
+`187522fdfe34ae228e1bfb9ad79dcfa495b391bc99f6c72e4d8a25dca5e73470`;
+the new consumer criterion SHA-256 is
+`3d79ad018e813c3af7b554c28c1b6899bfc6cfef90b1f81b77bf7d6ef6f424c5`.
+This P2 red run is not a candidate qualification and is not rebound to later
+product source. The independent P1 legacy diagnostic separately stopped after a
+successful read-only check when the revision 10 harness rejected multiple JSON
+stdout records before the command's completion record; no legacy receipt was
+emitted, and the remaining scenarios were not run. Its host-persistent evidence is
+`/projects/dev/_artifacts/lanectl-resume-20261117/currency-2915-q1-legacy-diagnostic/`.
