@@ -68,6 +68,10 @@ def main():
         sys.exit("warehouse and manifest must be new absolute paths")
     if git("rev-parse", "HEAD") != BASE or git("status", "--porcelain=v1", "--untracked-files=all"):
         sys.exit("legacy seed requires a clean checkout at the exact historical base")
+    fixture_path = Path(__file__).resolve()
+    oracle_path = Path(currency_legacy_oracle.__file__).resolve()
+    fixture_hash = hashlib.sha256(fixture_path.read_bytes()).hexdigest()
+    oracle_hash = hashlib.sha256(oracle_path.read_bytes()).hexdigest()
     dsn = os.environ["CURRENCY_LEGACY_POSTGRES_DSN"]
     schema = "currency_legacy_" + uuid4().hex
     schema_created = False
@@ -91,8 +95,8 @@ def main():
                 "fact_transaction": 4, "fact_bill": 2, "fact_utility_usage": 2}
             def amounts(relation, value):
                 part = inventory[relation]
-                return sorted((row[part["columns"].index("currency")],
-                               float(row[part["columns"].index(value)])) for row in part["rows"])
+                return sorted((row[part["columns"].index("currency")]["value"],
+                               float(row[part["columns"].index(value)]["value"])) for row in part["rows"])
             assert amounts("fact_transaction", "amount") == [("EUR", -30.0), ("EUR", 200.0), ("USD", -20.0), ("USD", 100.0)]
             assert amounts("fact_bill", "billed_amount") == [("EUR", 200.0), ("USD", 100.0)]
             duck_schemas = {key: [list(row) for row in store.fetchall(f"PRAGMA table_info('{key}')")] for key in KEYS}
@@ -126,9 +130,12 @@ def main():
             store.close()
         if git("rev-parse", "HEAD") != BASE or git("status", "--porcelain=v1", "--untracked-files=all"):
             raise RuntimeError("historical source changed during legacy seed")
-        record = {"kind": "hla-currency-legacy-fixture/v1", "source_commit": BASE,
-                  "fixture_sha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
-                  "oracle_sha256": hashlib.sha256(Path(currency_legacy_oracle.__file__).read_bytes()).hexdigest(),
+        if (hashlib.sha256(fixture_path.read_bytes()).hexdigest() != fixture_hash
+                or hashlib.sha256(oracle_path.read_bytes()).hexdigest() != oracle_hash):
+            raise RuntimeError("legacy fixture or oracle changed during seed; evidence rejected")
+        record = {"kind": "hla-currency-legacy-fixture/v2", "source_commit": BASE,
+                  "fixture_sha256": fixture_hash,
+                  "oracle_sha256": oracle_hash,
                   "warehouse_sha256": hashlib.sha256(warehouse.read_bytes()).hexdigest(),
                   "postgres_schema": schema, "duckdb_schemas": duck_schemas,
                   "postgres_schemas": pg_schemas, "postgres_rows": pg_rows, "facts": inventory,

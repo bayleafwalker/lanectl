@@ -1,7 +1,7 @@
 id = "hla-currency-separate-totals"
 repo = "homelab-analytics"
 base_sha = "82dbd9477029d6fda7df67edc617f45a1a4ceb59"
-revision = 4
+revision = 5
 draft = true
 title = "Preserve separate currency totals across monetary reports and consumers"
 task_class = "product-api"

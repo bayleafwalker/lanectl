@@ -1,4 +1,4 @@
-# Currency separation: independent qualification, revision 4
+# Currency separation: independent qualification, revision 5
 
 Operator decision: preserve original denominations and show separate totals per
 currency, without conversion. Work is homelab-analytics#2915; baseline is
@@ -443,3 +443,66 @@ Revision 4 source SHA-256: legacy seed
 inventory oracle `498adeeb6706721f54de296511fbe58e2e4904919fc031c60bf284a64416c340`;
 oracle controls `e14e377b50088ff57884750bb4d3b0f315911aaaf6f10c9609ec5ae7bc0bd4eb`;
 historical red control `5c4a19699ac4363c3bedc294a625386a481925a91fbec4759105727db9653b2e`.
+
+
+## Revision 5: typed facts and pre-seed binding
+
+Revision 4 remains bound to commit `1b99019236c7a71b907a8add9f0ab730a6e24d0d`
+and its original evidence above. Revision 5 records the observed type of every
+legacy fact column and tags every captured scalar as null, string, integer,
+decimal, float, boolean, date, datetime or bytes. Decimal scale alone is
+normalized within the decimal type; timezone-aware datetimes normalize to UTC
+within the datetime type. A numeric-looking ID remains a string; a
+decimal amount is distinct from a string or integer; a date is distinct from
+a same-looking string. Unlike reporting's documented absent-field convention,
+the original fact inventory does not equate zero with null. A candidate may
+add columns, but all original observed types and typed values must be preserved
+in the read-only projection. If physical relations are replaced, the independent
+author and owner must bind an equivalent typed projection without narrowing this
+requirement; the supported candidate workflow remains an open implementation
+interface.
+
+The seed captures its own file and oracle hashes before opening or seeding either
+store, verifies both again after seeding and before creating the manifest, and
+rejects changed or missing files with no manifest. On error it attempts to remove
+the owned warehouse and private PostgreSQL schema; cleanup failure is nonpassing.
+Two independent real mutation controls
+used owned copies under the actual namespace: one changed the seed file and the
+other changed the oracle after the warehouse appeared. Both produced nonzero
+exit, no manifest, no warehouse and zero remaining private schemas. Raw
+`/tmp/lanectl-resume-20261116/hla-independent/currency-2915-r5-mutation-final-currency_legacy_fixture.{json,stdout}`
+and `currency-2915-r5-mutation-final-currency_legacy_oracle.{json,stdout}`.
+
+The pure typed oracle controls pass for equivalent decimal scales and unchanged
+data, and reject numeric-looking ID type changes, amount string/decimal type
+changes, column-type changes, date/string and datetime/string collisions, plus
+previous dropped, added, altered and duplicated fact controls. Actual fenced
+control JUnit is `/tmp/hla-currency-acceptance-2915-source/currency-r5-oracle-controls-final.xml`;
+the combined ordinary baseline is **11 expected historical product failures,
+8 passing controls, no errors/skips** in
+`/tmp/hla-currency-acceptance-2915-source/currency-r5-ordinary-final.xml`. Raw command
+and output use `currency-2915-r5-oracle-controls-final` and `currency-2915-r5-ordinary-final`
+under `/tmp/lanectl-resume-20261116/hla-independent/`.
+
+A clean exact-82 historical checkout with its own locked dependencies seeded
+the typed fixture in the actual namespace. Read-only reopen matched every typed
+fact and all six old PostgreSQL publications. The original supported refresh
+and republish retained the fact inventory, then after disposable warehouse mart
+clear the strict published HTTP assertion still failed on one 250 row with no
+currency. This is historical red evidence, not candidate qualification. Raw
+`currency-2915-r5-{seed-final,reopen-final,persisted-red-final}.{json,stdout}` is under the same
+`hla-independent` directory. Synthetic manifest `/tmp/currency-legacy-seed-r5-final.json`
+has SHA-256 `2b06b04bd0ecf28a229db306ef6eb4961128534032f9b756baf5a7f64fb60868`
+and binds source `82dbd9477029d6fda7df67edc617f45a1a4ceb59`, the two pre-seed
+file hashes below, actual legacy schemas and the closed-warehouse hash. All
+disposable database files, PostgreSQL schemas and processes were removed; these
+raw paths are session-local.
+
+Revision 5 source SHA-256: legacy seed
+`693c8f0540b55464736b083dd27a32dc43ef0224db16d2c234edd8dd9c90e8fc`;
+typed inventory oracle `8db01f61c7abc6c6a20fd3d2df263d6175f0583a24b896bfaa1abfc0a3b1bc33`;
+controls `7b4bc2330e0e8a6ee280136625c807ee507f83d74f2540e7f3e489b8eb15ff5d`;
+historical red control remains
+`5c4a19699ac4363c3bedc294a625386a481925a91fbec4759105727db9653b2e`.
+The documented owner-supplied candidate upgrade/rebuild interface and mandatory
+end-to-end legacy qualification remain pending; no candidate pass is claimed.
