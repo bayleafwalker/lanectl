@@ -166,20 +166,35 @@ def reap(log: EventLog, *, now: datetime, older_than_s: float,
 
 
 def register(sub) -> dict:
-    p = sub.add_parser("reap", help="close abandoned attempts so caps recover")
+    p = sub.add_parser("reap", help="close abandoned attempts so caps recover (records events)")
     p.add_argument("--older-than", type=int, default=3600, metavar="SECONDS",
                    help="claimed longer ago than this (default 3600)")
-    p.add_argument("--lane", default="implement")
+    p.add_argument("--lane", default="implement", help="lane whose attempt limit applies (default implement)")
+    p.add_argument("--dry-run", action="store_true", help="list claims that look abandoned; change nothing")
+    p.add_argument("--yes", action="store_true", help="do not ask for confirmation on a terminal")
     return {"reap": _cmd}
 
 
 def _cmd(args, log: EventLog) -> int:
     lane = load_lane(args.lane)
+    if args.dry_run:
+        now = datetime.now(timezone.utc)
+        stale = [aid for aid, ts in (
+            (v.attempts[-1]["attempt_id"], v.attempts[-1].get("ts"))
+            for v in project_items(log.read()).values() if v.state == "claimed" and v.attempts)
+            if _stale(ts, now, args.older_than)]
+        print(f"would examine {len(stale)} claimed attempt(s) older than {args.older_than}s"
+              + "".join(f"\n  {aid}" for aid in stale) + "\nnext: rerun without --dry-run")
+        return 0
+    from .render import confirm
+    if not confirm("Close abandoned attempts (records events)?", yes=args.yes):
+        print("cancelled; nothing changed")
+        return 1
     closed = reap(log, now=datetime.now(timezone.utc), older_than_s=args.older_than,
                   max_attempts=lane.max_attempts)
     for aid in closed:
         print(f"reaped {aid}")
-    print(f"{len(closed)} abandoned attempt(s) closed")
+    print(f"✓ {len(closed)} abandoned attempt(s) closed\nnext: lanectl status")
     return 0
 
 
