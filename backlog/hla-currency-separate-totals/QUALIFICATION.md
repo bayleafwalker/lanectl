@@ -306,3 +306,30 @@ requires parent `82dbd9477029d6fda7df67edc617f45a1a4ceb59`, and the commit diff
 contains exactly the four acceptance files. This is host-local selected public
 source evidence under `_artifacts`, not durable-authoritative or a full `.git`
 archive. All `/tmp` evidence is session-local.
+
+## Import-order correction
+
+A later HLA target-context lint check found import-order errors in the dashboard
+fixture and PostgreSQL qualification module. Their existing helper imports were
+reordered; acceptance assertions and the criterion revision are unchanged. The
+revision 1–3 source bindings, failures, PostgreSQL evidence and UI evidence above
+remain historical for their original bytes and are not rebound to these corrected
+files. The required PostgreSQL and named-unit UI qualifications must still be run
+against the exact candidate and corrected criterion before acceptance.
+
+With HLA's Ruff 0.15.8 configuration, `ruff check --no-cache --stdin-filename
+ tests/<filename> -` passed both corrected files and the unchanged ordinary test.
+On historical HLA source `82dbd9477029d6fda7df67edc617f45a1a4ceb59` in the
+actual lanectl namespace, the focused baseline remained 11 expected product
+failures, 6 controls passing, no errors/skips:
+`/tmp/hla-currency-acceptance-2915-source/currency-import-baseline.xml` and
+`/tmp/lanectl-resume-20261116/hla-independent/currency-import-baseline.{json,stdout}`.
+The published and dashboard modules imported and collected successfully;
+collection is an import check, not a PostgreSQL or UI qualification.
+
+Corrected SHA-256 values: dashboard fixture
+`a4403e3ddde348552d515ddabad3b22ff752d61046b2f1ddf2bb324cec172c91` and
+published test `d9fa0f1d6f416d1d59319a0d2b2b3c934e667777d025cdc58dafab36785b238b`.
+The ordinary test remains
+`944076f422a8da0ee2857e3e9e5409a038d66ba86e99806634091c84f4836656`.
+Raw `/tmp` evidence is session-local.

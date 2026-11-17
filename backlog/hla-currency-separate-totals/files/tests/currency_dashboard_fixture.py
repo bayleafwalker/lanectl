@@ -10,6 +10,7 @@ from uuid import uuid4
 
 import psycopg
 import uvicorn
+from test_acc_currency_separate_totals import KEYS, bill, load, usage
 
 from apps.api.app import create_app
 from packages.domains.finance.pipelines.account_transaction_service import AccountTransactionService
@@ -18,7 +19,6 @@ from packages.pipelines.transformation_service import TransformationService
 from packages.storage.duckdb_store import DuckDBStore
 from packages.storage.postgres_reporting import PostgresReportingStore
 from packages.storage.run_metadata import RunMetadataRepository
-from test_acc_currency_separate_totals import KEYS, bill, load, usage
 
 
 def main():
