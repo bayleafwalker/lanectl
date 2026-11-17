@@ -1,4 +1,4 @@
-# Currency separation: independent qualification, revision 10
+# Currency separation: independent qualification, revision 11
 
 Operator decision: preserve original denominations and show separate totals per
 currency, without conversion. Work is homelab-analytics#2915; baseline is
@@ -787,3 +787,31 @@ Revision 10 SHA-256: adversarial helper
 legacy test `9ef8c320cc3c4cf6bedca1687490cff59a8e3e6d00662089b0d1e3d05f313475`;
 legacy driver `dd9358b342920c7af0fe8ec4ca82313054907986fccb8733c51e42c296c87f72`.
 All `/tmp` paths are session-local.
+
+
+## Revision 11: accept the explicit US-dollar symbol
+
+Revision 10 remains bound to commit `8c8914aacc5beb6905fb8013917d8b90254916bd`.
+An independent qualification on production parent
+`e83d058c8e8a579d181f79fc7acf5a7d8e2b7a78` and acceptance-only child
+`92c8b0367794ed0b4d07c3fa72c800968b936755` passed the ordinary and published
+checks but the dashboard matcher rejected the visibly rendered `US$250.00`.
+The prior positive matcher accepted `$` and `USD`, but accidentally omitted
+`US$`, even though the same test's wrong-unit oracle already recognizes that
+symbol as USD. This is an acceptance-oracle defect; the historical Q result is
+not a candidate pass and is not rebound to this revision. The retained evidence
+is host-persistent and semi-ephemeral at
+`/projects/dev/_artifacts/lanectl-resume-20261117/currency-2915-q-qualification/manifest.json`;
+the legacy qualification was not run after the dashboard failure.
+
+The exact visible amount matcher now also accepts `US$` as USD. A real Chromium
+control in the lanectl namespace first failed on visible `US$80.00` with the old
+matcher, then passed after the correction. It also verifies `US$800.00` cannot
+satisfy 80 and a hidden `US$80.00` cannot satisfy the visible requirement;
+the earlier euro, dollar, hidden, opacity and wrong-currency controls remain.
+Raw `currency-2915-r11-browser-{red,green}.{json,stdout,stderr}` is under
+`/tmp/lanectl-resume-20261116/hla-independent/` and is session-local. Revised UI
+criterion SHA-256 is
+`09782ecfe20232262edd4c704840ed66a718928bd7c3a5323893eec7e3ebcff1`.
+A fresh clean acceptance-only child and all required candidate qualifications
+must be run with the new criterion; no earlier receipt is rebound.
