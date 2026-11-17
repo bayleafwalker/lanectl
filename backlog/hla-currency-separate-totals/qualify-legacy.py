@@ -6,6 +6,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import runpy
 import shlex
 import signal
 import subprocess
@@ -73,7 +74,8 @@ if not args.control:
     if not warehouse.is_file() or not manifest.is_file() or warehouse.is_relative_to(checkout) or manifest.is_relative_to(checkout):
         sys.exit('Legacy warehouse and manifest must be existing files outside the candidate checkout')
     seed = json.loads(manifest.read_text())
-    if seed.get('kind') != 'hla-currency-legacy-fixture/v2' or seed.get('source_commit') != '82dbd9477029d6fda7df67edc617f45a1a4ceb59':
+    if (seed.get('kind') != 'hla-currency-legacy-fixture/v2' or seed.get('source_commit') != '82dbd9477029d6fda7df67edc617f45a1a4ceb59'
+            or seed.get('drift_relation') is not None):
         sys.exit('Incorrect legacy fixture kind or historical source')
     if seed.get('fixture_sha256') != digest(root / 'files/tests/currency_legacy_fixture.py') or seed.get('oracle_sha256') != digest(root / 'files/tests/currency_legacy_oracle.py'):
         sys.exit('Legacy fixture or oracle differs from the seeded bytes')
@@ -83,23 +85,35 @@ if not args.control:
     extra_bindings = {}
     schemas = {seed['postgres_schema']}
     warehouses = {warehouse}
-    for label in ('DRIFT', 'DEPENDENCY', 'OUTAGE'):
-        wk, mk = f'CURRENCY_LEGACY_{label}_WAREHOUSE', f'CURRENCY_LEGACY_{label}_MANIFEST'
-        if not os.environ.get(wk) or not os.environ.get(mk):
-            sys.exit(f'{wk} and {mk} are required for independent adversarial fixtures')
-        w, m = Path(os.environ[wk]).resolve(), Path(os.environ[mk]).resolve()
+    def bind_fixture(label, w, m, relation=None):
+        w, m = w.resolve(), m.resolve()
         if not w.is_file() or not m.is_file() or w.is_relative_to(checkout) or m.is_relative_to(checkout) or w in warehouses:
             sys.exit('Adversarial warehouses and manifests must be distinct existing files outside checkout')
         item = json.loads(m.read_text())
         if (item.get('kind') != seed['kind'] or item.get('source_commit') != seed['source_commit']
                 or item.get('fixture_sha256') != seed['fixture_sha256'] or item.get('oracle_sha256') != seed['oracle_sha256']
-                or item.get('warehouse_sha256') != digest(w) or item.get('postgres_schema') in schemas):
+                or item.get('warehouse_sha256') != digest(w) or item.get('postgres_schema') in schemas
+                or item.get('drift_relation') != relation):
             sys.exit('Adversarial fixture source, schema or warehouse binding is invalid')
-        os.environ[wk], os.environ[mk] = str(w), str(m)
         schemas.add(item['postgres_schema'])
         warehouses.add(w)
         extra_bindings[label] = {'manifest': str(m), 'manifest_sha256': digest(m), 'warehouse': str(w),
                                  'warehouse_before_sha256': item['warehouse_sha256']}
+        return str(w), str(m)
+
+    for label in ('WAREHOUSE_DRIFT', 'DRIFT', 'DEPENDENCY', 'OUTAGE'):
+        wk, mk = f'CURRENCY_LEGACY_{label}_WAREHOUSE', f'CURRENCY_LEGACY_{label}_MANIFEST'
+        if not os.environ.get(wk) or not os.environ.get(mk):
+            sys.exit(f'{wk} and {mk} are required for independent adversarial fixtures')
+        os.environ[wk], os.environ[mk] = bind_fixture(label, Path(os.environ[wk]), Path(os.environ[mk]))
+
+    matrix_path = os.environ.get('CURRENCY_LEGACY_DRIFT_MATRIX')
+    if not matrix_path:
+        sys.exit('CURRENCY_LEGACY_DRIFT_MATRIX is required for per-relation drift fixtures')
+    matrix = Path(matrix_path).resolve()
+    os.environ['CURRENCY_LEGACY_DRIFT_MATRIX'] = str(matrix)
+    for relation in runpy.run_path(str(root / 'files/tests/currency_drift_inventory.py'))['MARTS']:
+        bind_fixture(relation, matrix / f'{relation}.duckdb', matrix / f'{relation}.json', relation)
     ui_report = Path(args.ui_report)
     first_ui_report = Path(str(ui_report) + '.first')
     if not ui_report.is_absolute() or ui_report.exists() or first_ui_report.exists() or ui_report.is_relative_to(checkout):
@@ -155,8 +169,8 @@ with tempfile.TemporaryDirectory(prefix='.currency-legacy-owner-', dir=checkout)
     else:
         forwarded = ['CURRENCY_LEGACY_POSTGRES_DSN', 'CURRENCY_LEGACY_PG_DUMP',
                      'CURRENCY_LEGACY_API_PORT', 'CURRENCY_LEGACY_WEB_PORT',
-                     'PLAYWRIGHT_BROWSERS_PATH', 'LD_LIBRARY_PATH',
-                     *[f'CURRENCY_LEGACY_{label}_{kind}' for label in ('DRIFT', 'DEPENDENCY', 'OUTAGE') for kind in ('WAREHOUSE', 'MANIFEST')]]
+                     'PLAYWRIGHT_BROWSERS_PATH', 'LD_LIBRARY_PATH', 'CURRENCY_LEGACY_DRIFT_MATRIX',
+                     *[f'CURRENCY_LEGACY_{label}_{kind}' for label in ('WAREHOUSE_DRIFT', 'DRIFT', 'DEPENDENCY', 'OUTAGE') for kind in ('WAREHOUSE', 'MANIFEST')]]
         prefix = ' '.join(f'{key}={shlex.quote(os.environ[key])}' for key in forwarded if os.environ.get(key))
         prefix += f' CURRENCY_LEGACY_WAREHOUSE={shlex.quote(str(warehouse))} CURRENCY_LEGACY_MANIFEST={shlex.quote(str(manifest))} CURRENCY_LEGACY_UI_REPORT={shlex.quote(str(ui_report))}'
         target = 'tests/test_acc_currency_legacy_upgrade.py::test_legacy_upgrade_preserves_facts_snapshots_and_published_currency'

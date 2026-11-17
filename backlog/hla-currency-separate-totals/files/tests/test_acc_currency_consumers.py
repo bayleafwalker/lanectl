@@ -185,15 +185,53 @@ def test_energy_decision_refuses_mixed_contract_components(tmp_path):
     assert all(value is None for key, value in result.items() if key.startswith("estimated_annual_")), result
 
 
-def test_energy_decision_single_usd_is_never_labelled_eur(tmp_path):
-    subject = energy_assessment(tmp_path, "USD", "USD")
+def assert_usd_energy_subject(subject):
     result = subject["snapshot"]["assessment"]
     assert result["currency"] == "USD", result
-    assert not any(key.startswith("estimated_annual_") and key.endswith("_eur") and value is not None
-                   for key, value in result.items()), result
-    assert any("annual" in key and "current" in key and value is not None for key, value in result.items()), result
-    annual = [value for key, value in subject["baseline"].items() if "annual" in key and isinstance(value, dict) and value.get("value") is not None]
-    assert annual and all(value.get("unit") == "USD/year" for value in annual), subject["baseline"]
+    expected = {
+        "estimated_annual_cost_current_eur": Decimal("467.88"),
+        "estimated_annual_cost_best_alternative_eur": Decimal("335.88"),
+        "estimated_annual_difference_eur": Decimal("132"),
+    }
+    amounts = {key: Decimal(str(value)) for key, value in result.items()
+               if key.startswith("estimated_annual_") and value is not None}
+    assert amounts == expected, result
+    annual = {key: value for key, value in subject["baseline"].items()
+              if "annual" in key and isinstance(value, dict) and value.get("value") is not None}
+    assert {key: Decimal(str(value["value"])) for key, value in annual.items()} == expected, annual
+    assert all(value.get("unit") in ("USD/year", "US$/year", "$/year") for value in annual.values()), annual
+
+
+def test_energy_decision_single_usd_is_never_labelled_eur(tmp_path):
+    assert_usd_energy_subject(energy_assessment(tmp_path, "USD", "USD"))
+
+
+def test_usd_energy_oracle_accepts_legacy_keys_but_rejects_wrong_units_and_values():
+    import copy
+
+    import pytest
+
+    values = {"estimated_annual_cost_current_eur": "467.88",
+              "estimated_annual_cost_best_alternative_eur": "335.88",
+              "estimated_annual_difference_eur": "132"}
+    subject = {"snapshot": {"assessment": {"currency": "USD", **values}},
+               "baseline": {key: {"value": value, "unit": "USD/year"} for key, value in values.items()}}
+    assert_usd_energy_subject(subject)
+    wrong_unit = copy.deepcopy(subject)
+    wrong_unit["baseline"]["estimated_annual_cost_current_eur"]["unit"] = "EUR/year"
+    with pytest.raises(AssertionError):
+        assert_usd_energy_subject(wrong_unit)
+    wrong_value = copy.deepcopy(subject)
+    wrong_value["snapshot"]["assessment"]["estimated_annual_cost_current_eur"] = "468.88"
+    with pytest.raises(AssertionError):
+        assert_usd_energy_subject(wrong_value)
+    current, alternative, _ = values
+    for field in ("assessment", "baseline"):
+        swapped = copy.deepcopy(subject)
+        observed = swapped["snapshot"]["assessment"] if field == "assessment" else swapped["baseline"]
+        observed[current], observed[alternative] = observed[alternative], observed[current]
+        with pytest.raises(AssertionError):
+            assert_usd_energy_subject(swapped)
 
 
 def test_energy_decision_same_eur_control(tmp_path):

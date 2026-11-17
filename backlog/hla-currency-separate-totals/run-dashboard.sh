@@ -50,7 +50,7 @@ trap cleanup EXIT
 trap 'exit 130' INT
 trap 'exit 143' TERM
 run_phase() {
-  local scenario="$1" selector="$2" report="$3" deadline ready=0
+  local scenario="$1" selector="$2" pattern="$3" report="$4" deadline ready=0
   [[ ! -e "$report" ]] || { echo "Report already exists: $report" >&2; return 1; }
   setsid env CURRENCY_ACCEPTANCE_SCENARIO="$scenario" .venv/bin/python tests/currency_dashboard_fixture.py >"$logdir/$scenario-fixture.log" 2>&1 & backend_pid=$!
   setsid env HOMELAB_ANALYTICS_API_BASE_URL="$CURRENCY_ACCEPTANCE_API_URL" node apps/web/frontend/node_modules/next/dist/bin/next dev apps/web/frontend -H 127.0.0.1 -p "$CURRENCY_ACCEPTANCE_WEB_PORT" >"$logdir/$scenario-next.log" 2>&1 & web_pid=$!
@@ -65,23 +65,27 @@ run_phase() {
   done
   [ "$ready" = 1 ] || { cat "$logdir/$scenario-fixture.log" "$logdir/$scenario-next.log"; return 1; }
   export PLAYWRIGHT_JSON_OUTPUT_FILE="$report"
-  (cd apps/web/frontend && exec setsid node node_modules/@playwright/test/cli.js test playwright/currency-separate-totals.spec.js --project=chromium --reporter=line,json "$selector" 'disjoint household') & runner_pid=$!
+  (cd apps/web/frontend && exec setsid node node_modules/@playwright/test/cli.js test playwright/currency-separate-totals.spec.js --project=chromium --reporter=line,json "$selector" "$pattern") & runner_pid=$!
   if wait "$runner_pid"; then phase_status=0; else phase_status=$?; fi
   for pgid in "$runner_pid" "$web_pid" "$backend_pid"; do
     if dev_stop_process_group "$pgid"; then wait "$pgid" 2>/dev/null || true; else return 1; fi
   done
   runner_pid= web_pid= backend_pid=
 }
-run_phase mixed --grep-invert "$CURRENCY_ACCEPTANCE_UI_REPORT.mixed.json"
+run_phase mixed --grep-invert 'disjoint household|scenario projection' "$CURRENCY_ACCEPTANCE_UI_REPORT.mixed.json"
 mixed_status=$phase_status
-run_phase disjoint --grep "$CURRENCY_ACCEPTANCE_UI_REPORT.disjoint.json"
+run_phase disjoint --grep 'disjoint household' "$CURRENCY_ACCEPTANCE_UI_REPORT.disjoint.json"
 disjoint_status=$phase_status
-.venv/bin/python - "$CURRENCY_ACCEPTANCE_UI_REPORT" "$mixed_status" "$disjoint_status" <<'PY'
+run_phase scenario-eur --grep 'scenario projection currency oracle|scenario projection EUR' "$CURRENCY_ACCEPTANCE_UI_REPORT.scenario-eur.json"
+eur_status=$phase_status
+run_phase scenario-usd --grep 'scenario projection USD' "$CURRENCY_ACCEPTANCE_UI_REPORT.scenario-usd.json"
+usd_status=$phase_status
+.venv/bin/python - "$CURRENCY_ACCEPTANCE_UI_REPORT" "$mixed_status" "$disjoint_status" "$eur_status" "$usd_status" <<'PY'
 import json, sys
 try:
     output = sys.argv[1]
     reports = []
-    for suffix in ('.mixed.json', '.disjoint.json'):
+    for suffix in ('.mixed.json', '.disjoint.json', '.scenario-eur.json', '.scenario-usd.json'):
         with open(output + suffix) as f:
             reports.append(json.load(f))
     specs = []
@@ -92,8 +96,8 @@ try:
     for report in reports:
         for suite in report['suites']:
             walk(suite)
-    expected = {'visible amount oracle rejects larger and hidden values', 'fixture serves every published currency group', 'dashboard visibly retains both cashflow groups', 'dashboard visibly retains both utility groups', 'disjoint household report retains finance and utility units', 'disjoint household visibly retains finance and utility units'}
-    assert sys.argv[2:] == ['0', '0'] and all(not r['errors'] for r in reports)
+    expected = {'visible amount oracle rejects larger and hidden values', 'fixture serves every published currency group', 'dashboard visibly retains both cashflow groups', 'dashboard visibly retains both utility groups', 'disjoint household report retains finance and utility units', 'disjoint household visibly retains finance and utility units', 'scenario projection currency oracle rejects ambiguous and missing values', 'scenario projection EUR has coherent currency', 'scenario projection USD has coherent currency'}
+    assert sys.argv[2:] == ['0', '0', '0', '0'] and all(not r['errors'] for r in reports)
     assert {x['title'] for x in specs} == expected and len(specs) == len(expected)
     assert sum(r['stats']['expected'] for r in reports) == len(expected)
     assert all(r['stats'][key] == 0 for r in reports for key in ('skipped', 'unexpected', 'flaky'))
@@ -102,5 +106,5 @@ try:
 except (OSError, KeyError, ValueError, AssertionError, TypeError) as exc:
     raise SystemExit(f'UI qualification rejected: all exact tests must execute and pass: {exc}')
 with open(output, 'x') as f:
-    json.dump({'mixed': reports[0], 'disjoint': reports[1]}, f)
+    json.dump({'mixed': reports[0], 'disjoint': reports[1], 'scenario_eur': reports[2], 'scenario_usd': reports[3]}, f)
 PY
