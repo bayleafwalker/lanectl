@@ -10,7 +10,9 @@ Operator lifecycle, claims, verification and accounting: [operator guide](docs/o
 Planner cycle: [.claude/skills/lane-planner/SKILL.md](.claude/skills/lane-planner/SKILL.md).
 
 ```sh
-lanectl doctor                         # is the estate healthy?
+lanectl                                # grouped command map (Start here, Plan, Run, Land, Observe)
+lanectl status                         # what needs you, what is blocked, `next:` commands (--all, --json)
+lanectl doctor                         # is the estate healthy? repeats collapse; ends with a summary
 lanectl backlog list --open            # what is open, and in what state
 lanectl backlog new <id> --repo R --title T --scope 'src/**'   # scaffold a draft release
 lanectl backlog publish <id>           # lint and release it to the lanes
@@ -19,12 +21,23 @@ lanectl candidates && lanectl train <repo> && lanectl land <train_id>
 lanectl deploy run <train_id>          # repos with [deploy]: dev deploy + health before land
 lanectl deploy list | reap             # live dev deploys; tear down expired/landed/superseded
 lanectl lanes | report | view --html out.html   # caps, precision and cost, management page
+lanectl tui --repo R                   # read-only Ready/Active/Verification TUI (? keys, --plain for a table)
 lanectl focus <id> [--role integrator]  # attribute this Claude session's usage to a release
 lanectl tick                           # doctor + deploy reap + run (contrib/systemd timer)
 lanectl otel export --out spans.json   # OTLP/JSON spans for an OTel collector
 ```
 
-Run inside the checkout, or set `$LANECTL_HOME`.
+Run inside the checkout, or set `$LANECTL_HOME`. A missing or wrong home is an error
+(exit 3) that names the path and the fix, never an empty result.
+
+`status`, `ready`, `candidates` and `events` take `--json` (objects with a `schema` field,
+e.g. `lanectl.status/v1`, which also carries the precision metrics; `lanectl report` has them
+as text). `land`, `reject` and `reap` take `--dry-run` (print the plan, change nothing) and
+`--yes`, and end with a receipt line and `next:`.
+
+Interface exceptions: `land`, `reject` and `reap` confirm on a TTY but, off a TTY, act
+without `--yes` so unattended callers and existing scripts keep working; `claim-hold`,
+`claim-run`, `burn` and `stream` keep their preview-plus-`--execute` convention.
 
 Per-repo gate jobs (`[[repos.<r>.gate_jobs]]`) run in the attempt sandbox after acceptance;
 dev deploys (`[repos.<r>.deploy]`) run on passed trains with a stripped environment. See

@@ -38,12 +38,49 @@ class Finding:
     level: str
     check: str
     detail: str
+    fix: str = ""        # exact command that clears the finding, when there is one
+    subject: str = ""    # the release or attempt id the finding is about
 
     def line(self) -> str:
-        return f"{self.level:5} {self.check}: {self.detail}"
+        return f"{self.level:5} {self.check}: {self.detail}" + (f"  fix: {self.fix}" if self.fix else "")
 
     def as_dict(self) -> dict:
-        return {"level": self.level, "check": self.check, "detail": self.detail}
+        return {"level": self.level, "check": self.check, "detail": self.detail,
+                **({"fix": self.fix} if self.fix else {})}
+
+
+#: What one collapsed finding says about a whole kind, with the command that clears all of it.
+_KINDS = {
+    "base-drift": ("release base_sha differs from the repo's main", "lanectl backlog rebase --pending"),
+    "stale-attempts": ("claimed attempt past its timeout", "lanectl reap"),
+}
+
+
+def collapse(findings: list["Finding"]) -> list["Finding"]:
+    """Fold repeated WARN/ERROR findings of one kind into one line with a count and the fix."""
+    groups: dict[tuple[str, str], list[Finding]] = {}
+    for f in findings:
+        # Only known kinds, or findings that name a subject, are repeats of one thing;
+        # anything else keeps its own detail.
+        foldable = f.level != OK and (f.check in _KINDS or f.subject)
+        groups.setdefault((f.level, f.check) if foldable else (f.level, f"{f.check}\0{f.detail}"), []).append(f)
+    out: list[Finding] = []
+    for (level, _), group in groups.items():
+        if level == OK or len(group) == 1:
+            out += group
+            continue
+        check = group[0].check
+        what, fix = _KINDS.get(check, (group[0].detail, group[0].fix))
+        names = [f.subject for f in group if f.subject]
+        shown = ", ".join(names[:2]) + (f", +{len(names) - 2} more" if len(names) > 2 else "")
+        out.append(Finding(level, check, f"{len(group)} x {what}" + (f" ({shown})" if shown else ""),
+                           fix or group[0].fix))
+    return out
+
+
+def summary(findings: list["Finding"]) -> str:
+    n = {level: sum(1 for f in findings if f.level == level) for level in (OK, WARN, ERROR)}
+    return f"{n[OK]} ok, {n[WARN]} warn, {n[ERROR]} error"
 
 
 def _git(repo: Path, *args: str) -> str:
@@ -195,7 +232,8 @@ def check_attempts(views: dict[str, ItemView], now: datetime) -> list[Finding]:
         findings.append(Finding(
             WARN, "stale-attempts",
             f"{item_id}: attempt {attempt_id} claimed {age_s:.0f}s ago "
-            f"(timeout {timeout_s}s); run lanectl reap"))
+            f"(timeout {timeout_s}s); run lanectl reap",
+            fix="lanectl reap", subject=item_id))
     return findings
 
 
@@ -231,7 +269,8 @@ def check_base_drift(releases: list[WorkRelease], repos: dict[str, RepoSpec],
         findings.append(Finding(
             WARN, "base-drift",
             f"{rel.id}: base_sha {rel.base_sha[:12]} differs from {repo.name} "
-            f"{repo.main} {current[:12]}; rebase the release onto main"))
+            f"{repo.main} {current[:12]}; rebase the release onto main",
+            fix=f"lanectl backlog rebase {rel.id}", subject=rel.id))
     return findings
 
 
@@ -325,6 +364,8 @@ def _cmd(args, log: EventLog) -> int:
     if args.json:
         print(json.dumps([f.as_dict() for f in findings], indent=1))
     else:
-        for finding in findings:
+        for finding in collapse(findings):
             print(finding.line())
+        worst = ERROR if any(f.level == ERROR for f in findings) else WARN if any(f.level == WARN for f in findings) else OK
+        print(Finding(worst, "summary", summary(findings)).line())
     return 1 if any(f.level == ERROR for f in findings) else 0
