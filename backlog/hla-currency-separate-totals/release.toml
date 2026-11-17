@@ -1,0 +1,31 @@
+id = "hla-currency-separate-totals"
+repo = "homelab-analytics"
+base_sha = "82dbd9477029d6fda7df67edc617f45a1a4ceb59"
+revision = 1
+draft = true
+title = "Preserve separate currency totals across monetary reports and consumers"
+task_class = "product-api"
+size = "L"
+data_class = "public"
+work = "homelab-analytics#2915"
+work_complete = true
+
+outcome = """
+Preserve and show original denominations in Finance and Utilities monetary reports and
+existing household views, aggregating only like currencies without conversion. Collections
+retain every currency group; mixed-denomination scalar interfaces report unavailable when
+one value and unit cannot represent them. Correct single-currency results, empty versus
+unavailable publications, strict published-store isolation, and usage-only versus actual
+zero-bill distinction remain intact. No preferred currency, whitelist, FX or conversion.
+Acceptance is independently authored; implementation design and decomposition remain
+with the implementer. Mandatory real PostgreSQL and visible dashboard qualifications are
+described in QUALIFICATION.md. This prospective outcome does not complete domain cards,
+Homelab attention, or reopen an exhausted experiment.
+"""
+
+[scope]
+paths = ["packages/**", "apps/**", "migrations/**", "tests/**", "requirements/**", "docs/**"]
+
+[acceptance]
+files = ["tests/test_acc_currency_separate_totals.py", "tests/currency_published_qualification.py", "tests/currency_dashboard_fixture.py", "apps/web/frontend/playwright/currency-separate-totals.spec.js"]
+exec = ["uv run --no-sync python -m pytest -q -p no:cacheprovider tests/test_acc_currency_separate_totals.py"]
