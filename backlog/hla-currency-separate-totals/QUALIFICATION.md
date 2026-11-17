@@ -1,4 +1,4 @@
-# Currency separation: independent qualification, revision 9
+# Currency separation: independent qualification, revision 10
 
 Operator decision: preserve original denominations and show separate totals per
 currency, without conversion. Work is homelab-analytics#2915; baseline is
@@ -713,3 +713,77 @@ runner controls
 `93fdeb781b2a6e5e2f1ccbc26ed2b1c69585ccce482a2d4d92a8aec067be97e0`.
 Raw `/tmp` paths are session-local. Earlier published, UI and legacy evidence
 remains historical for the original criterion and harness bytes; do not rebind it.
+
+
+## Revision 10: independent maintenance failure scenarios
+
+Revision 9 remains bound to commit `0772039d03ab38ea4d5ae5dd47dc434aed0e8908`
+and all earlier evidence remains bound to its original bytes. The owner-side
+legacy qualifier now requires three **additional**, independently seeded 82
+warehouse/manifest pairs in the same private PostgreSQL instance. Set absolute
+paths before running the existing `qualify-legacy.py` command:
+
+```sh
+export CURRENCY_LEGACY_DRIFT_WAREHOUSE=/absolute/private/drift.duckdb
+export CURRENCY_LEGACY_DRIFT_MANIFEST=/absolute/private/drift.json
+export CURRENCY_LEGACY_DEPENDENCY_WAREHOUSE=/absolute/private/dependency.duckdb
+export CURRENCY_LEGACY_DEPENDENCY_MANIFEST=/absolute/private/dependency.json
+export CURRENCY_LEGACY_OUTAGE_WAREHOUSE=/absolute/private/outage.duckdb
+export CURRENCY_LEGACY_OUTAGE_MANIFEST=/absolute/private/outage.json
+```
+
+Seed every pair with the same supported 82 fixture process as the main pair,
+using distinct PostgreSQL schemas and files. The driver binds all four seed
+manifests, fixture and oracle hashes, original warehouse hashes, candidate
+source and acceptance bytes; the main successful full upgrade and retry, with
+first-run inspection, remains a prerequisite before any adversarial result can
+contribute to a receipt. Missing commands or commands that always refuse cannot
+qualify. Every scenario starts from the recorded original facts, snapshots and
+published inventory; the three added stores are independent of one another.
+
+* **Unknown drift:** add a synthetic unknown column to the private legacy PG
+  monthly relation. Both `--check` and upgrade must return nonzero, with the
+  injected store and DuckDB unchanged; typed facts and raw snapshots remain.
+* **Dependent view and grant:** add a real dependent PG view and a PUBLIC SELECT
+  grant to the disposable schema. `--check` must leave both stores unchanged.
+  Upgrade may refuse unchanged or succeed, but on success the original view
+  definition and grant must survive, as must original typed facts and snapshots;
+  exact January Finance EUR 170 and USD 80 must appear in both stores.
+* **PostgreSQL unavailable:** select a nonexistent private socket, requiring
+  nonzero `--check` without store changes and nonzero upgrade without a false
+  completion. Preserve typed facts and old snapshots even if an implementation
+  performed partial work; restore connectivity and require the same supported
+  command to complete and produce the same exact Finance groups in both stores.
+  This proves an unavailable-store failure and safe retry; it does not inject or
+  claim a specific mid-transaction failure point or atomic cross-store behavior.
+
+A failed command may not report a success status or `success: true` JSON.
+Refusal checks compare the whole warehouse file and stable PG dump, including
+private schema, rows and permissions. Other legacy outputs and UI remain covered
+by the prerequisite full upgrade; the three adversarial scenarios explicitly
+check their listed outcomes, not all possible drift, grants or failures. SQL here
+only introduces owned synthetic defects/dependencies; it never repairs candidate
+schemas. No implementation order is prescribed.
+
+Four focused namespace controls passed, including rejection of success-as-refusal,
+warehouse or PG mutation during refusal, changed view/lost grant, false-success
+JSON, and partial-first upgrade ordering; JUnit
+`/tmp/currency-r10-oracle-controls-v2.xml` SHA-256
+`fccb4a4083ee412c984a3b1e012cbe0550bfbb19d747e4c5a1a383cbc13b54ed`.
+The actual target Ruff check passed. The named-unit lifecycle controls retained
+clean, detached-child, failure, SIGINT and SIGTERM behavior, with cgroups settled:
+`/tmp/currency-r10-cgroup-controls.log`. The four-fixture driver ran against a
+clean acceptance-only scratch commit `76bace4fece927656be7636293c0bb122556093d`
+with original 82 product source: the missing public command failed `--check`,
+produced no receipt, and the exact unit settled. Raw
+`/tmp/currency-r10v2-missing.log`, seed records
+`/tmp/lanectl-resume-20261116/hla-independent/currency-2915-r10v2-seed-{main,drift,dependency,outage}.{json,stdout,stderr}`.
+The four owned PG schemas and warehouses were removed with the private server.
+This negative control stops before the new adversarial scenarios; those scenarios
+have not yet been run end-to-end on a candidate. No candidate pass is claimed.
+
+Revision 10 SHA-256: adversarial helper
+`955761b31af8e828d85cbba5b8fadf4c713c1255e7de09fdc7d0ebae191bdc02`;
+legacy test `9ef8c320cc3c4cf6bedca1687490cff59a8e3e6d00662089b0d1e3d05f313475`;
+legacy driver `dd9358b342920c7af0fe8ec4ca82313054907986fccb8733c51e42c296c87f72`.
+All `/tmp` paths are session-local.
