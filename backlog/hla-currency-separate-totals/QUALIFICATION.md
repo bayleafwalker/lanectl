@@ -1,4 +1,4 @@
-# Currency separation: independent qualification, revision 7
+# Currency separation: independent qualification, revision 8
 
 Operator decision: preserve original denominations and show separate totals per
 currency, without conversion. Work is homelab-analytics#2915; baseline is
@@ -641,3 +641,25 @@ owner driver
 `3de1659a6023ae90c7179841f03a10efe3701a80032f76fe1df173872044cf81`.
 The seed, typed oracle, history red and UI criterion retain their revision 6
 hashes. Raw `/tmp` paths are session-local.
+
+
+## Revision 8: realistic partial-first negative control
+
+Revision 7 and its above source-bound controls remain bound to commit
+`be47931d2b5991c4704b3715b5d2a48ec4b95cd5`. The sequencing control now uses
+the actual currency grouping oracle: a simulated first successful command emits
+only EUR 170, while a simulated second would add the missing USD 80. The first
+inspection rejects that partial output and the real sequence never runs the
+second command; the control then separately demonstrates the hypothetical second
+result would pass. A complete result still passes both inspections. No candidate
+or product behavior is mocked in the mandatory qualification itself.
+
+Five focused controls passed with no errors or skips in the namespace, and the
+new target-context Ruff check passed. JUnit
+`/tmp/currency-r7-controls-v2.xml` has SHA-256
+`28e438a497c6a41aa7ef3ec7a62b401578f144baf2b3aff44b0c2507d8a48e13`;
+raw records use `currency-2915-r7-{controls,ruff}-v2.{json,stdout,stderr}` under
+`/tmp/lanectl-resume-20261116/hla-independent/`. The revised upgrade test has
+SHA-256 `80471783f058fef014041cd66bbc2bf173f1575fc39ffbaa3674474f4a4bf0bf`;
+the revision 7 driver and remaining source bindings are unchanged. These paths
+are session-local and no candidate pass is claimed.

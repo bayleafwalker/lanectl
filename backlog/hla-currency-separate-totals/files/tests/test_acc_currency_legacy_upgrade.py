@@ -229,24 +229,31 @@ def qualify_first_then_retry(run_upgrade, verify_upgrade):
 
 def test_first_completed_upgrade_is_checked_before_retry():
     events = []
+    state = {"rows": []}
+    complete_rows = [{"currency": "EUR", "net": 170}, {"currency": "USD", "net": 80}]
 
-    def run():
-        events.append("run")
-
-    def complete(attempt):
+    def verify(attempt):
         events.append(f"verify-{attempt}")
+        by_currency(state["rows"], "net", {"EUR": 170, "USD": 80})
 
-    qualify_first_then_retry(run, complete)
+    def complete():
+        events.append("run")
+        state["rows"] = complete_rows
+
+    qualify_first_then_retry(complete, verify)
     assert events == ["run", "verify-1", "run", "verify-2"]
     events.clear()
 
-    def partial_first(attempt):
-        events.append(f"verify-{attempt}")
-        assert attempt != 1, "first run left partial output"
+    def partial_then_repairs():
+        events.append("run")
+        state["rows"] = complete_rows[:1] if events.count("run") == 1 else complete_rows
 
-    with pytest.raises(AssertionError, match="first run left partial output"):
-        qualify_first_then_retry(run, partial_first)
+    with pytest.raises(AssertionError):
+        qualify_first_then_retry(partial_then_repairs, verify)
     assert events == ["run", "verify-1"]
+    # Prove this simulated second run would have hidden the first bad result.
+    partial_then_repairs()
+    verify(2)
 
 
 def verify_completed_upgrade(manifest, warehouse, dsn, schema, tmp_path, ui_report, *, clear_warehouse):
