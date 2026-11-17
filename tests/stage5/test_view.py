@@ -20,7 +20,7 @@ def test_items_counts_and_event_text_is_escaped():
     claimed = make_event("item.claimed", {"attempt_id": "aa-a1", "lane": "implement",
                                           "model": "m", "worker": "w"}, item_id=IID)
     html = render([claimed, exp("aa-a1", cls="<script>x</script>")], NOW)
-    assert '<section id="items">' in html and "<td>claimed</td><td>1</td>" in html
+    assert '<section id="items">' in html and "claimed</span></td><td>1</td>" in html
     assert "<script>x</script>" not in html and "&lt;script&gt;x&lt;/script&gt;" in html
     assert "<script src" not in html and "http" not in html.split("</head>")[0]
 
@@ -60,3 +60,16 @@ def test_capacity_uses_the_policy_and_degrades_without_one(tmp_path, monkeypatch
         'anchor = "2026-11-08T10:00:00Z"\n')
     html = render([], NOW)
     assert "allocation revision 7" in html and "<td>p</td><td>5h</td>" in html
+
+
+def test_page_is_responsive_accessible_and_puts_attention_first():
+    page = render([], NOW)
+    assert 'name="viewport"' in page and "prefers-color-scheme: dark" in page
+    assert page.index('id="attention"') < page.index('id="backlog"')
+    assert '<th scope="col">' in page and "<caption>" in page and 'class="table-wrap"' in page
+
+
+def test_long_cell_is_clipped_with_full_text_available():
+    from lanectl.view import _cell
+    cell = _cell("x" * 300)
+    assert cell.startswith("<details><summary>") and cell.count("x") == 100 + 300

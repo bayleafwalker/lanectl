@@ -13,6 +13,7 @@ import shlex
 from pathlib import Path
 from urllib.parse import quote, unquote, urlsplit
 
+from .html_style import HEAD_META, STYLE, badge
 from .lifecycle import REASON_RULES, attention_reasons, lifecycle_rows
 
 #: Query keys a locator may carry; all optional, each at most once.
@@ -29,60 +30,6 @@ _RUNTIME_KEYS = ("body", "log", "transcript", "detail", "claims")
 
 #: Accounting phases, in display order (mirrors accounting.render_timeline).
 _ACCOUNTING_PHASES = ("queued", "execution", "integration", "verification")
-
-#: Flat, semantic colour palette (paper blue / navy / white / slate / blue /
-#: warning).  No shadows, rounded corners, transitions or animation.
-_STYLE = """
-:root { --paper:#f3f7fb; --navy:#19344d; --white:#ffffff; --slate:#526779;
-        --blue:#255e9a; --warning:#8b4b14; }
-html { background:var(--paper); }
-body { margin:0; padding:1.25rem 1rem 3rem; background:var(--paper);
-       color:var(--navy); font-family:system-ui,-apple-system,"Segoe UI",sans-serif;
-       line-height:1.45; }
-main { max-width:70rem; margin:0 auto; }
-header { background:var(--white); border:1px solid var(--slate);
-         border-top:4px solid var(--blue); padding:1rem 1.25rem; }
-h1 { margin:0 0 .25rem; font-size:1.5rem; }
-h2 { margin:2rem 0 .5rem; padding-bottom:.25rem; border-bottom:1px solid var(--slate); }
-a { color:var(--blue); }
-a:focus, a:hover { outline:2px solid var(--blue); outline-offset:2px; }
-code, pre { font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace; }
-.muted { color:var(--slate); }
-.warning { color:var(--warning); }
-.unavailable { color:var(--warning); }
-.tag { font-size:.8rem; color:var(--white); background:var(--slate);
-       padding:.05rem .4rem; }
-.tag.local { background:var(--blue); }
-dl { margin:.5rem 0; }
-dt { font-weight:700; }
-.identifiers { display:grid; grid-template-columns:auto 1fr; gap:.2rem .75rem;
-               margin:.75rem 0; }
-.identifiers dt { color:var(--slate); }
-.identifiers dd { margin:0; }
-.provenance { display:flex; flex-wrap:wrap; gap:.75rem 1.75rem; margin:.75rem 0;
-              padding:.5rem 0; border-top:1px solid var(--slate);
-              border-bottom:1px solid var(--slate); }
-.provenance div { display:flex; gap:.35rem; }
-.provenance dt { color:var(--slate); font-weight:400; }
-.provenance dd { margin:0; }
-.table-wrap { overflow-x:auto; }
-table { border-collapse:collapse; width:100%; margin:.5rem 0; }
-caption { text-align:left; padding:.25rem 0; color:var(--slate); }
-th, td { border:1px solid var(--slate); padding:.35rem .5rem; text-align:left;
-         vertical-align:top; }
-th { background:var(--white); color:var(--navy); }
-tr:nth-child(even) td { background:var(--white); }
-.state { font-weight:700; }
-.state-observed { color:var(--blue); }
-.state-unknown { color:var(--warning); }
-.state-missing { color:var(--warning); }
-.state-rejected { color:var(--warning); }
-.state-stale { color:var(--warning); }
-.reasons { padding-left:1.25rem; }
-.reasons li { margin:.35rem 0; }
-.jump { margin:.35rem 0; overflow-wrap:anywhere; }
-"""
-
 
 def _esc(value: object) -> str:
     """HTML-escape an untrusted value for text or attribute content."""
@@ -242,10 +189,7 @@ def _jump(repo, item_id, attempt_id) -> str:
 
 
 def _state_label(state: str) -> str:
-    state = state if isinstance(state, str) and state else "unknown"
-    cls = f"state state-{state}" if state in (
-        "observed", "unknown", "missing", "rejected", "stale") else "state state-unknown"
-    return f'<span class="{cls}">{_esc(state)}</span>'
+    return badge(state if isinstance(state, str) and state else "unknown")
 
 
 def _fact_rows(facts: dict) -> list[tuple]:
@@ -536,10 +480,9 @@ def render_lifecycle(repo: str, row: dict, *, base_url: str = "") -> str:
     return f"""<!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+{HEAD_META}
 <title>{title}</title>
-<style>{_STYLE}</style>
+<style>{STYLE}</style>
 </head>
 <body>
 <main>

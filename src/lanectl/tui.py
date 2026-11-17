@@ -9,10 +9,13 @@ from datetime import datetime, timedelta, timezone
 import curses
 import json
 import os
+import sys
+import textwrap
 from queue import Empty, Queue
 from threading import Thread
 import time
 
+from .vocab import SYMBOLS, classify, mark
 from .lifecycle import (READS, attention_reasons, lifecycle_rows, local_facts,
                         ready_work, release_work_ids)
 
@@ -53,11 +56,11 @@ def build_snapshot(ready, rows, *, observed_at=None):
     detail pane auditable rather than a second lifecycle ledger.
     """
     return {"ready": ready, "rows": list(rows),
-            "observed_at": observed_at or datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")}
+            "observed_at": observed_at or _stamp(datetime.now(timezone.utc))}
 
 
 def _stamp(now):
-    return now.isoformat().replace("+00:00", "Z")
+    return now.replace(microsecond=0).isoformat().replace("+00:00", "Z")
 
 
 def _age(stamp, now):
@@ -269,7 +272,16 @@ def source_status_line(snapshot):
         if event_age is not None:
             event_part += f" age {int(event_age)}s"
     capability = "actions allowed" if snapshot.get("actions_allowed", True) else "actions disabled"
-    return f"{event_part} · OWNER {owner_state} {capability} · {owner_part}"
+    return f"{event_part} · {owner_part} · {capability}"
+
+
+def _ago(seconds):
+    seconds = int(max(0, seconds))
+    if seconds < 60:
+        return f"{seconds}s"
+    if seconds < 3600:
+        return f"{seconds // 60}m{seconds % 60:02d}s"
+    return f"{seconds // 3600}h{seconds % 3600 // 60:02d}m"
 
 
 def _ready_key(item):
@@ -329,7 +341,7 @@ def initial_state(snapshot, view=READY, filter_text=""):
     return {"snapshot": snapshot, "view": view, "filter": filter_text,
             "selected": 0, "selection": _identity(rows[0]) if rows else None,
             "detail": None, "help": False, "filtering": False,
-            "filter_draft": filter_text}
+            "filter_draft": filter_text, "scroll": 0}
 
 
 def _index_for(rows, identity):
@@ -348,9 +360,34 @@ def _reconcile(state, *, previous_rows=None):
     return state
 
 
-def handle_key(state, key, *, snapshot=None):
-    """Pure TUI state transition. ``snapshot`` supplies a refresh result."""
+_DOWN = (curses.KEY_DOWN, ord("j"), "down", "j")
+_UP = (curses.KEY_UP, ord("k"), "up", "k")
+_PGDN = (curses.KEY_NPAGE, ord(" "), " ", "pgdn")
+_PGUP = (curses.KEY_PPAGE, ord("b"), "b", "pgup")
+_TOP = (curses.KEY_HOME, ord("g"), "g", "home")
+_BOTTOM = (curses.KEY_END, ord("G"), "G", "end")
+
+
+def _overlay_open(state):
+    return bool(state.get("help")) or state.get("detail") is not None
+
+
+def _filter_line_shown(state):
+    return bool(state.get("filtering") or state.get("filter"))
+
+
+def _body_height(height, filter_shown):
+    """Rows between the header lines and the footer (tabs, status, [filter], footer)."""
+    return max(1, height - 3 - (1 if filter_shown else 0))
+
+
+def handle_key(state, key, *, snapshot=None, height=24, width=80):
+    """Pure TUI state transition. ``snapshot`` supplies a refresh result.
+
+    ``height`` and ``width`` size the viewport so scrolling can be bounded.
+    """
     state = dict(state)
+    state.setdefault("scroll", 0)
     rows = view_rows(state["snapshot"], state["view"], state["filter"])
     if key in ("refresh", "owner_result"):
         if snapshot is not None:
@@ -361,6 +398,7 @@ def handle_key(state, key, *, snapshot=None):
             state["filter"] = state.get("filter_draft", "").strip()
             state["filtering"] = False
             state["detail"] = None
+            state["scroll"] = 0
             state["selection"] = state.get("selection")
             return _reconcile(state, previous_rows=rows)
         if key in (27, "esc"):
@@ -374,8 +412,12 @@ def handle_key(state, key, *, snapshot=None):
         elif isinstance(key, str) and len(key) == 1 and key.isprintable():
             state["filter_draft"] = state.get("filter_draft", "") + key
         return state
+    overlay = _overlay_open(state)
     if key in (ord("q"), 27, "q", "esc"):
-        state["quit"] = True
+        if overlay:
+            state.update(detail=None, help=False, scroll=0)
+        else:
+            state["quit"] = True
     elif key in (ord("/"), "/"):
         state["filtering"] = True
         state["filter_draft"] = state["filter"]
@@ -385,26 +427,36 @@ def handle_key(state, key, *, snapshot=None):
         return _reconcile(state, previous_rows=rows)
     elif key in (ord("1"), ord("2"), ord("3"), "1", "2", "3"):
         index = int(chr(key) if isinstance(key, int) else key) - 1
-        state.update(view=VIEWS[index], selected=0, selection=None, detail=None, help=False)
+        state.update(view=VIEWS[index], selected=0, selection=None, detail=None, help=False,
+                     scroll=0)
         return _reconcile(state)
-    elif key in (curses.KEY_DOWN, ord("j"), "down", "j") and rows:
-        state["selected"] = min((state.get("selected") or 0) + 1, len(rows) - 1)
+    elif overlay and (key in _DOWN or key in _UP or key in _PGDN or key in _PGUP
+                      or key in _TOP or key in _BOTTOM):
+        _, lines = overlay_lines(state["snapshot"], state["view"], state["filter"],
+                                 state["detail"], state["help"], width=width)
+        page = max(1, _body_height(height, _filter_line_shown(state)) - 1)
+        top = max(0, len(lines) - page)
+        move = (1 if key in _DOWN else -1 if key in _UP else page if key in _PGDN
+                else -page if key in _PGUP else None)
+        state["scroll"] = (0 if key in _TOP else top if key in _BOTTOM
+                           else max(0, min(top, state["scroll"] + move)))
+    elif not overlay and rows and (key in _DOWN or key in _UP or key in _PGDN or key in _PGUP
+                                   or key in _TOP or key in _BOTTOM):
+        page = max(1, _body_height(height, _filter_line_shown(state)) // (2 if width < 80 else 1))
+        current = state.get("selected") or 0
+        target = (current + 1 if key in _DOWN else current - 1 if key in _UP
+                  else current + page if key in _PGDN else current - page if key in _PGUP
+                  else 0 if key in _TOP else len(rows) - 1)
+        state["selected"] = max(0, min(len(rows) - 1, target))
         state["selection"] = _identity(rows[state["selected"]])
-    elif key in (curses.KEY_UP, ord("k"), "up", "k") and rows:
-        state["selected"] = max((state.get("selected") or 0) - 1, 0)
-        state["selection"] = _identity(rows[state["selected"]])
-    elif key in (10, 13, "enter") and rows:
-        state["detail"] = (state["selection"], "detail")
-        state["help"] = False
+    elif key in (10, 13, "enter") and rows and not overlay:
+        state.update(detail=(state["selection"], "detail"), help=False, scroll=0)
     elif key in (ord("e"), "e") and rows:
-        state["detail"] = (state["selection"], "evidence")
-        state["help"] = False
+        state.update(detail=(state["selection"], "evidence"), help=False, scroll=0)
     elif key in (ord("s"), "s") and rows:
-        state["detail"] = (state["selection"], "sources")
-        state["help"] = False
+        state.update(detail=(state["selection"], "sources"), help=False, scroll=0)
     elif key in (ord("?"), "?"):
-        state["help"] = True
-        state["detail"] = None
+        state.update(help=True, detail=None, scroll=0)
     return state
 
 
@@ -421,32 +473,37 @@ def _cells(row, view):
     codes = ",".join(reason.get("code", "") for reason in row.get("reasons", [])) or "-"
     lease = facts.get("work.lease.read-v1", {})
     lease_value = lease.get("value", {}).get("lease", lease.get("state", "unknown"))
+    state = mark(_state(row))
     if view == READY:
-        return (_text(row.get("item_id")), _text(row.get("attempt_id")), _state(row), codes)
+        return (_text(row.get("item_id")), _text(row.get("attempt_id")), state, codes)
     if view == ACTIVE:
-        return (_text(row.get("item_id")), _text(row.get("attempt_id")), _state(row), _text(lease_value), codes)
+        return (_text(row.get("item_id")), _text(row.get("attempt_id")), state, _text(lease_value), codes)
     evidence = facts.get("work.evidence.tail-v1", {}).get("state", "local")
-    return (_text(row.get("item_id")), _text(row.get("attempt_id")), _state(row), evidence, codes)
+    return (_text(row.get("item_id")), _text(row.get("attempt_id")), state, evidence, codes)
 
 
-def _fit(cells, width, marker=""):
-    gap = 2
-    available = max(1, width - len(marker) - gap * (len(cells) - 1))
-    weights = [2] + [1] * (len(cells) - 1)
-    total = sum(weights)
-    lengths = [max(3, available * weight // total) for weight in weights]
-    lengths[-1] += available - sum(lengths)
-    def clipped(value, size):
-        value = _text(value)
-        return value if len(value) <= size else value[:max(0, size - 1)] + "…"
-    return marker + "  ".join(clipped(value, size).ljust(size) for value, size in zip(cells, lengths))
+def _clip(value, size):
+    value = _text(value)
+    return value if len(value) <= size else value[:max(0, size - 1)] + "…"
+
+
+def _widths(table, width, marker=2):
+    """Column widths: content-sized, the last (reasons) column takes the rest."""
+    gap, count = 2, len(table[0])
+    widths = [min(max(len(line[i]) for line in table), 30) for i in range(count - 1)]
+    last = lambda: width - marker - gap * (count - 1) - sum(widths)
+    while last() < 12 and max(widths) > 8:
+        widths[widths.index(max(widths))] -= 1
+    return widths + [max(1, last())]
 
 
 def render_plain_table(snapshot, view, filter_text=""):
-    """Plain, no-color representation of exactly the displayed view query."""
+    """Plain, no-color, aligned representation of exactly the displayed view query."""
     rows = view_rows(snapshot, view, filter_text)
-    lines = [source_status_line(snapshot), "  ".join(_columns(view))]
-    lines.extend("  ".join(_cells(row, view)) for row in rows)
+    table = [_columns(view)] + [_cells(row, view) for row in rows]
+    widths = [max(len(line[i]) for line in table) for i in range(len(table[0]))]
+    lines = [source_status_line(snapshot)]
+    lines.extend("  ".join(c.ljust(w) for c, w in zip(line, widths)).rstrip() for line in table)
     return "\n".join(lines)
 
 
@@ -498,48 +555,175 @@ def source_lines(row):
     return lines or ["No sources were available for this row."]
 
 
-HELP_LINES = ["Keys: 1 Ready · 2 Active · 3 Verification", "j/↓ and k/↑ move selection",
-              "/ filter · Enter inspect · e evidence · s sources", "r refresh · ? help · q quit"]
+HELP_LINES = [
+    "Keys",
+    "1 Ready · 2 Active · 3 Verification",
+    "j/↓ k/↑ move or scroll · PgDn/Space PgUp/b page · g/G first/last",
+    "/ filter (Enter apply, Esc cancel) · Enter inspect · e evidence · s sources",
+    "r refresh (owner is polled at most once per --refresh interval)",
+    "? this help · Esc/q close, then quit",
+    "",
+    "States (symbol and word; color is never the only cue)",
+    *(f"{SYMBOLS[kind]} {label}" for kind, label in
+      (("needs", "needs you"), ("failed", "failed"), ("running", "running"),
+       ("ok", "ok/done"), ("idle", "idle/queued"), ("unknown", "unknown/stale"))),
+]
 
 
-def render_screen(snapshot, view, *, width, height, selected=0, filter_text="", color=False, detail=None, help=False, filtering=False, filter_draft=""):
-    """Render an 80x24-safe text frame; color is deliberately presentation-only."""
-    del color  # state is always conveyed by words and markers.
-    width, height = max(1, width), max(1, height)
-    rows = view_rows(snapshot, view, filter_text)
-    stamp = snapshot.get("observed_at", "unknown")
-    shown_filter = filter_draft if filtering else filter_text
-    lines = [f"{view} (read-only) · observed {stamp}", source_status_line(snapshot), f"FILTER {shown_filter or '-'} · {len(rows)} rows",
-             _fit(_columns(view), width)]
-    if snapshot.get("selection_missing") and not (help or detail is not None or filtering):
-        item, attempt = snapshot["selection_missing"]
-        lines.append(f"NO MATCHING ROW item={_text(item)} attempt={_text(attempt)}")
-    if filtering:
-        lines.append("FILTER TEXT (Enter apply · Esc cancel): " + filter_draft)
+def overlay_lines(snapshot, view, filter_text, detail, help, *, width=80):
+    """``(title, wrapped lines)`` for the help or detail overlay, else ``None``."""
     if help:
-        lines.append("HELP")
-        lines.extend(HELP_LINES)
+        title, lines = "HELP", HELP_LINES
     elif detail is not None:
+        rows = view_rows(snapshot, view, filter_text)
         identity, mode = detail if isinstance(detail, tuple) else (detail, "detail")
-        detail_index = _index_for(rows, identity) if isinstance(identity, tuple) else identity
-        if detail_index is None or detail_index >= len(rows):
-            lines.extend(["DETAIL", "item no longer in view"])
+        index = _index_for(rows, identity) if isinstance(identity, tuple) else identity
+        if index is None or index >= len(rows):
+            title, lines = "DETAIL", ["item no longer in view"]
         else:
-            row = rows[detail_index]
-            lines.append(("SOURCES " if mode == "sources" else "EVIDENCE " if mode in ("evidence", True) else "DETAIL ") + _text(row.get("item_id")))
+            row = rows[index]
+            title = ("SOURCES " if mode == "sources" else "EVIDENCE " if mode in ("evidence", True)
+                     else "DETAIL ") + _text(row.get("item_id"))
             if mode == "sources":
-                lines.extend(source_lines(row))
+                lines = source_lines(row)
             elif mode in ("evidence", True):
                 from .verification import evidence_bundle, render_bundle
-                lines.extend(render_bundle(evidence_bundle(row)).splitlines())
+                lines = render_bundle(evidence_bundle(row)).splitlines()
             else:
-                lines.extend(detail_lines(row))
+                lines = detail_lines(row)
     else:
-        for index, row in enumerate(rows):
-            lines.append(_fit(_cells(row, view), width, "> " if index == selected else "  "))
-    footer = "1 Ready  2 Active  3 Verification  j/k move  / filter  r refresh  Enter inspect  e evidence  s sources  ? help  q quit"
-    lines.append(footer)
-    return "\n".join(line[:width] for line in lines[:height])
+        return None
+    wrapped = []
+    for line in lines:
+        indent = " " * (len(line) - len(line.lstrip()))
+        wrapped.extend(textwrap.wrap(line, width=max(8, width), subsequent_indent=indent + "  ",
+                                     replace_whitespace=False) or [""])
+    return title, wrapped
+
+
+def _status_segments(snapshot, now, rows, selected):
+    sources = snapshot.get("sources", {})
+    if now is None:
+        try:
+            now = datetime.fromisoformat(snapshot.get("observed_at", "").replace("Z", "+00:00"))
+        except ValueError:
+            now = None
+    age = _age(snapshot.get("observed_at"), now) if now else None
+    segs = [(f"updated {_ago(age)} ago" if age is not None else "updated ?", "")]
+    for label in ("owner", "events"):
+        source = sources.get(label, {})
+        state = source.get("state", "unknown")
+        text = f" · {label} {mark(state)}"
+        if label == "owner" and source.get("next_attempt_at"):
+            wait = (datetime.fromisoformat(source["next_attempt_at"].replace("Z", "+00:00")) - now).total_seconds() if now else None
+            text += f" retry {_ago(wait)}" if wait is not None else ""
+        segs.append((text, classify(state)))
+    count = len(rows)
+    segs.append((f" · row {selected + 1}/{count}" if count and selected is not None else f" · {count} rows", ""))
+    if not snapshot.get("actions_allowed", True):
+        segs.append((" · read-only, owner not fresh", "needs"))
+    return segs
+
+
+_FOOTERS = ("j/k move · Enter inspect · / filter · ? keys · q quit", "j/k · Enter · / · ? keys · q quit",
+            "? keys · q quit", "? · q")
+_OVERLAY_FOOTERS = ("j/k scroll · PgUp/PgDn · g/G · Esc back · ? keys · q quit", "j/k PgUp/PgDn · Esc back",
+                    "Esc back · q quit", "Esc")
+
+
+def _footer(width, overlay):
+    options = _OVERLAY_FOOTERS if overlay else _FOOTERS
+    return next((text for text in options if len(text) <= width), options[-1])
+
+
+def _row_lines(rows, view, selected, width, count):
+    """Visible list lines (wide table or stacked 2-line rows) scrolled to the selection."""
+    cells = [_cells(row, view) for row in rows]
+    stacked = width < 80
+    per = 2 if stacked else 1
+    head = 0 if stacked else 1
+    window = max(1, (count - head) // per)
+    first = max(0, min(selected - window + 1, len(rows) - window)) if rows else 0
+    lines = []
+    if not stacked:
+        widths = _widths([_columns(view)] + cells, width)
+        lines.append([("  " + "  ".join(c.ljust(w) for c, w in zip(_columns(view), widths)), "dim")])
+    for index in range(first, min(len(rows), first + window)):
+        cell, marker = cells[index], "> " if index == selected else "  "
+        role = classify(_state(rows[index]))
+        bold = "sel" if index == selected else ""
+        if stacked:
+            lines.append([(marker + f"{cell[0]} {cell[1]}", bold)])
+            lines.append([("    ", ""), (cell[2], role), ("  " + " ".join(cell[3:]), "dim")])
+        else:
+            segs = [(marker, bold)]
+            for i, (value, w) in enumerate(zip(cell, widths)):
+                segs.append((_clip(value, w).ljust(w) + ("  " if i < len(cell) - 1 else ""),
+                             role if i == 2 else bold if i == 0 else ""))
+            lines.append(segs)
+    return lines
+
+
+def render_frame(snapshot, view, *, width, height, selected=0, filter_text="", detail=None,
+                 help=False, filtering=False, filter_draft="", scroll=0, now=None):
+    """Lines of ``(text, role)`` segments; roles map to curses attributes only."""
+    width, height = max(1, width), max(1, height)
+    rows = view_rows(snapshot, view, filter_text)
+    tabs = "  ".join(f"[{i + 1} {name}]" if name == view else f" {i + 1} {name} "
+                     for i, name in enumerate(VIEWS))
+    lines = [[(tabs + ("  read-only" if len(tabs) + 11 <= width else ""), "head")],
+             _status_segments(snapshot, now, rows, selected if rows else None)]
+    filter_shown = filtering or bool(filter_text)
+    if filtering:
+        lines.append([("filter> " + filter_draft + "▏  Enter apply · Esc cancel", "sel")])
+    elif filter_text:
+        lines.append([(f"filter: {filter_text}", "dim")])
+    body = _body_height(height, filter_shown)
+    overlay = overlay_lines(snapshot, view, filter_text, detail, help, width=width)
+    if overlay:
+        title, wrapped = overlay
+        room = max(1, body - 1)
+        top = max(0, min(scroll, len(wrapped) - room))
+        more = f" · {top + 1}-{min(len(wrapped), top + room)}/{len(wrapped)}" if len(wrapped) > room else ""
+        lines.append([(title + more, "head")])
+        lines.extend([(text, "")] for text in wrapped[top:top + room])
+    else:
+        room = body
+        if snapshot.get("selection_missing") and not filtering:
+            item, attempt = snapshot["selection_missing"]
+            lines.append([(f"NO MATCHING ROW item={_text(item)} attempt={_text(attempt)}", "needs")])
+            room -= 1
+        if rows:
+            lines.extend(_row_lines(rows, view, selected, width, room))
+        else:
+            lines.append([("no rows" + (" match the filter (/ to change)" if filter_text else ""), "dim")])
+    lines = lines[:height - 1]
+    lines.extend([[("", "")]] * (height - 1 - len(lines)))
+    lines.append([(_footer(width, overlay is not None), "dim")])
+    clipped = []
+    for line in lines:
+        left, out = width, []
+        for text, role in line:
+            if left <= 0:
+                break
+            out.append((text[:left], role))
+            left -= len(text)
+        clipped.append(out)
+    return clipped
+
+
+def render_screen(snapshot, view, *, width, height, selected=0, filter_text="", color=False,
+                  detail=None, help=False, filtering=False, filter_draft="", scroll=0, now=None):
+    """Render a text frame of exactly ``height`` lines, each at most ``width`` wide.
+
+    ``color`` is accepted for the caller's convenience: this text never carries
+    escape codes, the curses adapter colours the segments from ``render_frame``.
+    """
+    del color
+    frame = render_frame(snapshot, view, width=width, height=height, selected=selected,
+                         filter_text=filter_text, detail=detail, help=help, filtering=filtering,
+                         filter_draft=filter_draft, scroll=scroll, now=now)
+    return "\n".join("".join(text for text, _ in line).rstrip() for line in frame)
 
 
 def query_snapshot(client, events, *, journal_path=None, work_ids=None,
@@ -570,12 +754,82 @@ def query_snapshot(client, events, *, journal_path=None, work_ids=None,
     return build_snapshot(ready_work(client), rows)
 
 
+class OwnerPoller:
+    """Starts owner reads no more often than ``interval`` seconds (and not before backoff).
+
+    The UI loop wakes far more often than the interval to redraw and read keys;
+    this keeps that from becoming owner traffic.
+    """
+    def __init__(self, reader, interval, *, clock=time.monotonic, worker=OwnerRefreshWorker):
+        self.reader, self.interval, self.clock, self.worker_type = reader, interval, clock, worker
+        self.worker, self.last_started = None, None
+
+    def due(self, refresh, now):
+        if self.worker is not None:
+            return False
+        if self.last_started is not None and self.clock() - self.last_started < self.interval:
+            return False
+        retry = refresh.get("next_owner_attempt_at")
+        return retry is None or now >= retry
+
+    def step(self, refresh, now):
+        """Start a read if due and apply a finished one; returns ``(refresh, changed)``."""
+        if self.due(refresh, now):
+            self.worker = self.worker_type(self.reader, list(refresh.get("events", [])),
+                                           refresh.get("owner_revision"))
+            self.last_started = self.clock()
+        completed = self.worker.poll() if self.worker is not None else None
+        if completed is None:
+            return refresh, False
+        outcome, error = completed
+        self.worker = None
+        return _apply_owner_result(refresh, error or outcome, now=now,
+                                   random_value=__import__("random").random, stale_after_s=60,
+                                   backoff_base_s=2, backoff_cap_s=60), True
+
+
+def not_configured_message(repo):
+    """What happened, why, the exact fix and the docs, for an unconfigured owner."""
+    return (f"error: {repo}: Vuoro coordination is not configured\n"
+            f"  why: governance/vuoro.toml has no [repos.{repo}] table (or the file is missing)\n"
+            f"  fix: add [repos.{repo}] with endpoint, repo_id, expected_environment and one of "
+            "token_env or credential_name to governance/vuoro.toml\n"
+            "  docs: docs/architecture/vuoro-coordination.md")
+
+
+def _interactive():
+    return sys.stdin.isatty() and sys.stdout.isatty() and os.environ.get("TERM", "") not in ("", "dumb")
+
+
+def _use_color(no_color):
+    if no_color or os.environ.get("NO_COLOR") or not curses.has_colors():
+        return False
+    return True
+
+
+_PAIRS = {"ok": curses.COLOR_GREEN, "needs": curses.COLOR_YELLOW, "failed": curses.COLOR_RED,
+          "running": curses.COLOR_CYAN, "idle": curses.COLOR_WHITE, "unknown": curses.COLOR_MAGENTA}
+
+
+def _attributes(color):
+    """Map frame roles to curses attributes; bold/dim carry emphasis without color."""
+    attrs = {"": 0, "head": curses.A_BOLD, "sel": curses.A_BOLD, "dim": curses.A_DIM}
+    if color:
+        curses.use_default_colors()
+        for number, (role, fg) in enumerate(_PAIRS.items(), 1):
+            curses.init_pair(number, fg, -1)
+            attrs[role] = curses.color_pair(number) | (curses.A_BOLD if role in ("needs", "failed") else 0)
+    else:
+        attrs.update({role: curses.A_BOLD if role in ("needs", "failed") else 0 for role in _PAIRS})
+    return attrs
+
+
 def _cmd(args, log):
     """Interactive read-only command. No key mutates owner state."""
     from .coordination import configured
     coordinator = configured(args.repo)
     if coordinator is None:
-        print(f"{args.repo}: Vuoro coordination is not configured")
+        print(not_configured_message(args.repo), file=sys.stderr)
         return 1
     no_color = args.no_color or bool(os.environ.get("NO_COLOR"))
     from .config import load_releases
@@ -591,7 +845,7 @@ def _cmd(args, log):
         del revision
         return query_snapshot(coordinator.client, events, journal_path=coordinator.path,
                               work_ids=work_ids, item=args.item, attempt=args.attempt)
-    if args.plain:
+    if args.plain or not _interactive():
         refreshed = refresh_state(initial_refresh_state(), event_reader, owner_reader)
         snapshot = refreshed["snapshot"]
         if (args.item is not None or args.attempt is not None) and not snapshot.get("rows"):
@@ -601,40 +855,37 @@ def _cmd(args, log):
         return 0
     def run(screen):
         screen.keypad(True)
+        attrs = _attributes(_use_color(no_color))
         refresh = refresh_state(initial_refresh_state(), event_reader)
-        snapshot = refresh["snapshot"]
-        state, refreshed = initial_state(snapshot, args.view.title(), args.filter), time.monotonic()
-        worker = None
+        state, refreshed = initial_state(refresh["snapshot"], args.view.title(), args.filter), time.monotonic()
+        poller = OwnerPoller(owner_reader, args.refresh)
         while True:
-            snapshot, view, filter_text = state["snapshot"], state["view"], state["filter"]
-            rows, selected = view_rows(snapshot, view, filter_text), state["selected"]
+            height, width = screen.getmaxyx()
             screen.erase()
-            for y, line in enumerate(render_screen(snapshot, view, width=screen.getmaxyx()[1], height=screen.getmaxyx()[0], selected=selected or 0, filter_text=filter_text, color=not no_color, detail=state["detail"], help=state["help"], filtering=state["filtering"], filter_draft=state["filter_draft"]).splitlines()):
-                try: screen.addnstr(y, 0, line, max(0, screen.getmaxyx()[1] - 1))
-                except curses.error: pass
+            frame = render_frame(state["snapshot"], state["view"], width=width - 1, height=height,
+                                 selected=state["selected"] or 0, filter_text=state["filter"],
+                                 detail=state["detail"], help=state["help"],
+                                 filtering=state["filtering"], filter_draft=state["filter_draft"],
+                                 scroll=state.get("scroll", 0), now=datetime.now(timezone.utc))
+            for y, line in enumerate(frame):
+                x = 0
+                for text, role in line:
+                    try: screen.addstr(y, x, text, attrs.get(role, 0))
+                    except curses.error: pass
+                    x += len(text)
             screen.refresh()
-            if worker is None and (refresh.get("next_owner_attempt_at") is None or
-                                   datetime.now(timezone.utc) >= refresh["next_owner_attempt_at"]):
-                worker = OwnerRefreshWorker(owner_reader, list(refresh.get("events", [])),
-                                            refresh.get("owner_revision"))
-            if worker is not None:
-                completed = worker.poll()
-                if completed is not None:
-                    outcome, error = completed
-                    refresh = _apply_owner_result(refresh, error or outcome,
-                                                  now=datetime.now(timezone.utc),
-                                                  random_value=__import__("random").random,
-                                                  stale_after_s=60, backoff_base_s=2, backoff_cap_s=60)
-                    state = handle_key(state, "owner_result", snapshot=refresh["snapshot"])
-                    worker = None
-            screen.timeout(min(100, max(0, int((args.refresh - (time.monotonic() - refreshed)) * 1000))))
+            refresh, changed = poller.step(refresh, datetime.now(timezone.utc))
+            if changed:
+                state = handle_key(state, "owner_result", snapshot=refresh["snapshot"])
+            screen.timeout(500)
             key = screen.getch()
-            if key == -1 or (key == ord("r") and not state["filtering"]):
+            # Local events are re-read each --refresh interval or on r; never per wakeup.
+            if key == -1 and time.monotonic() - refreshed >= args.refresh or key == ord("r") and not state["filtering"]:
                 refresh = refresh_state(refresh, event_reader)
                 state = handle_key(state, "refresh", snapshot=refresh["snapshot"])
                 refreshed = time.monotonic()
-            else:
-                state = handle_key(state, key)
+            elif key != -1:
+                state = handle_key(state, key, height=height, width=width - 1)
                 if state.get("quit"): return
     curses.wrapper(run)
     return 0
