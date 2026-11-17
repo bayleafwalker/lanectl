@@ -51,7 +51,7 @@ try:
         root = Path(folder)
         account = AccountTransactionService(landing_root=root / "landing", metadata_repository=RunMetadataRepository(root / "runs.db"))
         with TestClient(create_app(account, transformation_service=transformation, reporting_service=reporting)) as client:
-            response = client.get("/reports/monthly-cashflow")
+            response = client.get("/reports/monthly-cashflow", params={"from_month": "2026-01", "to_month": "2026-01"})
             assert response.status_code == 200, response.text
             by_currency(response.json()["rows"], "net", {"EUR": 170, "USD": 80})
 finally:

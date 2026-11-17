@@ -1,4 +1,4 @@
-# Currency separation: independent qualification, revision 5
+# Currency separation: independent qualification, revision 6
 
 Operator decision: preserve original denominations and show separate totals per
 currency, without conversion. Work is homelab-analytics#2915; baseline is
@@ -9,7 +9,7 @@ representative scenarios here. Existing source normalization, requirements, and
 frontend snapshots remain in force. Do not infer a preferred currency, whitelist,
 FX rate, or conversion.
 
-All three qualifications below are mandatory on the exact repaired candidate after
+All four qualifications below are mandatory on the exact repaired candidate after
 the environment prerequisite is qualified. Use the actual lanectl namespace and
 credential fence, an owned checkout/environment and private synthetic database,
 and retain source-bound records. Never substitute parity or mocks for correctness.
@@ -506,3 +506,103 @@ historical red control remains
 `5c4a19699ac4363c3bedc294a625386a481925a91fbec4759105727db9653b2e`.
 The documented owner-supplied candidate upgrade/rebuild interface and mandatory
 end-to-end legacy qualification remain pending; no candidate pass is claimed.
+
+
+## Revision 6: executable existing-store qualification
+
+Revision 5 and its original evidence remain bound to commit
+`904d6cfd0f36a702cdc863630d2743770a6a3371`; no historical evidence is rebound.
+This revision supersedes the earlier statement that a candidate interface is still
+unknown. The implementation owner proposed `python -m apps.worker.main
+upgrade-reporting [--check]`; it is not present on 82 and is not yet qualified.
+The supported entrypoint must select the existing DuckDB using
+`HOMELAB_ANALYTICS_ANALYTICS_DATABASE_PATH`, and the existing PostgreSQL schema
+using `HOMELAB_ANALYTICS_REPORTING_BACKEND=postgres`,
+`HOMELAB_ANALYTICS_REPORTING_POSTGRES_DSN` and
+`HOMELAB_ANALYTICS_REPORTING_SCHEMA`. `--check` is read-only. Successful upgrade
+emits a nonempty completion JSON object only after rebuilding and republishing;
+repeating the command is the supported retry. Unknown drift or unsupported views,
+grants or dependencies must be refused without changes. No test-only SQL repair
+is permitted. This qualification checks a successful repeat, but does not inject
+partial cross-store failures or unknown drift; those proposed refusal and recovery
+behaviors require additional independent qualification before any claim about them.
+
+Seed fresh owned DuckDB and PostgreSQL stores with `currency_legacy_fixture.py`
+using an exact clean 82 checkout and its own dependencies under the actual fence.
+It seeds the original mixed January facts and old publications, captures both a
+nonempty household snapshot and a valid-empty subscription snapshot, then adds a
+February fact. The manifest binds the complete typed fact inventory, physical
+schemas, old snapshot bytes, both stores' original publications, seed and oracle
+hashes, and the closed warehouse hash. Preserve the generated manifest and do not
+reuse a warehouse after a qualification attempt. The database and schema must
+already exist; the candidate must perform its own supported upgrade.
+
+Install every `files/` entry in a clean candidate checkout with its own locked
+Python and frontend dependencies and Playwright browser. Set `LANECTL_HOME`,
+`PYTHONPATH`, and the user bus for the actual namespace; set
+`CURRENCY_LEGACY_POSTGRES_DSN` to the private fixture's existing PostgreSQL,
+`CURRENCY_LEGACY_PG_DUMP` to its compatible `pg_dump`, and distinct free
+`CURRENCY_LEGACY_API_PORT` and `CURRENCY_LEGACY_WEB_PORT`. Set the candidate's
+owned browser path and any runtime library paths as needed. Then run:
+
+```sh
+python backlog/hla-currency-separate-totals/qualify-legacy.py \
+  --checkout /absolute/clean/candidate \
+  --warehouse /absolute/private/original.duckdb \
+  --manifest /absolute/private/seed-manifest.json \
+  --ui-report /absolute/new/ui-report.json \
+  --evidence /absolute/new/qualification.json
+```
+
+The named namespace unit verifies source, criterion and fixture bindings, requires
+one exact executed and passed pytest case with no skips or errors, and emits a
+receipt only after exact cgroup settlement. It preserves a JUnit sidecar and the
+real browser report. The test compares the entire private PostgreSQL schema/data
+and warehouse hash before and after `--check`, checks typed original facts and raw
+snapshot rows before and after upgrade and retry, and checks actual rebuilt
+DuckDB and republished PostgreSQL currency groups before using reporting code.
+After clearing disposable warehouse marts it checks strict PUBLISHED HTTP reads,
+including the January household status `legacy_denomination_unavailable` with
+empty rows and snapshot metadata, a separate valid-empty old subscription
+snapshot, and absent history. A real candidate dashboard must visibly describe
+the unavailable January household data; hidden text or a false no-history state
+cannot satisfy the UI oracle. No denomination is invented for old snapshots.
+Existing usage-only numeric-zero compatibility and the distinct observed zero
+bill remain governed by the original criteria.
+
+Real 82 fixture and source-bound negative evidence use clean scratch candidate
+`b11c63105a5f0c22bfc1cf093848229f45826dbd` (original 82 production plus
+acceptance files). The named owner qualification reached the proposed `--check`
+after exact inventory, snapshot, publication and stable PostgreSQL dump checks;
+82 returned exit 2 because that subcommand does not exist. One test failed, no
+receipt or UI report was emitted, and its exact cgroup settled. Raw log:
+`/tmp/currency-r6-owner-missing-v2.log`. The original 82 historical HTTP response
+also fails: it returns `snapshot` and a EUR-labelled blended 250 instead of the
+unavailable status; raw `currency-2915-r6-history-red-v2.{json,stdout,stderr}`
+under `/tmp/lanectl-resume-20261116/hla-independent/`. The two seed manifests
+are `/tmp/currency-legacy-r6-missing-v2.json` (SHA-256
+`0312a793be3cbcd9068f733677594680fc2eb2772b6dc5d78ece9e8ef3e822d0`) and
+`/tmp/currency-legacy-r6-history-v2.json` (SHA-256
+`93639718cbac83d40055392da47d648723a8dd7e6c8ceb04af592afd24b516c8`).
+The first seed attempt used SQL_ASCII and was refused by the old PostgreSQL store;
+the recorded successful fixtures used UTF-8. Databases and processes were removed.
+
+Four focused oracle controls passed under the namespace, rejecting false empty,
+no-history, changed/missing/duplicate old snapshots and typed inventory mutation;
+raw `currency-2915-r6-oracle-controls-source-final.{json,stdout,stderr}` in the
+same directory. A real Chromium control rejects hidden and false-empty messages:
+`currency-2915-r6-browser-control.{json,stdout,stderr}`. The named-unit lifecycle
+controls accepted a clean exit and rejected a detached TERM-ignoring child,
+explicit failure, SIGINT and SIGTERM; each observed the exact cgroup settled:
+`/tmp/currency-r6-cgroup-controls.log`. HLA's locked Ruff passed all nine Python
+acceptance files in target context. These raw paths are session-local; no candidate
+upgrade or full candidate UI has passed.
+
+Revision 6 SHA-256: seed
+`6ac674ca84ce6771bf5a5c68b15581384478397448ae68acab0cd159afc0c05d`;
+typed oracle `8db01f61c7abc6c6a20fd3d2df263d6175f0583a24b896bfaa1abfc0a3b1bc33`;
+history red `0382c33144ded819fdf9efd8d11e6f3eec6e7d33bb616502c377d9b637fd7027`;
+upgrade test `1409cad42185625cf50ae6c0e4ac7dd326ceed2e19101703218612a41ef30503`;
+UI test `3510486a7ab6425a3eea4a7da28c436feb6c9d9e6d35989b8186ebed081269bd`;
+owner driver `4b4ea466646eb837b8484ef84f4892caa6057296abf86ccf4f9805c0c497fa57`;
+lifecycle controls `de1c0be680e6840577acb9c6edfa11388652f735d3cb3f1d70a6ed394452787a`.

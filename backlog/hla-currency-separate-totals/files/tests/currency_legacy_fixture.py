@@ -10,6 +10,7 @@ import os
 import subprocess
 import sys
 import tempfile
+from datetime import datetime, timezone
 from pathlib import Path
 from uuid import uuid4
 
@@ -29,6 +30,9 @@ from packages.storage.run_metadata import RunMetadataRepository
 BASE = "82dbd9477029d6fda7df67edc617f45a1a4ceb59"
 KEYS = ["mart_monthly_cashflow", "mart_monthly_cashflow_by_counterparty", "mart_spend_by_category_monthly",
         "mart_utility_cost_summary", "mart_utility_cost_trend_monthly", "mart_household_overview"]
+SNAPSHOT_KEYS = ["mart_household_overview", "mart_subscription_summary"]
+EXTRA_KEYS = ["mart_subscription_summary", "mart_open_attention_items", "mart_recent_significant_changes",
+              "mart_affordability_ratios", "mart_recurring_cost_baseline"]
 
 
 def transactions():
@@ -89,34 +93,52 @@ def main():
             assert ts.load_transactions(transactions(), run_id="legacy-finance") == 4
             assert ts.load_bills([bill(3, "USD", 100), bill(1, "EUR", 200)], run_id="legacy-bills") == 2
             assert ts.load_utility_usage([usage(3), usage(1)], run_id="legacy-usage") == 2
-            ts.refresh_publications(KEYS)
+            ts.refresh_publications(KEYS + EXTRA_KEYS)
+            pg = PostgresReportingStore(dsn, schema=schema)
+            schema_created = True
+            reporting = ReportingService(ts, publication_store=pg, access_mode=ReportingAccessMode.PUBLISHED)
+            assert reporting.publish_publications(KEYS + EXTRA_KEYS) == KEYS + EXTRA_KEYS
+            assert reporting.capture_publication_snapshots(SNAPSHOT_KEYS, run_id="legacy-january", captured_at=datetime(2026, 2, 1, tzinfo=timezone.utc)) == SNAPSHOT_KEYS
+            # A later fact makes January an actual past month for the existing UI.
+            later = {"booked_at": "2026-02-01", "account_id": "synthetic-legacy", "counterparty_name": "later",
+                     "amount": "0", "currency": "EUR", "description": "legacy-later-month"}
+            assert ts.load_transactions([later], run_id="legacy-february") == 1
+            ts.refresh_publications(KEYS + EXTRA_KEYS)
+            assert reporting.publish_publications(KEYS + EXTRA_KEYS) == KEYS + EXTRA_KEYS
             inventory = snapshot_legacy_facts(store)
             assert {name: len(part["rows"]) for name, part in inventory.items()} == {
-                "fact_transaction": 4, "fact_bill": 2, "fact_utility_usage": 2}
+                "fact_transaction": 5, "fact_bill": 2, "fact_utility_usage": 2}
             def amounts(relation, value):
                 part = inventory[relation]
                 return sorted((row[part["columns"].index("currency")]["value"],
                                float(row[part["columns"].index(value)]["value"])) for row in part["rows"])
-            assert amounts("fact_transaction", "amount") == [("EUR", -30.0), ("EUR", 200.0), ("USD", -20.0), ("USD", 100.0)]
+            assert amounts("fact_transaction", "amount") == [("EUR", -30.0), ("EUR", 0.0), ("EUR", 200.0), ("USD", -20.0), ("USD", 100.0)]
             assert amounts("fact_bill", "billed_amount") == [("EUR", 200.0), ("USD", 100.0)]
-            duck_schemas = {key: [list(row) for row in store.fetchall(f"PRAGMA table_info('{key}')")] for key in KEYS}
+            duck_schemas = {key: [list(row) for row in store.fetchall(f"PRAGMA table_info('{key}')")] for key in KEYS + EXTRA_KEYS + ["reporting_publication_snapshot"]}
             assert "currency" not in [row[1] for row in duck_schemas["mart_monthly_cashflow"]]
-            pg = PostgresReportingStore(dsn, schema=schema)
-            schema_created = True
-            reporting = ReportingService(ts, publication_store=pg, access_mode=ReportingAccessMode.PUBLISHED)
-            assert reporting.publish_publications(KEYS) == KEYS
+            snapshot_sql = "SELECT publication_key, reference_month, captured_at, run_id, row_count, rows_json FROM reporting_publication_snapshot ORDER BY publication_key, reference_month"
+            duck_snapshots = store.fetchall_dicts(snapshot_sql)
+            pg_snapshots = pg.fetchall_dicts(snapshot_sql)
+            assert duck_snapshots == pg_snapshots
+            assert {(r["publication_key"], r["reference_month"], r["row_count"]) for r in pg_snapshots} == {
+                ("mart_household_overview", "2026-01", 1), ("mart_subscription_summary", "2026-01", 0)}
             with tempfile.TemporaryDirectory(prefix="currency-legacy-api-") as temp:
                 root = Path(temp)
                 service = AccountTransactionService(landing_root=root / "landing", metadata_repository=RunMetadataRepository(root / "runs.db"))
                 with TestClient(create_app(service, transformation_service=ts, reporting_service=reporting)) as client:
-                    response = client.get("/reports/monthly-cashflow")
+                    response = client.get("/reports/monthly-cashflow", params={"from_month": "2026-01", "to_month": "2026-01"})
                     assert response.status_code == 200, response.text
                     legacy_rows = response.json()["rows"]
                     assert len(legacy_rows) == 1 and float(legacy_rows[0]["net"]) == 250
                     assert "currency" not in legacy_rows[0]
+                    snapshot = client.get("/reports/household-overview", params={"as_of": "2026-01"})
+                    assert snapshot.status_code == 200 and snapshot.json()["as_of_status"] == "snapshot"
+                    assert snapshot.json()["snapshot"]["run_id"] == "legacy-january"
+                    empty = client.get("/reports/subscription-summary", params={"as_of": "2026-01"})
+                    assert empty.status_code == 200 and empty.json()["as_of_status"] == "snapshot" and empty.json()["rows"] == []
             with psycopg.connect(dsn) as conn:
                 pg_schemas = {}
-                for key in KEYS:
+                for key in KEYS + EXTRA_KEYS + ["reporting_publication_snapshot"]:
                     cols = conn.execute("SELECT column_name, data_type, is_nullable, ordinal_position FROM information_schema.columns WHERE table_schema = %s AND table_name = %s ORDER BY ordinal_position", (schema, key)).fetchall()
                     assert cols, key
                     pg_schemas[key] = [list(row) for row in cols]
@@ -139,6 +161,7 @@ def main():
                   "warehouse_sha256": hashlib.sha256(warehouse.read_bytes()).hexdigest(),
                   "postgres_schema": schema, "duckdb_schemas": duck_schemas,
                   "postgres_schemas": pg_schemas, "postgres_rows": pg_rows, "facts": inventory,
+                  "legacy_snapshots": {"duckdb": duck_snapshots, "postgres": pg_snapshots},
                   "legacy_published_finance_rows": legacy_rows}
         with manifest.open("x") as output:
             manifest_created = True
