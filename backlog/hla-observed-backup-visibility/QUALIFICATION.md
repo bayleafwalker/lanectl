@@ -101,3 +101,36 @@ Corrected SHA-256 values: ordinary test
 `69bfc9b8c33917cfb46bd7db02dd06ac28502c5df3cb19c06b419785db1b8e7e` and
 published test `6123d2ff9bbb37b938ccd4d27aabb68c650885f326c76d7d200c1d8bd73b577f`.
 Raw `/tmp` evidence is session-local.
+
+## Canonical base 6c018e78 requalification
+
+The release metadata now names HLA source
+`6c018e781186059a6fa6f48d9098c9b2b43a9451`. Revision 2 criteria remain
+unchanged from the import correction at lanectl commit `9357`; the earlier 82
+results above retain their original source bindings and are not rebound. An
+independent archive of the exact new source was prepared at
+`/tmp/hla-backup-2914-6c-source` with a separately owned Python environment;
+`uv sync --offline --locked --extra dev` ran inside the actual lanectl namespace
+using its owned cache. The source's `uv.lock` SHA-256 was
+`0f5d60547db05f73fa1f79ec2ec6acc1d08ba3c68d4fc8c8d4f7c90cf7e30142`.
+
+In the same namespace, GNU make `test-target` ran the exact ordinary acceptance
+file with pytest caching disabled. JUnit reported **7 executed: 4 expected
+product assertion failures, 3 controls passed, 0 errors, 0 skips**. The four
+failures are the never-successful target, latest attempt after a success,
+observation window/attempt order, and latest successful timestamp/size cases.
+JUnit `/tmp/backup-2914-6c-ordinary.xml` has SHA-256
+`6a77855adab8a63da457dc8b93b5bc5a60f915a58fcf6a74d7b7ee8cb4ff7986`.
+Raw namespace command records and outputs are
+`/tmp/lanectl-resume-20261116/hla-independent/backup-2914-6c-{python-setup,ordinary,target-ruff,ruff-version}.{json,stdout,stderr}`.
+The exact locked Ruff 0.15.8 passed both acceptance files in the new source's
+actual target configuration, with `--no-cache`.
+
+The ordinary and published criterion SHA-256 values remain respectively
+`69bfc9b8c33917cfb46bd7db02dd06ac28502c5df3cb19c06b419785db1b8e7e`
+and `6123d2ff9bbb37b938ccd4d27aabb68c650885f326c76d7d200c1d8bd73b577f`;
+the current published runner SHA-256 is
+`205e149e4c7e1a266929ce8b65c15161b3834c2cef133043838e1183878e5a46`.
+This is a baseline red control, not a candidate pass. The independent real
+PostgreSQL published-path qualification remains mandatory on the exact repaired
+candidate. Raw `/tmp` paths are session-local.
