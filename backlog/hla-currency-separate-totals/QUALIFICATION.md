@@ -1,4 +1,4 @@
-# Currency separation: independent qualification, revision 3
+# Currency separation: independent qualification, revision 4
 
 Operator decision: preserve original denominations and show separate totals per
 currency, without conversion. Work is homelab-analytics#2915; baseline is
@@ -57,7 +57,7 @@ These synthetic runner controls do not qualify a candidate or replace PostgreSQL
 ## Required visible dashboard check
 
 Install locked frontend and browser dependencies in the candidate's own checkout;
-install the four `files/` artifacts at their corresponding candidate paths.
+install all acceptance `files/` artifacts at their corresponding candidate paths.
 Provide a private UTF-8 PostgreSQL DSN, two free loopback ports, a new absolute
 `CURRENCY_ACCEPTANCE_UI_REPORT` path and a new absolute owner evidence path, both
 outside the candidate checkout.
@@ -333,3 +333,113 @@ published test `d9fa0f1d6f416d1d59319a0d2b2b3c934e667777d025cdc58dafab36785b238b
 The ordinary test remains
 `944076f422a8da0ee2857e3e9e5409a038d66ba86e99806634091c84f4836656`.
 Raw `/tmp` evidence is session-local.
+
+
+## Revision 4: existing-store upgrade boundary
+
+Revision 3 remains bound to lanectl commit `95c6df74c5ee34f6f83f7da91217f293b6bdd382`
+and earlier revision history and evidence above. This revision adds a mandatory
+legacy-store qualification; the existing fresh-store, strict published PostgreSQL,
+visible UI and lifecycle requirements remain in force.
+
+The seed helper `tests/currency_legacy_fixture.py` requires a clean source checkout
+at exact historical HLA commit `82dbd9477029d6fda7df67edc617f45a1a4ceb59`, a new
+absolute DuckDB path, a new manifest path outside that checkout and a private UTF-8 PostgreSQL instance.
+Under the actual lanectl namespace, invoke it from that historical checkout with
+its own installed locked dependencies and `CURRENCY_LEGACY_POSTGRES_DSN` set:
+
+```sh
+python /absolute/path/to/lanectl/backlog/hla-currency-separate-totals/files/tests/currency_legacy_fixture.py \
+  --warehouse /absolute/path/to/new-legacy.duckdb \
+  --manifest /absolute/path/to/new-legacy-manifest.json
+```
+
+The owner must provide the normal HLA DuckDB runtime library environment, for
+example through the repository's make environment. This creates a random private
+PostgreSQL schema named in the manifest; keep that instance and the DuckDB file
+unchanged until candidate qualification. Dispose of the owned schema, processes,
+and files after qualification. The fixture uses only the source's supported
+transaction, bill and usage loaders, refresh and publisher. It records the exact
+source commit, fixture/oracle hashes, closed-warehouse hash, all original fact
+columns and rows (including IDs, dates, amounts, currencies and run identities),
+actual DuckDB/PG publication schemas, all six PG publication row sets and the
+old strict-PUBLISHED HTTP response. It has four transaction, two bill and two
+usage facts, with EUR170 + USD80 finance and EUR200 + USD100 utility costs.
+Both original monthly cashflow tables lack a currency column.
+
+**Candidate qualification is mandatory and not yet executable end-to-end.** The
+interactive implementation owner must provide the documented, source-controlled
+production upgrade/rebuild and republication entrypoint, including how it selects
+the existing DuckDB path and existing PostgreSQL schema, any required configuration
+and lifecycle, and how an independent owner obtains equivalent read-only fact
+inventory if those legacy relations are replaced. This is an implementation
+interface question, not a new currency-policy decision. No command is assumed
+here and no migration technique is prescribed. Before acceptance, the independent
+owner must bind a clean exact candidate SHA, criterion and fixture hashes, manifest
+hash, source schemas and command output; execute that documented candidate workflow
+on the *same* populated legacy stores; and verify every original fact and identity
+is present once, all original fact values match, no additional facts were invented,
+and no conversion or loss occurred. `currency_legacy_oracle.snapshot_legacy_facts`
+provides a read-only projection of all original columns when those relations remain
+available, allowing added columns; `assert_inventory_unchanged` compares exact
+canonical inventories. If the owner chooses versioned replacement, the owner must
+identify the supported equivalent read-only projection, and the independent
+acceptance author must bind and verify it without weakening the inventory oracle.
+An arbitrary supplied JSON, unreviewed extractor, SQL schema patch, dropped/reseeded
+store or test-only conversion cannot stand in for the candidate workflow.
+
+The owner must then verify the candidate has replaced the *pre-existing* PG
+publications with the correct per-currency API and existing-consumer results; the
+expected values and refusal semantics are those of revisions 1–3. After that
+republish, clear only disposable warehouse reporting marts and verify strict
+PUBLISHED HTTP still returns those correct groups, with no warehouse fallback.
+This isolation step is not an upgrade or schema repair and must not alter facts.
+Recheck fact inventory after the workflow and isolation step. Existing valid-empty
+and unavailable-publication checks still apply. The owner must retain the raw
+source-bound reports and may not substitute a fresh store or a parity-only check.
+The future end-to-end harness must fail closed for missing interface, fixture,
+metadata, exact test execution or evidence; it is not yet a passed receipt.
+
+Historical context only: source `DuckDBStore.open` opens persistent stores and
+`ensure_table` does not generally evolve existing columns. Existing HLA also has
+`apply_pending_duckdb_migrations` and fact-based refresh patterns, but no chosen
+solution is implied; the implementer may use a numbered migration, a versioned
+replacement or another supported design. Existing PostgreSQL publishing ordinarily
+creates missing tables and does not generally add columns to old ones.
+
+Proof on 2026-11-17: a clean owned exact-82 checkout with its own locked Python
+environment seeded private persistent DuckDB and PostgreSQL 17.10 through the
+actual namespace; `/tmp/currency-legacy-seed-r4-final-v4.json` records the complete
+synthetic inventory and schemas (SHA-256
+`e1da7741c210dd4cec9bebe41897c0391365006998bf486ce8908535e35e0be1`). An
+independent read-only reopen matched every fact and all six old PG publication
+row sets (`/tmp/lanectl-resume-20261116/hla-independent/currency-2915-r4-reopen-v4.{json,stdout}`).
+Raw seed output is `currency-2915-r4-seed-v4.{json,stdout}` in that
+directory. The disposable PG and DuckDB stores were removed after verification.
+
+A separate reproducible historical-only red control
+`tests/currency_legacy_baseline_red.py` reopened another seeded store, verified
+the same fact inventory before and after the historical supported refresh and
+republish, cleared the disposable warehouse reporting marts, rechecked facts,
+and failed on the
+strict-PUBLISHED HTTP finance result: one 250 row without currency, rather than
+EUR170 and USD80. This is a product assertion failure, not an upgrade pass. Raw
+`/tmp/lanectl-resume-20261116/hla-independent/currency-2915-r4-persisted-red-v5.{json,stdout}`;
+its separate seed manifest is `/tmp/currency-legacy-seed-r4-final-v5.json` (SHA-256
+`284f6c7972f436b2e9462f53bee9fa4c1ed7f32468c152a2c8a769612b6240b6`). The databases and
+processes were removed. The baseline red script is never a candidate upgrade path.
+
+The independent inventory oracle controls accepted equal data and rejected removed,
+added, relabelled, re-identified, changed-amount, duplicate and missing-column
+facts; decimal scale normalization has its own passing control. Combined ordinary
+baseline **11 historical product failures, 8 passing controls, no errors/skips**:
+`/tmp/hla-currency-acceptance-2915-source/currency-r4-ordinary.xml`, raw
+`/tmp/lanectl-resume-20261116/hla-independent/currency-2915-r4-ordinary.{json,stdout}`.
+Ruff 0.15.8 passed each new Python file in HLA target context. All `/tmp` evidence
+is session-local. No repaired candidate has been qualified.
+
+Revision 4 source SHA-256: legacy seed
+`e114a3bed5e8339c9a5705e113d12502bb7ce7c25416910fb8f0a29f03bfb7fa`;
+inventory oracle `498adeeb6706721f54de296511fbe58e2e4904919fc031c60bf284a64416c340`;
+oracle controls `e14e377b50088ff57884750bb4d3b0f315911aaaf6f10c9609ec5ae7bc0bd4eb`;
+historical red control `5c4a19699ac4363c3bedc294a625386a481925a91fbec4759105727db9653b2e`.
