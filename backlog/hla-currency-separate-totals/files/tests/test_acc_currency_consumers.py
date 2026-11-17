@@ -3,7 +3,7 @@ from decimal import Decimal
 
 import pytest
 
-from test_acc_currency_separate_totals import api, bill, by_currency, load, rows, usage
+from test_acc_currency_separate_totals import MONTH, api, bill, by_currency, load, rows, usage
 
 
 OVERLAP_PUBLICATIONS = ["mart_utility_cost_summary", "mart_utility_cost_trend_monthly"]
@@ -46,6 +46,22 @@ def assert_utility_overlap_summary(client):
         assert row["bill_count"] == bill_count and row["usage_record_count"] == 2, row
 
 
+def assert_utility_overlap_windows(client):
+    for start, end, billed, bills in ((1, 20, 200, 1), (10, 28, 60, 1), (1, 28, 260, 2)):
+        window = {"meter_id": "overlapping-invoices",
+                  "from_period": f"{MONTH}-{start:02}", "to_period": f"{MONTH}-{end:02}"}
+        response = client.get("/reports/utility-cost-summary", params=window)
+        assert response.status_code == 200, (window, response.text)
+        observed = response.json()["rows"]
+        assert len(observed) == 1, (window, observed)
+        row = observed[0]
+        assert row["currency"] == "EUR" and row["coverage_status"] == "matched", (window, row)
+        assert Decimal(str(row["billed_amount"])) == Decimal(billed), (window, row)
+        assert Decimal(str(row["usage_quantity"])) == Decimal(100), (window, row)
+        assert Decimal(str(row["unit_cost"])) == Decimal(billed) / Decimal(100), (window, row)
+        assert row["bill_count"] == bills and row["usage_record_count"] == 2, (window, row)
+
+
 def assert_utility_overlap_trend(client):
     trend = rows(client, "/reports/utility-cost-trend")
     by_currency(trend, "total_cost", {"EUR": 720})
@@ -57,6 +73,12 @@ def test_utility_cost_summary_does_not_multiply_bills_or_usage(tmp_path):
     with api(tmp_path) as (ts, client):
         load_utility_overlap(ts)
         assert_utility_overlap_summary(client)
+
+
+def test_utility_summary_filters_keep_each_periods_observations(tmp_path):
+    with api(tmp_path) as (ts, client):
+        load_utility_overlap(ts)
+        assert_utility_overlap_windows(client)
 
 
 def test_utility_trend_does_not_multiply_overlapping_usage(tmp_path):

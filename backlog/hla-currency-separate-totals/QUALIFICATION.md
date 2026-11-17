@@ -1,4 +1,4 @@
-# Currency separation: independent qualification, revision 17
+# Currency separation: independent qualification, revision 18
 
 Operator decision: preserve original denominations and show separate totals per
 currency, without conversion. Work is homelab-analytics#2915; baseline is
@@ -1083,3 +1083,14 @@ projection currency. The reopened detail and compare surfaces preserve the
 original values with unknown denomination even with a known current baseline. No new environment
 variables or fixture phases are needed. The dashboard receipt validates
 exactly twelve test results.
+
+
+## Revision 18: overlap after report filtering
+
+The utility summary checks each overlapping bill separately and both together
+through the public meter and period filters. Each individual window retains
+both distinct 50 kWh observations, classifies the period as matched, and
+preserves its billed EUR amount. The union counts each usage record once
+and reports EUR 260, 100 kWh, and a 2.60 unit price. The same queries run
+against strict PUBLISHED after both related warehouse marts are cleared.
+The source fixture, dashboard tests and environment requirements are unchanged.

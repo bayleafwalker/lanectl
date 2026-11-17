@@ -8,6 +8,7 @@ from test_acc_currency_consumers import (
     OVERLAP_PUBLICATIONS,
     assert_utility_overlap_summary,
     assert_utility_overlap_trend,
+    assert_utility_overlap_windows,
     load_utility_overlap,
 )
 from test_acc_currency_empty_schema import check_empty_schema
@@ -88,6 +89,7 @@ def test_currency_published_reporting_survives_warehouse_clear_without_fallback(
             with TestClient(create_app(service, transformation_service=overlap, reporting_service=published)) as client:
                 assert_utility_overlap_summary(client)
                 assert_utility_overlap_trend(client)
+                assert_utility_overlap_windows(client)
         finally:
             overlap.store.close()
     finally:
