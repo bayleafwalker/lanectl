@@ -129,16 +129,20 @@ def _lines(doc: dict, caps: dict, show_all: bool) -> list[str]:
     needs, blocked = doc["needs_you"], doc["blocked"]
     if needs:
         out.append(f"{sym(SYMBOLS['needs'])} NEEDS YOU ({len(needs)})")
-        for n in cap("needs", needs):
-            why = clip(n["reason"], 56) if n["reason"] else f"{n['tries']} tries"
-            out.append(f"  {render.state(n['state'])}{' ' * max(1, 11 - len(n['state']))}{n['id']}  {why}")
+        shown = cap("needs", needs)
+        width = max(len(n["id"]) for n in shown)
+        for n in shown:
+            why = clip(n["reason"], max(24, 76 - width)) if n["reason"] else f"{n['tries']} tries"
+            out.append(f"  {render.state(n['state'])}{' ' * max(1, 11 - len(n['state']))}{n['id']:<{width}}  {why}")
         out += _more(len(cap("needs", needs)), len(needs))
     elif not blocked:
         out.append(f"{sym(SYMBOLS['ok'])} Nothing needs you.")
     if blocked:
         out += ["", f"{sym(SYMBOLS[classify('blocked')])} BLOCKED ({len(blocked)}; `lanectl ready` agrees)"]
-        for b in cap("blocked", blocked):
-            out.append(f"  {b['id']}  {b['reasons'][0].split(' (')[0]} -> {b['fix']}")
+        shown = cap("blocked", blocked)
+        width = max(len(b["id"]) for b in shown)
+        for b in shown:
+            out.append(f"  {b['id']:<{width}}  {b['reasons'][0].split(' (')[0]} -> {b['fix']}")
         out += _more(len(cap("blocked", blocked)), len(blocked))
     if doc["warnings"]:
         out += ["", "WARNINGS"]
