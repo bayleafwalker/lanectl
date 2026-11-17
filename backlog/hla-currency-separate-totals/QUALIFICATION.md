@@ -1,4 +1,4 @@
-# Currency separation: independent qualification, revision 16
+# Currency separation: independent qualification, revision 17
 
 Operator decision: preserve original denominations and show separate totals per
 currency, without conversion. Work is homelab-analytics#2915; baseline is
@@ -1059,3 +1059,27 @@ distinct counts and unit costs through the public summary. The income-change
 test checks the public refusal and absence of persisted scenario rows for a
 cross-currency delta, then uses the same fixture to verify an exact same-unit
 income projection and explicit USD assumption.
+
+## Revision 17: overlapping observations and reopened cashflow scenarios
+
+The monthly utility summary must count each distinct billed invoice and each
+distinct matched usage record once, including when billing periods partially
+overlap and equal-valued usage records fall inside both. The same-currency
+fixture checks that invoice amounts 200 and 60 plus two separate 50 kWh
+observations yield 260, 100 kWh and a 2.60 unit price. The earlier same-period
+and one-invoice controls remain. The trend checks exact EUR 720, 300 kWh and
+2.40 across the three seeded meters. The strict PUBLISHED qualifier republishes
+both reports and repeats these HTTP checks after clearing both warehouse marts.
+
+The supported income-change and expense-shock POST routes save EUR and USD
+scenarios. A later cold GET must keep the saved unit and projected values even
+after the current finance baseline is replaced with the opposite currency.
+The existing EUR/USD dashboard phases now open each saved detail and the
+compare page through real Next/API paths. Both saved scenario cards show
+their explicit denomination and the values read from those same saved IDs.
+The historical control seeds two old rows: expense has only a percentage,
+and income has only a known EUR delta. Neither field establishes the combined
+projection currency. The reopened detail and compare surfaces preserve the
+original values with unknown denomination even with a known current baseline. No new environment
+variables or fixture phases are needed. The dashboard receipt validates
+exactly twelve test results.

@@ -18,13 +18,17 @@ MONTH = date.today().strftime("%Y-%m")
 
 
 @contextmanager
-def api(root, *, published=False):
+def api(root, *, published=False, warehouse=None):
     root.mkdir(parents=True, exist_ok=True)
-    ts = TransformationService(DuckDBStore.memory())
-    service = AccountTransactionService(landing_root=root / "landing", metadata_repository=RunMetadataRepository(root / "runs.db"))
-    reporting = ReportingService(ts, access_mode=ReportingAccessMode.PUBLISHED) if published else None
-    with TestClient(create_app(service, transformation_service=ts, reporting_service=reporting)) as client:
-        yield ts, client
+    store = DuckDBStore.memory() if warehouse is None else DuckDBStore.open(str(warehouse))
+    try:
+        ts = TransformationService(store)
+        service = AccountTransactionService(landing_root=root / "landing", metadata_repository=RunMetadataRepository(root / "runs.db"))
+        reporting = ReportingService(ts, access_mode=ReportingAccessMode.PUBLISHED) if published else None
+        with TestClient(create_app(service, transformation_service=ts, reporting_service=reporting)) as client:
+            yield ts, client
+    finally:
+        store.close()
 
 
 def transactions(currency_amounts):

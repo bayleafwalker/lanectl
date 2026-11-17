@@ -1,35 +1,68 @@
 """Independent currency and monetary-evidence checks for report consumers."""
 from decimal import Decimal
 
-from test_acc_currency_separate_totals import api, bill, load, rows, usage
+import pytest
+
+from test_acc_currency_separate_totals import api, bill, by_currency, load, rows, usage
+
+
+OVERLAP_PUBLICATIONS = ["mart_utility_cost_summary", "mart_utility_cost_trend_monthly"]
+
+
+def load_utility_overlap(ts):
+    invoices, observations = [], []
+    for meter in ("one-invoice", "two-invoices", "overlapping-invoices"):
+        first = bill(1, "EUR", 200, meter)
+        first["billing_period_end"] = first["billing_period_start"][:8] + "28"
+        if meter == "overlapping-invoices":
+            first["billing_period_end"] = first["billing_period_start"][:8] + "20"
+        invoices.append(first)
+        if meter in ("two-invoices", "overlapping-invoices"):
+            second = dict(first, billed_amount="60", provider="another-synthetic-provider",
+                          invoice_date=first["billing_period_end"])
+            if meter == "overlapping-invoices":
+                second["billing_period_start"] = first["billing_period_start"][:8] + "10"
+                second["billing_period_end"] = first["billing_period_start"][:8] + "28"
+            invoices.append(second)
+        days = (15, 17) if meter == "overlapping-invoices" else (4, 5)
+        observations.extend(dict(usage(day, meter), usage_quantity="50") for day in days)
+    assert ts.load_bills(invoices, run_id="many-invoices") == 5
+    assert ts.load_utility_usage(observations, run_id="many-observations") == 6
+    ts.refresh_publications(OVERLAP_PUBLICATIONS)
+
+
+def assert_utility_overlap_summary(client):
+    summary = rows(client, "/reports/utility-cost-summary")
+    assert len(summary) == 3, summary
+    by_meter = {row["meter_id"]: row for row in summary}
+    assert set(by_meter) == {"one-invoice", "two-invoices", "overlapping-invoices"}
+    for meter, total, bill_count in (("one-invoice", "200", 1), ("two-invoices", "260", 2),
+                                     ("overlapping-invoices", "260", 2)):
+        row = by_meter[meter]
+        assert row["currency"] == "EUR" and row["coverage_status"] == "matched", row
+        assert Decimal(str(row["billed_amount"])) == Decimal(total), row
+        assert Decimal(str(row["usage_quantity"])) == Decimal("100"), row
+        assert Decimal(str(row["unit_cost"])) == Decimal(total) / Decimal("100"), row
+        assert row["bill_count"] == bill_count and row["usage_record_count"] == 2, row
+
+
+def assert_utility_overlap_trend(client):
+    trend = rows(client, "/reports/utility-cost-trend")
+    by_currency(trend, "total_cost", {"EUR": 720})
+    by_currency(trend, "usage_amount", {"EUR": 300})
+    by_currency(trend, "unit_price_effective", {"EUR": "2.4"})
 
 
 def test_utility_cost_summary_does_not_multiply_bills_or_usage(tmp_path):
     with api(tmp_path) as (ts, client):
-        invoices, observations = [], []
-        for meter in ("one-invoice", "two-invoices"):
-            first = bill(1, "EUR", 200, meter)
-            first["billing_period_end"] = first["billing_period_start"][:8] + "28"
-            invoices.append(first)
-            if meter == "two-invoices":
-                second = dict(first, billed_amount="60", provider="another-synthetic-provider",
-                              invoice_date=first["billing_period_end"])
-                invoices.append(second)
-            observations.extend(dict(usage(day, meter), usage_quantity="50") for day in (4, 5))
-        assert ts.load_bills(invoices, run_id="many-invoices") == 3
-        assert ts.load_utility_usage(observations, run_id="many-observations") == 4
-        ts.refresh_publications(["mart_utility_cost_summary"])
-        summary = rows(client, "/reports/utility-cost-summary")
-        assert len(summary) == 2, summary
-        by_meter = {row["meter_id"]: row for row in summary}
-        assert set(by_meter) == {"one-invoice", "two-invoices"}
-        for meter, total, bill_count in (("one-invoice", "200", 1), ("two-invoices", "260", 2)):
-            row = by_meter[meter]
-            assert row["currency"] == "EUR" and row["coverage_status"] == "matched", row
-            assert Decimal(str(row["billed_amount"])) == Decimal(total), row
-            assert Decimal(str(row["usage_quantity"])) == Decimal("100"), row
-            assert Decimal(str(row["unit_cost"])) == Decimal(total) / Decimal("100"), row
-            assert row["bill_count"] == bill_count and row["usage_record_count"] == 2, row
+        load_utility_overlap(ts)
+        assert_utility_overlap_summary(client)
+
+
+def test_utility_trend_does_not_multiply_overlapping_usage(tmp_path):
+    with api(tmp_path) as (ts, client):
+        load_utility_overlap(ts)
+        assert_utility_overlap_trend(client)
 
 
 def test_unbilled_usage_does_not_dilute_billed_currency_unit_price(tmp_path):
@@ -106,6 +139,58 @@ def test_income_projection_refuses_a_delta_in_a_different_currency(tmp_path):
         projection = body["cashflow_rows"][0]
         assert Decimal(str(projection["baseline_income"])) == Decimal("100.37"), projection
         assert Decimal(str(projection["scenario_income"])) == Decimal("110.37"), projection
+
+
+SAVED_CASHFLOW_FIELDS = ("currency", "projection_currency", "cashflow_currency", "unit", "currency_unit")
+SAVED_CASHFLOW_ASSUMPTIONS = {
+    "income-change": {"cashflow_currency", "projection_currency"},
+    "expense-shock": {"baseline_monthly_expense", "baseline_expense", "cashflow_currency", "projection_currency"},
+}
+
+
+def saved_cashflow_currency(body, kind):
+    declarations = [entry[field] for entry in (body, *body["cashflow_rows"])
+                    for field in SAVED_CASHFLOW_FIELDS if entry.get(field) is not None]
+    declarations.extend(assumption["unit"] for assumption in body["assumptions"]
+                        if assumption["assumption_key"] in SAVED_CASHFLOW_ASSUMPTIONS[kind]
+                        and assumption.get("unit") is not None)
+    if declarations and kind == "income-change":
+        declarations.extend(row["unit"] for row in body["assumptions"]
+                            if row["assumption_key"] == "monthly_income_delta" and row.get("unit") is not None)
+    return set(declarations)
+
+
+@pytest.mark.parametrize("currency", ["EUR", "USD"])
+@pytest.mark.parametrize("kind", ["income-change", "expense-shock"])
+def test_saved_cashflow_keeps_its_currency_after_baseline_changes(tmp_path, kind, currency):
+    warehouse = tmp_path / "saved-projections.duckdb"
+    with api(tmp_path, warehouse=warehouse) as (ts, client):
+        load(ts, [(1, currency, 1000), (2, currency, -100)])
+        change = {"monthly_income_delta": "20", "currency": currency} if kind == "income-change" else {"expense_pct_delta": "0.10"}
+        created = client.post(f"/api/scenarios/{kind}", json={**change, "projection_months": 1})
+        assert created.status_code == 200, created.text
+        scenario_id = created.json()["scenario_id"]
+
+    with api(tmp_path / "reopened", warehouse=warehouse) as (ts, client):
+        # Replace the fixture's current source denomination after saving.
+        other_currency = "USD" if currency == "EUR" else "EUR"
+        ts.store.execute("DELETE FROM fact_transaction")
+        ts.store.execute("DELETE FROM fact_transaction_current")
+        load(ts, [(1, other_currency, 2200), (2, other_currency, -300)])
+        by_currency(rows(client, "/reports/monthly-cashflow"), "net", {other_currency: 1900})
+
+        response = client.get(f"/api/scenarios/{scenario_id}/cashflow")
+        assert response.status_code == 200, response.text
+        body = response.json()
+        assert saved_cashflow_currency(body, kind) == {currency}, body
+        assert len(body["cashflow_rows"]) == 1, body
+        projection = body["cashflow_rows"][0]
+        expected = {
+            "baseline_income": 1000, "baseline_expense": 100,
+            "scenario_income": 1020 if kind == "income-change" else 1000,
+            "scenario_expense": 100 if kind == "income-change" else 110,
+        }
+        assert {key: Decimal(str(projection[key])) for key in expected} == expected, projection
 
 
 def assert_no_household_projection(client, response, before):

@@ -4,6 +4,12 @@ from uuid import uuid4
 
 import psycopg
 from fastapi.testclient import TestClient
+from test_acc_currency_consumers import (
+    OVERLAP_PUBLICATIONS,
+    assert_utility_overlap_summary,
+    assert_utility_overlap_trend,
+    load_utility_overlap,
+)
 from test_acc_currency_empty_schema import check_empty_schema
 from test_acc_currency_separate_totals import (
     KEYS,
@@ -71,6 +77,19 @@ def test_currency_published_reporting_survives_warehouse_clear_without_fallback(
             disjoint.store.execute(f"DELETE FROM {key}")
         with TestClient(create_app(service, transformation_service=disjoint, reporting_service=published)) as client:
             assert_disjoint_household_contributions(rows(client, "/reports/household-overview"))
+        overlap = TransformationService(DuckDBStore.memory())
+        try:
+            load_utility_overlap(overlap)
+            published = ReportingService(overlap, publication_store=store, access_mode=ReportingAccessMode.PUBLISHED)
+            assert published.publish_publications(OVERLAP_PUBLICATIONS) == OVERLAP_PUBLICATIONS
+            for key in OVERLAP_PUBLICATIONS:
+                overlap.store.execute(f"DELETE FROM {key}")
+                assert overlap.store.fetchall(f"SELECT count(*) FROM {key}") == [(0,)]
+            with TestClient(create_app(service, transformation_service=overlap, reporting_service=published)) as client:
+                assert_utility_overlap_summary(client)
+                assert_utility_overlap_trend(client)
+        finally:
+            overlap.store.close()
     finally:
         with psycopg.connect(dsn, autocommit=True) as conn:
             conn.execute(f'DROP SCHEMA IF EXISTS "{schema}" CASCADE')
