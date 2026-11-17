@@ -9,7 +9,7 @@ import sys
 
 from . import render, runner
 from .config import home
-from .events import open_log
+from .events import open_log, project_items
 from .render import CliError
 from .status import release_rows
 
@@ -22,7 +22,7 @@ def discover_plugins(package_name: str) -> list:
     package = importlib.import_module(package_name)
     found = []
     for info in pkgutil.iter_modules(package.__path__, package_name + "."):
-        if info.name.endswith(".__main__"):   # importing it would run the CLI
+        if info.name.endswith(".__main__"):   # the entry point holds no commands
             continue
         module = importlib.import_module(info.name)
         if callable(getattr(module, "register", None)):
@@ -84,10 +84,24 @@ EXAMPLES = """Examples:
   lanectl candidates && lanectl train <repo> && lanectl land <train_id>
 
 Run `lanectl <command> --help` for a command's options.
-Exit codes: 0 ok, 1 failed, 2 usage, 3 not found, 5 precondition failed."""
+Exit codes: 0 ok, 1 failed, 2 usage, 3 not found, 5 precondition failed,
+75 temporary (worker infrastructure failed; retry later)."""
 
 
 def _version() -> str:
+    """The checkout's pyproject version when running from one, else the installed wheel's.
+
+    Install metadata in a dev venv goes stale between releases, so a checkout wins.
+    """
+    try:
+        import tomllib
+        from pathlib import Path
+        text = (Path(__file__).resolve().parents[2] / "pyproject.toml").read_text()
+        data = tomllib.loads(text)
+        if data["project"]["name"] == "lanectl":
+            return data["project"]["version"]
+    except Exception:
+        pass
     try:
         from importlib.metadata import version
         return version("lanectl")
@@ -100,9 +114,9 @@ class _Parser(argparse.ArgumentParser):
 
     def error(self, message):
         import difflib
-        if "invalid choice" in message:
+        names = [c for a in self._actions if isinstance(a, argparse._SubParsersAction) for c in a.choices]
+        if "invalid choice" in message and names:   # only a parser that owns commands guesses
             bad = message.split("'")[1] if "'" in message else ""
-            names = [c for a in self._actions if isinstance(a, argparse._SubParsersAction) for c in a.choices]
             near = difflib.get_close_matches(bad, names, n=1, cutoff=0.5)
             self.print_usage(sys.stderr)
             hint = f"did you mean {near[0]}?" if near else "see `lanectl --help`"
@@ -180,20 +194,39 @@ def _check_home() -> None:
                        code=3, slug="home_not_found")
 
 
-def _effect(args, log, what: str, plan: str, act, ok) -> int:
-    """Shared tail for effectful commands: preview, confirm, act, receipt and next step."""
+def _effect(args, what: str, plan: str, act) -> int:
+    """Shared tail for effectful commands: preview, confirm, act, receipt and next step.
+
+    ``act`` returns ``(exit_code, message)``: 0 done, 3 not found, 5 refused. The code is never
+    derived from the message text.
+    """
     if args.dry_run:
         print(f"would {plan}\nnext: rerun without --dry-run")
         return 0
     if not render.confirm(f"{what}?", yes=args.yes):
         print("cancelled; nothing changed")
         return 1
-    result = act()
-    good = ok(result) or "already" in result
-    code = 0 if good else (3 if result.startswith("unknown") else 5)
-    print(f"{render.sym(render.OK if good else render.FAILED)} {result}")
+    code, result = act()
+    print(f"{render.sym(render.OK if code == 0 else render.FAILED)} {result}")
     print("next: lanectl status")
     return code
+
+
+def _not_found(kind: str, ident: str, listing: str) -> CliError:
+    return CliError(f"unknown {kind} {ident}", why=f"no such {kind} in the event log",
+                    fix=listing, code=3, slug=f"{kind}_not_found")
+
+
+def _landed(result: str) -> tuple[int, str]:
+    return (0 if result.startswith("landed") else 5), result   # "landed [...] (already recorded)" is a landing
+
+
+def _reject(log, attempt_id: str, reason: str, park: bool) -> tuple[int, str]:
+    if not any(x["attempt_id"] == attempt_id for v in project_items(log.read()).values()
+               for x in v.attempts):
+        return 3, f"unknown attempt {attempt_id}; list them with `lanectl candidates`"
+    result = runner.integrator_reject(log, attempt_id, reason, park)
+    return (0 if result.endswith((": parked", ": requeued")) else 5), result
 
 
 def _add_effect_flags(p) -> None:
@@ -206,7 +239,7 @@ def _build_parser():
     p.add_argument("--version", action="version", version=f"lanectl {_version()}")
     p.add_argument("--debug", action="store_true", help="show tracebacks instead of one-line errors")
     p.add_argument("--no-color", action="store_true", help="never colour output")
-    sub = p.add_subparsers(dest="cmd", metavar="<command>")
+    sub = p.add_subparsers(dest="cmd", metavar="<command>", parser_class=_Parser)
     r = sub.add_parser("run", help="admit and execute attempts until caps or the queue stop it")
     r.add_argument("--lane", default="implement", help="lane to claim from (default implement)")
     r.add_argument("--item", help="only claim this release id")
@@ -278,7 +311,13 @@ def _dispatch(a, handlers) -> int:
         return handlers[a.cmd](a, None)
     if _needs_home(a.cmd):
         _check_home()
-    log = open_log()
+    try:
+        log = open_log()
+    except ValueError as e:
+        raise CliError(f"cannot open the event log: {e}",
+                       why="the backend marker or LANECTL_STREAM_REPO selects an invalid authority",
+                       fix="inspect <state dir>/backend.json, or unset LANECTL_STREAM_REPO",
+                       code=1, slug="backend_invalid") from e
     if a.cmd in handlers:
         return handlers[a.cmd](a, log)
 
@@ -293,7 +332,7 @@ def _dispatch(a, handlers) -> int:
             print(out, flush=True)
             if "-> rejected: infra:" in out or "-> rejected: infra" in out:
                 print("breaker: worker infrastructure failure; stopping this run loop", flush=True)
-                return 3
+                return 75   # EX_TEMPFAIL: retry later; 3 is reserved for not found
         return 0
     if a.cmd == "ready":
         rows = release_rows(log.read(), a.lane, include_landed=a.all)
@@ -321,10 +360,11 @@ def _dispatch(a, handlers) -> int:
     if a.cmd == "land":
         tb = next((e["data"] for e in reversed(log.read())
                    if e["type"] == "train.built" and e["data"]["train_id"] == a.train_id), None)
-        plan = (f"land train {a.train_id}: fast-forward {tb['repo']} main with attempts {tb['attempts']}"
-                if tb else f"land train {a.train_id} (unknown train)")
-        return _effect(a, log, f"Land train {a.train_id} on main", plan,
-                       lambda: runner.land(log, a.train_id), lambda r: r.startswith("landed"))
+        if tb is None:
+            raise _not_found("train", a.train_id, "lanectl candidates   # then: lanectl train <repo>")
+        plan = f"land train {a.train_id}: fast-forward {tb['repo']} main with attempts {tb['attempts']}"
+        return _effect(a, f"Land train {a.train_id} on main", plan,
+                       lambda: _landed(runner.land(log, a.train_id)))
     if a.cmd == "approve":
         print(runner.approve(log, a.attempt_id, a.note))
         return 0
@@ -333,10 +373,9 @@ def _dispatch(a, handlers) -> int:
         return 0
     if a.cmd == "reject":
         verb = "park" if a.park else "requeue"
-        return _effect(a, log, f"Reject {a.attempt_id} ({verb})",
+        return _effect(a, f"Reject {a.attempt_id} ({verb})",
                        f"{verb} attempt {a.attempt_id}: {a.reason}",
-                       lambda: runner.integrator_reject(log, a.attempt_id, a.reason, a.park),
-                       lambda r: r.endswith((": parked", ": requeued")))
+                       lambda: _reject(log, a.attempt_id, a.reason, a.park))
     if a.cmd == "events":
         known = {e["type"] for e in log.read()}
         for t in a.types or ():

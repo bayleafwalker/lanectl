@@ -9,8 +9,11 @@ import os
 import sys
 from datetime import datetime, timezone
 
-# The estate-wide state vocabulary (operator-interface contract, section 3).
-NEEDS, FAILED, RUNNING, OK, IDLE, UNKNOWN = "▲", "✗", "◐", "●", "○", "◌"
+from .vocab import SYMBOLS, classify
+
+# The estate-wide state vocabulary (operator-interface contract, section 3) lives in vocab.py.
+NEEDS, FAILED, RUNNING, OK, IDLE, UNKNOWN = (SYMBOLS[k] for k in
+                                             ("needs", "failed", "running", "ok", "idle", "unknown"))
 _COLORS = {NEEDS: "33", FAILED: "31", RUNNING: "36", OK: "32", IDLE: "2", UNKNOWN: "2"}
 
 
@@ -37,6 +40,11 @@ def use_color(stream=None) -> bool:
 def sym(symbol: str, stream=None) -> str:
     """The state symbol, coloured on a TTY."""
     return f"\x1b[{_COLORS[symbol]}m{symbol}\x1b[0m" if use_color(stream) else symbol
+
+
+def state(word: str, stream=None) -> str:
+    """A state word with its vocab symbol: ``▲ candidate``."""
+    return f"{sym(SYMBOLS[classify(word)], stream)} {word}"
 
 
 def clip(text: str, width: int) -> str:

@@ -115,17 +115,18 @@ def test_failed_owner_read_still_honours_backoff_and_interval():
 
 
 def args(**kw):
+    kw.setdefault("plain", True)   # off a TTY without --plain the TUI prints `status` instead
     return SimpleNamespace(repo="r", view="ready", filter="", item=None, attempt=None,
-                           plain=False, no_color=False, refresh=15.0, **kw)
+                           no_color=False, refresh=15.0, **kw)
 
 
-def test_non_tty_prints_the_plain_table_and_exits_zero(monkeypatch, capsys):
+def test_plain_prints_the_query_table_and_exits_zero(monkeypatch, capsys):
     from lanectl import coordination, config
     monkeypatch.setattr(coordination, "configured", lambda repo: SimpleNamespace(client=None, path=None))
     monkeypatch.setattr(config, "load_releases", lambda: [])
     monkeypatch.setattr(tui, "query_snapshot", lambda *a, **k: snapshot())
     monkeypatch.setattr(tui, "_interactive", lambda: False)
-    assert tui._cmd(args(), SimpleNamespace(read=lambda after=0: [])) == 0
+    assert tui._cmd(args(), SimpleNamespace(read=lambda after=0: []))== 0
     out = capsys.readouterr().out
     assert "owner#1" in out and "WORK" in out
 

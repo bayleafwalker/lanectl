@@ -89,6 +89,42 @@ def _recover(log: EventLog, events: list[dict], fin: dict, iid: str,
     return True
 
 
+def select(events: list[dict], now: datetime, older_than_s: float, claim_filter=None):
+    """The attempts reap() would act on: (finished-but-undecided, abandoned claims).
+
+    Shared by `reap --dry-run` and reap() so the preview lists exactly what runs.
+    """
+    claims = [e for e in events if e["type"] == "item.claimed" and e["item_id"]]
+    finished = {e["data"]["attempt_id"] for e in events if e["type"] == "attempt.finished"}
+    decided = {e["data"]["attempt_id"] for e in events if e["type"] == "decision.recorded"}
+    undecided = []
+    for e in events:   # finished, old, never decided: the runner died mid-step
+        aid = e["data"].get("attempt_id")
+        if e["type"] != "attempt.finished" or not aid or aid in decided:
+            continue
+        claim = next((c for c in claims if c["data"]["attempt_id"] == aid), None)
+        if claim_filter is not None and (claim is None or not claim_filter(claim)):
+            continue
+        if not _stale(e["ts"], now, older_than_s):
+            continue
+        iid = e["item_id"] or (claim["item_id"] if claim else None)
+        if iid is not None:
+            undecided.append((e, iid))
+    abandoned = []
+    for e in claims:
+        aid = e["data"]["attempt_id"]
+        if aid in finished or aid in decided:
+            continue
+        if claim_filter is not None and not claim_filter(e):
+            continue
+        if not _stale(e["ts"], now, older_than_s):
+            continue
+        binding = delivery_policy.claim_binding(events, e["item_id"], e["data"])
+        if binding is not None:
+            abandoned.append((e, binding))
+    return undecided, abandoned
+
+
 def reap(log: EventLog, *, now: datetime, older_than_s: float,
          max_attempts: int, claim_filter=None, allow_accept=True) -> list[str]:
     """Close stale open attempts and decide stale finished ones; return their ids."""
@@ -98,38 +134,15 @@ def reap(log: EventLog, *, now: datetime, older_than_s: float,
     with log.locked():
         events = log.read()
         releases = {r.id: r for r in load_releases()}
-        claims = [e for e in events if e["type"] == "item.claimed" and e["item_id"]]
-        finished = {e["data"]["attempt_id"] for e in events if e["type"] == "attempt.finished"}
-        decided = {e["data"]["attempt_id"] for e in events if e["type"] == "decision.recorded"}
-        for e in events:   # finished, old, never decided: the runner died mid-step
+        undecided, abandoned = select(events, now, older_than_s, claim_filter)
+        for e, iid in undecided:
             fin = e["data"]
-            aid = fin.get("attempt_id")
-            if e["type"] != "attempt.finished" or not aid or aid in decided:
-                continue
-            claim = next((c for c in claims if c["data"]["attempt_id"] == aid), None)
-            if claim_filter is not None and (claim is None or not claim_filter(claim)):
-                continue
-            if not _stale(e["ts"], now, older_than_s):
-                continue
-            iid = e["item_id"] or next(
-                (c["item_id"] for c in claims if c["data"]["attempt_id"] == aid), None)
-            if iid is None:
-                continue
+            aid = fin["attempt_id"]
             if _recover(log, events, fin, iid, releases.get(iid), max_attempts, allow_accept=allow_accept):
-                decided.add(aid)
                 closed.append(aid)
         views: dict[str, ItemView] = project_items(log.read())
-        for e in claims:
+        for e, binding in abandoned:
             d, iid, aid = e["data"], e["item_id"], e["data"]["attempt_id"]
-            if aid in finished or aid in decided:
-                continue
-            if claim_filter is not None and not claim_filter(e):
-                continue
-            if not _stale(e["ts"], now, older_than_s):
-                continue
-            binding = delivery_policy.claim_binding(events, iid, d)
-            if binding is None:
-                continue
             lane = delivery_policy.from_binding(binding)
             # same counting as admission: this revision, infra failures excluded
             used = len([a for a in views[iid].attempts if a.get("release_revision") == d.get("release_revision")
@@ -160,7 +173,6 @@ def reap(log: EventLog, *, now: datetime, older_than_s: float,
                 log.append("item.parked", {"reason": reasons[0]}, item_id=iid)
             else:
                 log.append("item.requeued", {"reason": reasons[0]}, item_id=iid)
-            finished.add(aid)
             closed.append(aid)
     return closed
 
@@ -179,11 +191,9 @@ def _cmd(args, log: EventLog) -> int:
     lane = load_lane(args.lane)
     if args.dry_run:
         now = datetime.now(timezone.utc)
-        stale = [aid for aid, ts in (
-            (v.attempts[-1]["attempt_id"], v.attempts[-1].get("ts"))
-            for v in project_items(log.read()).values() if v.state == "claimed" and v.attempts)
-            if _stale(ts, now, args.older_than)]
-        print(f"would examine {len(stale)} claimed attempt(s) older than {args.older_than}s"
+        undecided, abandoned = select(log.read(), now, args.older_than)
+        stale = [e["data"]["attempt_id"] for e, _ in undecided] + [e["data"]["attempt_id"] for e, _ in abandoned]
+        print(f"would examine {len(stale)} open or undecided attempt(s) older than {args.older_than}s"
               + "".join(f"\n  {aid}" for aid in stale) + "\nnext: rerun without --dry-run")
         return 0
     from .render import confirm

@@ -14,13 +14,16 @@ from . import doctor, render, runner
 from .config import home, load_lane, load_releases, load_repos
 from .events import project_items
 from .ready import readiness
-from .render import FAILED, IDLE, NEEDS, RUNNING, clip, sym
+from .render import clip, sym
+from .vocab import SYMBOLS, classify
 
 SCHEMA = "lanectl.status/v1"
 #: Item states where a lane cannot take the item right now even though the release is ready.
 IN_FLIGHT_STATES = frozenset({"claimed", "implemented", "gated", "candidate", "in-train", "parked"})
 _RUNNING = ("claimed", "implemented", "gated")
-_CAPS = {"needs": 5, "blocked": 3}   # rows per section before "… N more (--all)"
+_CAPS = {"needs": 5, "blocked": 3, "warnings": 3, "flight": 3}   # rows per section before "… N more"
+MAX_LINES = 24   # the default view fits one terminal screen; sections shrink to fit, --all lifts it
+_NEEDS = ("in-train", "candidate", "parked")   # item states waiting on a person, most urgent first
 
 
 def release_rows(events: list[dict], lane_name: str = "implement", include_landed: bool = True) -> list[dict]:
@@ -41,14 +44,13 @@ def release_rows(events: list[dict], lane_name: str = "implement", include_lande
             state = "LANDED" if landed else ("READY" if not reasons else "BLOCKED")
         rows.append({"id": rel.id, "state": state, "reasons": reasons, "repo": rel.repo,
                      "tries": len(v.attempts) if v else 0,
-                     "reason": v.last_reason if v and state in ("PARKED", "REJECTED") else "",
+                     "reason": v.last_reason if v and state == "PARKED" else "",
                      "claimed_at": v.attempts[-1].get("ts") if v and v.attempts else None})
     return rows
 
 
-def _unblock(rel_id: str, reasons: list[str]) -> str:
-    if any("draft" in r for r in reasons):
-        return f"lanectl backlog publish {rel_id}"
+def _unblock(rel_id: str) -> str:
+    # Never `publish`: a draft may be a planner hold that only `show` explains.
     return f"lanectl backlog show {rel_id}"
 
 
@@ -62,15 +64,8 @@ def build(log, now: datetime | None = None) -> dict:
     now = now or datetime.now(timezone.utc)
     events = log.read()
     rows = release_rows(events)
-    views = project_items(events)
-    needs = []
-    for state, rank in (("IN-TRAIN", 0), ("CANDIDATE", 1), ("PARKED", 2), ("REJECTED", 3)):
-        for r in rows:
-            if r["state"] == state:
-                needs.append({**r, "rank": rank, "state": state.lower()})
-    for n in needs:
-        del n["rank"]
-    blocked = [{"id": r["id"], "reasons": r["reasons"], "fix": _unblock(r["id"], r["reasons"])}
+    needs = [{**r, "state": state} for state in _NEEDS for r in rows if r["state"].lower() == state]
+    blocked = [{"id": r["id"], "reasons": r["reasons"], "fix": _unblock(r["id"])}
                for r in rows if r["state"] == "BLOCKED"]
     warnings = [{"level": f.level.lower(), "check": f.check, "detail": f.detail, "fix": f.fix}
                 for f in doctor.collapse(doctor.run(log, now=now)) if f.level != doctor.OK]
@@ -94,15 +89,15 @@ def _lanes(events: list[dict]) -> list[dict]:
 
 def _next(doc: dict) -> list[str]:
     out = []
-    by_state = {n["state"]: n for n in doc["needs_you"]}
+    by_state: dict[str, dict] = {}
+    for n in doc["needs_you"]:
+        by_state.setdefault(n["state"], n)   # the first row of each state, in log order
     if "in-train" in by_state:
         out.append("lanectl candidates")
     if "candidate" in by_state:
         out.append(f"lanectl train {by_state['candidate']['repo']}")
-    for state in ("parked", "rejected"):
-        if state in by_state:
-            out.append(f"lanectl backlog show {by_state[state]['id']}")
-            break
+    if "parked" in by_state:
+        out.append(f"lanectl backlog show {by_state['parked']['id']}")
     if doc["blocked"] and len(out) < 3:
         out.append(doc["blocked"][0]["fix"])
     for w in doc["warnings"]:
@@ -111,50 +106,57 @@ def _next(doc: dict) -> list[str]:
     return out or ["lanectl ready"]
 
 
-def _more(shown: int, total: int, indent: str = "  ") -> list[str]:
-    return [f"{indent}… {total - shown} more (--all)"] if total > shown else []
+def _more(shown: int, total: int, hint: str = "--all") -> list[str]:
+    return [f"  … {total - shown} more ({hint})"] if total > shown else []
 
 
 def format_text(doc: dict, show_all: bool = False) -> str:
+    caps = dict(_CAPS)
+    while True:
+        lines = _lines(doc, caps, show_all)
+        biggest = max(caps, key=caps.get)
+        if show_all or len(lines) <= MAX_LINES or caps[biggest] <= 1:
+            return "\n".join(lines)
+        caps[biggest] -= 1
+
+
+def _lines(doc: dict, caps: dict, show_all: bool) -> list[str]:
     c = doc["context"]
-    cap = lambda key, items: items if show_all else items[:_CAPS[key]]
+    cap = lambda key, items: items if show_all else items[:caps[key]]
     out = [f"lanectl  home {c['home']} ({c['source']})",
            f"repos: {', '.join(c['repos'])} · {c['events']} events · "
            f"{doc['landed']['count']} landed", ""]
-    needs = doc["needs_you"]
+    needs, blocked = doc["needs_you"], doc["blocked"]
     if needs:
-        out.append(f"{sym(NEEDS)} NEEDS YOU ({len(needs)})")
+        out.append(f"{sym(SYMBOLS['needs'])} NEEDS YOU ({len(needs)})")
         for n in cap("needs", needs):
-            word = f"{sym(FAILED)} rejected" if n["state"] == "rejected" else n["state"]
             why = clip(n["reason"], 56) if n["reason"] else f"{n['tries']} tries"
-            out.append(f"  {word:<10} {n['id']}  {why}")
+            out.append(f"  {render.state(n['state'])}{' ' * max(1, 11 - len(n['state']))}{n['id']}  {why}")
         out += _more(len(cap("needs", needs)), len(needs))
-    else:
-        out.append(f"{sym(render.OK)} Nothing needs you.")
-    blocked = doc["blocked"]
+    elif not blocked:
+        out.append(f"{sym(SYMBOLS['ok'])} Nothing needs you.")
     if blocked:
-        out += ["", f"{sym(IDLE)} BLOCKED ({len(blocked)}; `lanectl ready` agrees)"]
+        out += ["", f"{sym(SYMBOLS[classify('blocked')])} BLOCKED ({len(blocked)}; `lanectl ready` agrees)"]
         for b in cap("blocked", blocked):
             out.append(f"  {b['id']}  {b['reasons'][0].split(' (')[0]} -> {b['fix']}")
         out += _more(len(cap("blocked", blocked)), len(blocked))
     if doc["warnings"]:
         out += ["", "WARNINGS"]
-        for w in doc["warnings"]:
+        for w in cap("warnings", doc["warnings"]):
             out.append(f"  {w['check']}: {w['detail']}" + (f" -> {w['fix']}" if w["fix"] else ""))
-    ready = doc["counts"].get("ready", 0)
-    flight = [f"{len(doc['in_flight'])} running"] + [f"{ready} ready"]
+        out += _more(len(cap("warnings", doc["warnings"])), len(doc["warnings"]), hint="lanectl doctor")
     lanes = "  ".join(f"{l['lane']} {l['caps']['concurrency']['used']}/{l['caps']['concurrency']['limit']}"
                       for l in doc["lanes"] if "concurrency" in l["caps"])
-    out += ["", f"{sym(RUNNING)} IN FLIGHT: {len(doc['in_flight'])} running, {doc['counts'].get('ready', 0)} ready"
-            + (f" · lanes {lanes}" if lanes else "")]
-    for r in doc["in_flight"]:
+    out += ["", f"{sym(SYMBOLS['running'])} IN FLIGHT: {len(doc['in_flight'])} running, "
+                f"{doc['counts'].get('ready', 0)} ready" + (f" · lanes {lanes}" if lanes else "")]
+    for r in cap("flight", doc["in_flight"]):
         out.append(f"  {r['state']:<12} {r['id']}  {r['age']}")
+    out += _more(len(cap("flight", doc["in_flight"])), len(doc["in_flight"]))
     if show_all:
         out += ["", f"LANDED ({doc['landed']['count']})", *(f"  {i}" for i in doc["landed"]["ids"])]
     elif doc["landed"]["count"]:
         out.append(f"landed: {doc['landed']['count']} (lanectl status --all to list)")
-    out += ["", *(f"next: {cmd}" for cmd in doc["next"])]
-    return "\n".join(out)
+    return [*out, "", *(f"next: {cmd}" for cmd in doc["next"])]
 
 
 def register(sub) -> dict:

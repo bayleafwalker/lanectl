@@ -64,7 +64,7 @@ def test_status_never_calls_a_blocked_release_ready(estate, capsys):
     doc = json.loads(capsys.readouterr().out)
     if "BLOCKED  cc-draft" in ready_out:
         assert [b["id"] for b in doc["blocked"]] == ["cc-draft"]
-        assert doc["blocked"][0]["fix"] == "lanectl backlog publish cc-draft"
+        assert doc["blocked"][0]["fix"] == "lanectl backlog show cc-draft"
         assert doc["counts"].get("ready", 0) == 0
 
 

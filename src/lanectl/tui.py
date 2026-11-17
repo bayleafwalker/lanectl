@@ -6,6 +6,7 @@ small curses adapter below them only obtains a new snapshot and renders it.
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
+import argparse
 import curses
 import json
 import os
@@ -15,6 +16,7 @@ from queue import Empty, Queue
 from threading import Thread
 import time
 
+from .render import CliError
 from .vocab import SYMBOLS, classify, mark
 from .lifecycle import (READS, attention_reasons, lifecycle_rows, local_facts,
                         ready_work, release_work_ids)
@@ -41,7 +43,7 @@ def _state(row):
     value = _facts(row).get("work.public.item-v1", {}).get("value", {})
     item = value.get("item") if isinstance(value, dict) else None
     if isinstance(item, dict):
-        return item.get("status", "unknown")
+        return "blocked" if item.get("blocked") is True else item.get("status", "unknown")
     return value.get("state", "unknown") if isinstance(value, dict) else "unknown"
 
 
@@ -605,8 +607,8 @@ def _status_segments(snapshot, now, rows, selected):
     sources = snapshot.get("sources", {})
     if now is None:
         try:
-            now = datetime.fromisoformat(snapshot.get("observed_at", "").replace("Z", "+00:00"))
-        except ValueError:
+            now = datetime.fromisoformat((snapshot.get("observed_at") or "").replace("Z", "+00:00"))
+        except (AttributeError, ValueError):
             now = None
     age = _age(snapshot.get("observed_at"), now) if now else None
     segs = [(f"updated {_ago(age)} ago" if age is not None else "updated ?", "")]
@@ -815,7 +817,11 @@ def _attributes(color):
     """Map frame roles to curses attributes; bold/dim carry emphasis without color."""
     attrs = {"": 0, "head": curses.A_BOLD, "sel": curses.A_BOLD, "dim": curses.A_DIM}
     if color:
-        curses.use_default_colors()
+        try:
+            curses.use_default_colors()
+        except curses.error:   # terminal without default-colour support: draw without colour
+            color = False
+    if color:
         for number, (role, fg) in enumerate(_PAIRS.items(), 1):
             curses.init_pair(number, fg, -1)
             attrs[role] = curses.color_pair(number) | (curses.A_BOLD if role in ("needs", "failed") else 0)
@@ -827,11 +833,18 @@ def _attributes(color):
 def _cmd(args, log):
     """Interactive read-only command. No key mutates owner state."""
     from .coordination import configured
+    if not args.plain and not _interactive():
+        from . import cli, status   # contract section 8: off a TTY the TUI prints `status`
+        cli._check_home()
+        return status._cmd(argparse.Namespace(all=False, json=False), log)
+    if not args.repo:
+        raise CliError("tui needs --repo", why="the TUI reads lifecycle facts from the owner",
+                       fix="lanectl tui --repo <repo>", code=2, slug="usage")
     coordinator = configured(args.repo)
     if coordinator is None:
         print(not_configured_message(args.repo), file=sys.stderr)
         return 1
-    no_color = args.no_color or bool(os.environ.get("NO_COLOR"))
+    no_color = args.no_color or getattr(args, "tui_no_color", False) or bool(os.environ.get("NO_COLOR"))
     from .config import load_releases
     work_ids = release_work_ids(load_releases())
     def event_reader(checkpoint):
@@ -845,7 +858,7 @@ def _cmd(args, log):
         del revision
         return query_snapshot(coordinator.client, events, journal_path=coordinator.path,
                               work_ids=work_ids, item=args.item, attempt=args.attempt)
-    if args.plain or not _interactive():
+    if args.plain:
         refreshed = refresh_state(initial_refresh_state(), event_reader, owner_reader)
         snapshot = refreshed["snapshot"]
         if (args.item is not None or args.attempt is not None) and not snapshot.get("rows"):
@@ -879,26 +892,36 @@ def _cmd(args, log):
                 state = handle_key(state, "owner_result", snapshot=refresh["snapshot"])
             screen.timeout(500)
             key = screen.getch()
-            # Local events are re-read each --refresh interval or on r; never per wakeup.
-            if key == -1 and time.monotonic() - refreshed >= args.refresh or key == ord("r") and not state["filtering"]:
+            # Local events are re-read each --refresh interval (even while keys arrive) or on r.
+            manual = key == ord("r") and not state["filtering"]
+            if manual or time.monotonic() - refreshed >= args.refresh:
                 refresh = refresh_state(refresh, event_reader)
                 state = handle_key(state, "refresh", snapshot=refresh["snapshot"])
                 refreshed = time.monotonic()
-            elif key != -1:
+            if key != -1 and not manual:
                 state = handle_key(state, key, height=height, width=width - 1)
                 if state.get("quit"): return
     curses.wrapper(run)
     return 0
 
 
+def _refresh_seconds(text):
+    value = float(text)
+    if not value >= 1:
+        raise argparse.ArgumentTypeError("must be at least 1 second (continuous owner reads are refused)")
+    return value
+
+
 def register(sub):
     parser = sub.add_parser("tui", help="read-only Ready, Active and Verification operator TUI")
-    parser.add_argument("--repo", required=True, help="configured owner repository")
+    parser.add_argument("--repo", help="configured owner repository (required on a terminal)")
     parser.add_argument("--view", choices=("ready", "active", "verification"), default="ready")
     parser.add_argument("--filter", default="", help="initial text filter")
     parser.add_argument("--item", help="exact local release id to jump to")
     parser.add_argument("--attempt", help="exact attempt id to jump to")
     parser.add_argument("--plain", action="store_true", help="print the same query snapshot as the TUI")
-    parser.add_argument("--no-color", action="store_true", help="disable terminal color")
-    parser.add_argument("--refresh", type=float, default=15.0, help="refresh interval in seconds (default: 15)")
+    # Own dest: the subparser's default would otherwise overwrite the root `--no-color`.
+    parser.add_argument("--no-color", dest="tui_no_color", action="store_true", help="disable terminal color")
+    parser.add_argument("--refresh", type=_refresh_seconds, default=15.0,
+                        help="refresh interval in seconds, at least 1 (default: 15)")
     return {"tui": _cmd}

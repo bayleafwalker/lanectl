@@ -60,12 +60,16 @@ def collapse(findings: list["Finding"]) -> list["Finding"]:
     """Fold repeated WARN/ERROR findings of one kind into one line with a count and the fix."""
     groups: dict[tuple[str, str], list[Finding]] = {}
     for f in findings:
-        groups.setdefault((f.level, f.check if f.level != OK else f.detail), []).append(f)
+        # Only known kinds, or findings that name a subject, are repeats of one thing;
+        # anything else keeps its own detail.
+        foldable = f.level != OK and (f.check in _KINDS or f.subject)
+        groups.setdefault((f.level, f.check) if foldable else (f.level, f"{f.check}\0{f.detail}"), []).append(f)
     out: list[Finding] = []
-    for (level, check), group in groups.items():
+    for (level, _), group in groups.items():
         if level == OK or len(group) == 1:
             out += group
             continue
+        check = group[0].check
         what, fix = _KINDS.get(check, (group[0].detail, group[0].fix))
         names = [f.subject for f in group if f.subject]
         shown = ", ".join(names[:2]) + (f", +{len(names) - 2} more" if len(names) > 2 else "")
@@ -362,7 +366,6 @@ def _cmd(args, log: EventLog) -> int:
     else:
         for finding in collapse(findings):
             print(finding.line())
-        shown = collapse(findings)
-        worst = ERROR if any(f.level == ERROR for f in shown) else WARN if any(f.level == WARN for f in shown) else OK
-        print(Finding(worst, "summary", summary(shown)).line())
+        worst = ERROR if any(f.level == ERROR for f in findings) else WARN if any(f.level == WARN for f in findings) else OK
+        print(Finding(worst, "summary", summary(findings)).line())
     return 1 if any(f.level == ERROR for f in findings) else 0
