@@ -1,4 +1,4 @@
-# Currency separation: independent qualification, revision 12
+# Currency separation: independent qualification, revision 13
 
 Operator decision: preserve original denominations and show separate totals per
 currency, without conversion. Work is homelab-analytics#2915; baseline is
@@ -864,3 +864,45 @@ successful read-only check when the revision 10 harness rejected multiple JSON
 stdout records before the command's completion record; no legacy receipt was
 emitted, and the remaining scenarios were not run. Its host-persistent evidence is
 `/projects/dev/_artifacts/lanectl-resume-20261117/currency-2915-q1-legacy-diagnostic/`.
+
+
+## Revision 13: household projection cannot hide a blend
+
+Revision 12 remains bound to commit `e129c32f4a5fd326575bac6256ce4c180b896bee`
+and its original P2 red evidence above. Its tariff helper could accept null
+utility scalars while returning a deficit estimate or a persisted blended
+household projection. Revision 13 checks the entire observable consequence.
+The operation may refuse. If it returns HTTP 200, an incompatible household
+projection must be explicitly unavailable, with an unknown deficit; if a scenario
+identifier is returned, its public comparison and cashflow endpoints must refuse
+or explicitly indicate unavailability without exposing scenario or variance
+projection rows. A separately representable USD utility scalar may remain
+available with the correct USD assumption unit and arithmetic. Mixed-utility or
+usage-only money still cannot be represented as an observed scalar. The checks
+use the existing interfaces and do not require a particular status-field name or
+conversion, nor do they prescribe implementation strategy.
+
+The oracle control rejects the exact counterexample: null utility fields plus a
+persisted-blend scenario and a non-null deficit. It also rejects a null deficit
+with exposed persisted rows and rejects empty rows presented without an explicit
+unavailability signal. Positive controls accept operation refusal and a valid
+USD utility amount with explicitly unavailable household projection; existing
+single-currency and observed-zero controls remain.
+
+Against the same frozen P2 product source, the separate acceptance-only scratch
+child `8062cdd51ebf56734f7cf03182b614f6fbf9ee5d` differs from P2 only in the
+new consumer criterion and its shared acceptance fixture. The actual namespace
+run produced **7 expected product assertion failures, 4 passing controls, 0
+errors and 0 skips**, and target-context Ruff passed. An earlier revision-13
+interim run reached the public cashflow endpoint and observed persisted mixed
+projection rows; the final stricter check may reject the earlier unmarked 200
+response first. Both results are retained independently. Host-persistent,
+semi-ephemeral evidence, including a source bundle, is under
+`/projects/dev/_artifacts/lanectl-resume-20261117/currency-2915-r13-consumer-red/`.
+Final JUnit SHA-256 is
+`45dc2fd112e0208e24d0f2e049a8c1e8ba3f7858271af2c9b8de144ff29c8ea8`;
+interim JUnit is
+`a5ad654421a8e1089a216c085ebd7982850027faa2859763b8ea9f68be640ee3`;
+consumer criterion SHA-256 is
+`9d0986cda66648101e842f017b8cac08a87a802f66b7dd641455e42d68aae963`.
+These are historical red controls, not a repaired candidate pass.
