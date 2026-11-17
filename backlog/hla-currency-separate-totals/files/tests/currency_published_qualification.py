@@ -12,7 +12,7 @@ from packages.pipelines.transformation_service import TransformationService
 from packages.storage.duckdb_store import DuckDBStore
 from packages.storage.postgres_reporting import PostgresReportingStore
 from packages.storage.run_metadata import RunMetadataRepository
-from test_acc_currency_separate_totals import KEYS, bill, by_currency, load, rows, usage
+from test_acc_currency_separate_totals import KEYS, assert_disjoint_household_contributions, bill, by_currency, load, rows, usage
 
 
 def test_currency_published_reporting_survives_warehouse_clear_without_fallback(tmp_path):
@@ -50,6 +50,14 @@ def test_currency_published_reporting_survives_warehouse_clear_without_fallback(
             unavailable = client.get("/reports/monthly-cashflow")
             assert unavailable.status_code == 404
             assert "Published reporting relation is unavailable" in unavailable.json()["error"]
+        disjoint = TransformationService(DuckDBStore.memory())
+        load(disjoint, [(1, "USD", 250)], [bill(1, "EUR", 300)], [usage(1)])
+        published = ReportingService(disjoint, publication_store=store, access_mode=ReportingAccessMode.PUBLISHED)
+        published.publish_publications(KEYS)
+        for key in KEYS:
+            disjoint.store.execute(f"DELETE FROM {key}")
+        with TestClient(create_app(service, transformation_service=disjoint, reporting_service=published)) as client:
+            assert_disjoint_household_contributions(rows(client, "/reports/household-overview"))
     finally:
         with psycopg.connect(dsn, autocommit=True) as conn:
             conn.execute(f'DROP SCHEMA IF EXISTS "{schema}" CASCADE')

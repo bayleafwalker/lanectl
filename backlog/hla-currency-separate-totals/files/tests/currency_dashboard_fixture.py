@@ -30,8 +30,14 @@ def main():
     try:
         with tempfile.TemporaryDirectory(prefix="currency-dashboard-") as folder:
             ts = TransformationService(DuckDBStore.memory())
-            load(ts, [(3, "USD", 100), (1, "EUR", 200), (4, "USD", -20), (2, "EUR", -30)],
-                 [bill(3, "USD", 100), bill(1, "EUR", 200)], [usage(3), usage(1)])
+            scenario = os.environ["CURRENCY_ACCEPTANCE_SCENARIO"]
+            if scenario == "mixed":
+                load(ts, [(3, "USD", 100), (1, "EUR", 200), (4, "USD", -20), (2, "EUR", -30)],
+                     [bill(3, "USD", 100), bill(1, "EUR", 200)], [usage(3), usage(1)])
+            elif scenario == "disjoint":
+                load(ts, [(1, "USD", 250)], [bill(1, "EUR", 300)], [usage(1)])
+            else:
+                raise ValueError("unknown currency acceptance scenario")
             ts.refresh_publications(extra)
             reporting = ReportingService(ts, publication_store=PostgresReportingStore(dsn, schema=schema),
                                          access_mode=ReportingAccessMode.PUBLISHED)

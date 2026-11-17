@@ -194,3 +194,29 @@ def test_spending_by_category_preserves_currency(tmp_path):
     with api(tmp_path) as (ts, client):
         load(ts, [(4, "USD", -20), (2, "EUR", -30)])
         by_currency(rows(client, "/reports/spend-by-category-monthly"), "total_expense", {"EUR": 30, "USD": 20})
+
+
+def assert_disjoint_household_contributions(data):
+    def has(currency, field, amount):
+        return any(r.get("currency") == currency and r.get(field) is not None
+                   and Decimal(str(r[field])) == Decimal(str(amount)) for r in data)
+    assert has("USD", "cashflow_net", 250), data
+    assert has("EUR", "utility_cost_total", 300), data
+
+
+def test_household_preserves_disjoint_domain_contributions(tmp_path):
+    with api(tmp_path) as (ts, client):
+        load(ts, [(1, "USD", 250)], [bill(1, "EUR", 300)], [usage(1)])
+        assert_disjoint_household_contributions(rows(client, "/reports/household-overview"))
+
+
+def test_disjoint_oracle_rejects_dropped_or_relabelled_contributions():
+    import pytest
+    good = [{"currency": "USD", "cashflow_net": 250}, {"currency": "EUR", "utility_cost_total": 300}]
+    assert_disjoint_household_contributions(good)
+    wrong = [good[:1], good[1:],
+             [{"currency": "EUR", "cashflow_net": 250}, good[1]],
+             [good[0], {"currency": "USD", "utility_cost_total": 300}]]
+    for mutation in wrong:
+        with pytest.raises(AssertionError):
+            assert_disjoint_household_contributions(mutation)
