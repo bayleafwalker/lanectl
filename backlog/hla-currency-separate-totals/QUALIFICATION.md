@@ -1,4 +1,4 @@
-# Currency separation: independent qualification, revision 9
+# Currency separation: independent qualification, revision 14
 
 Operator decision: preserve original denominations and show separate totals per
 currency, without conversion. Work is homelab-analytics#2915; baseline is
@@ -713,3 +713,234 @@ runner controls
 `93fdeb781b2a6e5e2f1ccbc26ed2b1c69585ccce482a2d4d92a8aec067be97e0`.
 Raw `/tmp` paths are session-local. Earlier published, UI and legacy evidence
 remains historical for the original criterion and harness bytes; do not rebind it.
+
+
+## Revision 10: independent maintenance failure scenarios
+
+Revision 9 remains bound to commit `0772039d03ab38ea4d5ae5dd47dc434aed0e8908`
+and all earlier evidence remains bound to its original bytes. The owner-side
+legacy qualifier now requires three **additional**, independently seeded 82
+warehouse/manifest pairs in the same private PostgreSQL instance. Set absolute
+paths before running the existing `qualify-legacy.py` command:
+
+```sh
+export CURRENCY_LEGACY_DRIFT_WAREHOUSE=/absolute/private/drift.duckdb
+export CURRENCY_LEGACY_DRIFT_MANIFEST=/absolute/private/drift.json
+export CURRENCY_LEGACY_DEPENDENCY_WAREHOUSE=/absolute/private/dependency.duckdb
+export CURRENCY_LEGACY_DEPENDENCY_MANIFEST=/absolute/private/dependency.json
+export CURRENCY_LEGACY_OUTAGE_WAREHOUSE=/absolute/private/outage.duckdb
+export CURRENCY_LEGACY_OUTAGE_MANIFEST=/absolute/private/outage.json
+```
+
+Seed every pair with the same supported 82 fixture process as the main pair,
+using distinct PostgreSQL schemas and files. The driver binds all four seed
+manifests, fixture and oracle hashes, original warehouse hashes, candidate
+source and acceptance bytes; the main successful full upgrade and retry, with
+first-run inspection, remains a prerequisite before any adversarial result can
+contribute to a receipt. Missing commands or commands that always refuse cannot
+qualify. Every scenario starts from the recorded original facts, snapshots and
+published inventory; the three added stores are independent of one another.
+
+* **Unknown drift:** add a synthetic unknown column to the private legacy PG
+  monthly relation. Both `--check` and upgrade must return nonzero, with the
+  injected store and DuckDB unchanged; typed facts and raw snapshots remain.
+* **Dependent view and grant:** add a real dependent PG view and a PUBLIC SELECT
+  grant to the disposable schema. `--check` must leave both stores unchanged.
+  Upgrade may refuse unchanged or succeed, but on success the original view
+  definition and grant must survive, as must original typed facts and snapshots;
+  exact January Finance EUR 170 and USD 80 must appear in both stores.
+* **PostgreSQL unavailable:** select a nonexistent private socket, requiring
+  nonzero `--check` without store changes and nonzero upgrade without a false
+  completion. Preserve typed facts and old snapshots even if an implementation
+  performed partial work; restore connectivity and require the same supported
+  command to complete and produce the same exact Finance groups in both stores.
+  This proves an unavailable-store failure and safe retry; it does not inject or
+  claim a specific mid-transaction failure point or atomic cross-store behavior.
+
+A failed command may not report a success status or `success: true` JSON.
+Refusal checks compare the whole warehouse file and stable PG dump, including
+private schema, rows and permissions. Other legacy outputs and UI remain covered
+by the prerequisite full upgrade; the three adversarial scenarios explicitly
+check their listed outcomes, not all possible drift, grants or failures. SQL here
+only introduces owned synthetic defects/dependencies; it never repairs candidate
+schemas. No implementation order is prescribed.
+
+Four focused namespace controls passed, including rejection of success-as-refusal,
+warehouse or PG mutation during refusal, changed view/lost grant, false-success
+JSON, and partial-first upgrade ordering; JUnit
+`/tmp/currency-r10-oracle-controls-v2.xml` SHA-256
+`fccb4a4083ee412c984a3b1e012cbe0550bfbb19d747e4c5a1a383cbc13b54ed`.
+The actual target Ruff check passed. The named-unit lifecycle controls retained
+clean, detached-child, failure, SIGINT and SIGTERM behavior, with cgroups settled:
+`/tmp/currency-r10-cgroup-controls.log`. The four-fixture driver ran against a
+clean acceptance-only scratch commit `76bace4fece927656be7636293c0bb122556093d`
+with original 82 product source: the missing public command failed `--check`,
+produced no receipt, and the exact unit settled. Raw
+`/tmp/currency-r10v2-missing.log`, seed records
+`/tmp/lanectl-resume-20261116/hla-independent/currency-2915-r10v2-seed-{main,drift,dependency,outage}.{json,stdout,stderr}`.
+The four owned PG schemas and warehouses were removed with the private server.
+This negative control stops before the new adversarial scenarios; those scenarios
+have not yet been run end-to-end on a candidate. No candidate pass is claimed.
+
+Revision 10 SHA-256: adversarial helper
+`955761b31af8e828d85cbba5b8fadf4c713c1255e7de09fdc7d0ebae191bdc02`;
+legacy test `9ef8c320cc3c4cf6bedca1687490cff59a8e3e6d00662089b0d1e3d05f313475`;
+legacy driver `dd9358b342920c7af0fe8ec4ca82313054907986fccb8733c51e42c296c87f72`.
+All `/tmp` paths are session-local.
+
+
+## Revision 11: accept the explicit US-dollar symbol
+
+Revision 10 remains bound to commit `8c8914aacc5beb6905fb8013917d8b90254916bd`.
+An independent qualification on production parent
+`e83d058c8e8a579d181f79fc7acf5a7d8e2b7a78` and acceptance-only child
+`92c8b0367794ed0b4d07c3fa72c800968b936755` passed the ordinary and published
+checks but the dashboard matcher rejected the visibly rendered `US$250.00`.
+The prior positive matcher accepted `$` and `USD`, but accidentally omitted
+`US$`, even though the same test's wrong-unit oracle already recognizes that
+symbol as USD. This is an acceptance-oracle defect; the historical Q result is
+not a candidate pass and is not rebound to this revision. The retained evidence
+is host-persistent and semi-ephemeral at
+`/projects/dev/_artifacts/lanectl-resume-20261117/currency-2915-q-qualification/manifest.json`;
+the legacy qualification was not run after the dashboard failure.
+
+The exact visible amount matcher now also accepts `US$` as USD. A real Chromium
+control in the lanectl namespace first failed on visible `US$80.00` with the old
+matcher, then passed after the correction. It also verifies `US$800.00` cannot
+satisfy 80 and a hidden `US$80.00` cannot satisfy the visible requirement;
+the earlier euro, dollar, hidden, opacity and wrong-currency controls remain.
+Raw `currency-2915-r11-browser-{red,green}.{json,stdout,stderr}` is under
+`/tmp/lanectl-resume-20261116/hla-independent/` and is session-local. Revised UI
+criterion SHA-256 is
+`09782ecfe20232262edd4c704840ed66a718928bd7c3a5323893eec7e3ebcff1`.
+A fresh clean acceptance-only child and all required candidate qualifications
+must be run with the new criterion; no earlier receipt is rebound.
+
+
+## Revision 12: monetary consumer and usage evidence
+
+Revision 11 remains bound to `de2a8aaad720c10640eea621e6b32829bb1fc51e`;
+all original UI, publication and legacy evidence retains its own source and
+criterion bindings. The ordinary acceptance now independently exercises real
+loaders, reporting and public APIs for these additional behaviors:
+
+* A tariff scenario must refuse or make its monetary scalar unavailable when
+  finance and utility denominations differ, utility data contains multiple
+  denominations, or usage exists without a monetary bill. It must preserve
+  correct same-EUR arithmetic and distinguish a real observed zero EUR bill.
+  For a valid all-USD scenario, its existing monetary assumption unit must say
+  USD rather than the generic word `currency`.
+* The electricity contract decision must not sum mixed EUR and USD components
+  into a qualified scalar. An all-USD assessment and its baseline must not
+  label estimated USD amounts as EUR/year; the all-EUR calculation remains a
+  control. These checks use the existing public subject and assessment interface,
+  not a prescribed replacement field layout or conversion policy.
+* A EUR bill of 100 for 100 kWh plus 100 kWh from a separate unbilled meter
+  must not assign that unbilled usage to the EUR group and halve its unit price.
+  The single billed-meter case remains an independent passing control.
+
+On frozen product P2 `e4303e4b61e73596a5b567af907f11504ba5aaff` (same runtime
+product bytes as P1), an acceptance-only clean scratch child
+`92617bd71666aaf6a170d991ca090fb65909575f` contains exactly the new consumer
+criterion and its existing shared fixture. In the actual lanectl namespace it
+produced **7 expected product assertion failures and 4 passing controls, with
+0 errors and 0 skips**. The failures are the three unrepresentable tariff
+cases, all-USD tariff unit, mixed-components decision, all-USD decision unit,
+and the billed/unbilled denominator. Controls cover same-EUR and genuine zero
+tariff results, the same-EUR decision, the billed-only denominator, and the
+false-zero/dropped-group oracle. The control test count is four because the
+same-EUR and zero tariff checks share one case. Target-context Ruff passed.
+
+Selected host-persistent, semi-ephemeral evidence and an acceptance-only Git
+bundle are in
+`/projects/dev/_artifacts/lanectl-resume-20261117/currency-2915-r12-consumer-red/`.
+The JUnit SHA-256 is
+`187522fdfe34ae228e1bfb9ad79dcfa495b391bc99f6c72e4d8a25dca5e73470`;
+the new consumer criterion SHA-256 is
+`3d79ad018e813c3af7b554c28c1b6899bfc6cfef90b1f81b77bf7d6ef6f424c5`.
+This P2 red run is not a candidate qualification and is not rebound to later
+product source. The independent P1 legacy diagnostic separately stopped after a
+successful read-only check when the revision 10 harness rejected multiple JSON
+stdout records before the command's completion record; no legacy receipt was
+emitted, and the remaining scenarios were not run. Its host-persistent evidence is
+`/projects/dev/_artifacts/lanectl-resume-20261117/currency-2915-q1-legacy-diagnostic/`.
+
+
+## Revision 13: household projection cannot hide a blend
+
+Revision 12 remains bound to commit `e129c32f4a5fd326575bac6256ce4c180b896bee`
+and its original P2 red evidence above. Its tariff helper could accept null
+utility scalars while returning a deficit estimate or a persisted blended
+household projection. Revision 13 checks the entire observable consequence.
+The operation may refuse. If it returns HTTP 200, an incompatible household
+projection must be explicitly unavailable, with an unknown deficit; if a scenario
+identifier is returned, its public comparison and cashflow endpoints must refuse
+or explicitly indicate unavailability without exposing scenario or variance
+projection rows. A separately representable USD utility scalar may remain
+available with the correct USD assumption unit and arithmetic. Mixed-utility or
+usage-only money still cannot be represented as an observed scalar. The checks
+use the existing interfaces and do not require a particular status-field name or
+conversion, nor do they prescribe implementation strategy.
+
+The oracle control rejects the exact counterexample: null utility fields plus a
+persisted-blend scenario and a non-null deficit. It also rejects a null deficit
+with exposed persisted rows and rejects empty rows presented without an explicit
+unavailability signal. Positive controls accept operation refusal and a valid
+USD utility amount with explicitly unavailable household projection; existing
+single-currency and observed-zero controls remain.
+
+Against the same frozen P2 product source, the separate acceptance-only scratch
+child `8062cdd51ebf56734f7cf03182b614f6fbf9ee5d` differs from P2 only in the
+new consumer criterion and its shared acceptance fixture. The actual namespace
+run produced **7 expected product assertion failures, 4 passing controls, 0
+errors and 0 skips**, and target-context Ruff passed. An earlier revision-13
+interim run reached the public cashflow endpoint and observed persisted mixed
+projection rows; the final stricter check may reject the earlier unmarked 200
+response first. Both results are retained independently. Host-persistent,
+semi-ephemeral evidence, including a source bundle, is under
+`/projects/dev/_artifacts/lanectl-resume-20261117/currency-2915-r13-consumer-red/`.
+Final JUnit SHA-256 is
+`45dc2fd112e0208e24d0f2e049a8c1e8ba3f7858271af2c9b8de144ff29c8ea8`;
+interim JUnit is
+`a5ad654421a8e1089a216c085ebd7982850027faa2859763b8ea9f68be640ee3`;
+consumer criterion SHA-256 is
+`9d0986cda66648101e842f017b8cac08a87a802f66b7dd641455e42d68aae963`.
+These are historical red controls, not a repaired candidate pass.
+
+
+## Revision 14: discover projections after refused operations
+
+Revision 13 remains bound to commit `8f16bc6abc0501e771fa5cf696a9c5732e6552c6`
+and its original red/control evidence is unchanged. A refused tariff operation
+can still leave a discoverable scenario with a blended projection; likewise a
+200 response without a returned ID must not hide such a scenario. Before each
+incompatible POST the oracle reads the supported scenario catalogue with
+`include_archived=true`; after the POST it reads it again, identifies every new
+scenario and includes any returned ID, regardless of response status. It fetches
+both public comparison and cashflow endpoints for all such IDs before checking
+whether each refuses or explicitly reports unavailable with no projected rows.
+A metadata-only refused scenario is allowed. This does not require rollback,
+particular storage strategy, or changes to unrelated existing scenarios.
+
+The real catalogue must return a parseable list of distinct nonempty IDs; errors,
+missing IDs, malformed responses and duplicate IDs cannot silently mean no new
+scenarios. The positive control parses an existing ID and permits newly created
+metadata with unavailable projection endpoints. Negative controls prove that a
+422 followed by a discoverable blended projection is rejected and that both
+endpoints are called, and prove the same for a 200 response with no returned ID.
+They retain revision 13's null-header, persisted-row, ambiguous-empty and valid
+USD utility-only controls.
+
+Against frozen P2 product `e4303e4b61e73596a5b567af907f11504ba5aaff`, the clean
+acceptance-only scratch child `6f07fdf1de03b60591a0495a1a2a7942def43d3c` differs
+from P2 only in the consumer criterion and its shared test fixture. The actual
+lanectl namespace run produced **7 expected product assertion failures and 4
+passing controls, 0 errors and 0 skips**; target-context Ruff passed. The separate
+source-bound oracle control also passed. Selected host-persistent,
+semi-ephemeral evidence and verified acceptance-only bundle are under
+`/projects/dev/_artifacts/lanectl-resume-20261117/currency-2915-r14-consumer-red/`.
+The final JUnit SHA-256 is
+`758def5665debce4862a978e6d286537815b29251f579fc9cfbae078adc84f3f`;
+the new criterion SHA-256 is
+`a17ea4155f1063c465363dcd55016d0245a3c5c0a20364959b8062ceee50acda`.
+These are historical red/control results, not a repaired candidate pass.

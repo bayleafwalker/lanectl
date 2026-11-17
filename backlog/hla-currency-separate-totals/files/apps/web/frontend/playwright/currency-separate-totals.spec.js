@@ -3,7 +3,7 @@ const { test, expect } = require("@playwright/test");
 // Match the complete text of an individually visible element. A hidden descendant,
 // a longer amount such as 1700, or an amount with a different unit cannot satisfy it.
 function amountPattern(currency, amount) {
-  const unit = currency === "EUR" ? "(?:€|EUR)" : "(?:\\$|USD)";
+  const unit = currency === "EUR" ? "(?:€|EUR)" : "(?:US\\$|\\$|USD)";
   const number = `${amount}(?:[.,]00)?`;
   return new RegExp(`^\\s*(?:${unit}\\s*${number}|${number}\\s*${unit})\\s*$`);
 }
@@ -57,6 +57,10 @@ test("visible amount oracle rejects larger and hidden values", async ({ page }) 
   expect(await hasVisibleAmount(container, "EUR", 300)).toBe(false);
   await page.setContent('<article><span>€1700</span><span>$800</span><span hidden>€170</span><span style="display:none">$80</span></article>');
   expect(await hasVisibleAmount(container, "EUR", 170)).toBe(false);
+  expect(await hasVisibleAmount(container, "USD", 80)).toBe(false);
+  await page.setContent('<article><span>US$80.00</span></article>');
+  expect(await hasVisibleAmount(container, "USD", 80)).toBe(true);
+  await page.setContent('<article><span>US$800.00</span><span hidden>US$80.00</span></article>');
   expect(await hasVisibleAmount(container, "USD", 80)).toBe(false);
   const clean = [{currency:"USD",cashflow_net:250,utility_cost_total:0}, {currency:"EUR",cashflow_net:null,utility_cost_total:300}];
   const duplicated = [{currency:"USD",cashflow_net:250,utility_cost_total:300}, {currency:"EUR",cashflow_net:250,utility_cost_total:300}];

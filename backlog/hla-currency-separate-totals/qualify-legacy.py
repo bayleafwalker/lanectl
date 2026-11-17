@@ -38,7 +38,7 @@ unit = 'currency-legacy-qualification-' + uuid.uuid4().hex
 print('NAMED_UNIT ' + unit + '.service', flush=True)
 sandbox = replace(for_train(readonly=(str(state_dir().resolve()), str(home().resolve()),
                                     str(Path(repo.path).resolve()),),
-                            writable=(str(checkout),), timeout_s=900), unit=unit)
+                            writable=(str(checkout),), timeout_s=1800), unit=unit)
 transport = transport_environment()
 root = Path(__file__).resolve().parent
 tracked = [Path(__file__).resolve(),
@@ -80,6 +80,26 @@ if not args.control:
     if seed.get('warehouse_sha256') != digest(warehouse):
         sys.exit('Legacy warehouse differs from the sealed original fixture')
     manifest_hash = digest(manifest)
+    extra_bindings = {}
+    schemas = {seed['postgres_schema']}
+    warehouses = {warehouse}
+    for label in ('DRIFT', 'DEPENDENCY', 'OUTAGE'):
+        wk, mk = f'CURRENCY_LEGACY_{label}_WAREHOUSE', f'CURRENCY_LEGACY_{label}_MANIFEST'
+        if not os.environ.get(wk) or not os.environ.get(mk):
+            sys.exit(f'{wk} and {mk} are required for independent adversarial fixtures')
+        w, m = Path(os.environ[wk]).resolve(), Path(os.environ[mk]).resolve()
+        if not w.is_file() or not m.is_file() or w.is_relative_to(checkout) or m.is_relative_to(checkout) or w in warehouses:
+            sys.exit('Adversarial warehouses and manifests must be distinct existing files outside checkout')
+        item = json.loads(m.read_text())
+        if (item.get('kind') != seed['kind'] or item.get('source_commit') != seed['source_commit']
+                or item.get('fixture_sha256') != seed['fixture_sha256'] or item.get('oracle_sha256') != seed['oracle_sha256']
+                or item.get('warehouse_sha256') != digest(w) or item.get('postgres_schema') in schemas):
+            sys.exit('Adversarial fixture source, schema or warehouse binding is invalid')
+        os.environ[wk], os.environ[mk] = str(w), str(m)
+        schemas.add(item['postgres_schema'])
+        warehouses.add(w)
+        extra_bindings[label] = {'manifest': str(m), 'manifest_sha256': digest(m), 'warehouse': str(w),
+                                 'warehouse_before_sha256': item['warehouse_sha256']}
     ui_report = Path(args.ui_report)
     first_ui_report = Path(str(ui_report) + '.first')
     if not ui_report.is_absolute() or ui_report.exists() or first_ui_report.exists() or ui_report.is_relative_to(checkout):
@@ -135,7 +155,8 @@ with tempfile.TemporaryDirectory(prefix='.currency-legacy-owner-', dir=checkout)
     else:
         forwarded = ['CURRENCY_LEGACY_POSTGRES_DSN', 'CURRENCY_LEGACY_PG_DUMP',
                      'CURRENCY_LEGACY_API_PORT', 'CURRENCY_LEGACY_WEB_PORT',
-                     'PLAYWRIGHT_BROWSERS_PATH', 'LD_LIBRARY_PATH']
+                     'PLAYWRIGHT_BROWSERS_PATH', 'LD_LIBRARY_PATH',
+                     *[f'CURRENCY_LEGACY_{label}_{kind}' for label in ('DRIFT', 'DEPENDENCY', 'OUTAGE') for kind in ('WAREHOUSE', 'MANIFEST')]]
         prefix = ' '.join(f'{key}={shlex.quote(os.environ[key])}' for key in forwarded if os.environ.get(key))
         prefix += f' CURRENCY_LEGACY_WAREHOUSE={shlex.quote(str(warehouse))} CURRENCY_LEGACY_MANIFEST={shlex.quote(str(manifest))} CURRENCY_LEGACY_UI_REPORT={shlex.quote(str(ui_report))}'
         target = 'tests/test_acc_currency_legacy_upgrade.py::test_legacy_upgrade_preserves_facts_snapshots_and_published_currency'
@@ -170,7 +191,7 @@ with tempfile.TemporaryDirectory(prefix='.currency-legacy-owner-', dir=checkout)
                         problem = 'named unit cgroup was not observable and populated during execution'
                     else:
                         go.touch()
-            deadline = time.monotonic() + 930
+            deadline = time.monotonic() + 1830
             while proc.poll() is None and interrupted is None and problem is None and time.monotonic() < deadline:
                 time.sleep(.05)
             if proc.poll() is None:
@@ -239,14 +260,15 @@ with tempfile.TemporaryDirectory(prefix='.currency-legacy-owner-', dir=checkout)
     first_ui_report_hash = digest(first_ui_report)
 # Owner handshake files have now been removed; source binding must still hold.
 if (git('rev-parse', 'HEAD') != sha or git('status', '--porcelain=v1', '--untracked-files=all')
-        or hashes != {str(p): digest(p) for p in tracked} or digest(manifest) != manifest_hash):
+        or hashes != {str(p): digest(p) for p in tracked} or digest(manifest) != manifest_hash
+        or any(digest(Path(item['manifest'])) != item['manifest_sha256'] for item in extra_bindings.values())):
     sys.exit('Candidate or criterion changed; UI evidence rejected')
 junit_artifact = Path(str(evidence) + '.junit.xml')
 with junit_artifact.open('xb') as out:
     out.write(junit_bytes)
 evidence.write_text(json.dumps({'kind': 'hla-currency-legacy-upgrade-qualification/v1', 'candidate_commit': sha,
                                 'source_sha256': hashes, 'legacy_manifest_sha256': manifest_hash,
-                                'legacy_warehouse_before_sha256': seed['warehouse_sha256'], 'junit_sha256': junit_hash,
+                                'legacy_warehouse_before_sha256': seed['warehouse_sha256'], 'adversarial_fixtures': extra_bindings, 'junit_sha256': junit_hash,
                                 'junit_path': str(junit_artifact), 'ui_report_sha256': ui_report_hash,
                                 'first_ui_report_sha256': first_ui_report_hash,
                                 **observation}, indent=2) + '\n')

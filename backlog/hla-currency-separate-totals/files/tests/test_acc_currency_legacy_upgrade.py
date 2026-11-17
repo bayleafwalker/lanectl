@@ -19,6 +19,12 @@ import pytest
 import uvicorn
 from currency_legacy_fixture import KEYS
 from currency_legacy_oracle import assert_inventory_unchanged, canonical, snapshot_legacy_facts
+from currency_upgrade_adversarial import (
+    assert_dependency_preserved,
+    assert_no_false_completion,
+    assert_refusal_unchanged,
+    run_adversarial,
+)
 from fastapi.testclient import TestClient
 from psycopg import sql
 from psycopg.rows import dict_row
@@ -219,6 +225,7 @@ def test_legacy_upgrade_preserves_facts_snapshots_and_published_currency(tmp_pat
                                  clear_warehouse=attempt == 2)
 
     qualify_first_then_retry(run_upgrade, verify_upgrade)
+    run_adversarial(env, command, digest, pg_dump, assert_original_snapshots, by_currency, assert_legacy_publications_present)
 
 
 def qualify_first_then_retry(run_upgrade, verify_upgrade):
@@ -254,6 +261,21 @@ def test_first_completed_upgrade_is_checked_before_retry():
     # Prove this simulated second run would have hidden the first bad result.
     partial_then_repairs()
     verify(2)
+
+
+def test_adversarial_refusal_oracle_rejects_false_success_and_mutation():
+    assert_refusal_unchanged(1, ("warehouse", "postgres"), ("warehouse", "postgres"))
+    assert_dependency_preserved("original view", "original view", 1)
+    with pytest.raises(AssertionError):
+        assert_dependency_preserved("original view", "different view", 1)
+    with pytest.raises(AssertionError):
+        assert_dependency_preserved("original view", "original view", 0)
+    assert_no_false_completion('{"status":"error"}')
+    with pytest.raises(AssertionError):
+        assert_no_false_completion('{"status":"success"}')
+    for code, after in ((0, ("warehouse", "postgres")), (1, ("changed", "postgres")), (1, ("warehouse", "changed"))):
+        with pytest.raises(AssertionError):
+            assert_refusal_unchanged(code, ("warehouse", "postgres"), after)
 
 
 def verify_completed_upgrade(manifest, warehouse, dsn, schema, tmp_path, ui_report, *, clear_warehouse):
