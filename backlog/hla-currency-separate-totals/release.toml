@@ -1,7 +1,7 @@
 id = "hla-currency-separate-totals"
 repo = "homelab-analytics"
 base_sha = "82dbd9477029d6fda7df67edc617f45a1a4ceb59"
-revision = 14
+revision = 16
 draft = true
 title = "Preserve separate currency totals across monetary reports and consumers"
 task_class = "product-api"
@@ -28,5 +28,5 @@ Homelab attention, or reopen an exhausted experiment.
 paths = ["packages/**", "apps/**", "migrations/**", "tests/**", "requirements/**", "docs/**"]
 
 [acceptance]
-files = ["tests/test_acc_currency_separate_totals.py", "tests/test_acc_currency_consumers.py", "tests/test_acc_currency_empty_schema.py", "tests/currency_published_qualification.py", "tests/currency_dashboard_fixture.py", "tests/currency_legacy_oracle.py", "tests/currency_upgrade_adversarial.py", "tests/currency_legacy_fixture.py", "tests/currency_legacy_baseline_red.py", "tests/currency_legacy_history_red.py", "tests/test_acc_currency_legacy_oracle.py", "tests/test_acc_currency_legacy_upgrade.py", "apps/web/frontend/playwright/currency-separate-totals.spec.js", "apps/web/frontend/playwright/currency-legacy-history.spec.js"]
+files = ["tests/test_acc_currency_separate_totals.py", "tests/test_acc_currency_consumers.py", "tests/test_acc_currency_empty_schema.py", "tests/currency_published_qualification.py", "tests/currency_dashboard_fixture.py", "tests/currency_legacy_oracle.py", "tests/currency_upgrade_adversarial.py", "tests/currency_legacy_fixture.py", "tests/currency_drift_inventory.py", "tests/currency_legacy_baseline_red.py", "tests/currency_legacy_history_red.py", "tests/test_acc_currency_legacy_oracle.py", "tests/test_acc_currency_legacy_upgrade.py", "apps/web/frontend/playwright/currency-separate-totals.spec.js", "apps/web/frontend/playwright/currency-legacy-history.spec.js"]
 exec = ["uv run --no-sync python -m pytest -q -p no:cacheprovider tests/test_acc_currency_separate_totals.py tests/test_acc_currency_consumers.py tests/test_acc_currency_legacy_oracle.py tests/test_acc_currency_empty_schema.py::test_empty_current_warehouse_is_valid tests/test_acc_currency_empty_schema.py::test_empty_legacy_warehouse_is_refused", "uv run --no-sync python -m pytest -q -p no:cacheprovider tests/test_acc_currency_legacy_upgrade.py::test_history_oracle_distinguishes_unavailable_from_valid_empty_and_no_history tests/test_acc_currency_legacy_upgrade.py::test_snapshot_oracle_rejects_changed_missing_and_duplicate_old_bytes tests/test_acc_currency_legacy_upgrade.py::test_first_completed_upgrade_is_checked_before_retry tests/test_acc_currency_legacy_upgrade.py::test_adversarial_refusal_oracle_rejects_false_success_and_mutation"]

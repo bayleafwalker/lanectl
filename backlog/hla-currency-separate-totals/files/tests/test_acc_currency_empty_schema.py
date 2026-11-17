@@ -28,7 +28,8 @@ def assert_refused(response):
     assert any(word in str(body["error"]).lower() for word in ("currency", "schema", "upgrade")), body
 
 
-def check_empty_schema(tmp_path, *, published, stale):
+def check_empty_schema(tmp_path, *, warehouse_shape, published_shape=None):
+    published = published_shape is not None
     tmp_path.mkdir(parents=True, exist_ok=True)
     store = DuckDBStore.memory()
     ts = TransformationService(store)
@@ -40,18 +41,26 @@ def check_empty_schema(tmp_path, *, published, stale):
     try:
         # A populated warehouse can never become the strict published answer.
         store.execute(f"DROP TABLE IF EXISTS {TABLE}")
-        store.execute(f"CREATE TABLE {TABLE} ({CURRENT_COLUMNS if published or not stale else BASE_COLUMNS})")
+        if warehouse_shape != "absent":
+            columns = BASE_COLUMNS if warehouse_shape == "legacy" else CURRENT_COLUMNS
+            store.execute(f"CREATE TABLE {TABLE} ({columns})")
         if published:
-            store.execute(f"INSERT INTO {TABLE} VALUES ('2026-01', 17, 0, 17, 1, 'USD')")
+            if warehouse_shape == "current":
+                store.execute(f"INSERT INTO {TABLE} VALUES ('2026-01', 17, 0, 17, 1, 'USD')")
             with psycopg.connect(dsn, autocommit=True) as conn:
                 conn.execute(sql.SQL("CREATE SCHEMA {}").format(sql.Identifier(schema)))
-                conn.execute(sql.SQL("CREATE TABLE {}.{} (" + (BASE_COLUMNS if stale else CURRENT_COLUMNS) + ")").format(sql.Identifier(schema), sql.Identifier(TABLE)))
+                if published_shape != "absent":
+                    columns = BASE_COLUMNS if published_shape == "legacy" else CURRENT_COLUMNS
+                    conn.execute(sql.SQL("CREATE TABLE {}.{} (" + columns + ")").format(sql.Identifier(schema), sql.Identifier(TABLE)))
             reporting = ReportingService(ts, publication_store=PostgresReportingStore(dsn, schema=schema), access_mode=ReportingAccessMode.PUBLISHED)
         else:
             reporting = ReportingService(ts, access_mode=ReportingAccessMode.WAREHOUSE)
         with TestClient(create_app(service, transformation_service=ts, reporting_service=reporting), raise_server_exceptions=False) as client:
             response = client.get("/reports/monthly-cashflow")
-            if stale:
+            if published_shape == "absent":
+                assert response.status_code == 404, (response.status_code, response.text)
+                assert "Published reporting relation is unavailable" in response.json()["error"]
+            elif (published_shape or warehouse_shape) == "legacy":
                 assert_refused(response)
             else:
                 assert response.status_code == 200 and response.json()["rows"] == [], (response.status_code, response.text)
@@ -63,16 +72,16 @@ def check_empty_schema(tmp_path, *, published, stale):
 
 
 def test_empty_current_warehouse_is_valid(tmp_path):
-    check_empty_schema(tmp_path, published=False, stale=False)
+    check_empty_schema(tmp_path, warehouse_shape="current")
 
 
 def test_empty_legacy_warehouse_is_refused(tmp_path):
-    check_empty_schema(tmp_path, published=False, stale=True)
+    check_empty_schema(tmp_path, warehouse_shape="legacy")
 
 
 def test_empty_current_published_is_valid(tmp_path):
-    check_empty_schema(tmp_path / "nested-fixture", published=True, stale=False)
+    check_empty_schema(tmp_path / "nested-fixture", warehouse_shape="current", published_shape="current")
 
 
 def test_empty_legacy_published_is_refused(tmp_path):
-    check_empty_schema(tmp_path / "nested-fixture", published=True, stale=True)
+    check_empty_schema(tmp_path / "nested-fixture", warehouse_shape="current", published_shape="legacy")

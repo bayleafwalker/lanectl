@@ -63,7 +63,7 @@ if not args.control:
     for key in required:
         if not os.environ.get(key): sys.exit(f'{key} is required')
     report = Path(os.environ['CURRENCY_ACCEPTANCE_UI_REPORT'])
-    if not report.is_absolute() or any(Path(str(report)+s).exists() for s in ('', '.mixed.json', '.disjoint.json')):
+    if not report.is_absolute() or any(Path(str(report)+s).exists() for s in ('', '.mixed.json', '.disjoint.json', '.scenario-eur.json', '.scenario-usd.json')):
         sys.exit('UI report and sidecars must be new absolute paths')
 else:
     report = None

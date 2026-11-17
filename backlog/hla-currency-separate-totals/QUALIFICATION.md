@@ -1,4 +1,4 @@
-# Currency separation: independent qualification, revision 14
+# Currency separation: independent qualification, revision 16
 
 Operator decision: preserve original denominations and show separate totals per
 currency, without conversion. Work is homelab-analytics#2915; baseline is
@@ -944,3 +944,118 @@ The final JUnit SHA-256 is
 the new criterion SHA-256 is
 `a17ea4155f1063c465363dcd55016d0245a3c5c0a20364959b8062ceee50acda`.
 These are historical red/control results, not a repaired candidate pass.
+
+## Revision 15: denomination labels and legacy column preservation
+
+Historical revisions and evidence retain their source bindings. The scenario
+oracle reads the explicit currency and price-baseline year for compatibility
+fields whose names end in `_eur`. A historical field name does not establish
+the unit. The live scenario detail tests create a scenario through the supported
+API, open its actual page in a browser, and require coherent currency context
+for EUR and USD. The history selector requires exactly one matching entry and
+still checks the historical unavailability and original snapshot metadata.
+
+Seed one additional isolated pair at the historical source using the same
+procedure as revision 10. Set these variables as well as the revision 10
+variables before running the owner-side legacy qualifier:
+
+```sh
+export CURRENCY_LEGACY_WAREHOUSE_DRIFT_WAREHOUSE=/absolute/private/warehouse-drift.duckdb
+export CURRENCY_LEGACY_WAREHOUSE_DRIFT_MANIFEST=/absolute/private/warehouse-drift.json
+```
+
+The DuckDB fixture places a populated synthetic column on the rebuilt household
+overview. Check must leave both stores unchanged. A targeted refusal must be
+read-only in both check and upgrade, or a completed upgrade must preserve the
+column's observed values and yield exact outputs from the original facts.
+The PostgreSQL fixture probes populated columns on monthly cashflow and
+household overview separately. Each requires a relation-specific schema refusal
+in both modes and an unchanged warehouse and full publication dump, including
+the sentinel. Each PostgreSQL injection is removed from the owned fixture only
+after its refusal and preservation are proved. Typed facts and original snapshot
+bytes remain checked. The controls reject generic subprocess failure, the wrong
+relation, false completion, and dropped, changed or duplicate sentinel values.
+These independent cases exercise both ALTER and republish-only maintenance
+paths. Per-relation coverage requires separate checks.
+
+The full criterion also requires every rebuilt mart as the sole drift target
+in its own exact-82 fixture. Set `CURRENCY_LEGACY_DRIFT_MATRIX` to an absolute
+directory outside the candidate checkout. From the clean historical source
+and using the same private PostgreSQL instance as the other seeds, enumerate
+`MARTS` from `files/tests/currency_drift_inventory.py`. For each relation, run
+the established seeder with the additional `--drift-relation <relation>`
+argument and these output names:
+
+```sh
+python "$criteria/currency_legacy_fixture.py" --drift-relation "$relation" \
+  --warehouse "$CURRENCY_LEGACY_DRIFT_MATRIX/$relation.duckdb" \
+  --manifest "$CURRENCY_LEGACY_DRIFT_MATRIX/$relation.json"
+```
+
+The historical reporting service publishes the target relation in each fixture.
+If it contains no rows, the qualified probe introduces one disposable derived
+row with typed values and a populated sentinel. It leaves source facts and
+historical snapshots intact. Each PostgreSQL refusal is checked before the
+probe removes its own injection and proves the pre-injection publication state.
+A separate DuckDB injection on the same isolated pair then proves unchanged
+refusal or a complete upgrade preserving the sentinel. The owner-side driver
+binds each original warehouse hash, manifest and PostgreSQL schema. The
+matrix runs after the normal first successful upgrade and idempotent retry.
+
+The visible projection oracle requires an explicit unambiguous unit and every
+monetary cell from the corresponding live cashflow rows. Its browser controls
+reject hidden units, a bare dollar with no explicit denomination, conflicting
+currencies, other dollar symbols, and missing or incorrect values. The annual
+energy decision independently checks current cost, alternative cost and
+difference by field in both the assessment and the baseline.
+
+After a PostgreSQL outage failure, inspect the original typed facts, snapshot
+rows, disconnected publication schema and unrelated warehouse relations before
+restoring access. The only eligible partial warehouse changes are the declared
+derived marts, snapshot-format maintenance and the schema migration marker.
+The observed original snapshot rows and all unrelated values, including a
+foreign sentinel, must survive. The ordering control rejects a retry that
+could conceal an earlier damaging change. Drift diagnostics bind the affected
+relation by identifier in the actual refusal message.
+
+
+## Revision 16: presentation styling and publication preflight
+
+The projection oracle maps headers using the authored heading text. A visible
+control applies the production uppercase heading style and still requires the
+same denomination and amounts. The immutable revision 15 UI result remains
+bound to that revision and captured the heading-style mismatch.
+
+The strict PUBLISHED checks create a real PostgreSQL schema with the target
+relation absent, then query the public report with the DuckDB target independently
+legacy-shaped and absent. Both return the explicit published-relation
+unavailability diagnostic. Current-shaped empty publications remain valid.
+
+Set `CURRENCY_LEGACY_PG_HAZARDS` to a new absolute directory. Seed five additional
+exact-82 pairs with the same fixture command used for the matrix, always passing
+`--drift-relation mart_household_overview`. Name their files `<hazard>.duckdb` and
+`<hazard>.json` for `trigger`, `row-security`, `foreign-key`, `ownership` and
+`numeric-typmod`. Use the same private PostgreSQL instance and a fixture login
+that can create a disposable role. The qualification creates a real BEFORE
+TRUNCATE trigger, enabled RLS policy, populated inbound foreign key, non-owner
+role with DML access, or populated incompatible numeric typmod, in separate
+fixtures. It requires targeted refusal with unchanged warehouse and full PG
+schema/data/ACL dump for check and upgrade, and rechecks the original typed facts
+and raw history. The owner-control fixture uses a non-superuser effective role
+so the owner mismatch is real and confined to the target mart.
+
+
+Use four distinct free loopback ports. Set `CURRENCY_LEGACY_API_PORT` and
+`CURRENCY_LEGACY_WEB_PORT` for first upgrade verification, and
+`CURRENCY_LEGACY_RETRY_API_PORT` and `CURRENCY_LEGACY_RETRY_WEB_PORT` for the retry.
+The owner driver prechecks and records all four. Each browser run still checks
+its listeners and stops its server and process group before advancing. Seed the
+main warehouse with a filename such as `legacy-MAIN.duckdb`, which keeps its
+catalog name distinct from the DuckDB `main` schema.
+
+The ordinary consumer tests also load genuine one-to-many and many-to-many
+billing observations and check the original invoice totals, observed quantity,
+distinct counts and unit costs through the public summary. The income-change
+test checks the public refusal and absence of persisted scenario rows for a
+cross-currency delta, then uses the same fixture to verify an exact same-unit
+income projection and explicit USD assumption.

@@ -4,6 +4,34 @@ from decimal import Decimal
 from test_acc_currency_separate_totals import api, bill, load, rows, usage
 
 
+def test_utility_cost_summary_does_not_multiply_bills_or_usage(tmp_path):
+    with api(tmp_path) as (ts, client):
+        invoices, observations = [], []
+        for meter in ("one-invoice", "two-invoices"):
+            first = bill(1, "EUR", 200, meter)
+            first["billing_period_end"] = first["billing_period_start"][:8] + "28"
+            invoices.append(first)
+            if meter == "two-invoices":
+                second = dict(first, billed_amount="60", provider="another-synthetic-provider",
+                              invoice_date=first["billing_period_end"])
+                invoices.append(second)
+            observations.extend(dict(usage(day, meter), usage_quantity="50") for day in (4, 5))
+        assert ts.load_bills(invoices, run_id="many-invoices") == 3
+        assert ts.load_utility_usage(observations, run_id="many-observations") == 4
+        ts.refresh_publications(["mart_utility_cost_summary"])
+        summary = rows(client, "/reports/utility-cost-summary")
+        assert len(summary) == 2, summary
+        by_meter = {row["meter_id"]: row for row in summary}
+        assert set(by_meter) == {"one-invoice", "two-invoices"}
+        for meter, total, bill_count in (("one-invoice", "200", 1), ("two-invoices", "260", 2)):
+            row = by_meter[meter]
+            assert row["currency"] == "EUR" and row["coverage_status"] == "matched", row
+            assert Decimal(str(row["billed_amount"])) == Decimal(total), row
+            assert Decimal(str(row["usage_quantity"])) == Decimal("100"), row
+            assert Decimal(str(row["unit_cost"])) == Decimal(total) / Decimal("100"), row
+            assert row["bill_count"] == bill_count and row["usage_record_count"] == 2, row
+
+
 def test_unbilled_usage_does_not_dilute_billed_currency_unit_price(tmp_path):
     with api(tmp_path) as (ts, client):
         load(ts, [], [bill(1, "EUR", 100, "billed")], [usage(1, "billed"), usage(1, "unbilled")])
@@ -48,6 +76,36 @@ def scenario_inventory(client):
         identifiers.append(row["scenario_id"])
     assert len(identifiers) == len(set(identifiers)), body
     return set(identifiers)
+
+
+def test_income_projection_refuses_a_delta_in_a_different_currency(tmp_path):
+    with api(tmp_path) as (ts, client):
+        load(ts, [(1, "USD", "100.37")])
+        endpoint = "/api/scenarios/income-change"
+        payload = {"monthly_income_delta": "10.00", "projection_months": 1}
+        before = scenario_inventory(client)
+        relations = ("dim_scenario", "fact_scenario_assumption", "proj_income_cashflow")
+        old_counts = [ts.store.fetchall(f"SELECT count(*) FROM {relation}") for relation in relations]
+        incompatible = client.post(endpoint, json={**payload, "currency": "EUR"})
+        assert scenario_inventory(client) == before, incompatible.text
+        assert [ts.store.fetchall(f"SELECT count(*) FROM {relation}") for relation in relations] == old_counts
+        assert incompatible.status_code in (409, 422, 503), incompatible.text
+        assert "currenc" in incompatible.text.lower(), incompatible.text
+
+        compatible = client.post(endpoint, json={**payload, "currency": "USD"})
+        assert compatible.status_code == 200, compatible.text
+        scenario_id = compatible.json()["scenario_id"]
+        assert scenario_inventory(client) == before | {scenario_id}
+        assert Decimal(compatible.json()["new_monthly_income"]) == Decimal("110.37")
+        result = client.get(f"/api/scenarios/{scenario_id}/cashflow")
+        assert result.status_code == 200, result.text
+        body = result.json()
+        assumptions = [row for row in body["assumptions"] if row["assumption_key"] == "monthly_income_delta"]
+        assert len(assumptions) == 1 and assumptions[0]["unit"] == "USD", body
+        assert len(body["cashflow_rows"]) == 1, body
+        projection = body["cashflow_rows"][0]
+        assert Decimal(str(projection["baseline_income"])) == Decimal("100.37"), projection
+        assert Decimal(str(projection["scenario_income"])) == Decimal("110.37"), projection
 
 
 def assert_no_household_projection(client, response, before):
@@ -185,15 +243,53 @@ def test_energy_decision_refuses_mixed_contract_components(tmp_path):
     assert all(value is None for key, value in result.items() if key.startswith("estimated_annual_")), result
 
 
-def test_energy_decision_single_usd_is_never_labelled_eur(tmp_path):
-    subject = energy_assessment(tmp_path, "USD", "USD")
+def assert_usd_energy_subject(subject):
     result = subject["snapshot"]["assessment"]
     assert result["currency"] == "USD", result
-    assert not any(key.startswith("estimated_annual_") and key.endswith("_eur") and value is not None
-                   for key, value in result.items()), result
-    assert any("annual" in key and "current" in key and value is not None for key, value in result.items()), result
-    annual = [value for key, value in subject["baseline"].items() if "annual" in key and isinstance(value, dict) and value.get("value") is not None]
-    assert annual and all(value.get("unit") == "USD/year" for value in annual), subject["baseline"]
+    expected = {
+        "estimated_annual_cost_current_eur": Decimal("467.88"),
+        "estimated_annual_cost_best_alternative_eur": Decimal("335.88"),
+        "estimated_annual_difference_eur": Decimal("132"),
+    }
+    amounts = {key: Decimal(str(value)) for key, value in result.items()
+               if key.startswith("estimated_annual_") and value is not None}
+    assert amounts == expected, result
+    annual = {key: value for key, value in subject["baseline"].items()
+              if "annual" in key and isinstance(value, dict) and value.get("value") is not None}
+    assert {key: Decimal(str(value["value"])) for key, value in annual.items()} == expected, annual
+    assert all(value.get("unit") in ("USD/year", "US$/year", "$/year") for value in annual.values()), annual
+
+
+def test_energy_decision_single_usd_is_never_labelled_eur(tmp_path):
+    assert_usd_energy_subject(energy_assessment(tmp_path, "USD", "USD"))
+
+
+def test_usd_energy_oracle_accepts_legacy_keys_but_rejects_wrong_units_and_values():
+    import copy
+
+    import pytest
+
+    values = {"estimated_annual_cost_current_eur": "467.88",
+              "estimated_annual_cost_best_alternative_eur": "335.88",
+              "estimated_annual_difference_eur": "132"}
+    subject = {"snapshot": {"assessment": {"currency": "USD", **values}},
+               "baseline": {key: {"value": value, "unit": "USD/year"} for key, value in values.items()}}
+    assert_usd_energy_subject(subject)
+    wrong_unit = copy.deepcopy(subject)
+    wrong_unit["baseline"]["estimated_annual_cost_current_eur"]["unit"] = "EUR/year"
+    with pytest.raises(AssertionError):
+        assert_usd_energy_subject(wrong_unit)
+    wrong_value = copy.deepcopy(subject)
+    wrong_value["snapshot"]["assessment"]["estimated_annual_cost_current_eur"] = "468.88"
+    with pytest.raises(AssertionError):
+        assert_usd_energy_subject(wrong_value)
+    current, alternative, _ = values
+    for field in ("assessment", "baseline"):
+        swapped = copy.deepcopy(subject)
+        observed = swapped["snapshot"]["assessment"] if field == "assessment" else swapped["baseline"]
+        observed[current], observed[alternative] = observed[alternative], observed[current]
+        with pytest.raises(AssertionError):
+            assert_usd_energy_subject(swapped)
 
 
 def test_energy_decision_same_eur_control(tmp_path):

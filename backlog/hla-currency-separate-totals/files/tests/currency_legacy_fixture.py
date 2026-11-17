@@ -16,6 +16,7 @@ from uuid import uuid4
 
 import currency_legacy_oracle
 import psycopg
+from currency_drift_inventory import MARTS
 from currency_legacy_oracle import canonical, snapshot_legacy_facts
 from fastapi.testclient import TestClient
 
@@ -66,7 +67,9 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--warehouse", required=True)
     parser.add_argument("--manifest", required=True)
+    parser.add_argument("--drift-relation", choices=MARTS)
     args = parser.parse_args()
+    keys = list(dict.fromkeys(KEYS + EXTRA_KEYS + ([args.drift_relation] if args.drift_relation else [])))
     warehouse, manifest = Path(args.warehouse), Path(args.manifest)
     if not warehouse.is_absolute() or not manifest.is_absolute() or warehouse.exists() or manifest.exists():
         sys.exit("warehouse and manifest must be new absolute paths")
@@ -93,18 +96,18 @@ def main():
             assert ts.load_transactions(transactions(), run_id="legacy-finance") == 4
             assert ts.load_bills([bill(3, "USD", 100), bill(1, "EUR", 200)], run_id="legacy-bills") == 2
             assert ts.load_utility_usage([usage(3), usage(1)], run_id="legacy-usage") == 2
-            ts.refresh_publications(KEYS + EXTRA_KEYS)
+            ts.refresh_publications(keys)
             pg = PostgresReportingStore(dsn, schema=schema)
             schema_created = True
             reporting = ReportingService(ts, publication_store=pg, access_mode=ReportingAccessMode.PUBLISHED)
-            assert reporting.publish_publications(KEYS + EXTRA_KEYS) == KEYS + EXTRA_KEYS
+            assert reporting.publish_publications(keys) == keys
             assert reporting.capture_publication_snapshots(SNAPSHOT_KEYS, run_id="legacy-january", captured_at=datetime(2026, 2, 1, tzinfo=timezone.utc)) == SNAPSHOT_KEYS
             # A later fact makes January an actual past month for the existing UI.
             later = {"booked_at": "2026-02-01", "account_id": "synthetic-legacy", "counterparty_name": "later",
                      "amount": "0", "currency": "EUR", "description": "legacy-later-month"}
             assert ts.load_transactions([later], run_id="legacy-february") == 1
-            ts.refresh_publications(KEYS + EXTRA_KEYS)
-            assert reporting.publish_publications(KEYS + EXTRA_KEYS) == KEYS + EXTRA_KEYS
+            ts.refresh_publications(keys)
+            assert reporting.publish_publications(keys) == keys
             inventory = snapshot_legacy_facts(store)
             assert {name: len(part["rows"]) for name, part in inventory.items()} == {
                 "fact_transaction": 5, "fact_bill": 2, "fact_utility_usage": 2}
@@ -114,7 +117,7 @@ def main():
                                float(row[part["columns"].index(value)]["value"])) for row in part["rows"])
             assert amounts("fact_transaction", "amount") == [("EUR", -30.0), ("EUR", 0.0), ("EUR", 200.0), ("USD", -20.0), ("USD", 100.0)]
             assert amounts("fact_bill", "billed_amount") == [("EUR", 200.0), ("USD", 100.0)]
-            duck_schemas = {key: [list(row) for row in store.fetchall(f"PRAGMA table_info('{key}')")] for key in KEYS + EXTRA_KEYS + ["reporting_publication_snapshot"]}
+            duck_schemas = {key: [list(row) for row in store.fetchall(f"PRAGMA table_info('{key}')")] for key in keys + ["reporting_publication_snapshot"]}
             assert "currency" not in [row[1] for row in duck_schemas["mart_monthly_cashflow"]]
             snapshot_sql = "SELECT publication_key, reference_month, captured_at, run_id, row_count, rows_json FROM reporting_publication_snapshot ORDER BY publication_key, reference_month"
             duck_snapshots = store.fetchall_dicts(snapshot_sql)
@@ -138,13 +141,13 @@ def main():
                     assert empty.status_code == 200 and empty.json()["as_of_status"] == "snapshot" and empty.json()["rows"] == []
             with psycopg.connect(dsn) as conn:
                 pg_schemas = {}
-                for key in KEYS + EXTRA_KEYS + ["reporting_publication_snapshot"]:
+                for key in keys + ["reporting_publication_snapshot"]:
                     cols = conn.execute("SELECT column_name, data_type, is_nullable, ordinal_position FROM information_schema.columns WHERE table_schema = %s AND table_name = %s ORDER BY ordinal_position", (schema, key)).fetchall()
                     assert cols, key
                     pg_schemas[key] = [list(row) for row in cols]
             assert "currency" not in [row[0] for row in pg_schemas["mart_monthly_cashflow"]]
             pg_rows = {}
-            for key in KEYS:
+            for key in [*KEYS, *([args.drift_relation] if args.drift_relation and args.drift_relation not in KEYS else [])]:
                 captured = [{column: canonical(value) for column, value in row.items()}
                             for row in pg.fetchall_dicts(f'SELECT * FROM "{key}"')]
                 pg_rows[key] = sorted(captured, key=lambda row: json.dumps(row, sort_keys=True))
@@ -162,7 +165,7 @@ def main():
                   "postgres_schema": schema, "duckdb_schemas": duck_schemas,
                   "postgres_schemas": pg_schemas, "postgres_rows": pg_rows, "facts": inventory,
                   "legacy_snapshots": {"duckdb": duck_snapshots, "postgres": pg_snapshots},
-                  "legacy_published_finance_rows": legacy_rows}
+                  "legacy_published_finance_rows": legacy_rows, "drift_relation": args.drift_relation}
         with manifest.open("x") as output:
             manifest_created = True
             output.write(json.dumps(record, indent=2) + "\n")

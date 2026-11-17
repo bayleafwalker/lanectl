@@ -36,14 +36,23 @@ def main():
                      [bill(3, "USD", 100), bill(1, "EUR", 200)], [usage(3), usage(1)])
             elif scenario == "disjoint":
                 load(ts, [(1, "USD", 250)], [bill(1, "EUR", 300)], [usage(1)])
+            elif scenario in ("scenario-eur", "scenario-usd"):
+                currency = "EUR" if scenario == "scenario-eur" else "USD"
+                load(ts, [(1, currency, 1000), (2, currency, -100)],
+                     [bill(1, currency, 100)], [usage(1)])
             else:
                 raise ValueError("unknown currency acceptance scenario")
             ts.refresh_publications(extra)
             reporting = ReportingService(ts, publication_store=PostgresReportingStore(dsn, schema=schema),
                                          access_mode=ReportingAccessMode.PUBLISHED)
             reporting.publish_publications(KEYS + extra)
-            for key in KEYS + extra:
-                ts.store.execute(f"DELETE FROM {key}")
+            if scenario in ("mixed", "disjoint"):
+                for key in KEYS + extra:
+                    ts.store.execute(f"DELETE FROM {key}")
+            else:
+                # Scenario creation writes the warehouse; its follow-up API must read
+                # that live store, not a publication captured before the POST.
+                reporting = ReportingService(ts, access_mode=ReportingAccessMode.WAREHOUSE)
             root = Path(folder)
             service = AccountTransactionService(landing_root=root / "landing", metadata_repository=RunMetadataRepository(root / "runs.db"))
             app = create_app(service, transformation_service=ts, reporting_service=reporting)
