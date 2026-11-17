@@ -202,6 +202,11 @@ def assert_disjoint_household_contributions(data):
                    and Decimal(str(r[field])) == Decimal(str(amount)) for r in data)
     assert has("USD", "cashflow_net", 250), data
     assert has("EUR", "utility_cost_total", 300), data
+    for row in data:
+        for field, allowed in (("cashflow_net", "USD"), ("utility_cost_total", "EUR")):
+            value = row.get(field)
+            if value is not None and Decimal(str(value)) != 0:
+                assert row.get("currency") == allowed, (field, row)
 
 
 def test_household_preserves_disjoint_domain_contributions(tmp_path):
@@ -214,7 +219,16 @@ def test_disjoint_oracle_rejects_dropped_or_relabelled_contributions():
     import pytest
     good = [{"currency": "USD", "cashflow_net": 250}, {"currency": "EUR", "utility_cost_total": 300}]
     assert_disjoint_household_contributions(good)
-    wrong = [good[:1], good[1:],
+    assert_disjoint_household_contributions([
+        {"currency": "USD", "cashflow_net": 250, "utility_cost_total": 0},
+        {"currency": "EUR", "cashflow_net": None, "utility_cost_total": 300},
+        {"currency": "ZZZ", "cashflow_net": 0, "utility_cost_total": None},
+    ])
+    wrong = [[{"currency": "USD", "cashflow_net": 250, "utility_cost_total": 300},
+              {"currency": "EUR", "cashflow_net": 250, "utility_cost_total": 300}],
+             good[:1], good[1:],
+             good + [{"currency": "EUR", "cashflow_net": 1}],
+             good + [{"currency": "ZZZ", "utility_cost_total": 1}],
              [{"currency": "EUR", "cashflow_net": 250}, good[1]],
              [good[0], {"currency": "USD", "utility_cost_total": 300}]]
     for mutation in wrong:

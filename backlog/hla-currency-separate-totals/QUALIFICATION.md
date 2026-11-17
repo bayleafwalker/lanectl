@@ -1,4 +1,4 @@
-# Currency separation: independent qualification, revision 2
+# Currency separation: independent qualification, revision 3
 
 Operator decision: preserve original denominations and show separate totals per
 currency, without conversion. Work is homelab-analytics#2915; baseline is
@@ -246,3 +246,63 @@ process helper `c5955acf66c7e1f10c04d9d78f50b578fff42028082b5dcc60fa74a866fcd2c9
 named owner driver `25da74517d7b0aad30348a5ec9fc8a6aaba039f7bfd4f1abbe1466b876e133f8`;
 lifecycle control `bcdb719f7b0aad47e1d369b074d399056a55db7aec4f51a81d634003be794cb7`;
 named-unit control `1ad1498ec196cbe3701dea3ecc6c1d6ef084d5c418e3d3df5131b65da1535aca`.
+
+
+## Revision 3: reject additional relabelled contributions
+
+Revision 2 remains bound to commit `8505466cc609c11ebac26498e5f3d45ca158d97d`,
+its exact hashes and historical evidence above. The disjoint reporting oracle now
+requires both observed contributions and rejects every additional nonzero cashflow
+value outside USD or utility value outside EUR. Null and numeric zero remain valid
+for absent fields; no zero-to-null schema change is required. The real-PG test
+imports this same oracle. Its controls include the exact counterexample with
+USD and EUR rows both containing cashflow 250 and utilities 300, additional
+wrong-group values of 1, an unknown `ZZZ` group, and valid zero/null fields.
+
+The actual dashboard check likewise requires the correct visible pairs and rejects
+additional visible nonzero wrong-currency values in their respective cashflow and
+utility panels. Its Chromium oracle control covers visible €250 and $300 extra
+groups, an unknown three-letter code, negative and accounting-style amounts, and
+acceptance of zero or hidden extras. These fixture controls do not replace actual
+reporting, publication or dashboard checks.
+
+Revision 3 historical baseline, same HLA source `82dbd9477029d6fda7df67edc617f45a1a4ceb59`:
+focused warehouse **11 expected product assertion failures and 6 passing controls,
+no errors/skips**, JUnit `/tmp/hla-currency-acceptance-2915-source/currency-r3-baseline-final.xml`,
+fenced output `/tmp/lanectl-resume-20261116/hla-independent/currency-2915-r3-baseline-final.{json,stdout}`.
+Real PostgreSQL **1 expected product failure, no errors/skips**, JUnit
+`/tmp/hla-currency-acceptance-2915-source/currency-r3-published-final.xml`, fenced
+output `/tmp/lanectl-resume-20261116/hla-independent/currency-2915-r3-published-final.{json,stdout}`.
+It fails on the earlier blended finance row; the disjoint published assertions
+remain required on a repaired candidate and are not claimed as executed here.
+
+Real Chromium with the final criterion under the named unit: **1 oracle control
+pass, 5 product failures, zero skipped tests/reporter errors**. The clean scratch
+source commit is `afd68a4a80fd6f3492f3c2da007a67599c32d866` with parent
+`ae52f4db41d4dedcd48da0c4b31d2b2720baa82d`, itself parented by the baseline
+`82dbd9477029d6fda7df67edc617f45a1a4ceb59`; the revision 3 scratch commit changes
+only the ordinary test and Playwright test. Raw owner output is
+`/tmp/currency-named-baseline-r3-final2.log`, reports
+`/tmp/currency-named-baseline-r3-final2.json.mixed.json` and
+`/tmp/currency-named-baseline-r3-final2.json.disjoint.json`. It must not produce a
+success receipt. Standalone final browser-oracle control is
+`/tmp/lanectl-resume-20261116/hla-independent/currency-2915-r3-browser-control-final2.{json,stdout}`.
+The named unit's observed populated and then settled cgroup and effective kill
+policy are included in the owner output. No candidate pass is claimed.
+
+Revision 3 hashes: ordinary test
+`944076f422a8da0ee2857e3e9e5409a038d66ba86e99806634091c84f4836656`; UI test
+`155eebbef03a2c6e3f2791ac18f7de9ebe5af6907692afc501a8ae5d4bdc9548`; published
+criterion remains `a86188e3b2381e2eded06b5254535f37b2789c6582f934ef5ef87d62f4070b0d`
+and imports the changed ordinary test. Owner and PG runners remain
+`25da74517d7b0aad30348a5ec9fc8a6aaba039f7bfd4f1abbe1466b876e133f8` and
+`84b44cdbf1ceef759f20ca587f61e30990f69802cde433fe0414ba01093070c7`.
+
+The revision 2 acceptance-only historical source bundle is
+`/projects/dev/_artifacts/lanectl-resume-20261117/currency-2915-r2/acceptance-baseline-ae52.bundle`,
+SHA-256 `109ae814aa3064bcc254a6b8b9db701f487493f276c9de048579aa661fcf3010`.
+`git bundle verify` succeeded; its HEAD is `ae52f4db41d4dedcd48da0c4b31d2b2720baa82d`,
+requires parent `82dbd9477029d6fda7df67edc617f45a1a4ceb59`, and the commit diff
+contains exactly the four acceptance files. This is host-local selected public
+source evidence under `_artifacts`, not durable-authoritative or a full `.git`
+archive. All `/tmp` evidence is session-local.
