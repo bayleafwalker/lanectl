@@ -255,6 +255,7 @@ def _build_parser():
     t.add_argument("--only", nargs="*", metavar="ATTEMPT_ID", help="train only these attempts")
     l = sub.add_parser("land", help="fast-forward main to a passed train (records events, moves main)")
     l.add_argument("train_id", help="train id from `lanectl train`")
+    l.add_argument("--resume-owner", action="store_true", help="resume the existing lease for a single coordinated attempt")
     _add_effect_flags(l)
     rj = sub.add_parser("reject", help="integrator rejects a candidate: requeue, or --park (records events)")
     rj.add_argument("attempt_id", help="attempt id from `lanectl candidates`")
@@ -368,7 +369,7 @@ def _dispatch(a, handlers) -> int:
             raise _not_found("train", a.train_id, "lanectl candidates   # then: lanectl train <repo>")
         plan = f"land train {a.train_id}: fast-forward {tb['repo']} main with attempts {tb['attempts']}"
         return _effect(a, f"Land train {a.train_id} on main", plan,
-                       lambda: _landed(runner.land(log, a.train_id)))
+                       lambda: _landed(runner.land(log, a.train_id, resume_owner=a.resume_owner)))
     if a.cmd == "approve":
         print(runner.approve(log, a.attempt_id, a.note))
         return 0

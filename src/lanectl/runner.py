@@ -990,10 +990,55 @@ def build_train(log: EventLog, repo_name: str, attempt_ids: list[str] | None = N
 
 def _serialized_landing(fn):
     @functools.wraps(fn)
-    def serialized(log, train_id):
+    def serialized(log, train_id, *, resume_owner=False):
         with log.locked():
+            if resume_owner:
+                return _land_with_owner(fn, log, train_id)
             return fn(log, train_id)
     return serialized
+
+
+def _land_with_owner(land_checked, log, train_id):
+    from . import coordination
+    from .remote_events import RemoteEventLog
+
+    if isinstance(log, RemoteEventLog):
+        return f"{train_id}: owner resume requires the single-writer local event log"
+    train = next((event["data"] for event in reversed(log.read())
+                  if event["type"] == "train.built" and event["data"]["train_id"] == train_id), None)
+    if not train or not train.get("passed") or len(train["attempts"]) != 1:
+        return f"{train_id}: owner resume requires a passed single-attempt train"
+    attempt, = train["attempts"]
+    claim = next((event for event in reversed(log.read())
+                  if event["type"] == "item.claimed" and event["data"]["attempt_id"] == attempt), None)
+    release = next((rel for rel in load_releases()
+                    if claim and rel.id == claim["item_id"] and rel.repo == train["repo"]), None)
+    if (release is None or not release.work_complete
+            or claim["data"].get("release_revision") != release.revision
+            or claim["data"].get("base_sha") != release.base_sha):
+        return f"{train_id}: current release does not match the admitted Work release"
+    if not any(candidate["attempt_id"] == attempt for candidate in candidates(log, train["repo"])):
+        return f"{train_id}: attempt is no longer a candidate"
+    result = None
+    try:
+        owner = coordination.configured(train["repo"])
+        if owner is None:
+            return f"{train_id}: owner coordination is not configured"
+        binding = owner.recorded_binding(attempt)
+        if binding is None or release.work != f"{release.repo}#{binding['item_id']}":
+            return f"{train_id}: recorded lease does not match the Work release"
+        with owner.guard(attempt) as guard:
+            previous = getattr(_owner_context, "guard", None)
+            _owner_context.guard = guard
+            try:
+                result = land_checked(log, train_id)
+            finally:
+                _owner_context.guard = previous
+    except coordination.CoordinationError as exc:
+        if result is not None and result.startswith("landed"):
+            return f"{result}; owner coordination lost after landing"
+        return f"{train_id}: owner lease unavailable: {exc}"
+    return result
 
 
 @_serialized_landing
