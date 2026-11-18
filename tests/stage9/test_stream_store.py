@@ -80,3 +80,30 @@ def test_schema_number_alone_cannot_admit_incompatible_tables(tmp_path):
         db.execute('PRAGMA user_version=1')
     with pytest.raises(StreamError,match='tables are missing'):
         StreamStore(path)
+
+
+def test_pool_reservation_requires_one_policy_scope(store):
+    from lanectl.capacity import in_flight
+
+    def admission(repo, item):
+        page = store.read('ws', repo, 'control')
+        assert in_flight(page['events'], 'provider', 'pool') == 0
+        reservation = make_event('capacity.reserved', {
+            'reservation_id': f'reserve-{item}', 'attempt_id': f'{item}-a1',
+            'provider': 'provider', 'pool': 'pool', 'unit': 'requests', 'amount': 1,
+        }, item_id=item)
+        return page['revision'], [event(item), reservation]
+
+    first = admission('repo-a', 'release-a')
+    stale_same_scope = admission('repo-a', 'release-b')
+    separate_scope = admission('repo-b', 'release-c')
+    store.append('ws', 'repo-a', 'control', 'p-a', 'batch-0001', *first)
+    with pytest.raises(StreamError) as error:
+        store.append('ws', 'repo-a', 'control', 'p-b', 'batch-0002', *stale_same_scope)
+    assert error.value.code == 'revision-conflict'
+    assert in_flight(store.read('ws', 'repo-a', 'control')['events'], 'provider', 'pool') == 1
+
+    store.append('ws', 'repo-b', 'control', 'p-b', 'batch-0002', *separate_scope)
+    combined = [item for repo in ('repo-a', 'repo-b')
+                for item in store.read('ws', repo, 'control')['events']]
+    assert in_flight(combined, 'provider', 'pool') == 2
