@@ -148,6 +148,8 @@ def register(sub):
     init.add_argument('database')
     postgres = actions.add_parser('init-postgres', help='explicitly initialize PostgreSQL using the migration role')
     postgres.add_argument('--runtime-role', required=True, help='existing PostgreSQL role for Lane runtime access')
+    postgres.add_argument('--if-needed', action='store_true', help='verify an already initialized schema without changing it')
+    actions.add_parser('check-postgres', help='check PostgreSQL Lane owner readiness using the runtime role')
     backend = actions.add_parser('configure', help='select served authority for all local invocations')
     backend.add_argument('--repo', required=True)
     backend.add_argument('--home', required=True)
@@ -192,7 +194,10 @@ def _cmd(args, log):
         return 0
     if args.stream_action == 'init-postgres':
         from .stream_postgres import migrate_from_environment
-        return migrate_from_environment(args.runtime_role)
+        return migrate_from_environment(args.runtime_role, if_needed=args.if_needed)
+    if args.stream_action == 'check-postgres':
+        from .stream_postgres import check_from_environment
+        return check_from_environment()
     if args.stream_action == 'init':
         initialize(args.database)
         print(f'lane stream schema {SCHEMA_VERSION}: {args.database}')
