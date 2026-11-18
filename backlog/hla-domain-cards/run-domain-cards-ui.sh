@@ -49,7 +49,7 @@ for scenario in normal empty unavailable; do
   ports=$(.venv/bin/python -c 'import socket; sockets=[socket.socket(),socket.socket()]; [s.bind(("127.0.0.1",0)) for s in sockets]; print(*(s.getsockname()[1] for s in sockets))')
   read -r DOMAIN_CARDS_API_PORT web_port <<< "$ports"
   export DOMAIN_CARDS_SCENARIO="$scenario" DOMAIN_CARDS_API_PORT
-  export DOMAIN_CARDS_WEB_URL="http://127.0.0.1:$web_port"
+  export DOMAIN_CARDS_WEB_URL="http://127.0.0.1:$web_port/operating-picture"
   export HOMELAB_ANALYTICS_API_BASE_URL="http://127.0.0.1:$DOMAIN_CARDS_API_PORT"
   export PLAYWRIGHT_JSON_OUTPUT_FILE="$DOMAIN_CARDS_REPORT_DIR/$scenario.json"
   LD_LIBRARY_PATH="$duckdb_path" setsid .venv/bin/python tests/domain_cards_fixture.py > "$DOMAIN_CARDS_REPORT_DIR/$scenario-api.log" 2>&1 &
@@ -60,7 +60,7 @@ for scenario in normal empty unavailable; do
   for ((i=0; i<40; i++)); do
     for pid in "${owned[@]}"; do kill -0 "$pid"; done
     if curl -fsS --max-time 2 "$HOMELAB_ANALYTICS_API_BASE_URL/health" >/dev/null && \
-      curl -fsS --max-time 2 "$DOMAIN_CARDS_WEB_URL/" >/dev/null; then
+      curl -fsS --max-time 2 "$DOMAIN_CARDS_WEB_URL" >/dev/null; then
       ready=1
       break
     fi
