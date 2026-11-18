@@ -1015,18 +1015,18 @@ def register(sub):
     commands = parser.add_subparsers(dest="resident_action", required=True)
     for name in ("describe", "status", "run", "fence", "recover"):
         command = commands.add_parser(name)
-        command.add_argument("--profile", required=True, type=Path)
+        command.add_argument("--profile", required=True, type=Path, help="Protected resident profile JSON file.")
         if name in ("run", "fence", "recover"):
-            command.add_argument("--generation", required=True, type=int)
+            command.add_argument("--generation", required=True, type=int, help="Expected resident generation.")
         if name == "run":
-            command.add_argument("--wake-id", required=True)
-            command.add_argument("--context", required=True, type=Path)
-            command.add_argument("--context-sha256", required=True)
-            command.add_argument("--work-ref", default="")
-            command.add_argument("--source-recheck", type=Path)
-            command.add_argument("--source-recheck-sha256")
+            command.add_argument("--wake-id", required=True, help="Stable wake identity supplied by the admission owner.")
+            command.add_argument("--context", required=True, type=Path, help="Admitted context packet JSON file.")
+            command.add_argument("--context-sha256", required=True, help="SHA-256 of the admitted context packet.")
+            command.add_argument("--work-ref", default="", help="Owner work reference for this episode.")
+            command.add_argument("--source-recheck", type=Path, help="Fresh source recheck receipt JSON file.")
+            command.add_argument("--source-recheck-sha256", help="SHA-256 of the source recheck receipt.")
         if name == "fence":
-            command.add_argument("--reason", required=True)
+            command.add_argument("--reason", required=True, help="Reason for fencing the expected generation.")
     return {"resident": _cmd}
 
 

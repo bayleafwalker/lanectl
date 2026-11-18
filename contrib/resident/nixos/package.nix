@@ -1,7 +1,7 @@
 { lib, python3Packages, src }:
 python3Packages.buildPythonPackage {
   pname = "lanectl";
-  version = "0.2.15";
+  inherit ((builtins.fromTOML (builtins.readFile (src + "/pyproject.toml"))).project) version;
   inherit src;
   pyproject = true;
   build-system = [ python3Packages.hatchling ];
