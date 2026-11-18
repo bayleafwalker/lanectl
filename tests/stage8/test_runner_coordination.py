@@ -62,7 +62,13 @@ def test_owner_success_only_after_land_and_no_tracker_double_settlement(estate,m
     monkeypatch.setattr(integrator,'_accepted',lambda *a:True)
     runner.execute(runner.admit('implement',log),log,adapter_fn=good)
     assert project_items(log.read())['owner-proof'].state=='landed'
-    assert [c[0] for c in owner.calls]==['start','evidence','evidence','report']
+    assert [c[0] for c in owner.calls] == ['start', 'evidence', 'evidence', 'evidence',
+                                          'evidence', 'evidence', 'report']
+    evidence = [entry[1] for entry in owner.calls if entry[0] == 'evidence']
+    assert [args[1].split(':')[0] for args in evidence] == ['claim', 'gates', 'candidate', 'train', 'landed']
+    assert evidence[0][3]['work_id'] == 12
+    assert {'gate': 'acceptance', 'passed': True} in evidence[1][3]['checks']
+    assert evidence[3][3]['checked_sha'] == evidence[4][3]['landed_sha']
     assert [e['data'] for e in log.read() if e['type']=='work.synced'][-1]['owner_reported']
 
 
@@ -140,6 +146,17 @@ def test_manual_landing_resumes_only_the_admitted_owner_lease(estate, monkeypatc
     assert 'lease unavailable' in runner.land(log, train, resume_owner=True)
     assert project_items(log.read())['owner-manual'].state == 'in-train'
     owner.active = True
+    append = owner.append_evidence
+
+    def refuse_train(*args):
+        if args[1].startswith('train:'):
+            raise coordination.CoordinationError('train evidence refused')
+        append(*args)
+
+    monkeypatch.setattr(owner, 'append_evidence', refuse_train)
+    assert 'train evidence refused' in runner.land(log, train, resume_owner=True)
+    assert project_items(log.read())['owner-manual'].state == 'in-train'
+    monkeypatch.setattr(owner, 'append_evidence', append)
     assert runner.land(log, train, resume_owner=True).startswith('landed')
     assert project_items(log.read())['owner-manual'].state == 'landed'
     assert not any(call[0] == 'report' for call in owner.calls)
