@@ -151,8 +151,13 @@ def merged(repo, sha, run=subprocess.run):
     return git("merge-base", "--is-ancestor", sha, head, allowed=(0, 1)).returncode == 0
 
 
-def reconcile(log, *, repos=None, releases=None, run=None, settle_owner=False):
-    """Retry incomplete tracker effects, including PR completion, without relanding."""
+def reconcile(log, *, repos=None, releases=None, run=None, settle_owner=False, release=None):
+    """Retry incomplete tracker effects, including PR completion, without relanding.
+
+    ``release`` limits the retry to that release's retained landings: no owner is
+    resolved and no tracker call is made for any other release.  Without it every
+    landed release is reconciled, as before.
+    """
     from .config import load_releases, load_repos
     from types import SimpleNamespace
     repos = load_repos() if repos is None else repos
@@ -163,6 +168,8 @@ def reconcile(log, *, repos=None, releases=None, run=None, settle_owner=False):
     results = []
     for event in events:
         if event["type"] != "item.landed":
+            continue
+        if release is not None and event["item_id"] != release:
             continue
         snapshot = event["data"].get("work_request")
         rel = SimpleNamespace(**snapshot) if snapshot else releases.get(event["item_id"])
@@ -213,12 +220,15 @@ def reconcile(log, *, repos=None, releases=None, run=None, settle_owner=False):
 def register(sub):
     p = sub.add_parser("work", help="reconcile tracker completion after landing")
     actions = p.add_subparsers(dest="work_action", required=True)
-    actions.add_parser("reconcile", help="retry tracker synchronization and pending PR closes")
+    reconcile_cmd = actions.add_parser("reconcile",
+                                       help="retry tracker synchronization and pending PR closes")
+    reconcile_cmd.add_argument("--release", metavar="RELEASE_ID",
+                               help="only reconcile this release's landed events")
     return {"work": _cmd}
 
 
 def _cmd(args, log):
-    results = reconcile(log, settle_owner=True)
+    results = reconcile(log, settle_owner=True, release=args.release)
     for result in results:
         print(json.dumps(result, sort_keys=True))
     return 1 if any(not r["ok"] for r in results) else 0
