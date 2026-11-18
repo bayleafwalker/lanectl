@@ -160,6 +160,39 @@ def test_import_cli_dry_run_hash_check_execute_and_repeat(client,tmp_path,monkey
     assert receipt['source_sha256']==args.source_sha256 and receipt['events']==1
 
 
+def test_mixed_repository_import_is_refused_before_owner_write(client, tmp_path, monkeypatch):
+    import hashlib
+    import json
+    from types import SimpleNamespace
+    from lanectl import coordination, stream_store
+    from lanectl.contracts import make_event
+
+    state = tmp_path / "host-state"
+    monkeypatch.setenv("LANECTL_STATE", str(state))
+    monkeypatch.setattr(coordination, "configured", lambda *a, **kw: SimpleNamespace(client=client))
+    source = tmp_path / "source.jsonl"
+    events = [
+        make_event("train.deployed", {
+            "train_id": f"train-{repo}", "repo": repo, "namespace": f"lane-dev-{repo}",
+            "passed": True, "expires_at": "2026-11-18T18:00:00Z",
+        })
+        for repo in ("repo-a", "repo-b")
+    ]
+    source.write_text("".join(json.dumps(event) + "\n" for event in events))
+    args = SimpleNamespace(
+        stream_action="import", home=str(tmp_path), repo="repo-a", stream="control",
+        source=str(source), source_sha256=hashlib.sha256(source.read_bytes()).hexdigest(),
+        execute=False,
+    )
+    for execute in (False, True):
+        args.execute = execute
+        with pytest.raises(StreamError, match="history event 2 has a repository") as error:
+            stream_store._cmd(args, None)
+        assert error.value.code == "history-scope-mismatch"
+    assert client.store.read("ws", "repo-a", "control")["events"] == []
+    assert not (state / "stream-import-receipt.json").exists()
+
+
 def test_remote_append_and_read_snapshot_cannot_be_mutated_after_recording(client,tmp_path):
     log=RemoteEventLog(client,tmp_path/'pending.json')
     data={'release_id':'release-x','revision':1}
