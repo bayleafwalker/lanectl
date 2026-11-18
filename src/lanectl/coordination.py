@@ -391,8 +391,16 @@ def configured(repo_name, *, root=None, journal_path=None):
     expected_environment and exactly one of token_env or credential_name.
     Missing configuration disables coordination.
     """
-    from .config import home
+    client = _configured_client(repo_name, root=root)
+    if client is None:
+        return None
     from .events import state_dir
+    safe = hashlib.sha256(repo_name.encode()).hexdigest()[:20]
+    return Coordinator(client, journal_path or state_dir() / ('coordination-' + safe + '.sqlite'))
+
+
+def _configured_client(repo_name, *, root=None):
+    from .config import home
     config = Path(root or home()) / 'governance' / 'vuoro.toml'
     if not config.exists():
         return None
@@ -422,26 +430,33 @@ def configured(repo_name, *, root=None, journal_path=None):
         if not token or any(char.isspace() for char in token):
             raise CoordinationError('systemd runner credential invalid')
         return token
-    client = VuoroClient(raw['endpoint'], raw['repo_id'], resolve_token,
-                         expected_environment=raw['expected_environment'])
-    safe = hashlib.sha256(repo_name.encode()).hexdigest()[:20]
-    return Coordinator(client, journal_path or state_dir() / ('coordination-' + safe + '.sqlite'))
+    return VuoroClient(raw['endpoint'], raw['repo_id'], resolve_token,
+                       expected_environment=raw['expected_environment'])
 
 
 def register(sub):
     parser = sub.add_parser('coordinate', help='inspect the configured Vuoro coordination owner')
     parser.add_argument('repo', help='repository name from governance/vuoro.toml')
+    parser.add_argument('--require-stream-read', action='store_true',
+                        help='require an authorized read of the repository control stream')
     return {'coordinate': _cmd}
 
 
 def _cmd(args, log):
-    coordinator = configured(args.repo)
-    if coordinator is None:
-        print(f'{args.repo}: Vuoro coordination is not configured')
-        return 1
     try:
-        catalog = coordinator.client.discover()
-        print(f'{args.repo}: Vuoro catalog {catalog["revision"]}; journal {coordinator.path}')
+        coordinator = None if args.require_stream_read else configured(args.repo)
+        client = (_configured_client(args.repo) if args.require_stream_read
+                  else coordinator.client if coordinator is not None else None)
+        if client is None:
+            raise CoordinationError('Vuoro coordination is not configured')
+        catalog = client.discover()
+        if args.require_stream_read:
+            client.invoke(client.envelope('lane.stream.read-v1',
+                                          {'stream': 'control', 'after': 0, 'limit': 1}, None))
+            detail = 'repository-scoped stream read accepted'
+        else:
+            detail = f'journal {coordinator.path}'
+        print(f'{args.repo}: Vuoro catalog {catalog["revision"]}; {detail}')
         return 0
     except CoordinationError as exc:
         print(f'{args.repo}: {exc}')
