@@ -65,9 +65,17 @@ def test_postgres_owner_contract(tmp_path, monkeypatch, capsys):
         monkeypatch.delenv("VUORO_LANE_POSTGRES_MIGRATION_DSN", raising=False)
         assert main(["stream", "init-postgres", "--runtime-role", runtime_user]) == 1
         assert "MIGRATION_DSN is required" in capsys.readouterr().err
+        with connect() as db:
+            db.execute("CREATE ROLE lane_migration LOGIN")
+            db.execute("CREATE SCHEMA lane")
         dsn = psycopg.conninfo.make_conninfo(
-            host=tmp_path, dbname="postgres", user="postgres"
+            host=tmp_path, dbname="postgres", user="lane_migration"
         )
+        monkeypatch.setenv("VUORO_LANE_POSTGRES_MIGRATION_DSN", dsn)
+        assert main(["stream", "init-postgres", "--runtime-role", runtime_user]) == 1
+        assert "different migration role" in capsys.readouterr().err
+        with connect() as db:
+            db.execute("ALTER SCHEMA lane OWNER TO lane_migration")
         monkeypatch.setenv("VUORO_LANE_POSTGRES_MIGRATION_DSN", dsn)
         assert main(["stream", "init-postgres", "--runtime-role", runtime_user]) == 0
         assert "schema 1 initialized" in capsys.readouterr().out

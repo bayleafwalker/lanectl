@@ -31,8 +31,18 @@ def initialize_postgres(connect, *, runtime_role=None):
                 "store-unavailable",
                 "lane migration requires a transactional connection",
             )
+        owner = db.execute("""
+            SELECT nspowner = CURRENT_USER::regrole
+            FROM pg_catalog.pg_namespace WHERE nspname = 'lane'
+        """).fetchone()
+        if owner is None:
+            db.execute("CREATE SCHEMA lane")
+        elif owner != (True,):
+            raise StreamError(
+                "incompatible-schema",
+                "Lane schema belongs to a different migration role",
+            )
         db.execute("""
-            CREATE SCHEMA lane;
             CREATE TABLE lane.schema_version (
                 singleton boolean PRIMARY KEY CHECK (singleton), version integer NOT NULL
             );
