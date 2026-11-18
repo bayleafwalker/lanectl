@@ -13,8 +13,16 @@ from .stream_store import (
 )
 
 
-def initialize_postgres(connect):
+def initialize_postgres(connect, *, runtime_role=None):
     """Initialize a new owner schema using a migration-role connection factory."""
+    if runtime_role is not None and (
+        not isinstance(runtime_role, str)
+        or not runtime_role
+        or runtime_role.lower() == "public"
+    ):
+        raise StreamError(
+            "invalid-role", "an explicit PostgreSQL runtime role is required"
+        )
     with connect() as db:
         if db.autocommit:
             raise StreamError(
@@ -47,6 +55,14 @@ def initialize_postgres(connect):
         db.execute(
             "INSERT INTO lane.schema_version VALUES (true, %s)", (SCHEMA_VERSION,)
         )
+        if runtime_role is not None:
+            role = db.execute("SELECT quote_ident(%s)", (runtime_role,)).fetchone()[0]
+            db.execute(f"GRANT USAGE ON SCHEMA lane TO {role}")
+            db.execute(f"GRANT SELECT ON ALL TABLES IN SCHEMA lane TO {role}")
+            db.execute(
+                f"GRANT INSERT ON lane.heads, lane.events, lane.batches TO {role}"
+            )
+            db.execute(f"GRANT UPDATE (revision) ON lane.heads TO {role}")
 
 
 class PostgresStreamStore(StreamStore):

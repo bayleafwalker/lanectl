@@ -56,8 +56,17 @@ def test_postgres_owner_contract(tmp_path):
 
         with pytest.raises(StreamError, match="schema is missing or incompatible"):
             PostgresStreamStore(connect)
-        initialize_postgres(connect)
-        store = PostgresStreamStore(connect)
+        runtime_user = "lane-runtime"
+        with connect() as db:
+            db.execute('CREATE ROLE "lane-runtime" LOGIN')
+        with pytest.raises(StreamError, match="explicit PostgreSQL runtime role"):
+            initialize_postgres(connect, runtime_role="PUBLIC")
+        initialize_postgres(connect, runtime_role=runtime_user)
+
+        def connect_runtime():
+            return psycopg.connect(host=tmp_path, dbname="postgres", user=runtime_user)
+
+        store = PostgresStreamStore(connect_runtime)
         event = make_event(
             "item.parked", {"reason": "qualification"}, item_id="fixture"
         )
@@ -87,6 +96,18 @@ def test_postgres_owner_contract(tmp_path):
         assert store.read("workspace", "repo-b", "control")["revision"] == 0
         with pytest.raises(StreamError, match="different content"):
             store.append(*scope, "principal", "batch-one", 0, [event, event])
+        assert store.read(*scope)["head_revision"] == 2
+        for forbidden in (
+            "DELETE FROM lane.events",
+            "UPDATE lane.batches SET digest = 'edited'",
+            "DROP TABLE lane.events",
+            "CREATE TABLE lane.unexpected (id integer)",
+        ):
+            with (
+                pytest.raises(psycopg.errors.InsufficientPrivilege),
+                connect_runtime() as db,
+            ):
+                db.execute(forbidden)
         assert store.read(*scope)["head_revision"] == 2
     finally:
         subprocess.run(
