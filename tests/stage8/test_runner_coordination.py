@@ -19,7 +19,8 @@ class Owner:
         self.calls.append(('start',args))
     @contextmanager
     def guard(self,*a,**kw):
-        self.cancel=kw['on_lost']
+        self.cancel=kw.get('on_lost', lambda: None)
+        self.assert_active()
         yield self
         self.assert_active()
     def assert_active(self):
@@ -122,3 +123,23 @@ def test_reported_success_without_owner_acceptance_remains_pending():
     owner.report_outcome=lambda *a,**kw:{'settled':False,'settlement_effect':'awaiting-verification'}
     owner.completion=lambda *a:{'closed':False,'status':'active','resolution':None}
     assert not work.report_owner_completion(owner,'attempt',SimpleNamespace(id='release'),{'landed_sha':'b'*40,'owner_checks':[{'name':'train','status':'passed'}]})
+
+def test_manual_landing_resumes_only_the_admitted_owner_lease(estate, monkeypatch):
+    _, release, log = estate
+    release('owner-manual', TEST)
+    _set_work('owner-manual', 'target#12', True)
+    owner = configure(monkeypatch)
+    monkeypatch.setattr(owner, 'recorded_binding', lambda attempt: {'item_id': 12}, raising=False)
+    monkeypatch.setattr(integrator, '_authority', lambda: {'autonomous_classes': []})
+    claim = runner.admit('implement', log)
+    assert 'candidate' in runner.execute(claim, log, adapter_fn=good)
+    runner.build_train(log, 'target', [claim.attempt_id])
+    train = next(e['data']['train_id'] for e in reversed(log.read()) if e['type'] == 'train.built')
+    assert 'owner lease required' in runner.land(log, train)
+    owner.active = False
+    assert 'lease unavailable' in runner.land(log, train, resume_owner=True)
+    assert project_items(log.read())['owner-manual'].state == 'in-train'
+    owner.active = True
+    assert runner.land(log, train, resume_owner=True).startswith('landed')
+    assert project_items(log.read())['owner-manual'].state == 'landed'
+    assert not any(call[0] == 'report' for call in owner.calls)

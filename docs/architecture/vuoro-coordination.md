@@ -131,6 +131,13 @@ around a refused or uncertain operation.
 
 ## Recovery and durability
 
+For an operator-reviewed single-attempt train using the local event log, use
+`lanectl land TRAIN_ID --resume-owner`. LANECTL checks the admitted release
+and Work binding and heartbeats the existing lease before landing. An expired
+or refused lease leaves the train unlanded. For repositories configured with
+`landing = "pr"`, merge the checked train through canonical CI, then use
+`lanectl work reconcile` to submit the outcome from the recorded landing.
+
 The default SQLite journal is under `LANECTL_STATE`, scoped to endpoint,
 repository and expected environment. This journal is **host-persistent recovery
 state**, not cross-host work authority. It stores immutable request identities,
