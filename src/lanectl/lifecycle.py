@@ -467,6 +467,41 @@ def attention_reasons(snapshot, *, now=None, stale_after_s=None):
     return reasons
 
 
+def _display_word(value):
+    """Return a non-empty display string, or ``None`` for anything else."""
+    if not isinstance(value, str):
+        return None
+    word = value.strip()
+    return word or None
+
+
+def work_disposition(row):
+    """Describe the owner's Work item disposition for an owner-only row.
+
+    Only the observed ``work.public.item-v1`` fact can supply a disposition.
+    An unknown read, a mismatched identity, or an item that reports neither a
+    status nor a resolution is rendered as ``unknown``: no accepted result is
+    ever inferred from a missing or unusable owner fact.
+    """
+    facts = row.get("facts") if isinstance(row, dict) else None
+    fact = facts.get("work.public.item-v1") if isinstance(facts, dict) else None
+    if not isinstance(fact, dict) or fact.get("state") != "observed":
+        return "unknown"
+    value = fact.get("value")
+    item = value.get("item") if isinstance(value, dict) else None
+    if not isinstance(item, dict):
+        return "unknown"
+    status = _display_word(item.get("status"))
+    resolution = _display_word(item.get("resolution"))
+    if status and resolution:
+        return f"{status} (resolution: {resolution})"
+    if status:
+        return status
+    if resolution:
+        return f"resolution: {resolution}"
+    return "unknown"
+
+
 def render_rows(rows):
     """Small dependency-free table for terminals and tests."""
     lines = ["ITEM  ATTEMPT  OWNER  LOCAL  REASONS"]
@@ -483,6 +518,10 @@ def render_rows(rows):
         item = row.get("item_id") or row.get("work_id") or "-"
         attempt = row.get("attempt_id") or row.get("run_id") or "-"
         lines.append(f"{item}  {attempt}  {owner}  {local}  {codes}")
+        if row.get("mode") == "owner-only":
+            # Owner-only rows read a single Work item; its disposition is the
+            # operator-facing answer, so keep it on its own labeled line.
+            lines.append(f"Work disposition: {work_disposition(row)}")
     return "\n".join(lines)
 
 
