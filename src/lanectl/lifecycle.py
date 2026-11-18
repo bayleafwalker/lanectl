@@ -202,6 +202,11 @@ def _fact(client, catalog, operation, values):
             if reported is not None and requested is not None and reported != requested:
                 raise CoordinationError(f"owner public item work_id mismatch: requested "
                                         f"{requested!r}, owner reports {reported!r}")
+        if operation == "work.lease.read-v1" and isinstance(result, dict):
+            for key, expected in (("item_id", values.get("item_id")),
+                                  ("repo_id", getattr(client, "repo_id", None))):
+                if key in result and expected is not None and result[key] != expected:
+                    raise CoordinationError(f"owner lease read {key} mismatch")
         return {"state": "observed", "source": operation, "revision": catalog["revision"],
                 "observed_at": observed_at, "value": result}
     except CoordinationError as exc:

@@ -90,3 +90,25 @@ def test_owner_only_lifecycle_uses_no_local_state(tmp_path, monkeypatch, capsys)
     assert row["facts"]["work.lease.read-v1"]["state"] == "unknown"
     assert not any(name.startswith("local.") for name in row["facts"])
     assert not state.exists()
+
+
+def test_lease_history_refuses_mismatched_owner_scope(monkeypatch):
+    client = Client()
+    client.repo_id = "example"
+    invoke = client.invoke
+
+    def reply(envelope):
+        result = invoke(envelope)
+        if envelope["operation"] == "work.lease.read-v1":
+            return {**result, **scope}
+        return result
+
+    monkeypatch.setattr(client, "invoke", reply)
+    for scope, mismatched_key in (
+        ({"repo_id": "foreign", "item_id": 44}, "repo_id"),
+        ({"repo_id": "example", "item_id": 45}, "item_id"),
+    ):
+        fact = lifecycle(client, work_id=44)["facts"]["work.lease.read-v1"]
+        assert fact["state"] == "unknown"
+        assert fact["reason"] == f"owner lease read {mismatched_key} mismatch"
+        assert "value" not in fact
