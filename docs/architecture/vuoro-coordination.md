@@ -137,6 +137,9 @@ and Work binding and heartbeats the existing lease before landing. An expired
 or refused lease leaves the train unlanded. For repositories configured with
 `landing = "pr"`, merge the checked train through canonical CI, then use
 `lanectl work reconcile` to submit the outcome from the recorded landing.
+Coordinated runs record the release and Work binding, plus gate names and
+verdicts, in owner evidence. Before landing a single-attempt train, LANECTL
+records its checked commit and the matching deploy receipt when one is required.
 
 The default SQLite journal is under `LANECTL_STATE`, scoped to endpoint,
 repository and expected environment. This journal is **host-persistent recovery

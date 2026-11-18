@@ -623,10 +623,19 @@ def _coordinate_execution(native):
             settlement = None
             with owner.guard(c.attempt_id, on_lost=lost) as guard:
                 _owner_context.guard = guard
+                _owner_context.owner = owner
+                owner.append_evidence(c.attempt_id, "claim", "Observation",
+                                      {"release_id": c.rel.id, "release_revision": c.rel.revision,
+                                       "work_id": work_id, "base_sha": c.rel.base_sha})
                 out = native(c, log, adapter_fn, lease_guard=guard,
                                cancel_event=cancel, sandbox_holder=sandbox_holder, prompt=prompt)
                 guard.assert_active()
-                view = project_items(log.read())[c.rel.id]
+                events = log.read()
+                view = project_items(events)[c.rel.id]
+                checks = [{key: event["data"][key] for key in ("gate", "passed")}
+                          for event in events if event["type"] == "gate.result"
+                          and event["data"]["attempt_id"] == c.attempt_id]
+                owner.append_evidence(c.attempt_id, "gates", "Observation", {"checks": checks})
                 owner.append_evidence(c.attempt_id, "candidate", "Observation",
                                       {"release_id": c.rel.id, "attempt_id": c.attempt_id,
                                        "state": view.state, "result": out})
@@ -660,6 +669,7 @@ def _coordinate_execution(native):
             return _coordination_park(c, log, exc)
         finally:
             _owner_context.guard = None
+            _owner_context.owner = None
 
     return execute
 
@@ -1029,11 +1039,14 @@ def _land_with_owner(land_checked, log, train_id):
             return f"{train_id}: recorded lease does not match the Work release"
         with owner.guard(attempt) as guard:
             previous = getattr(_owner_context, "guard", None)
+            previous_owner = getattr(_owner_context, "owner", None)
             _owner_context.guard = guard
+            _owner_context.owner = owner
             try:
                 result = land_checked(log, train_id)
             finally:
                 _owner_context.guard = previous
+                _owner_context.owner = previous_owner
     except coordination.CoordinationError as exc:
         if result is not None and result.startswith("landed"):
             return f"{result}; owner coordination lost after landing"
@@ -1105,6 +1118,16 @@ def land(log: EventLog, train_id: str) -> str:
     if _coordinated(repo.name) and guard is None:
         return f"{train_id}: owner lease required before coordinated landing"
     if guard is not None:
+        guard.assert_active()
+    owner = getattr(_owner_context, "owner", None)
+    if owner is not None and len(d["attempts"]) == 1:
+        attempt, = d["attempts"]
+        owner.append_evidence(attempt, f"train:{train_id}:{tip}", "Observation",
+                              {"train_id": train_id, "checked_sha": tip, "passed": True})
+        if requires_deploy:
+            owner.append_evidence(attempt, f"deploy:{train_id}:{deployed['expires_at']}", "Observation",
+                                  {"train_id": train_id, "checked_sha": tip,
+                                   "passed": True, "expires_at": deployed["expires_at"]})
         guard.assert_active()
     cur = git(repo.path, "branch", "--show-current", check=False)
     if cur == repo.main:
