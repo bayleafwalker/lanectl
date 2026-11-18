@@ -287,7 +287,10 @@ service activation and the separate history/authority cutover remain required
 before hosted storage is called durable-authoritative.
 
 With all writers paused, initialize the owner's configured database explicitly,
-then inspect/import history from the current authority:
+then inspect and import history from the current authority. This example assumes
+the active local journal is scoped to one repository and every unlabeled
+event has been attributed. See the
+[lane history boundary](lane-history-boundary.md) for a mixed journal.
 
 ```sh
 lanectl stream init /state/lanectl/owner.sqlite
