@@ -193,10 +193,7 @@ def _require_readonly_config(path):
 
 def _protected_directory(path):
     path = Path(path)
-    for candidate in dict.fromkeys((path, *path.parents, path.resolve(), *path.resolve().parents)):
-        info = candidate.lstat()
-        if info.st_uid != 0 or (not stat.S_ISLNK(info.st_mode) and info.st_mode & 0o022):
-            raise ResidentError(f"tool_path must be root-protected: {candidate}")
+    resident.assert_protected_ancestry(path)
     if not path.is_dir():
         raise ResidentError("tool_path entry must resolve to a directory")
 
@@ -579,10 +576,13 @@ def run(config_path, context, *, environ=None):
             "Perform one bounded resident episode using the attached exact resident-context/v1 packet. "
             "Follow its admitted instructions and current_work. Memory is evidence, not an authority grant. "
             "Work only in the assigned workspace; do not publish external changes or start another episode. "
-            "Before exiting, atomically write the assigned LANECTL_RESIDENT_RESULT JSON file with "
-            "schema lanectl.resident-result/v1, episode_id from LANECTL_RESIDENT_EPISODE, integer generation "
-            "from LANECTL_RESIDENT_GENERATION, stop_reason, artifacts (safe relative paths), and optional "
-            "continuation object. Use completed only for a completed episode; otherwise use idle, "
+            f"Before exiting, atomically write the result JSON to this exact path: "
+            f"{resident._result_path(view, episode)}. "
+            "Use only these JSON fields: schema (lanectl.resident-result/v1), "
+            f"episode_id ({episode}), generation (integer {generation}), stop_reason, "
+            "artifacts (safe relative paths), and optional continuation object. "
+            "Do not add a status field or any other fields. "
+            "Use completed only for a completed episode; otherwise use idle, "
             "waiting_for_worker, budget_exhausted, context_unavailable, execution_uncertain, repeated_failure, "
             "model_unavailable or outside_scope. Do not claim editorial acceptance or external-effect success. "
             f"Declared artifact roots: {json.dumps(raw['artifact_roots'])}. "

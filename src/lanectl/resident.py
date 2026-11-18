@@ -77,12 +77,7 @@ def _regular_bytes(path, limit):
         os.close(fd)
 
 
-def assert_protected_file(path):
-    """Root-owned configuration, including both symlink and target ancestry.
-
-NixOS /etc symlinks into the store are valid. A profile in an agent-writable
-checkout is not qualification, even if it happens to contain qualified=true.
-"""
+def assert_protected_ancestry(path):
     path = Path(path).absolute()
     for candidate in dict.fromkeys((path, *path.parents, path.resolve(), *path.resolve().parents)):
         info = candidate.lstat()
@@ -98,6 +93,16 @@ checkout is not qualification, even if it happens to contain qualified=true.
             not stat.S_ISLNK(info.st_mode) and info.st_mode & 0o022 and not sticky_store
         ):
             raise ResidentError(f"configuration must be root-protected: {candidate}")
+
+
+def assert_protected_file(path):
+    """Root-owned configuration, including both symlink and target ancestry.
+
+NixOS /etc symlinks into the store are valid. A profile in an agent-writable
+checkout is not qualification, even if it happens to contain qualified=true.
+"""
+    path = Path(path).absolute()
+    assert_protected_ancestry(path)
     if not path.resolve().is_file():
         raise ResidentError("protected configuration must resolve to a regular file")
 

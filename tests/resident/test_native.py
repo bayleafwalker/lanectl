@@ -155,6 +155,8 @@ def test_real_child_receives_exact_context_clean_environment_and_result(setup):
     assert observed["argv"][observed["argv"].index("--model") + 1] == "resident-gateway/deepseek-v4.1-flash"
     assert observed["pgid"] == os.getpgrp()  # retain the outer owner's cleanup boundary
     env = observed["env"]
+    assert env["LANECTL_RESIDENT_RESULT"] in observed["argv"][-1]
+    assert env["LANECTL_RESIDENT_EPISODE"] in observed["argv"][-1]
     for name in ("OPENAI_API_KEY", "HTTP_PROXY", "OPENCODE_CONFIG_CONTENT", "PYTHONPATH"):
         assert name not in env
     assert env["HOME"].startswith(str(setup["runtime"]) + "/")
