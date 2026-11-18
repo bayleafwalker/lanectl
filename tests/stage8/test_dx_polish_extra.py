@@ -100,9 +100,9 @@ def test_doctor_warns_drift_for_waiting_states_only(estate, capsys):
         release(item, ACC)
         _append(log, [build() for build in events])
     _move(repo)
-    assert cli.main(["doctor"]) == 0
-    warns = [line for line in capsys.readouterr().out.splitlines()
-             if line.startswith("WARN") and "base_sha" in line]
+    assert cli.main(["doctor", "--json"]) == 0   # uncollapsed findings: the text view folds repeats
+    warns = [f["detail"] for f in json.loads(capsys.readouterr().out)
+             if f["level"] == "WARN" and "base_sha" in f["detail"]]
     for item in WAITING:
         assert any(item in warn for warn in warns), (item, warns)
     for item in IN_FLIGHT:

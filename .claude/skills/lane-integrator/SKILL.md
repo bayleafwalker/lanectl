@@ -12,7 +12,7 @@ the authority file says otherwise.
 ## 1. Inputs
 
 ```sh
-lanectl status                      # states, precision; parked rows show their reason
+lanectl status                      # needs you (with reasons), blocked, in flight; --json adds precision
 lanectl candidates                  # gate-accepted, awaiting integration
 lanectl events --type item.parked -n 20   # parked review-required attempts
 lanectl events --item <item_id>     # one item's full history

@@ -16,7 +16,7 @@ lanectl backlog list --open   # open releases with state and tries (--state, --r
 lanectl backlog show <id>     # one release: fields, attempts with reasons, outcome
 lanectl candidates        # gate-accepted, awaiting integration
 lanectl lanes             # routing, limits and live cap usage per lane
-lanectl status            # open items and precision (--all includes landed)
+lanectl status            # needs you, blocked, in flight (--all lists landed; precision: report)
 lanectl view --html <path>    # management page: backlog, attention, lanes, governance, report
 ```
 

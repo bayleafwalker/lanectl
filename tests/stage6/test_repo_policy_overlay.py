@@ -51,7 +51,23 @@ def test_worker_prompt_lists_repo_protected_paths(tmp_path):
 def test_run_gates_treats_repo_protected_paths_as_protected(tmp_path, monkeypatch):
     repo = _repo(tmp_path, protected_paths=("infra/**",))
     claim = runner.Claim(_rel(), repo, _lane(protected_paths=()), "item-1-a1", "lane/model", "w")
+    monkeypatch.setattr(runner, "load_lane", lambda _: claim.lane)
     monkeypatch.setattr(diffpolicy, "collect",
                         lambda *a, **k: [diffpolicy.FileChange("M", "infra/main.tf", 1, 0, ["x"])])
     gates = runner.run_gates(claim, tmp_path, SHA, "b" * 40, {}, "done")
     assert gates["diff-policy"] == ["protected-path: infra/main.tf"]
+
+
+def test_effective_lane_preserves_live_repo_overlay_and_restricted_filter(tmp_path):
+    from dataclasses import replace
+    from lanectl.delivery_policy import effective_lane, snapshot
+    bound = _lane(routing={'lane/model': 1.0}, allow_restricted=True)
+    current = replace(bound, routing={'lane/model': 2.0, 'new-lane/model': 1.0},
+                      external_models=('claude-outsider',))
+    lane = effective_lane(snapshot(bound), current)
+    repo = _repo(tmp_path, routing={'claude-sonnet-5-5': 1.0, 'claude-outsider': 2.0,
+                                   'opencode-go/other': 1.0})
+    from lanectl.ready import eligible_models
+    assert eligible_models(_rel(), lane, repo) == repo.routing
+    assert eligible_models(_rel(data_class='restricted'), lane, repo) == {'claude-sonnet-5-5': 1.0}
+    assert lane.routing == {'lane/model': 2.0}

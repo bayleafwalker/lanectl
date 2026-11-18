@@ -236,7 +236,8 @@ def _fmt_precision(p: float | None) -> str:
 
 
 def _fmt_usage(units: dict) -> str:
-    return ",".join(f"{k}={v}" for k, v in sorted(units.items())) or "-"
+    from .render import count, money
+    return ",".join(f"{k}={money(v) if 'usd' in k else count(v)}" for k, v in sorted(units.items())) or "-"
 
 
 def _table(title: str, rows: dict) -> list[str]:

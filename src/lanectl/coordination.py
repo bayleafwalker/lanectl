@@ -391,8 +391,16 @@ def configured(repo_name, *, root=None, journal_path=None):
     expected_environment and exactly one of token_env or credential_name.
     Missing configuration disables coordination.
     """
-    from .config import home
+    client = _configured_client(repo_name, root=root)
+    if client is None:
+        return None
     from .events import state_dir
+    safe = hashlib.sha256(repo_name.encode()).hexdigest()[:20]
+    return Coordinator(client, journal_path or state_dir() / ('coordination-' + safe + '.sqlite'))
+
+
+def _configured_client(repo_name, *, root=None):
+    from .config import home
     config = Path(root or home()) / 'governance' / 'vuoro.toml'
     if not config.exists():
         return None
@@ -422,26 +430,47 @@ def configured(repo_name, *, root=None, journal_path=None):
         if not token or any(char.isspace() for char in token):
             raise CoordinationError('systemd runner credential invalid')
         return token
-    client = VuoroClient(raw['endpoint'], raw['repo_id'], resolve_token,
-                         expected_environment=raw['expected_environment'])
-    safe = hashlib.sha256(repo_name.encode()).hexdigest()[:20]
-    return Coordinator(client, journal_path or state_dir() / ('coordination-' + safe + '.sqlite'))
+    return VuoroClient(raw['endpoint'], raw['repo_id'], resolve_token,
+                       expected_environment=raw['expected_environment'])
 
 
 def register(sub):
     parser = sub.add_parser('coordinate', help='inspect the configured Vuoro coordination owner')
     parser.add_argument('repo', help='repository name from governance/vuoro.toml')
+    checks = parser.add_mutually_exclusive_group()
+    checks.add_argument('--require-stream-read', action='store_true',
+                        help='require an authorized read of the repository control stream')
+    checks.add_argument('--work-item', type=int, metavar='ID',
+                        help='require a matching pending Work item at the configured owner')
     return {'coordinate': _cmd}
 
 
 def _cmd(args, log):
-    coordinator = configured(args.repo)
-    if coordinator is None:
-        print(f'{args.repo}: Vuoro coordination is not configured')
-        return 1
     try:
-        catalog = coordinator.client.discover()
-        print(f'{args.repo}: Vuoro catalog {catalog["revision"]}; journal {coordinator.path}')
+        if args.work_item is not None and args.work_item <= 0:
+            raise CoordinationError('Work item ID must be positive')
+        if args.require_stream_read or args.work_item is not None:
+            client = _configured_client(args.repo)
+        else:
+            coordinator = configured(args.repo)
+            client = coordinator.client if coordinator is not None else None
+        if client is None:
+            raise CoordinationError('Vuoro coordination is not configured')
+        catalog = client.discover()
+        if args.require_stream_read:
+            client.invoke(client.envelope('lane.stream.read-v1',
+                                          {'stream': 'control', 'after': 0, 'limit': 1}, None))
+            detail = 'repository-scoped stream read accepted'
+        elif args.work_item is not None:
+            from .claim_preview import ITEM, _item
+            result = client.invoke(client.envelope(ITEM, {'work_id': args.work_item}, None))
+            _, reasons = _item(result, args.work_item)
+            if reasons:
+                raise CoordinationError('; '.join(reasons))
+            detail = f'Work item {args.work_item} is pending'
+        else:
+            detail = f'journal {coordinator.path}'
+        print(f'{args.repo}: Vuoro catalog {catalog["revision"]}; {detail}')
         return 0
     except CoordinationError as exc:
         print(f'{args.repo}: {exc}')

@@ -1,14 +1,21 @@
 """Acceptance: abandoned attempts are closed so admission and caps recover (planner-owned)."""
 from datetime import datetime, timedelta, timezone
+from dataclasses import replace
 
+from lanectl.delivery_policy import snapshot
 from lanectl.events import EventLog, project_items
 from lanectl.reap import reap
+from tests.seed.test_gates import LANE
 
 
-def _claim(log, item, n):
-    log.append("release.published", {"release_id": item, "revision": 1}, item_id=item)
+def _claim(log, item, n, max_attempts=2):
+    # These assertions exercise a known legacy lane, not unknown provenance.
+    binding = snapshot(replace(LANE, max_attempts=max_attempts))
+    log.append("release.published", {"release_id": item, "revision": 1,
+                                     "effective_policy": binding}, item_id=item)
     log.append("item.claimed", {"attempt_id": f"{item}-a{n}", "lane": "implement", "model": "m",
-                                "worker": "w", "release_revision": 1}, item_id=item)
+                                "worker": "w", "release_revision": 1,
+                                "effective_policy": binding}, item_id=item)
 
 
 def test_reap_closes_only_stale_open_attempts(tmp_path):
@@ -34,7 +41,7 @@ def test_reap_closes_only_stale_open_attempts(tmp_path):
 
 def test_reap_parks_when_attempts_exhausted(tmp_path):
     log = EventLog(tmp_path / "e.jsonl")
-    _claim(log, "xx", 1)
+    _claim(log, "xx", 1, max_attempts=1)
     later = datetime.now(timezone.utc) + timedelta(hours=2)
     reap(log, now=later, older_than_s=60, max_attempts=1)
     assert project_items(log.read())["xx"].state == "parked"

@@ -26,8 +26,17 @@ existing flow, and keep that credential outside worker environments. HTTPS is
 required outside loopback; redirects are refused. `lanectl coordinate example`
 checks protocol, environment and catalog compatibility without claiming work.
 Discovery can be public: a successful catalog response does not prove that the
-runner credential authenticated. Qualification must also observe an authorized,
-repository-scoped owner read. An `identity-required` refusal remains a blocker.
+runner credential authenticated. Run
+`lanectl coordinate example --work-item 123` to verify that an item with
+that exact ID is pending in the configured repository at the Work owner.
+Use the ID from that owner's workspace. The check creates no run, lease,
+local event log or journal. Use `claim-run` to preview the release itself.
+
+For the optional served event store, run
+`lanectl coordinate example --require-stream-read` to require an authorized
+read of the repository's control stream, even if the stream is empty. The probe
+requests one event, prints no event contents, and leaves the event log and
+coordination journal untouched. An `identity-required` refusal remains a blocker.
 
 ### Workstation service activation
 
@@ -50,7 +59,7 @@ systemd-run --user --pipe --wait --collect \
   --setenv=LANECTL_HOME=/path/to/reviewed-worktree \
   --setenv=SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt \
   -p LoadCredential=lanectl-runner:"$HOME/.config/vuoro/credentials/lanectl-runner.token" \
-  "$HOME/.local/bin/lanectl" coordinate example
+  "$HOME/.local/bin/lanectl" coordinate example --require-stream-read
 ```
 
 Install the optional drop-in only after validation:

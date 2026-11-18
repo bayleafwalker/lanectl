@@ -1,0 +1,28 @@
+id = "hla-domain-cards"
+repo = "homelab-analytics"
+base_sha = "ace5afee59714234aed135310101fb25781a2337"
+revision = 4
+draft = true
+title = "Compose evidence-backed cards for active household domains"
+task_class = "product-api"
+size = "L"
+data_class = "public"
+work = "homelab-analytics#1590"
+work_complete = true
+
+outcome = """
+Show one card per active source-owning household domain: Finance, Utilities
+and Homelab. Surface metric coverage, comparable observed trends, and the
+highest-priority open source action. Preserve separate denominations and
+distinguish observed zero, true empty, unavailable data and insufficient
+history. The independent qualification covers supported ingestion, registered
+publication, strict published HTTP, and the rendered dashboard. See
+QUALIFICATION.md for the observable acceptance conditions.
+"""
+
+[scope]
+paths = ["packages/**", "apps/**", "tests/**", "requirements/**", "docs/**", "migrations/**"]
+
+[acceptance]
+files = ["tests/domain_cards_fixture.py", "tests/test_acc_domain_cards.py", "apps/web/frontend/playwright/domain-cards.spec.js"]
+exec = ["uv run --no-sync python -m pytest -q -p no:cacheprovider tests/test_acc_domain_cards.py -k 'not strict_publication and not missing_publications'"]

@@ -51,6 +51,7 @@ EVENT_TYPES: dict[str, tuple[str, ...]] = {
     "work.synced": ("work", "train_id", "closed", "ok"),
     "item.parked": ("reason",),
     "item.requeued": ("reason",),
+    "progress.reviewed": ("attempt_id", "judgment", "progress", "remaining", "reason"),
     "integrator.fix": ("attempt_id", "commit", "fix_class"),
     # v1 additive extension (planner, 2026-11-08) for ladder stages 2-5.
     "admission.shadow": ("static", "capacity", "agree", "reasons"),          # S2 capacity admission
@@ -139,6 +140,12 @@ def validate_event_parts(etype: str, data: dict, item_id: str | None) -> None:
         if not isinstance(data["reason"], str) or not data["reason"].strip():
             raise ContractError("invalidation reason must be nonempty")
         parse_evidence_ref(data["evidence_ref"])
+    if etype == "progress.reviewed":
+        if data["judgment"] not in ("continue", "stop"):
+            raise ContractError("invalid progress judgment")
+        if any(not isinstance(data[k], str) or not data[k].strip()
+               for k in ("attempt_id", "progress", "remaining", "reason")):
+            raise ContractError("progress judgment requires progress, remaining work, and reason")
     if etype == "decision.recorded" and data["decision"] not in DECISIONS:
         raise ContractError(f"bad decision {data['decision']!r}")
     if etype == "integrator.fix" and data["fix_class"] not in FIX_CLASSES:
@@ -232,3 +239,4 @@ class LaneRevision:
     # hand, never by the tick timer (operator direction 2026-11-10).
     allow_restricted: bool = False
     digest: str = ""
+    delivery_policy: str = "legacy"

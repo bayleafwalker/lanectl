@@ -16,7 +16,7 @@ import hashlib
 import subprocess
 from pathlib import Path
 
-from . import decisions, runner
+from . import decisions, delivery_policy, runner
 from .config import load_lane, load_releases
 from .events import EventLog, ItemView, project_items
 from .gates import decision
@@ -39,6 +39,11 @@ def _recover(log: EventLog, events: list[dict], fin: dict, iid: str,
     aid = fin["attempt_id"]
     claim = next((e["data"] for e in events
                   if e["type"] == "item.claimed" and e["data"]["attempt_id"] == aid), {})
+    binding = delivery_policy.claim_binding(events, iid, claim)
+    if binding is None:
+        return False
+    lane = delivery_policy.from_binding(binding)
+    max_attempts = lane.max_attempts
     seed = fin.get("seed_sha") or claim.get("base_sha")
     if not seed:   # no diff baseline: ``changed`` is unknowable, leave it for a human
         return False
@@ -51,12 +56,24 @@ def _recover(log: EventLog, events: list[dict], fin: dict, iid: str,
         used = runner.attempts_used(project_items(log.read())[iid], revision)
         changed = (fin.get("head_sha") or "") != seed
         dec, reasons, follow = decision.decide(gates, fin.get("outcome", "failed"), used,
-                                               max_attempts, changed)
+                                               max_attempts, changed, policy_mode=lane.delivery_policy)
     else:   # died before gates ran: cannot accept, and must not burn an attempt
         dec, reasons, follow = ("rejected", ["infra: runner died before gates"],
-                                "requeue-infra")
+                                "requeue-infra" if lane.delivery_policy == "legacy" else "park")
+    if dec == "candidate":
+        try:
+            effective = delivery_policy.effective_lane(binding, load_lane(lane.lane))
+        except (OSError, ValueError, KeyError, TypeError):
+            return False
+        # Existing gate records cannot establish newly tightened authority rules.
+        authority = ("size_max", "routing", "caps", "protected_paths", "dependency_manifests",
+                     "test_globs", "forbidden_added_patterns", "external_models", "timeout_s",
+                     "allow_restricted", "effects", "sandbox")
+        if any(getattr(effective, k) != getattr(lane, k) for k in authority):
+            return False
     if not allow_accept and dec == "candidate":
-        dec, reasons, follow = ("rejected", ["infra: abandoned runner; acceptance must be rerun"], "requeue-infra")
+        dec, reasons, follow = ("rejected", ["infra: abandoned runner; acceptance must be rerun"],
+                                "requeue-infra" if lane.delivery_policy == "legacy" else "park")
     decisions.follow_applied(
         log, item_id=iid, attempt_id=aid, follow=follow,
         mechanism=decisions.MECHANISM_REAPER, reasons=reasons)
@@ -72,6 +89,42 @@ def _recover(log: EventLog, events: list[dict], fin: dict, iid: str,
     return True
 
 
+def select(events: list[dict], now: datetime, older_than_s: float, claim_filter=None):
+    """The attempts reap() would act on: (finished-but-undecided, abandoned claims).
+
+    Shared by `reap --dry-run` and reap() so the preview lists exactly what runs.
+    """
+    claims = [e for e in events if e["type"] == "item.claimed" and e["item_id"]]
+    finished = {e["data"]["attempt_id"] for e in events if e["type"] == "attempt.finished"}
+    decided = {e["data"]["attempt_id"] for e in events if e["type"] == "decision.recorded"}
+    undecided = []
+    for e in events:   # finished, old, never decided: the runner died mid-step
+        aid = e["data"].get("attempt_id")
+        if e["type"] != "attempt.finished" or not aid or aid in decided:
+            continue
+        claim = next((c for c in claims if c["data"]["attempt_id"] == aid), None)
+        if claim_filter is not None and (claim is None or not claim_filter(claim)):
+            continue
+        if not _stale(e["ts"], now, older_than_s):
+            continue
+        iid = e["item_id"] or (claim["item_id"] if claim else None)
+        if iid is not None:
+            undecided.append((e, iid))
+    abandoned = []
+    for e in claims:
+        aid = e["data"]["attempt_id"]
+        if aid in finished or aid in decided:
+            continue
+        if claim_filter is not None and not claim_filter(e):
+            continue
+        if not _stale(e["ts"], now, older_than_s):
+            continue
+        binding = delivery_policy.claim_binding(events, e["item_id"], e["data"])
+        if binding is not None:
+            abandoned.append((e, binding))
+    return undecided, abandoned
+
+
 def reap(log: EventLog, *, now: datetime, older_than_s: float,
          max_attempts: int, claim_filter=None, allow_accept=True) -> list[str]:
     """Close stale open attempts and decide stale finished ones; return their ids."""
@@ -81,39 +134,22 @@ def reap(log: EventLog, *, now: datetime, older_than_s: float,
     with log.locked():
         events = log.read()
         releases = {r.id: r for r in load_releases()}
-        claims = [e for e in events if e["type"] == "item.claimed" and e["item_id"]]
-        finished = {e["data"]["attempt_id"] for e in events if e["type"] == "attempt.finished"}
-        decided = {e["data"]["attempt_id"] for e in events if e["type"] == "decision.recorded"}
-        for e in events:   # finished, old, never decided: the runner died mid-step
+        undecided, abandoned = select(events, now, older_than_s, claim_filter)
+        for e, iid in undecided:
             fin = e["data"]
-            aid = fin.get("attempt_id")
-            if e["type"] != "attempt.finished" or not aid or aid in decided:
-                continue
-            claim = next((c for c in claims if c["data"]["attempt_id"] == aid), None)
-            if claim_filter is not None and (claim is None or not claim_filter(claim)):
-                continue
-            if not _stale(e["ts"], now, older_than_s):
-                continue
-            iid = e["item_id"] or next(
-                (c["item_id"] for c in claims if c["data"]["attempt_id"] == aid), None)
-            if iid is None:
-                continue
+            aid = fin["attempt_id"]
             if _recover(log, events, fin, iid, releases.get(iid), max_attempts, allow_accept=allow_accept):
-                decided.add(aid)
                 closed.append(aid)
         views: dict[str, ItemView] = project_items(log.read())
-        for e in claims:
+        for e, binding in abandoned:
             d, iid, aid = e["data"], e["item_id"], e["data"]["attempt_id"]
-            if aid in finished or aid in decided:
-                continue
-            if claim_filter is not None and not claim_filter(e):
-                continue
-            if not _stale(e["ts"], now, older_than_s):
-                continue
+            lane = delivery_policy.from_binding(binding)
             # same counting as admission: this revision, infra failures excluded
             used = len([a for a in views[iid].attempts if a.get("release_revision") == d.get("release_revision")
                         and not a.get("infra")])
-            if used >= max_attempts:
+            if lane.delivery_policy == "review-progress":
+                follow, reasons = "park", ["abandoned: progress review required"]
+            elif used >= lane.max_attempts:
                 follow, reasons = "park", ["abandoned: attempts exhausted"]
             else:
                 follow, reasons = "requeue", ["abandoned"]
@@ -137,26 +173,38 @@ def reap(log: EventLog, *, now: datetime, older_than_s: float,
                 log.append("item.parked", {"reason": reasons[0]}, item_id=iid)
             else:
                 log.append("item.requeued", {"reason": reasons[0]}, item_id=iid)
-            finished.add(aid)
             closed.append(aid)
     return closed
 
 
 def register(sub) -> dict:
-    p = sub.add_parser("reap", help="close abandoned attempts so caps recover")
+    p = sub.add_parser("reap", help="close abandoned attempts so caps recover (records events)")
     p.add_argument("--older-than", type=int, default=3600, metavar="SECONDS",
                    help="claimed longer ago than this (default 3600)")
-    p.add_argument("--lane", default="implement")
+    p.add_argument("--lane", default="implement", help="lane whose attempt limit applies (default implement)")
+    p.add_argument("--dry-run", action="store_true", help="list claims that look abandoned; change nothing")
+    p.add_argument("--yes", action="store_true", help="do not ask for confirmation on a terminal")
     return {"reap": _cmd}
 
 
 def _cmd(args, log: EventLog) -> int:
     lane = load_lane(args.lane)
+    if args.dry_run:
+        now = datetime.now(timezone.utc)
+        undecided, abandoned = select(log.read(), now, args.older_than)
+        stale = [e["data"]["attempt_id"] for e, _ in undecided] + [e["data"]["attempt_id"] for e, _ in abandoned]
+        print(f"would examine {len(stale)} open or undecided attempt(s) older than {args.older_than}s"
+              + "".join(f"\n  {aid}" for aid in stale) + "\nnext: rerun without --dry-run")
+        return 0
+    from .render import confirm
+    if not confirm("Close abandoned attempts (records events)?", yes=args.yes):
+        print("cancelled; nothing changed")
+        return 1
     closed = reap(log, now=datetime.now(timezone.utc), older_than_s=args.older_than,
                   max_attempts=lane.max_attempts)
     for aid in closed:
         print(f"reaped {aid}")
-    print(f"{len(closed)} abandoned attempt(s) closed")
+    print(f"✓ {len(closed)} abandoned attempt(s) closed\nnext: lanectl status")
     return 0
 
 

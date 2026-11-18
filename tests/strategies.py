@@ -255,6 +255,11 @@ def _data_for(etype: str) -> st.SearchStrategy[dict]:
         return st.fixed_dictionaries({"reason": st.text(min_size=1, max_size=200)})
     if etype == "item.requeued":
         return st.fixed_dictionaries({"reason": st.text(min_size=1, max_size=200)})
+    if etype == "progress.reviewed":
+        return st.fixed_dictionaries({"attempt_id": ids("attempt"),
+            "judgment": st.sampled_from(("continue", "stop")),
+            "progress": st.just("progress"), "remaining": st.just("remaining"),
+            "reason": st.just("reason")})
     if etype == "integrator.fix":
         return st.fixed_dictionaries({
             "attempt_id": ids("attempt"),

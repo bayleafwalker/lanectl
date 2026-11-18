@@ -152,6 +152,10 @@ def _deploy(repo: str, raw) -> DeploySpec:
 def load_lane(name: str, root: Path | None = None) -> LaneRevision:
     path = (root or home()) / "governance" / "lanes" / f"{name}.toml"
     raw = tomllib.loads(path.read_text())
+    return lane_from_raw(raw, _digest(path), str(path))
+
+
+def lane_from_raw(raw: dict, digest: str, source: str = "lane") -> LaneRevision:
     try:
         return LaneRevision(
             lane=raw["lane"], revision=int(raw["revision"]),
@@ -170,10 +174,11 @@ def load_lane(name: str, root: Path | None = None) -> LaneRevision:
             effects=dict(raw.get("effects", {})),
             sandbox=dict(raw.get("sandbox", {})),
             allow_restricted=bool(raw["eligibility"].get("allow_restricted", False)),
-            digest=_digest(path),
+            digest=digest,
+            delivery_policy=raw["routing"].get("delivery_policy", "legacy"),
         )
     except KeyError as exc:
-        raise ContractError(f"{path}: missing {exc}") from exc
+        raise ContractError(f"{source}: missing {exc}") from exc
 
 
 def load_repos(root: Path | None = None) -> dict[str, RepoSpec]:

@@ -35,6 +35,8 @@ def estate(tmp_path, monkeypatch):
     home = tmp_path / "home"
     (home / "governance" / "lanes").mkdir(parents=True)
     lane_toml = (Path(__file__).parents[2] / "governance" / "lanes" / "implement.toml").read_text()
+    # This long-standing fixture exercises legacy retries; prospective tests opt in explicitly.
+    lane_toml = lane_toml.replace('delivery_policy = "review-progress"', 'delivery_policy = "legacy"')
     lane_toml = re.sub(r"(?m)^weights = \{.*\}$", 'weights = { "scripted/model" = 1.0 }', lane_toml)
     (home / "governance" / "lanes" / "implement.toml").write_text(lane_toml)
     (home / "governance" / "repos.toml").write_text(textwrap.dedent(f"""
