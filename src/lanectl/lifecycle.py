@@ -480,20 +480,29 @@ def render_rows(rows):
         local = ",".join(name[6:] for name in LOCAL_FACTS
                          if facts.get(name, {}).get("state") == "observed") or "unknown"
         codes = ",".join(reason["code"] for reason in row.get("reasons", ())) or "-"
-        lines.append(f"{row.get('item_id') or '-'}  {row.get('attempt_id') or '-'}  {owner}  {local}  {codes}")
+        item = row.get("item_id") or row.get("work_id") or "-"
+        attempt = row.get("attempt_id") or row.get("run_id") or "-"
+        lines.append(f"{item}  {attempt}  {owner}  {local}  {codes}")
     return "\n".join(lines)
 
 
 def register(sub):
     parser = sub.add_parser("lifecycle", help="read-only joined owner and local lifecycle rows")
     parser.add_argument("--repo", required=True, help="configured owner repository")
-    parser.add_argument("--item", help="local work/release identifier")
+    identifiers = parser.add_mutually_exclusive_group()
+    identifiers.add_argument("--item", help="local work/release identifier")
+    identifiers.add_argument("--work-id", type=int, help="read an owner Work item without local state")
+    parser.add_argument("--run-id", help="also read this owner run and evidence tail with --work-id")
     parser.add_argument("--json", action="store_true", help="emit the same lifecycle snapshot as JSON")
     return {"lifecycle": _cmd}
 
 
 def _cmd(args, log, *, client=None):
     """CLI adapter kept thin so tests can provide a fake catalog client."""
+    work_id = getattr(args, "work_id", None)
+    run_id = getattr(args, "run_id", None)
+    if work_id is not None or run_id is not None:
+        return _owner_history(args, client, work_id, run_id)
     if client is None:
         from .coordination import configured
         coordinator = configured(args.repo)
@@ -510,8 +519,36 @@ def _cmd(args, log, *, client=None):
                           journal_path=journal_path)
     for row in rows:
         row["reasons"] = attention_reasons(row)
-    if args.json:
+    _print_rows(rows, args.json)
+    return 0
+
+
+def _owner_history(args, client, work_id, run_id):
+    from .coordination import _configured_client
+
+    if work_id is None or work_id <= 0:
+        print("lifecycle: provide a positive --work-id for an owner-only read")
+        return 1
+    if client is None:
+        client = _configured_client(args.repo)
+    if client is None:
+        print(f"{args.repo}: Vuoro coordination is not configured")
+        return 1
+    row = lifecycle(client, work_id=work_id, run_id=run_id)
+    row["mode"] = "owner-only"
+    if run_id is not None:
+        row["work_run_association"] = "caller-supplied"
+        if not args.json:
+            print("The Work and run IDs were supplied by the caller.")
+    _print_rows([row], args.json)
+    required = ["work.public.item-v1"]
+    if run_id is not None:
+        required += ["work.run.resolve-v1", "work.evidence.tail-v1"]
+    return int(any(row["facts"][name]["state"] != "observed" for name in required))
+
+
+def _print_rows(rows, as_json):
+    if as_json:
         print(json.dumps({"rows": rows}, sort_keys=True))
     else:
         print(render_rows(rows))
-    return 0
