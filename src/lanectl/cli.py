@@ -309,7 +309,7 @@ def main(argv: list[str] | None = None) -> int:
 
 
 def _dispatch(a, handlers) -> int:
-    if a.cmd == "coordinate" and (a.require_stream_read or a.work_item is not None):
+    if a.cmd == "coordinate" and (a.require_work_read or a.require_stream_read or a.work_item is not None):
         return handlers[a.cmd](a, None)
     if a.cmd == "lifecycle" and (a.work_id is not None or a.run_id is not None):
         return handlers[a.cmd](a, None)

@@ -27,6 +27,10 @@ required outside loopback; redirects are refused. `lanectl coordinate example`
 checks protocol, environment and catalog compatibility without claiming work.
 Discovery can be public: a successful catalog response does not prove that the
 runner credential authenticated. Run
+`lanectl coordinate example --require-work-read` to verify an authorized read
+for the configured repository, including when its Work list is empty. This
+check needs no Lane history service and creates no run, lease, or local state.
+Use
 `lanectl coordinate example --work-item 123` to verify that an item with
 that exact ID is pending in the configured repository at the Work owner.
 Use the ID from that owner's workspace. The check creates no run, lease,
