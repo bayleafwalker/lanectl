@@ -44,8 +44,9 @@ def owner():
                 return self.respond({'client_protocol': {'minimum': 1, 'maximum': 1},
                     'environment': {'name': state['environment']}})
             assert self.path == '/api/catalog/v1'
-            self.respond({'revision': 'catalog-a', 'operations': [
-                {'name': 'work.' + op + '-v1'} for op in OPS]})
+            operations = [{'name': 'work.' + op + '-v1'} for op in OPS]
+            operations.append({'name': 'lane.stream.read-v1'})
+            self.respond({'revision': 'catalog-a', 'operations': operations})
 
         def do_POST(self):
             state['user_agents'].append(self.headers['User-Agent'])
@@ -70,6 +71,9 @@ def owner():
                 result = {'lease': dict(state['lease'])}
             elif op.endswith('public.item-v1'):
                 result = state['completion']
+            elif op == 'lane.stream.read-v1':
+                result = {'revision': 0, 'head_revision': 0, 'events': [],
+                          'next_after': 0, 'has_more': False}
             elif op.endswith('evidence.tail-v1'):
                 result = {'item': state['tail']}
             elif op.endswith('evidence.append-v1'):
@@ -303,3 +307,29 @@ def test_completion_refuses_unavailable_owner_facts(tmp_path):
         s['completion']['state'] = 'unavailable'
         with pytest.raises(CoordinationError,match='unavailable'):
             c.completion('release-a1')
+
+
+@pytest.mark.parametrize('denial', [None, 'identity-required', 'repo-scope-mismatch'])
+def test_coordinate_requires_scoped_stream_read(tmp_path, monkeypatch, capsys, denial):
+    from lanectl.cli import main
+
+    with owner() as (endpoint, state):
+        governance = tmp_path / 'governance'
+        governance.mkdir()
+        (governance / 'vuoro.toml').write_text(
+            f'[repos.example]\nendpoint = "{endpoint}"\nrepo_id = "repo-a"\n'
+            'expected_environment = "test"\ntoken_env = "TEST_RUNNER_TOKEN"\n'
+        )
+        local_state = tmp_path / 'state'
+        monkeypatch.setenv('LANECTL_HOME', str(tmp_path))
+        monkeypatch.setenv('LANECTL_STATE', str(local_state))
+        monkeypatch.setenv('TEST_RUNNER_TOKEN', 'synthetic-runner')
+        state['deny'] = denial
+
+        assert main(['coordinate', 'example', '--require-stream-read']) == (1 if denial else 0)
+        output = capsys.readouterr().out
+        assert (denial or 'repository-scoped stream read accepted') in output
+        assert [(call['operation'], call['arguments']) for call in state['calls']] == [
+            ('lane.stream.read-v1', {'stream': 'control', 'after': 0, 'limit': 1})
+        ]
+        assert not local_state.exists()
