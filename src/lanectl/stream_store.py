@@ -158,6 +158,16 @@ def register(sub):
     return {'stream': _cmd}
 
 
+def _check_history_repository(events, repository):
+    """Refuse known foreign scope. Legacy unlabeled events need owner review."""
+    for offset, event in enumerate(events, 1):
+        if 'repo' in event['data'] and event['data']['repo'] != repository:
+            raise StreamError(
+                'history-scope-mismatch',
+                f'history event {offset} has a repository that differs from the target',
+            )
+
+
 def _cmd(args, log):
     if args.stream_action in {"backup", "restore"}:
         from . import stream_recovery
@@ -188,11 +198,11 @@ def _cmd(args, log):
     remote = RemoteEventLog(coordinator.client, state_dir() / 'stream-pending.json', stream=args.stream)
     existing = remote.read()
     if args.stream_action == 'import':
-        from .contracts import validate_event
         source = Path(args.source)
         original = source.read_bytes()
         source_digest = hashlib.sha256(original).hexdigest()
         historical = [validate_event(json.loads(line)) for line in original.splitlines() if line.strip()]
+        _check_history_repository(historical, args.repo)
         shared = min(len(existing), len(historical))
         if existing[:shared] != historical[:shared]:
             raise StreamError('history-mismatch', 'served history differs from local source')
@@ -221,7 +231,8 @@ def _cmd(args, log):
     if local.exists() and local.read_text().strip() and not existing:
         raise StreamError('import-required', 'owner stream is empty but local authority has events; import and verify before switching')
     if local.exists() and local.read_text().strip():
-        historical = [json.loads(line) for line in local.read_text().splitlines() if line.strip()]
+        historical = [validate_event(json.loads(line)) for line in local.read_text().splitlines() if line.strip()]
+        _check_history_repository(historical, args.repo)
         if existing[:len(historical)] != historical:
             raise StreamError('history-mismatch', 'served stream does not preserve the local authority history')
     body = {'schema':'lanectl.backend/v1','backend':'served','repo':args.repo,

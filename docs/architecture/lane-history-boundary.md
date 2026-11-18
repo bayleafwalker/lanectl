@@ -50,9 +50,10 @@ Before accepting concurrent writers, bind the scope to the actual policy
 owner, model the cross-repository transaction and prove isolation. Keep
 repository-scoped event access. An internal policy lock or commit record may
 span member repositories, but readable event payloads must stay partitioned.
-Current stream import accepts a mixed source and selects one repository's
-stream. Do not use this procedure for mixed authority history without a
-scope-preserving migration and data-class review.
+Stream import refuses a source with an explicit foreign repository label.
+Unlabeled events still require owner review before a single-repository import.
+Mixed authority history requires a scope-preserving migration and data-class
+review.
 
 Evaluate PostgreSQL/CloudNativePG first when a shared policy owner is required.
 Measure transactional revision checks, stable snapshots and exact
