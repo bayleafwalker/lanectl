@@ -62,7 +62,11 @@ isolation against arbitrary hostile code sharing the operator's user identity.
 The credential drop-in alone does not provide that isolation. Read the actual environment name
 from the observed handshake; do not infer it from the URL. Validate the
 configured repository with `lanectl coordinate` before changing its recurring
-service. The optional `contrib/systemd/lanectl-tick-coordinated.conf` adds only
+service. With coordination configured, `doctor` checks for a reachable user
+systemd manager and the worker launcher before `tick` admits work. This
+reports host readiness for launching the sandbox. Qualify the actual
+credential and filesystem isolation separately on the selected host.
+The optional `contrib/systemd/lanectl-tick-coordinated.conf` adds only
 credential loading and the workstation CA bundle to the existing service. For a
 one-off check, keep the draft configuration in a separate reviewed worktree:
 
