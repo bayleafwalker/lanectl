@@ -62,3 +62,10 @@ behavior, and recovery from approved off-node custody. Use a disposable
 fresh-owner restore and compare canonical event and batch data before
 approving import or selecting served authority. Keep existing SQLite stream
 qualification as a reference for comparison and offline recovery.
+
+The PostgreSQL migration runs in the owner environment with Psycopg available.
+Supply the migration connection through `VUORO_LANE_POSTGRES_MIGRATION_DSN`
+and run `lanectl stream init-postgres --runtime-role ROLE`. Provision the
+named runtime role before migration. Start Vuoro with its separate runtime
+connection only after the migration succeeds. The migration grants the runtime
+role schema usage, scoped-table reads and inserts, and head revision updates.

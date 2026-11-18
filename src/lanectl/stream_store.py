@@ -146,6 +146,8 @@ def register(sub):
     actions = parser.add_subparsers(dest='stream_action', required=True)
     init = actions.add_parser('init', help='explicitly initialize/migrate the owner database')
     init.add_argument('database')
+    postgres = actions.add_parser('init-postgres', help='explicitly initialize PostgreSQL using the migration role')
+    postgres.add_argument('--runtime-role', required=True, help='existing PostgreSQL role for Lane runtime access')
     backend = actions.add_parser('configure', help='select served authority for all local invocations')
     backend.add_argument('--repo', required=True)
     backend.add_argument('--home', required=True)
@@ -178,6 +180,9 @@ def _cmd(args, log):
             return 1
         print(encode(receipt))
         return 0
+    if args.stream_action == 'init-postgres':
+        from .stream_postgres import migrate_from_environment
+        return migrate_from_environment(args.runtime_role)
     if args.stream_action == 'init':
         initialize(args.database)
         print(f'lane stream schema {SCHEMA_VERSION}: {args.database}')

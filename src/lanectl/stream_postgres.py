@@ -1,6 +1,8 @@
 """PostgreSQL repository streams for the Lane owner."""
 
 import json
+import os
+import sys
 from contextlib import contextmanager
 
 from .stream_store import (
@@ -63,6 +65,32 @@ def initialize_postgres(connect, *, runtime_role=None):
                 f"GRANT INSERT ON lane.heads, lane.events, lane.batches TO {role}"
             )
             db.execute(f"GRANT UPDATE (revision) ON lane.heads TO {role}")
+
+
+def migrate_from_environment(runtime_role):
+    """Run the operator command without exposing a database credential."""
+    dsn = os.environ.get("VUORO_LANE_POSTGRES_MIGRATION_DSN")
+    if not dsn:
+        print("VUORO_LANE_POSTGRES_MIGRATION_DSN is required", file=sys.stderr)
+        return 1
+    try:
+        from psycopg import Error, connect
+    except ImportError:
+        print(
+            "Lane PostgreSQL migration requires psycopg in the owner environment",
+            file=sys.stderr,
+        )
+        return 1
+    try:
+        initialize_postgres(lambda: connect(dsn), runtime_role=runtime_role)
+    except StreamError as error:
+        print(str(error), file=sys.stderr)
+        return 1
+    except Error:
+        print("Lane PostgreSQL initialization failed", file=sys.stderr)
+        return 1
+    print(f"Lane PostgreSQL schema {SCHEMA_VERSION} initialized")
+    return 0
 
 
 class PostgresStreamStore(StreamStore):
