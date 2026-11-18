@@ -313,7 +313,7 @@ def _dispatch(a, handlers) -> int:
         return handlers[a.cmd](a, None)
     if a.cmd == "lifecycle" and (a.work_id is not None or a.run_id is not None):
         return handlers[a.cmd](a, None)
-    if a.cmd == "stream" and a.stream_action in {"backup", "restore"}:
+    if a.cmd == "stream" and a.stream_action in {"backup", "restore", "init-postgres"}:
         return handlers[a.cmd](a, None)
     if _needs_home(a.cmd):
         _check_home()
