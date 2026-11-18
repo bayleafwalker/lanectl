@@ -21,7 +21,7 @@ def expires(seconds=3600):
 @contextmanager
 def owner():
     state = {'calls': [], 'effects': {}, 'tail': None, 'deny': None, 'drop': None, 'user_agents': [],
-             'environment': 'test', 'correlation': None, 'completion': {'authority':'sprintctl','state':'ok',
+             'environment': 'test', 'correlation': None, 'work_list_state': 'ok', 'completion': {'authority':'sprintctl','state':'ok',
              'as_of':'2026-11-10T00:00:00Z','item':{'work_id':123,'status':'active','resolution':None}}, 'lease': {'lease_id': 'lease_test', 'state': 'active',
              'generation': 1, 'expires_at': expires(), 'heartbeat_interval_seconds': 20}}
 
@@ -46,6 +46,8 @@ def owner():
             assert self.path == '/api/catalog/v1'
             operations = [{'name': 'work.' + op + '-v1'} for op in OPS]
             operations.append({'name': 'lane.stream.read-v1'})
+            operations.append({'name': 'work.public.list-v1', 'execution_semantics': 'read',
+                               'repo_scoped': True, 'result_schema': {'type': 'object'}})
             self.respond({'revision': 'catalog-a', 'operations': operations})
 
         def do_POST(self):
@@ -71,6 +73,8 @@ def owner():
                 result = {'lease': dict(state['lease'])}
             elif op.endswith('public.item-v1'):
                 result = state['completion']
+            elif op == 'work.public.list-v1':
+                result = {'authority': 'sprintctl', 'state': state['work_list_state'], 'items': []}
             elif op == 'lane.stream.read-v1':
                 result = {'revision': 0, 'head_revision': 0, 'events': [],
                           'next_after': 0, 'has_more': False}
@@ -364,5 +368,35 @@ def test_coordinate_work_item_preflight(tmp_path, monkeypatch, capsys,
         assert expected in capsys.readouterr().out
         assert [(call["operation"], call["arguments"]) for call in state["calls"]] == [
             ("work.public.item-v1", {"work_id": 123})
+        ]
+        assert not local_state.exists()
+
+
+@pytest.mark.parametrize('status,denial,expected', [
+    ('ok', None, 'repository-scoped Work read accepted'),
+    ('ok', 'repo-unauthorized', 'repo-unauthorized'),
+    ('unavailable', None, 'owner reports unavailable work state'),
+])
+def test_coordinate_requires_scoped_work_read(tmp_path, monkeypatch, capsys, status, denial, expected):
+    from lanectl.cli import main
+
+    with owner() as (endpoint, state):
+        governance = tmp_path / 'governance'
+        governance.mkdir()
+        (governance / 'vuoro.toml').write_text(
+            f'[repos.example]\nendpoint = "{endpoint}"\nrepo_id = "repo-a"\n'
+            'expected_environment = "test"\ntoken_env = "TEST_RUNNER_TOKEN"\n'
+        )
+        local_state = tmp_path / 'state'
+        monkeypatch.setenv('LANECTL_HOME', str(tmp_path))
+        monkeypatch.setenv('LANECTL_STATE', str(local_state))
+        monkeypatch.setenv('TEST_RUNNER_TOKEN', 'synthetic-runner')
+        state['deny'] = denial
+        state['work_list_state'] = status
+
+        assert main(['coordinate', 'example', '--require-work-read']) == (0 if status == 'ok' and not denial else 1)
+        assert expected in capsys.readouterr().out
+        assert [(call['operation'], call['arguments']) for call in state['calls']] == [
+            ('work.public.list-v1', {})
         ]
         assert not local_state.exists()

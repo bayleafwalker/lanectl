@@ -438,6 +438,8 @@ def register(sub):
     parser = sub.add_parser('coordinate', help='inspect the configured Vuoro coordination owner')
     parser.add_argument('repo', help='repository name from governance/vuoro.toml')
     checks = parser.add_mutually_exclusive_group()
+    checks.add_argument('--require-work-read', action='store_true',
+                        help='require an authorized repository-scoped Work read')
     checks.add_argument('--require-stream-read', action='store_true',
                         help='require an authorized read of the repository control stream')
     checks.add_argument('--work-item', type=int, metavar='ID',
@@ -449,13 +451,20 @@ def _cmd(args, log):
     try:
         if args.work_item is not None and args.work_item <= 0:
             raise CoordinationError('Work item ID must be positive')
-        if args.require_stream_read or args.work_item is not None:
+        if args.require_work_read or args.require_stream_read or args.work_item is not None:
             client = _configured_client(args.repo)
         else:
             coordinator = configured(args.repo)
             client = coordinator.client if coordinator is not None else None
         if client is None:
             raise CoordinationError('Vuoro coordination is not configured')
+        if args.require_work_read:
+            from .lifecycle import ready_work
+            work = ready_work(client)
+            if work["state"] != "observed":
+                raise CoordinationError(work["reason"])
+            print(f'{args.repo}: Vuoro catalog {work["revision"]}; repository-scoped Work read accepted')
+            return 0
         catalog = client.discover()
         if args.require_stream_read:
             client.invoke(client.envelope('lane.stream.read-v1',
