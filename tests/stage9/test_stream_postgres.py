@@ -86,6 +86,23 @@ def test_postgres_owner_contract(tmp_path, monkeypatch, capsys):
             return psycopg.connect(host=tmp_path, dbname="postgres", user=runtime_user)
 
         store = PostgresStreamStore(connect_runtime)
+        retry = [
+            "stream",
+            "init-postgres",
+            "--if-needed",
+            "--runtime-role",
+            runtime_user,
+        ]
+        assert main(retry) == 0
+        assert "already initialized" in capsys.readouterr().out
+        monkeypatch.setenv(
+            "VUORO_LANE_POSTGRES_DSN",
+            psycopg.conninfo.make_conninfo(
+                host=tmp_path, dbname="postgres", user=runtime_user
+            ),
+        )
+        assert main(["stream", "check-postgres"]) == 0
+        assert "schema 1 ready" in capsys.readouterr().out
         event = make_event(
             "item.parked", {"reason": "qualification"}, item_id="fixture"
         )
@@ -133,6 +150,8 @@ def test_postgres_owner_contract(tmp_path, monkeypatch, capsys):
         with pytest.raises(StreamError, match="permissions exceed") as error:
             PostgresStreamStore(connect_runtime)
         assert error.value.code == "unsafe-runtime-role"
+        assert main(["stream", "check-postgres"]) == 1
+        assert "permissions exceed" in capsys.readouterr().err
         with psycopg.connect(dsn) as migration:
             migration.execute('REVOKE DELETE ON lane.events FROM "lane-runtime"')
         assert PostgresStreamStore(connect_runtime).read(*scope)["head_revision"] == 2

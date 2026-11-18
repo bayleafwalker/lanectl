@@ -15,7 +15,7 @@ from .stream_store import (
 )
 
 
-def initialize_postgres(connect, *, runtime_role=None):
+def initialize_postgres(connect, *, runtime_role=None, if_needed=False):
     """Initialize a new owner schema using a migration-role connection factory."""
     if runtime_role is not None and (
         not isinstance(runtime_role, str)
@@ -31,6 +31,9 @@ def initialize_postgres(connect, *, runtime_role=None):
                 "store-unavailable",
                 "lane migration requires a transactional connection",
             )
+        db.execute(
+            "SELECT pg_advisory_xact_lock(hashtextextended('lanectl:lane:migration', 0))"
+        )
         owner = db.execute("""
             SELECT nspowner = CURRENT_USER::regrole
             FROM pg_catalog.pg_namespace WHERE nspname = 'lane'
@@ -42,6 +45,11 @@ def initialize_postgres(connect, *, runtime_role=None):
                 "incompatible-schema",
                 "Lane schema belongs to a different migration role",
             )
+        if if_needed and db.execute(
+            "SELECT to_regclass('lane.schema_version') IS NOT NULL"
+        ).fetchone() == (True,):
+            check_schema(db)
+            return False
         db.execute("""
             CREATE TABLE lane.schema_version (
                 singleton boolean PRIMARY KEY CHECK (singleton), version integer NOT NULL
@@ -75,9 +83,10 @@ def initialize_postgres(connect, *, runtime_role=None):
                 f"GRANT INSERT ON lane.heads, lane.events, lane.batches TO {role}"
             )
             db.execute(f"GRANT UPDATE (revision) ON lane.heads TO {role}")
+        return True
 
 
-def migrate_from_environment(runtime_role):
+def migrate_from_environment(runtime_role, *, if_needed=False):
     """Run the operator command without exposing a database credential."""
     dsn = os.environ.get("VUORO_LANE_POSTGRES_MIGRATION_DSN")
     if not dsn:
@@ -92,14 +101,61 @@ def migrate_from_environment(runtime_role):
         )
         return 1
     try:
-        initialize_postgres(lambda: connect(dsn), runtime_role=runtime_role)
+        initialized = initialize_postgres(
+            lambda: connect(dsn), runtime_role=runtime_role, if_needed=if_needed
+        )
     except StreamError as error:
         print(str(error), file=sys.stderr)
         return 1
     except Error:
         print("Lane PostgreSQL initialization failed", file=sys.stderr)
         return 1
-    print(f"Lane PostgreSQL schema {SCHEMA_VERSION} initialized")
+    action = "initialized" if initialized else "already initialized"
+    print(f"Lane PostgreSQL schema {SCHEMA_VERSION} {action}")
+    return 0
+
+
+def check_schema(db):
+    version = db.execute(
+        "SELECT version FROM lane.schema_version WHERE singleton"
+    ).fetchone()
+    if version != (SCHEMA_VERSION,):
+        raise StreamError("incompatible-schema", "lane stream migration required")
+    db.execute("SELECT workspace, repo, stream, revision FROM lane.heads LIMIT 0")
+    db.execute(
+        "SELECT workspace, repo, stream, revision, event, principal FROM lane.events LIMIT 0"
+    )
+    db.execute(
+        "SELECT workspace, repo, stream, principal, key, digest, result FROM lane.batches LIMIT 0"
+    )
+
+
+def check_from_environment():
+    """Verify current readiness using the separate runtime connection."""
+    dsn = os.environ.get("VUORO_LANE_POSTGRES_DSN")
+    if not dsn:
+        print("VUORO_LANE_POSTGRES_DSN is required", file=sys.stderr)
+        return 1
+    try:
+        from psycopg import connect
+    except ImportError:
+        print(
+            "Lane PostgreSQL readiness requires psycopg in the owner environment",
+            file=sys.stderr,
+        )
+        return 1
+
+    def connect_read_only():
+        db = connect(dsn)
+        db.read_only = True
+        return db
+
+    try:
+        PostgresStreamStore(connect_read_only)
+    except StreamError as error:
+        print(str(error), file=sys.stderr)
+        return 1
+    print(f"Lane PostgreSQL schema {SCHEMA_VERSION} ready")
     return 0
 
 
@@ -109,22 +165,7 @@ class PostgresStreamStore(StreamStore):
     def __init__(self, connect):
         self.connect = connect
         with self._db() as db:
-            version = db.execute(
-                "SELECT version FROM lane.schema_version WHERE singleton"
-            ).fetchone()
-            if version != (SCHEMA_VERSION,):
-                raise StreamError(
-                    "incompatible-schema", "lane stream migration required"
-                )
-            db.execute(
-                "SELECT workspace, repo, stream, revision FROM lane.heads LIMIT 0"
-            )
-            db.execute(
-                "SELECT workspace, repo, stream, revision, event, principal FROM lane.events LIMIT 0"
-            )
-            db.execute(
-                "SELECT workspace, repo, stream, principal, key, digest, result FROM lane.batches LIMIT 0"
-            )
+            check_schema(db)
             unsafe = db.execute("""
                 SELECT has_schema_privilege('lane', 'CREATE')
                     OR EXISTS (
