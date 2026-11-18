@@ -125,6 +125,31 @@ class PostgresStreamStore(StreamStore):
             db.execute(
                 "SELECT workspace, repo, stream, principal, key, digest, result FROM lane.batches LIMIT 0"
             )
+            unsafe = db.execute("""
+                SELECT has_schema_privilege('lane', 'CREATE')
+                    OR EXISTS (
+                        SELECT 1 FROM pg_catalog.pg_namespace
+                        WHERE nspname = 'lane' AND pg_has_role(nspowner, 'MEMBER')
+                    )
+                    OR EXISTS (
+                        SELECT 1 FROM unnest(ARRAY[
+                            'lane.schema_version', 'lane.heads', 'lane.events', 'lane.batches'
+                        ]) AS history(relation)
+                        WHERE has_table_privilege(relation, 'DELETE, TRUNCATE, TRIGGER')
+                    )
+                    OR has_any_column_privilege('lane.schema_version', 'INSERT, UPDATE')
+                    OR has_any_column_privilege('lane.events', 'UPDATE')
+                    OR has_any_column_privilege('lane.batches', 'UPDATE')
+                    OR EXISTS (
+                        SELECT 1 FROM unnest(ARRAY['workspace', 'repo', 'stream']) AS keys(column_name)
+                        WHERE has_column_privilege('lane.heads', column_name, 'UPDATE')
+                    )
+            """).fetchone()
+            if unsafe != (False,):
+                raise StreamError(
+                    "unsafe-runtime-role",
+                    "Lane runtime permissions exceed the append-only contract",
+                )
 
     @contextmanager
     def _db(self):

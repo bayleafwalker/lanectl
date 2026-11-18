@@ -128,6 +128,14 @@ def test_postgres_owner_contract(tmp_path, monkeypatch, capsys):
             ):
                 db.execute(forbidden)
         assert store.read(*scope)["head_revision"] == 2
+        with psycopg.connect(dsn) as migration:
+            migration.execute('GRANT DELETE ON lane.events TO "lane-runtime"')
+        with pytest.raises(StreamError, match="permissions exceed") as error:
+            PostgresStreamStore(connect_runtime)
+        assert error.value.code == "unsafe-runtime-role"
+        with psycopg.connect(dsn) as migration:
+            migration.execute('REVOKE DELETE ON lane.events FROM "lane-runtime"')
+        assert PostgresStreamStore(connect_runtime).read(*scope)["head_revision"] == 2
     finally:
         subprocess.run(
             [*ctl, "-m", "immediate", "-w", "stop"], check=True, capture_output=True
