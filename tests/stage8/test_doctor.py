@@ -96,3 +96,27 @@ def test_doctor_is_read_only(estate, capsys):
     assert cli.main(["doctor"]) == 0
     capsys.readouterr()
     assert log.read() == []
+
+
+def test_tick_stops_before_admission_when_worker_manager_unreachable(estate, monkeypatch):
+    from lanectl import doctor, tick
+
+    _, _, log = estate
+    (_home() / "governance" / "vuoro.toml").write_text('[repos.target]\ncredential_name="runner"\n')
+    original = subprocess.run
+    probes = []
+
+    def run(args, *rest, **kwargs):
+        if args[1:] == ["--user", "show", "--property=Version", "--value"]:
+            probes.append(args)
+            return subprocess.CompletedProcess(args, 1, "", "bus unavailable")
+        return original(args, *rest, **kwargs)
+
+    monkeypatch.setattr(doctor.subprocess, "run", run)
+
+    def no_admission(*args, **kwargs):
+        raise AssertionError("tick attempted admission without a user systemd manager")
+
+    result = tick.tick(log, run_fn=no_admission)
+    assert result["stopped"] == "doctor"
+    assert len(probes) == 1

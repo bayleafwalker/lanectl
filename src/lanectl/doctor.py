@@ -153,6 +153,8 @@ def check_train_isolation(root: Path, repos: dict[str, RepoSpec]) -> list[Findin
         coordinated = tomllib.loads(path.read_text()).get('repos', {})
     except (OSError, ValueError):
         return [Finding(ERROR, 'train-isolation', 'cannot read coordination configuration')]
+    if not isinstance(coordinated, dict):
+        return [Finding(ERROR, 'train-isolation', 'coordination repos must be a table')]
     if not coordinated:
         return []
     unfenced = {name for name, repo in repos.items() if repo.train_isolation not in ('namespace', 'systemd')}
@@ -164,7 +166,24 @@ def check_train_isolation(root: Path, repos: dict[str, RepoSpec]) -> list[Findin
     if unfenced:
         findings.append(Finding(WARN, 'train-isolation',
             'environment-only trains can read same-user credential files: ' + ', '.join(sorted(unfenced))))
+    if (repos.keys() & coordinated.keys()) - unfenced:
+        findings.append(check_worker_manager())
     return findings
+
+
+def check_worker_manager() -> Finding:
+    """Check the user manager needed by the coordinated worker launcher."""
+    systemctl = shutil.which("systemctl")
+    if not systemctl or not shutil.which("systemd-run"):
+        return Finding(ERROR, "worker-manager", "coordinated workers require systemctl and systemd-run on PATH")
+    try:
+        probe = subprocess.run([systemctl, "--user", "show", "--property=Version", "--value"],
+                               capture_output=True, text=True, timeout=10)
+    except (OSError, subprocess.TimeoutExpired):
+        probe = None
+    if probe is None or probe.returncode or not probe.stdout.strip():
+        return Finding(ERROR, "worker-manager", "coordinated workers require a reachable user systemd manager")
+    return Finding(OK, "worker-manager", "user systemd manager reachable")
 
 
 def check_train_service(repos: dict[str, RepoSpec]) -> list[Finding]:
