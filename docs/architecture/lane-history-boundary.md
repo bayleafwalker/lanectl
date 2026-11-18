@@ -1,7 +1,9 @@
 # Lane history and shared admission
 
-Use the existing Vuoro Work surface for the workstation gateway proof and its
-observed week. LANECTL policy history remains on one writer for that proof.
+Use the existing Vuoro Work surface for the workstation gateway proof. Verify
+the required claim-to-outcome scenarios on demand against owner records as
+they occur in ordinary operation. LANECTL policy history remains on one writer
+for that proof.
 Neither Work coordination nor remote visibility into Work requires a served
 LANECTL event stream. The retry journal remains host-local SQLite.
 
@@ -39,7 +41,7 @@ that result.
 Retain one writer per shared policy for the initial Work proof. Prepare the
 off-workstation pilot with a distinct public-only authority and explicitly
 independent caps and provider pool, or transfer exclusive ownership of the
-pilot policy before the measured interval. If those conditions cannot be
+pilot policy before that pilot begins. If those conditions cannot be
 proved, hold that pilot. A requirement for independent writers to use the same
 caps or provider pool is enough to require a shared authoritative admission
 boundary. A visibility-only requirement is satisfied through projections.
