@@ -80,6 +80,14 @@ requires a fresh owner read reporting done/accepted. Awaiting verification remai
 pending. `lanectl work reconcile` retries exact owner-journal completion after a
 restart without substituting operator tracker status writes.
 
+Verify an exact pending Work item without claiming it:
+`lanectl coordinate example --work-item 123` checks that item 123 is pending at
+the configured Work owner (use the ID from that owner's workspace) and creates
+no run, lease, event log or journal. Preview the release itself with `claim-run`.
+The optional served lane event stream probe is distinct:
+`lanectl coordinate example --require-stream-read` requires an authorized read
+of the repository's control stream.
+
 For a served event stream, autonomous effect execution additionally requires
 `integrator_host` in the reviewed integrator policy to match this host's kernel
 hostname. Other hosts may admit workers using atomic stream CAS but cannot deploy,
