@@ -27,6 +27,12 @@ required outside loopback; redirects are refused. `lanectl coordinate example`
 checks protocol, environment and catalog compatibility without claiming work.
 Discovery can be public: a successful catalog response does not prove that the
 runner credential authenticated. Run
+`lanectl coordinate example --work-item 123` to verify that an item with
+that exact ID is pending in the configured repository at the Work owner.
+Use the ID from that owner's workspace. The check creates no run, lease,
+local event log or journal. Use `claim-run` to preview the release itself.
+
+For the optional served event store, run
 `lanectl coordinate example --require-stream-read` to require an authorized
 read of the repository's control stream, even if the stream is empty. The probe
 requests one event, prints no event contents, and leaves the event log and

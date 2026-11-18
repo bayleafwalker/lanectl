@@ -333,3 +333,36 @@ def test_coordinate_requires_scoped_stream_read(tmp_path, monkeypatch, capsys, d
             ('lane.stream.read-v1', {'stream': 'control', 'after': 0, 'limit': 1})
         ]
         assert not local_state.exists()
+
+
+@pytest.mark.parametrize("status,reported,denial,expected", [
+    ("pending", 123, None, "Work item 123 is pending"),
+    ("active", 123, None, "is not pending"),
+    ("pending", 124, None, "is not work 123"),
+    ("pending", 123, "item-not-found", "item-not-found"),
+])
+def test_coordinate_work_item_preflight(tmp_path, monkeypatch, capsys,
+                                        status, reported, denial, expected):
+    from lanectl.cli import main
+
+    with owner() as (endpoint, state):
+        governance = tmp_path / "governance"
+        governance.mkdir()
+        (governance / "vuoro.toml").write_text(
+            f'[repos.example]\nendpoint = "{endpoint}"\nrepo_id = "repo-a"\n'
+            'expected_environment = "test"\ntoken_env = "TEST_RUNNER_TOKEN"\n'
+        )
+        local_state = tmp_path / "state"
+        monkeypatch.setenv("LANECTL_HOME", str(tmp_path))
+        monkeypatch.setenv("LANECTL_STATE", str(local_state))
+        monkeypatch.setenv("TEST_RUNNER_TOKEN", "synthetic-runner")
+        state["completion"]["item"].update(status=status, work_id=reported)
+        state["deny"] = denial
+
+        success = status == "pending" and reported == 123 and denial is None
+        assert main(["coordinate", "example", "--work-item", "123"]) == (0 if success else 1)
+        assert expected in capsys.readouterr().out
+        assert [(call["operation"], call["arguments"]) for call in state["calls"]] == [
+            ("work.public.item-v1", {"work_id": 123})
+        ]
+        assert not local_state.exists()

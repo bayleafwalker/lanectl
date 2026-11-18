@@ -437,16 +437,23 @@ def _configured_client(repo_name, *, root=None):
 def register(sub):
     parser = sub.add_parser('coordinate', help='inspect the configured Vuoro coordination owner')
     parser.add_argument('repo', help='repository name from governance/vuoro.toml')
-    parser.add_argument('--require-stream-read', action='store_true',
+    checks = parser.add_mutually_exclusive_group()
+    checks.add_argument('--require-stream-read', action='store_true',
                         help='require an authorized read of the repository control stream')
+    checks.add_argument('--work-item', type=int, metavar='ID',
+                        help='require a matching pending Work item at the configured owner')
     return {'coordinate': _cmd}
 
 
 def _cmd(args, log):
     try:
-        coordinator = None if args.require_stream_read else configured(args.repo)
-        client = (_configured_client(args.repo) if args.require_stream_read
-                  else coordinator.client if coordinator is not None else None)
+        if args.work_item is not None and args.work_item <= 0:
+            raise CoordinationError('Work item ID must be positive')
+        if args.require_stream_read or args.work_item is not None:
+            client = _configured_client(args.repo)
+        else:
+            coordinator = configured(args.repo)
+            client = coordinator.client if coordinator is not None else None
         if client is None:
             raise CoordinationError('Vuoro coordination is not configured')
         catalog = client.discover()
@@ -454,6 +461,13 @@ def _cmd(args, log):
             client.invoke(client.envelope('lane.stream.read-v1',
                                           {'stream': 'control', 'after': 0, 'limit': 1}, None))
             detail = 'repository-scoped stream read accepted'
+        elif args.work_item is not None:
+            from .claim_preview import ITEM, _item
+            result = client.invoke(client.envelope(ITEM, {'work_id': args.work_item}, None))
+            _, reasons = _item(result, args.work_item)
+            if reasons:
+                raise CoordinationError('; '.join(reasons))
+            detail = f'Work item {args.work_item} is pending'
         else:
             detail = f'journal {coordinator.path}'
         print(f'{args.repo}: Vuoro catalog {catalog["revision"]}; {detail}')
