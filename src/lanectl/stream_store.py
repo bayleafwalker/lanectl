@@ -24,6 +24,29 @@ def encode(value):
     return json.dumps(value, sort_keys=True, separators=(',', ':'), allow_nan=False)
 
 
+def validate_batch(principal, key, expected_revision, events):
+    """Return a validated event copy and the owner-compatible request digest."""
+    if not isinstance(principal, str) or not principal or not isinstance(key, str) or not 8 <= len(key) <= 128:
+        raise StreamError('invalid-identity', 'principal and bounded idempotency key required')
+    if type(expected_revision) is not int or expected_revision < 0:
+        raise StreamError('invalid-revision', 'expected revision must be nonnegative')
+    if not isinstance(events, list) or not 1 <= len(events) <= MAX_BATCH:
+        raise StreamError('invalid-batch', 'batch must contain 1 to 256 events')
+    try:
+        encoded = encode(events)
+        if len(encoded.encode()) > MAX_BYTES:
+            raise ValueError('batch too large')
+        frozen = json.loads(encoded)
+        for event in frozen:
+            if not isinstance(event, dict) or not {'schema','ts','type','item_id','data'} <= event.keys():
+                raise ValueError('event envelope is incomplete')
+            validate_event(event)
+    except (ValueError, TypeError, AttributeError, KeyError) as exc:
+        raise StreamError('invalid-event', 'batch contains invalid lane events') from exc
+    digest = hashlib.sha256(encode([expected_revision, frozen]).encode()).hexdigest()
+    return frozen, digest
+
+
 def initialize(path):
     """Explicit migration entrypoint. Runtime construction never runs DDL."""
     path = Path(path)
@@ -100,24 +123,7 @@ class StreamStore:
 
     def append(self, workspace, repo, stream, principal, key, expected_revision, events):
         scope = self._scope(workspace, repo, stream)
-        if not isinstance(principal, str) or not principal or not isinstance(key, str) or not 8 <= len(key) <= 128:
-            raise StreamError('invalid-identity', 'principal and bounded idempotency key required')
-        if type(expected_revision) is not int or expected_revision < 0:
-            raise StreamError('invalid-revision', 'expected revision must be nonnegative')
-        if not isinstance(events, list) or not 1 <= len(events) <= MAX_BATCH:
-            raise StreamError('invalid-batch', 'batch must contain 1 to 256 events')
-        try:
-            encoded = encode(events)
-            if len(encoded.encode()) > MAX_BYTES:
-                raise ValueError('batch too large')
-            frozen = json.loads(encoded)
-            for event in frozen:
-                if not isinstance(event, dict) or not {'schema','ts','type','item_id','data'} <= event.keys():
-                    raise ValueError('event envelope is incomplete')
-                validate_event(event)
-        except (ValueError, TypeError, AttributeError, KeyError) as exc:
-            raise StreamError('invalid-event', 'batch contains invalid lane events') from exc
-        digest = hashlib.sha256(encode([expected_revision, frozen]).encode()).hexdigest()
+        frozen, digest = validate_batch(principal, key, expected_revision, events)
         with self._db() as db:
             db.execute('BEGIN IMMEDIATE')
             prior = db.execute('SELECT digest,result FROM lane_batches WHERE workspace=? AND repo=? AND stream=? AND principal=? AND key=?', (*scope, principal, key)).fetchone()
