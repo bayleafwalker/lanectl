@@ -32,12 +32,17 @@ that exact ID is pending in the configured repository at the Work owner.
 Use the ID from that owner's workspace. The check creates no run, lease,
 local event log or journal. Use `claim-run` to preview the release itself.
 
-From a reader with a configured repository binding and a scoped credential,
-`lanectl lifecycle --repo example --work-id 123 --run-id RUN_ID --json`
-reads Work disposition, run identity, and the evidence tail without a release
-checkout, event log, or coordination journal. Supply the Work and run IDs from
-the original receipt. The report labels that association as caller-supplied
-and preserves an unavailable lease read as an unknown fact.
+From a reader with a configured repository binding and a repository-scoped
+`work:read` credential, run
+`lanectl lifecycle --repo example --work-id 123 --json`. The Work fact gives
+the item disposition. If the deployed owner serves `work.lease.read-v1` to
+that reader, its fact gives the run IDs, settlement reports, and check
+references bound to the Work item. This requires no release checkout, event
+log, or coordination journal.
+
+Use `--run-id RUN_ID` for additional run and evidence-tail reads with a
+credential that is authorized for that run. The report labels the supplied
+association accordingly and preserves a refused read as an unknown fact.
 
 For the optional served event store, run
 `lanectl coordinate example --require-stream-read` to require an authorized
