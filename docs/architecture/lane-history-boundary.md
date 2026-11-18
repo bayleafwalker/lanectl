@@ -53,7 +53,15 @@ span member repositories, but readable event payloads must stay partitioned.
 Stream import refuses a source with an explicit foreign repository label.
 Unlabeled events still require owner review before a single-repository import.
 Mixed authority history requires a scope-preserving migration and data-class
-review.
+review. Keep a source digest and an event-to-repository provenance record.
+Train and release identifiers can support attribution, while events about
+cross-repository capacity or with fields from multiple repositories still
+need a payload-level review.
+
+Authority selection verifies the active local journal against the served
+prefix. Importing an extracted repository partition leaves a mixed active
+journal ineligible for that switch. Preserve the original journal and keep
+writers fenced while establishing and verifying the scoped handoff.
 
 Evaluate PostgreSQL/CloudNativePG first when a shared policy owner is required.
 Measure transactional revision checks, stable snapshots and exact
