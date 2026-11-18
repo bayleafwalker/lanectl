@@ -427,10 +427,16 @@ def test_unix_relay_forwards_only_fixed_gateway_methods_and_no_client_secrets(se
         assert "Location" not in headers and "Set-Cookie" not in headers
         forwarded = {name.lower(): value for name, value in calls[-1]["headers"].items()}
         assert "authorization" not in forwarded and "x-upstream" not in forwarded
-        for endpoint in ("/v1/embeddings", "/v1/models?upstream=evil", "http://evil.invalid/v1/models"):
+        for endpoint in ("/v1/embeddings", "/v1/models?upstream=evil"):
             with pytest.raises(urllib.error.HTTPError) as exc:
                 relay_request(endpoint)
             assert exc.value.code in (400, 404)
+        connection = http.client.HTTPConnection("127.0.0.1", 18021, timeout=3)
+        try:
+            connection.request("GET", "http://evil.invalid/v1/models")
+            assert connection.getresponse().status in (400, 404)
+        finally:
+            connection.close()
         assert len(calls) == 1
     with pytest.raises(OSError):
         socket.create_connection(("127.0.0.1", 18021), timeout=.1)

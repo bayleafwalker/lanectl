@@ -133,6 +133,8 @@ def test_request_deadline_does_not_restart_for_each_upstream_read(running, monke
     # mocked monotonic clock. TLS and destination policy are tested elsewhere.
     content = b'data: {"choices":[{"delta":{"content":"ok"}}]}\n\ndata: [DONE]\n\n'
 
+    first_fragment_sent = threading.Event()
+
     class SlowPeer(BaseHTTPRequestHandler):
         def log_message(self, *args):
             pass
@@ -147,6 +149,7 @@ def test_request_deadline_does_not_restart_for_each_upstream_read(running, monke
                 time.sleep(.7)
                 self.wfile.write(content[:12])
                 self.wfile.flush()
+                first_fragment_sent.set()
                 time.sleep(.7)
                 self.wfile.write(content[12:])
                 self.wfile.flush()
@@ -172,10 +175,11 @@ def test_request_deadline_does_not_restart_for_each_upstream_read(running, monke
 
     try:
         _, url = running(opener=gateway.build_opener(config), timeout_s=1)
-        started = time.monotonic()
         with pytest.raises(TRANSPORT_FAILURES):
             read(url)
-        assert time.monotonic() - started < 1.3
+        # A rolling one-second timeout would accept both fragments. Demand
+        # the transport failure after the first successful upstream write.
+        assert first_fragment_sent.is_set()
     finally:
         peer.shutdown()
         peer.server_close()

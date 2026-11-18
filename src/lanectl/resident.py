@@ -86,7 +86,17 @@ checkout is not qualification, even if it happens to contain qualified=true.
     path = Path(path).absolute()
     for candidate in dict.fromkeys((path, *path.parents, path.resolve(), *path.resolve().parents)):
         info = candidate.lstat()
-        if info.st_uid != 0 or (not stat.S_ISLNK(info.st_mode) and info.st_mode & 0o022):
+        # A multi-user Nix store is group-writable and sticky. Its root
+        # ownership and sticky bit protect each existing root-owned entry.
+        sticky_store = (
+            candidate == Path("/nix/store")
+            and stat.S_ISDIR(info.st_mode)
+            and info.st_mode & stat.S_ISVTX
+            and not info.st_mode & stat.S_IWOTH
+        )
+        if info.st_uid != 0 or (
+            not stat.S_ISLNK(info.st_mode) and info.st_mode & 0o022 and not sticky_store
+        ):
             raise ResidentError(f"configuration must be root-protected: {candidate}")
     if not path.resolve().is_file():
         raise ResidentError("protected configuration must resolve to a regular file")

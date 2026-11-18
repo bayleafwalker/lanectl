@@ -1,15 +1,21 @@
 { lib, python3Packages, src }:
 python3Packages.buildPythonPackage {
-  pname = "lanectl-resident";
-  version = "0.2.15-resident";
+  pname = "lanectl";
+  version = "0.2.15";
   inherit src;
   pyproject = true;
   build-system = [ python3Packages.hatchling ];
   nativeCheckInputs = with python3Packages; [ pytestCheckHook hypothesis ];
-  # These protocol/adapter tests fit a Nix build sandbox. The complete suite
-  # also requires a running systemd user bus and remains a separate required
-  # target-host/CI gate; do not waive it based on this package build.
-  pytestFlagsArray = [ "tests/resident" ];
+  # The Nix sandbox lacks the host machine identity used by coordinator
+  # tests. The installed-interpreter and complete resident tests are also
+  # required on the target host.
+  enabledTestPaths = [
+    "tests/resident/test_gateway.py"
+    "tests/resident/test_gateway_review.py"
+    "tests/resident/test_native.py"
+    "tests/resident/test_systemd.py"
+  ];
+  disabledTests = [ "test_isolated_module_start_ignores_workspace_python_shadow" ];
   pythonImportsCheck = [
     "lanectl.resident" "lanectl.resident_native"
     "lanectl.resident_gateway" "lanectl.resident_systemd"

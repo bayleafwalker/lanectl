@@ -135,21 +135,24 @@ let
     window_s = cfg.gateway.windowSeconds;
   });
   addressFamily = address: if lib.hasInfix ":" address then "ip6" else "ip";
+  nftIdentity = name:
+    let uid = config.users.users.${name}.uid;
+    in if uid == null then ''"${name}"'' else toString uid;
   gatewayDestinations = lib.concatMapStringsSep "\n" (destination:
-    ''meta skuid "${cfg.gatewayUser}" ${addressFamily destination.address} daddr ${destination.address} tcp dport ${toString destination.port} accept''
+    ''meta skuid ${nftIdentity cfg.gatewayUser} ${addressFamily destination.address} daddr ${destination.address} tcp dport ${toString destination.port} accept''
   ) cfg.gateway.allowedTcpDestinations;
   dnsRules = lib.concatMapStringsSep "\n" (address:
-    ''meta skuid "${cfg.gatewayUser}" ${addressFamily address} daddr ${address} meta l4proto { tcp, udp } th dport 53 accept''
+    ''meta skuid ${nftIdentity cfg.gatewayUser} ${addressFamily address} daddr ${address} meta l4proto { tcp, udp } th dport 53 accept''
   ) cfg.gateway.dnsServers;
   outputRules = [
     # Defense in depth for an accidentally host-networked process using the
     # worker UID; intended tools have their own network namespace and loopback.
-    ''meta skuid "${cfg.workerUser}" counter reject''
+    ''meta skuid ${nftIdentity cfg.workerUser} counter reject''
   ] ++ lib.filter (line: line != "") (lib.splitString "\n" (dnsRules + "\n" + gatewayDestinations))
     ++ lib.optionals cfg.gateway.allowPublicHttps [
-      ''meta skuid "${cfg.gatewayUser}" ip daddr != { 0.0.0.0/8, 10.0.0.0/8, 100.64.0.0/10, 127.0.0.0/8, 169.254.0.0/16, 172.16.0.0/12, 192.0.0.0/24, 192.168.0.0/16, 198.18.0.0/15, 224.0.0.0/4, 240.0.0.0/4 } tcp dport 443 accept''
-      ''meta skuid "${cfg.gatewayUser}" ip6 daddr != { ::/128, ::1/128, fc00::/7, fe80::/10, ff00::/8 } tcp dport 443 accept''
-    ] ++ [ ''meta skuid "${cfg.gatewayUser}" counter reject'' ];
+      ''meta skuid ${nftIdentity cfg.gatewayUser} ip daddr != { 0.0.0.0/8, 10.0.0.0/8, 100.64.0.0/10, 127.0.0.0/8, 169.254.0.0/16, 172.16.0.0/12, 192.0.0.0/24, 192.168.0.0/16, 198.18.0.0/15, 224.0.0.0/4, 240.0.0.0/4 } tcp dport 443 accept''
+      ''meta skuid ${nftIdentity cfg.gatewayUser} ip6 daddr != { ::/128, ::1/128, fc00::/7, fe80::/10, ff00::/8 } tcp dport 443 accept''
+    ] ++ [ ''meta skuid ${nftIdentity cfg.gatewayUser} counter reject'' ];
   nftBackend = config.networking.nftables.enable;
   firewallOwnerUnit = if nftBackend then "nftables.service" else "firewall.service";
   # An independent nft table coexists with the workstation's iptables firewall.
@@ -217,6 +220,11 @@ in {
 
   config = mkIf cfg.enable {
     assertions = [
+      {
+        assertion = !nftBackend || (config.users.users.${cfg.workerUser}.uid != null
+          && config.users.users.${cfg.gatewayUser}.uid != null);
+        message = "Declare fixed resident user UIDs for build-time nftables validation.";
+      }
       { assertion = lib.versionAtLeast pkgs.systemd.version "257"; message = "Resident tools require systemd >=257 for disconnected private temporary storage."; }
       { assertion = cfg.workerUser != cfg.gatewayUser; message = "Resident worker and credential gateway require different UIDs."; }
       { assertion = cfg.gateway.port == 18021; message = "The private native model relay uses the fixed loopback port 18021."; }

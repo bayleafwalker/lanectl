@@ -19,6 +19,7 @@ import socket
 import sqlite3
 import ssl
 import stat
+import struct
 import threading
 import time
 import urllib.error
@@ -163,6 +164,29 @@ def load_config(path):
     return config
 
 
+def _systemd_credential_acl(fd, info, directory):
+    # With a static service UID, systemd can expose a root-owned credential
+    # using a named read-only ACL. The group mode then shows the ACL mask.
+    if (Path(directory).parent != Path("/run/credentials")
+            or (info.st_uid, info.st_gid, stat.S_IMODE(info.st_mode)) != (0, 0, 0o440)):
+        return False
+    undefined_id = 0xffffffff
+    expected = struct.pack("<I", 2) + b"".join(
+        struct.pack("<HHI", tag, permissions, user)
+        for tag, permissions, user in (
+            (0x01, 4, undefined_id),  # owner
+            (0x02, 4, os.geteuid()),  # named service UID
+            (0x04, 0, undefined_id),  # owning group
+            (0x10, 4, undefined_id),  # mask
+            (0x20, 0, undefined_id),  # other
+        )
+    )
+    try:
+        return os.getxattr(fd, "system.posix_acl_access") == expected
+    except OSError:
+        return False
+
+
 def read_credential(name, environment=None):
     if not isinstance(name, str) or re.fullmatch(r"[A-Za-z0-9_-]{1,64}", name) is None:
         raise GatewayError("invalid credential name")
@@ -174,8 +198,9 @@ def read_credential(name, environment=None):
         fd = os.open(name, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK, dir_fd=parent)
         try:
             info = os.fstat(fd)
-            if (not stat.S_ISREG(info.st_mode) or info.st_uid not in (0, os.geteuid())
-                    or info.st_mode & 0o077):
+            private = info.st_uid in (0, os.geteuid()) and not info.st_mode & 0o077
+            if (not stat.S_ISREG(info.st_mode)
+                    or not (private or _systemd_credential_acl(fd, info, directory))):
                 raise GatewayError("upstream credential must be a private regular file")
             with os.fdopen(fd, "rb", closefd=False) as stream:
                 data = stream.read(8193)
