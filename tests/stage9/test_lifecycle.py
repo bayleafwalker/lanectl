@@ -69,3 +69,24 @@ def test_ready_list_preserves_owner_order_without_a_local_ranking():
     fact = ready_work(Client())
     assert fact["state"] == "observed"
     assert fact["value"]["items"] == ["first", "second"]
+
+
+def test_owner_only_lifecycle_uses_no_local_state(tmp_path, monkeypatch, capsys):
+    import json
+
+    from lanectl import coordination
+    from lanectl.cli import main
+
+    client = Client(lease_error="owner refused: runner-operation-denied (HTTP 403)")
+    monkeypatch.setattr(coordination, "_configured_client", lambda repo: client)
+    state = tmp_path / "state"
+    monkeypatch.setenv("LANECTL_STATE", str(state))
+    run_id = "run_0123456789ABCDEFGHJKMNPQRS"
+    assert main(["lifecycle", "--repo", "example", "--work-id", "44",
+                 "--run-id", run_id, "--json"]) == 0
+    row = json.loads(capsys.readouterr().out)["rows"][0]
+    assert (row["work_id"], row["run_id"]) == (44, run_id)
+    assert row["facts"]["work.evidence.tail-v1"]["value"] == {"tail": "e9"}
+    assert row["facts"]["work.lease.read-v1"]["state"] == "unknown"
+    assert not any(name.startswith("local.") for name in row["facts"])
+    assert not state.exists()
