@@ -1,7 +1,7 @@
 id = "hla-domain-cards"
 repo = "homelab-analytics"
 base_sha = "ace5afee59714234aed135310101fb25781a2337"
-revision = 3
+revision = 4
 draft = true
 title = "Compose evidence-backed cards for active household domains"
 task_class = "product-api"

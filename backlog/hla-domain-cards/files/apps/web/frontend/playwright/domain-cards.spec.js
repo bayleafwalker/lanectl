@@ -43,7 +43,7 @@ async function checkCards(page) {
 
 async function trendLists(card, count) {
   await expect(card.getByRole("heading", {name:"Trend", exact:true})).toBeVisible();
-  const lists = card.locator("ul:has(time[datetime]), ol:has(time[datetime]), [role=list]:has(time[datetime])");
+  const lists = card.getByRole("list", {name:/\btrend\b/i});
   await expect(lists).toHaveCount(count);
   for (const list of await lists.all()) {
     await expect(list).toBeVisible();
