@@ -194,9 +194,11 @@ def appservice_provider_config() -> dict:
     from .resident_gateway import GO_ROUTE
     from .resident_native import render_gateway_opencode
 
-    return render_gateway_opencode(GO_ROUTE.split("/", 1)[1],
-                                   f"http://127.0.0.1:{APPSERVICE_GATEWAY_PORT}/v1",
-                                   32768, 8192)
+    config = render_gateway_opencode(GO_ROUTE.split("/", 1)[1],
+                                     f"http://127.0.0.1:{APPSERVICE_GATEWAY_PORT}/v1",
+                                     32768, 8192)
+    config["agents"] = {"title": {"disabled": True}}
+    return config
 
 
 def _record_result(output, exit_code, started, model, status_file, *, interrupted=False, diagnostic=""):
