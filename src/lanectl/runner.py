@@ -784,7 +784,7 @@ def execute(c: Claim, log: EventLog, adapter_fn=None, *, lease_guard=None,
     elif res.outcome == "failed" and head == seed_sha:
         gates = {}   # nothing to gate; decide() classifies this as infra
     else:
-        gates = run_gates(c, wt, seed_sha, head, acc, res.outcome, sb)
+        gates = run_gates(c, wt, seed_sha, head, acc, res.outcome, sb, cancel_event=cancel_event)
     for g, vs in gates.items():
         log.append("gate.result", {"attempt_id": c.attempt_id, "gate": g, "passed": not vs,
                                    "violations": vs}, item_id=rel.id)
@@ -840,7 +840,7 @@ def record_decision(log: EventLog, *, item_id: str, attempt_id: str, model: str,
 
 
 def run_gates(c: Claim, wt: Path, seed_sha: str, head: str, acc: dict[str, bytes],
-              worker_outcome: str, sb=None) -> dict[str, list[str]]:
+              worker_outcome: str, sb=None, *, cancel_event=None) -> dict[str, list[str]]:
     wrap = sb.wrap_shell if sb else None
     rel, repo, lane = c.rel, c.repo, c.lane
     try:
@@ -852,27 +852,35 @@ def run_gates(c: Claim, wt: Path, seed_sha: str, head: str, acc: dict[str, bytes
                                                 repo.protected_paths)}
     if diffpolicy.is_protected_violation(gates["diff-policy"]) or worker_outcome == "escalated":
         return gates
+
+    def run_appservice_gate(cmd, checkout, timeout):
+        return _train_command(repo, checkout, cmd, timeout_s=timeout, cancel_event=cancel_event)
+
+    run = run_appservice_gate if repo.train_isolation == "appservice" else None
     new_tests = {ch.path: (wt / ch.path).read_bytes() for ch in changes
                  if ch.status == "A" and match(ch.path, lane.test_globs) and (wt / ch.path).is_file()}
     gates["fail-on-base"] = failonbase.check(repo.path, rel.base_sha, new_tests, repo.test_cmd,
-                                             repo.setup_cmd, wrap=wrap)
+                                             repo.setup_cmd, wrap=wrap, run=run)
     acc_tests = {f: d for f, d in acc.items() if match(f, lane.test_globs)}
     if rel.acceptance.fail_on_base and acc_tests:
         gates["acceptance-on-base"] = [f"spec-gap {v}" for v in failonbase.check(
-            repo.path, rel.base_sha, acc_tests, repo.test_cmd, repo.setup_cmd, wrap=wrap)]
+            repo.path, rel.base_sha, acc_tests, repo.test_cmd, repo.setup_cmd, wrap=wrap, run=run)]
     for f, data in acc.items():   # belt and braces: gate the planner's bytes, not the worker's
         (wt / f).write_bytes(data)
     fails = []
     for cmd in rel.acceptance.exec:
-        p = subprocess.run(wrap(cmd, wt) if wrap else cmd, shell=True, cwd=wt,
-                           capture_output=True, text=True, timeout=1800)
+        if run is None:
+            p = subprocess.run(wrap(cmd, wt) if wrap else cmd, shell=True, cwd=wt,
+                               capture_output=True, text=True, timeout=1800)
+        else:
+            p = run(cmd, wt, 1800)
         if p.returncode:
             fails.append(f"exit {p.returncode}: {cmd} :: {(p.stdout + p.stderr)[-600:]}")
     gates["acceptance"] = fails
     # Gate jobs are extra repo-declared checks, so they run only after acceptance
     # is green and while the planner's acceptance bytes are still in the worktree.
     if not fails and repo.gate_jobs:
-        gates.update(gatejobs.run_jobs(repo.gate_jobs, wt, wrap))
+        gates.update(gatejobs.run_jobs(repo.gate_jobs, wt, wrap, run=run))
     git(wt, "checkout", "-q", "--", ".", check=False)
     return gates
 
@@ -901,14 +909,14 @@ def _merge_failure_reason(p: subprocess.CompletedProcess) -> str:
     return f"merge failed: {(lines[-1] if lines else '')[:200]}"
 
 
-def _train_command(repo, checkout: Path, command: str, *, cancel_event=None):
+def _train_command(repo, checkout: Path, command: str, *, timeout_s=1800, cancel_event=None):
     """Apply the reviewed repository's train boundary, never silently fall back."""
     from .config import home
     if repo.train_isolation == 'appservice':
         try:
-            return sandboxing.run_appservice_train(checkout, command, cancel_event=cancel_event)
+            return sandboxing.run_appservice_train(checkout, command, timeout_s, cancel_event=cancel_event)
         except (OSError, RuntimeError, ValueError, subprocess.SubprocessError) as exc:
-            return subprocess.CompletedProcess(command, 1, '', f'appservice train isolation failed: {type(exc).__name__}')
+            return subprocess.CompletedProcess(command, 125, '', f'appservice train isolation failed: {type(exc).__name__}')
     if repo.train_isolation == 'systemd':
         # The separate-UID host service stages its own checkout; its root-owned
         # receipt is the only result and there is no environment/namespace fallback.

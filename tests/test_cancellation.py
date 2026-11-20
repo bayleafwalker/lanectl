@@ -164,6 +164,10 @@ def test_appservice_train_mounts_only_the_checkout(tmp_path, monkeypatch):
     failure = run_appservice_train(checkout, "exit 41")
     assert failure.returncode == 41
 
+    which = shutil.which
+    monkeypatch.setattr(shutil, "which", lambda name: which("false") if name == "bwrap" else which(name))
+    assert run_appservice_train(checkout, "exit 1").returncode == 125
+
 
 def test_appservice_train_stops_on_lease_loss(tmp_path):
     from lanectl.sandbox import run_appservice_train

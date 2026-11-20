@@ -213,14 +213,19 @@ def run_appservice_train(checkout: Path, command: str, timeout_s: int = 1800, *,
                 "--setenv", "GIT_WORK_TREE", "/checkout",
             ])
         argv.extend([str(Path(shell).resolve()), "-c", command])
+        status = stack.enter_context(tempfile.TemporaryFile())
+        argv[1:1] = ["--json-status-fd", str(status.fileno())]
         process = stack.enter_context(subprocess.Popen(
             argv, start_new_session=True, text=True,
             stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-            env={},
+            env={}, pass_fds=(status.fileno(),),
         ))
         out, err, stopped = communicate(process, timeout_s, cancel_event)
         if stopped == "cancelled":
             return subprocess.CompletedProcess(command, 130, out, err + "appservice train cancelled")
         if stopped == "timeout":
             return subprocess.CompletedProcess(command, 124, out, err + "appservice train timed out")
+        status.seek(0)
+        if b'"exit-code"' not in status.read() or err.startswith("bwrap:"):
+            return subprocess.CompletedProcess(command, 125, out, err + "appservice sandbox launch failed")
         return subprocess.CompletedProcess(command, process.returncode, out, err)

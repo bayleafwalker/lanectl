@@ -14,7 +14,7 @@ from pathlib import Path
 def run_tests_at(repo: Path, rev: str, test_files: dict[str, bytes], test_cmd: str,
                  setup_cmd: str = "", timeout: int = 900, wrap=None,
                  tail: int | None = 2000, *,
-                 selected_files: list[str] | None = None) -> tuple[int, str]:
+                 selected_files: list[str] | None = None, run=None) -> tuple[int, str]:
     """Check out `rev` in a throwaway worktree, drop in `test_files`, run them.
 
     All `test_files` are materialized; `selected_files` limits execution to
@@ -37,11 +37,19 @@ def run_tests_at(repo: Path, rev: str, test_files: dict[str, bytes], test_cmd: s
             dst.parent.mkdir(parents=True, exist_ok=True)
             dst.write_bytes(data)
         if setup_cmd:
-            subprocess.run(setup_cmd, shell=True, cwd=wt, capture_output=True, timeout=timeout)
+            if run is None:
+                subprocess.run(setup_cmd, shell=True, cwd=wt, capture_output=True, timeout=timeout)
+            else:
+                setup = run(setup_cmd, wt, timeout)
+                if setup.returncode:
+                    return 125, (setup.stdout + setup.stderr)[-2000:]
         cmd = test_cmd.replace("{files}", " ".join(shlex.quote(f) for f in execution_files))
-        if wrap:   # worker-written tests are untrusted code: run them sandboxed
-            cmd = wrap(cmd, wt)
-        p = subprocess.run(cmd, shell=True, cwd=wt, capture_output=True, text=True, timeout=timeout)
+        if run is None:
+            if wrap:   # worker-written tests are untrusted code: run them sandboxed
+                cmd = wrap(cmd, wt)
+            p = subprocess.run(cmd, shell=True, cwd=wt, capture_output=True, text=True, timeout=timeout)
+        else:
+            p = run(cmd, wt, timeout)
         output = p.stdout + p.stderr
         return p.returncode, output if tail is None else output[-tail:]
     finally:
@@ -51,12 +59,14 @@ def run_tests_at(repo: Path, rev: str, test_files: dict[str, bytes], test_cmd: s
 
 
 def check(repo: Path, base: str, test_files: dict[str, bytes], test_cmd: str,
-          setup_cmd: str = "", wrap=None) -> list[str]:
+          setup_cmd: str = "", wrap=None, *, run=None) -> list[str]:
     if not test_files:
         return []
-    code, tail = run_tests_at(repo, base, test_files, test_cmd, setup_cmd, wrap=wrap)
+    code, tail = run_tests_at(repo, base, test_files, test_cmd, setup_cmd, wrap=wrap, run=run)
     if code == 0:
         return [f"passes-on-base: {sorted(test_files)}"]
     if code == 5:  # pytest: no tests collected
         return [f"no-tests-collected-on-base: {sorted(test_files)}"]
+    if run is not None and code != 1:
+        return [f"base check could not establish a test failure (exit {code}): {tail}"]
     return []
