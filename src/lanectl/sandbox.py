@@ -178,7 +178,8 @@ def run_appservice_train(checkout: Path, command: str, timeout_s: int = 1800, *,
                                   cancel_event=cancel_event)
 
 
-def run_appservice_command(checkout: Path, command: list[str], timeout_s: int, *, cancel_event=None):
+def run_appservice_command(checkout: Path, command: list[str], timeout_s: int, *, cancel_event=None,
+                           opencode_config: Path | None = None):
     """Launch an image executable inside the same boundary used for train checks."""
     from .child_process import communicate
 
@@ -200,6 +201,19 @@ def run_appservice_command(checkout: Path, command: list[str], timeout_s: int, *
         "--bind", str(workspace), "/checkout", "--chdir", "/checkout",
         "--setenv", "PATH", "/bin", "--setenv", "HOME", "/tmp/home",
     ]
+    if opencode_config is not None:
+        config = opencode_config.resolve(strict=True)
+        if not config.is_relative_to("/nix/store") or not config.is_file():
+            raise ValueError("appservice OpenCode configuration must come from the Nix image")
+        argv.extend([
+            "--setenv", "OPENCODE_CONFIG", str(config),
+            "--setenv", "OPENCODE_DISABLE_PROJECT_CONFIG", "1",
+            "--setenv", "OPENCODE_CONFIG_PROJECT_DISABLE", "1",
+            "--setenv", "OPENCODE_DISABLE_CLAUDE_CODE", "1",
+            "--setenv", "OPENCODE_DISABLE_MODELS_FETCH", "1",
+            "--setenv", "OPENCODE_DISABLE_AUTOUPDATE", "1",
+            "--setenv", "OPENCODE_DISABLE_FREE_MODELS", "1",
+        ])
     with ExitStack() as stack:
         if (workspace / ".git").is_file():
             clone = Path(stack.enter_context(tempfile.TemporaryDirectory(prefix="lanectl-train-git-"))) / "clone"

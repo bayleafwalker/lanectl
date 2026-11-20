@@ -19,8 +19,10 @@ import subprocess
 import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import TYPE_CHECKING
 
-from .adapters import AdapterResult
+if TYPE_CHECKING:
+    from .adapters import AdapterResult
 
 _ESCALATED = re.compile(r"DISPATCH_OUTCOME:\s*ESCALATED\b")
 _ESCALATION_REASON = re.compile(r"ESCALATION_REASON:\s*(.+)")
@@ -134,14 +136,8 @@ def run_opencode(*, model: str, worktree: Path, prompt: str, status_file: Path,
             text=True, start_new_session=True, env=env,
         )
     except OSError as exc:
-        usage = _empty_usage()
-        ended = _utcnow()
-        _write_status(status_file, {
-            "outcome": "failed", "exit_code": 127, "usage": usage, "model": model,
-            "started": started, "ended": ended, "final_message_tail": str(exc),
-            "escalation_reason": None,
-        })
-        return AdapterResult("failed", 127, f"opencode launch error: {exc}", None, usage)
+        return _record_result("", 127, started, model, status_file,
+                              diagnostic=f"opencode launch error: {exc}")
 
     timed_out = False
     try:
@@ -170,7 +166,7 @@ def run_opencode(*, model: str, worktree: Path, prompt: str, status_file: Path,
 
 
 def run_appservice_opencode(*, model: str, worktree: Path, prompt: str, status_file: Path,
-                            timeout_s: int, cancel_event=None) -> AdapterResult:
+                            timeout_s: int, config: Path, cancel_event=None) -> AdapterResult:
     """Run the image's OpenCode executable through the appservice boundary."""
     from .sandbox import run_appservice_command
 
@@ -180,7 +176,8 @@ def run_appservice_opencode(*, model: str, worktree: Path, prompt: str, status_f
         return _record_result("", 127, started, model, status_file, diagnostic="OpenCode is missing")
     argv = [executable, "run", "--standalone", "--format", "json", "--model", model, "--", prompt]
     try:
-        process = run_appservice_command(worktree, argv, timeout_s, cancel_event=cancel_event)
+        process = run_appservice_command(worktree, argv, timeout_s, cancel_event=cancel_event,
+                                         opencode_config=config)
     except (OSError, ValueError, RuntimeError, subprocess.SubprocessError) as exc:
         return _record_result("", 125, started, model, status_file, diagnostic=type(exc).__name__)
     return _record_result(process.stdout, process.returncode, started, model, status_file,
@@ -188,6 +185,8 @@ def run_appservice_opencode(*, model: str, worktree: Path, prompt: str, status_f
 
 
 def _record_result(output, exit_code, started, model, status_file, *, interrupted=False, diagnostic=""):
+    from .adapters import AdapterResult
+
     output = output or ""
     final_text, usage = parse_stream(output)
     if interrupted:

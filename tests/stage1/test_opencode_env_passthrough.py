@@ -25,8 +25,11 @@ def test_appservice_opencode_records_cancelled_execution(tmp_path, monkeypatch):
     cancelled = threading.Event()
     monkeypatch.setattr("shutil.which", lambda _: "/bin/opencode")
 
-    def launch(checkout, argv, timeout, *, cancel_event):
+    config = tmp_path / "image-config.json"
+
+    def launch(checkout, argv, timeout, *, cancel_event, opencode_config):
         assert checkout == tmp_path and timeout == 10 and cancel_event is cancelled
+        assert opencode_config == config
         assert argv == ["/bin/opencode", "run", "--standalone", "--format", "json",
                         "--model", "m", "--", "-starts-with-dash"]
         cancel_event.set()
@@ -36,6 +39,6 @@ def test_appservice_opencode_records_cancelled_execution(tmp_path, monkeypatch):
     monkeypatch.setattr(sandbox, "run_appservice_command", launch)
     status = tmp_path / "status.json"
     result = run_appservice_opencode(model="m", worktree=tmp_path, prompt="-starts-with-dash",
-                                    status_file=status, timeout_s=10, cancel_event=cancelled)
+                                    status_file=status, timeout_s=10, config=config, cancel_event=cancelled)
     assert (result.outcome, result.exit_code) == ("failed", 130)
     assert json.loads(status.read_text())["usage"] == result.usage

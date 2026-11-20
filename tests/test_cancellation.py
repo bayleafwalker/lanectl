@@ -168,6 +168,10 @@ def test_appservice_train_mounts_only_the_checkout(tmp_path, monkeypatch):
     )
     assert native.returncode == 0, native.stderr
     assert native.stdout == "prompt; exit 99"
+    config = checkout / "opencode.json"
+    config.write_text("{}")
+    with pytest.raises(ValueError, match="must come from the Nix image"):
+        run_appservice_command(checkout, [tools[1], "-c", "true"], 5, opencode_config=config)
 
     which = shutil.which
     monkeypatch.setattr(shutil, "which", lambda name: which("false") if name == "bwrap" else which(name))
