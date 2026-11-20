@@ -62,7 +62,20 @@ The appservice qualification recorded in Vuoro Cloud work item 2683 uses the
 published `lanectl-appservice-candidate` image with pod user namespaces.
 Bubblewrap isolates the attempt filesystem. A Longhorn volume preserved state
 when the probe moved between workers. The image's coordinated `doctor` check
-still requires a user systemd manager.
+required a user systemd manager in that candidate. The appservice worker profile
+in PR #45 adds a Bubblewrap readiness probe.
+
+On 2026-11-20, the credential-free Job `sovite/lanectl-proc-probe-857d16f`
+on `k8s-worker-3` exited 0 with OpenCode 2.3.0 in Bubblewrap's private PID
+namespace. It used the candidate digest
+`sha256:a23826fee5c500442b0f968ecf442012f5a4509945512ff57d4d9393b6aea3d6`,
+`hostUsers: false`, the existing Sovite localhost seccomp profile, a read-only
+root, all capabilities dropped and no service-account token. The outer
+container used `procMount: Unmasked`, which appservice admitted with a
+restricted-policy warning. The probe checked that the outer filesystem marker
+was hidden both by its original path and through the inner `/proc/1/root`.
+This qualifies OpenCode startup on that pod configuration. The scheduled
+coordinator, provider route and end-to-end run require their own evidence.
 
 Use the appservice image and persistent state for the scheduled pilot. Add an
 explicit appservice sandbox profile that hides the coordinator journal,
