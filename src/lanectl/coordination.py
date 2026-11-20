@@ -207,6 +207,19 @@ class Coordinator:
         """
         return self._saved(key)
 
+    def assert_takeover(self, predecessor, replacement):
+        """Match an owner receipt to two distinct attempts for the same item."""
+        previous = self._binding(predecessor)
+        current = self._binding(replacement)
+        self._check_lease(current['lease'])
+        old_lease = previous['lease']['lease_id']
+        if (predecessor == replacement
+                or previous['item_id'] != current['item_id']
+                or previous['run_id'] == current['run_id']
+                or old_lease == current['lease']['lease_id']
+                or current.get('took_over') != old_lease):
+            raise CoordinationError('owner takeover does not match the predecessor attempt')
+
     def saved_metadata(self, attempt_id):
         """Optional intent metadata saved with the run registration request."""
         saved = self._saved(attempt_id + ':run')

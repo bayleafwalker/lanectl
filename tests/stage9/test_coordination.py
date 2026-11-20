@@ -68,7 +68,7 @@ def owner():
             if key in state['effects'] and not op.endswith(('acquire-v1', 'heartbeat-v1', 'tail-v1', 'item-v1')):
                 result = state['effects'][key]
             elif op.endswith('run.register-v1'):
-                result = {'run': {'run_id': 'run_test'}}
+                result = {'run': {'run_id': state.get('run_id', 'run_test')}}
             elif op.endswith(('lease.acquire-v1', 'lease.heartbeat-v1')):
                 result = {'lease': dict(state['lease'])}
                 if op.endswith('lease.acquire-v1') and state.get('took_over'):
@@ -135,6 +135,21 @@ def test_takeover_receipt_survives_acquire_replays_without_receipt(tmp_path):
             assert replacement.recorded_binding('release-a1')['took_over'] == 'lease_predecessor'
         state['lease']['lease_id'] = 'lease_other'
         assert 'took_over' not in start(coord(url, tmp_path))
+
+
+def test_takeover_requires_exact_predecessor_and_distinct_run(tmp_path):
+    with owner() as (url, state):
+        coordinator = coord(url, tmp_path)
+        original = start(coordinator)
+        state['lease']['lease_id'] = 'lease_replacement'
+        state['took_over'] = original['lease']['lease_id']
+        state['run_id'] = 'run_replacement'
+        coordinator.start('release-a2', 123, 'scripted/model', 'sha256:' + 'a' * 64)
+        restarted = coord(url, tmp_path)
+        restarted.assert_takeover('release-a1', 'release-a2')
+        for invalid in ('release-a2', 'unknown'):
+            with pytest.raises(CoordinationError):
+                restarted.assert_takeover(invalid, 'release-a2')
 
 
 def test_full_protocol_and_owner_retains_settlement(tmp_path):
