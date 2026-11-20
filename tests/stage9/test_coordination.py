@@ -61,6 +61,11 @@ def owner():
             assert p['request_id'] == self.headers['X-Request-ID']
             state['calls'].append(p)
             op, args = p['operation'], p['arguments']
+            if state.get('drop_before_effect') == op:
+                state['drop_before_effect'] = None
+                self.connection.shutdown(2)
+                self.connection.close()
+                return
             if state['deny']:
                 return self.respond({'status': 'rejected', 'error': {'code': state['deny'],
                                      'message': 'owner refusal'}}, 403)
@@ -150,6 +155,31 @@ def test_takeover_requires_exact_predecessor_and_distinct_run(tmp_path):
         for invalid in ('release-a2', 'unknown'):
             with pytest.raises(CoordinationError):
                 restarted.assert_takeover(invalid, 'release-a2')
+
+
+def test_uncertain_predecessor_report_replays_exactly_and_owner_refuses_after_takeover(tmp_path):
+    with owner() as (url, state):
+        coordinator = coord(url, tmp_path)
+        original = start(coordinator)
+        operation = 'work.lease.report-outcome-v1'
+        state['drop_before_effect'] = operation
+        with pytest.raises(CoordinationError):
+            coordinator.report_outcome('release-a1', 'succeeded', 'old result')
+        pending = coordinator.saved_request('release-a1:outcome')
+        assert pending[2] is None
+
+        state['run_id'] = 'run_replacement'
+        state['lease']['lease_id'] = 'lease_replacement'
+        state['took_over'] = original['lease']['lease_id']
+        restarted = coord(url, tmp_path)
+        restarted.start('release-a2', 123, 'scripted/model', 'sha256:' + 'a' * 64)
+        restarted.assert_takeover('release-a1', 'release-a2')
+        state['deny'] = 'lease-superseded'
+        with pytest.raises(CoordinationError, match='lease-superseded'):
+            restarted.report_outcome('release-a1', 'succeeded', 'old result')
+        reports = [call for call in state['calls'] if call['operation'] == operation]
+        assert reports == [pending[1], pending[1]]
+        assert restarted.saved_request('release-a1:outcome')[2] is None
 
 
 def test_full_protocol_and_owner_retains_settlement(tmp_path):
