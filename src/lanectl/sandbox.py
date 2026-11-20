@@ -165,3 +165,34 @@ def for_train(*, readonly, writable, timeout_s=1800, env=None):
                    clean_environment=True,
                    guard_completion=True,
                    environment=tuple((name, source[name]) for name in PASS_ENV if source.get(name)))
+
+
+def run_appservice_train(checkout: Path, command: str, timeout_s: int = 1800):
+    """Run a train check with only its checkout and the image's tools mounted."""
+    from .child_process import communicate
+
+    workspace = checkout.resolve(strict=True)
+    launcher = shutil.which("bwrap")
+    shell = shutil.which("bash")
+    if launcher is None or shell is None or not Path("/nix/store").is_dir():
+        raise RuntimeError("appservice train isolation requires Bubblewrap and Nix image tools")
+
+    argv = [
+        launcher, "--unshare-user", "--unshare-pid", "--disable-userns",
+        "--die-with-parent", "--clearenv",
+        "--ro-bind", "/nix/store", "/nix/store",
+        "--ro-bind", "/bin", "/bin",
+        "--dev", "/dev", "--tmpfs", "/tmp", "--dir", "/tmp/home",
+        "--bind", str(workspace), "/checkout", "--chdir", "/checkout",
+        "--setenv", "PATH", "/bin", "--setenv", "HOME", "/tmp/home",
+        str(Path(shell).resolve()), "-c", command,
+    ]
+    with subprocess.Popen(
+        argv, start_new_session=True, text=True,
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+        env={},
+    ) as process:
+        out, err, stopped = communicate(process, timeout_s)
+        if stopped:
+            return subprocess.CompletedProcess(command, 124, out, err + "appservice train timed out")
+        return subprocess.CompletedProcess(command, process.returncode, out, err)

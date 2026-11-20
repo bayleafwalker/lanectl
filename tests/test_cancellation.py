@@ -141,3 +141,25 @@ def test_cancel_kills_worker_even_when_sandbox_stop_raises():
         if proc.poll() is None:
             proc.kill()
             proc.communicate(timeout=5)
+
+
+def test_appservice_train_mounts_only_the_checkout(tmp_path, monkeypatch):
+    from lanectl.sandbox import run_appservice_train
+
+    tools = [shutil.which(command) for command in ("bwrap", "bash")]
+    if not all(tools) or not Path(tools[1]).resolve().is_relative_to("/nix/store"):
+        pytest.skip("requires the Nix-packaged appservice tools")
+
+    checkout = tmp_path / "checkout"
+    checkout.mkdir()
+    credential = tmp_path / "owner-token"
+    credential.write_text("synthetic")
+    monkeypatch.setenv("CREDENTIALS_DIRECTORY", str(tmp_path))
+    result = run_appservice_train(
+        checkout,
+        f'test -z "${{CREDENTIALS_DIRECTORY:-}}" && test ! -e "{credential}" && printf ok > marker',
+    )
+    assert result.returncode == 0, result.stderr
+    assert (checkout / "marker").read_text() == "ok"
+    failure = run_appservice_train(checkout, "exit 41")
+    assert failure.returncode == 41

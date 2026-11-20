@@ -901,6 +901,11 @@ def _merge_failure_reason(p: subprocess.CompletedProcess) -> str:
 def _train_command(repo, checkout: Path, command: str):
     """Apply the reviewed repository's train boundary, never silently fall back."""
     from .config import home
+    if repo.train_isolation == 'appservice':
+        try:
+            return sandboxing.run_appservice_train(checkout, command)
+        except (OSError, RuntimeError, ValueError, subprocess.TimeoutExpired) as exc:
+            return subprocess.CompletedProcess(command, 1, '', f'appservice train isolation failed: {type(exc).__name__}')
     if repo.train_isolation == 'systemd':
         # The separate-UID host service stages its own checkout; its root-owned
         # receipt is the only result and there is no environment/namespace fallback.

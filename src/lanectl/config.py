@@ -92,8 +92,8 @@ def _landing(repo: str, value) -> str:
 
 
 def _train_isolation(repo: str, value) -> str:
-    if value not in ("namespace", "environment", "systemd"):
-        raise ContractError(f'{repo}: train_isolation must be "namespace", "systemd" or "environment"')
+    if value not in ("namespace", "environment", "systemd", "appservice"):
+        raise ContractError(f'{repo}: train_isolation must be "namespace", "systemd", "environment" or "appservice"')
     return value
 
 
