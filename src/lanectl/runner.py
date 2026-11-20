@@ -264,12 +264,26 @@ def appservice_replacement(events, rel, repo, lane, owner):
         effective = delivery_policy.effective_lane(binding, lane)
     except (ValueError, KeyError, TypeError):
         return None
-    if GO_ROUTE not in eligible_models(rel, effective, repo):
+    if eligible_models(rel, effective, repo).get(GO_ROUTE, 0) <= 0:
         return None
     old = owner.recorded_binding(predecessor)
     if old is None or rel.work != f"{rel.repo}#{old['item_id']}":
         return None
     return predecessor, Claim(rel, repo, effective, f"{rel.id}-a{len(view.attempts) + 1}", GO_ROUTE, "opencode")
+
+
+def _provider_admission(events, rel, model):
+    from . import steering
+
+    try:
+        policy = capacity.AllocationPolicy.load()
+    except capacity.PolicyError:
+        policy = None
+    provider = provider_for(model)
+    spec = policy.providers.get(provider) if policy is not None else None
+    return steering.admission(events, policy, datetime.now(timezone.utc),
+                              provider, rel.size, model,
+                              enforce=spec is not None and spec.admission_mode == "enforce")
 
 
 def recover_appservice(lane_name, log):
@@ -293,6 +307,8 @@ def recover_appservice(lane_name, log):
             if found is None:
                 continue
             predecessor, c = found
+            if readiness(rel, c.lane, repos) or _provider_admission(events, rel, c.model)["decision"] == "block":
+                continue
             prompt_digest = hashlib.sha256(render_prompt(rel, c.lane, repo).encode()).hexdigest()
             try:
                 owner.start(c.attempt_id, int(rel.work.split("#", 1)[1]), c.model,
@@ -424,16 +440,7 @@ def admit(lane_name: str, log: EventLog, only: str | None = None) -> Claim | str
             if model is None:
                 skipped.append(f"{rel.id}: no eligible model")
                 continue
-            from . import steering
-            try:
-                policy = capacity.AllocationPolicy.load()
-            except capacity.PolicyError:
-                policy = None
-            provider = provider_for(model)
-            spec = policy.providers.get(provider) if policy is not None else None
-            verdict = steering.admission(events, policy, datetime.now(timezone.utc),
-                                         provider, rel.size, model,
-                                         enforce=spec is not None and spec.admission_mode == "enforce")
+            verdict = _provider_admission(events, rel, model)
             if verdict["decision"] == "block":
                 skipped.append(f"{rel.id}: {'; '.join(verdict['reasons'])}")
                 continue

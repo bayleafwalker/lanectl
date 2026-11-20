@@ -86,6 +86,10 @@ def test_tick_recovery_waits_for_owner_before_writing_replacement(estate, monkey
     monkeypatch.setattr(runner, "appservice_replacement", lambda *args: (old.attempt_id, fresh))
     monkeypatch.setattr(coordination, "configured", lambda _: owner)
     before = log.read()
+    with monkeypatch.context() as denial:
+        denial.setattr(runner, "_provider_admission", lambda *args: {"decision": "block"})
+        assert runner.recover_appservice(lane.lane, log) is None
+        assert seen == [] and log.read() == before
     assert runner.recover_appservice(lane.lane, log) is None
     assert log.read() == before
     held = False
