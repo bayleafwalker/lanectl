@@ -165,6 +165,30 @@ def test_appservice_train_mounts_only_the_checkout(tmp_path, monkeypatch):
     assert failure.returncode == 41
 
 
+def test_appservice_train_stops_on_lease_loss(tmp_path):
+    from lanectl.sandbox import run_appservice_train
+
+    bwrap, bash = map(shutil.which, ("bwrap", "bash"))
+    if not bwrap or not bash or not Path(bash).resolve().is_relative_to("/nix/store"):
+        pytest.skip("requires the Nix-packaged appservice tools")
+
+    cancelled = threading.Event()
+    started = tmp_path / "started"
+
+    class LeaseLost:
+        def is_set(self):
+            if started.exists():
+                cancelled.set()
+            return cancelled.is_set()
+
+    result = run_appservice_train(
+        tmp_path, '(printf ready > started; while :; do :; done) & wait',
+        timeout_s=5, cancel_event=LeaseLost(),
+    )
+    assert cancelled.is_set(), result.stderr
+    assert result.returncode == 130, result.stderr
+
+
 def test_appservice_train_reads_linked_worktree_commit(tmp_path):
     from lanectl.sandbox import run_appservice_train
 

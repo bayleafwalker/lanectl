@@ -169,9 +169,12 @@ def for_train(*, readonly, writable, timeout_s=1800, env=None):
                    environment=tuple((name, source[name]) for name in PASS_ENV if source.get(name)))
 
 
-def run_appservice_train(checkout: Path, command: str, timeout_s: int = 1800):
+def run_appservice_train(checkout: Path, command: str, timeout_s: int = 1800, *, cancel_event=None):
     """Run a train check with only its checkout and the image's tools mounted."""
     from .child_process import communicate
+
+    if cancel_event is not None and cancel_event.is_set():
+        return subprocess.CompletedProcess(command, 130, "", "appservice train cancelled")
 
     workspace = checkout.resolve(strict=True)
     launcher = shutil.which("bwrap")
@@ -215,7 +218,9 @@ def run_appservice_train(checkout: Path, command: str, timeout_s: int = 1800):
             stdout=subprocess.PIPE, stderr=subprocess.PIPE,
             env={},
         ))
-        out, err, stopped = communicate(process, timeout_s)
-        if stopped:
+        out, err, stopped = communicate(process, timeout_s, cancel_event)
+        if stopped == "cancelled":
+            return subprocess.CompletedProcess(command, 130, out, err + "appservice train cancelled")
+        if stopped == "timeout":
             return subprocess.CompletedProcess(command, 124, out, err + "appservice train timed out")
         return subprocess.CompletedProcess(command, process.returncode, out, err)

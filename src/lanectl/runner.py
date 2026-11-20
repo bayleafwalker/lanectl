@@ -725,7 +725,10 @@ def execute(c: Claim, log: EventLog, adapter_fn=None, *, lease_guard=None,
         for target in config.get("repos", {}).values():
             native_env.pop(target.get("token_env", ""), None)
     if repo.setup_cmd:
-        _train_command(repo, wt, repo.setup_cmd)
+        if repo.train_isolation == "appservice":
+            _train_command(repo, wt, repo.setup_cmd, cancel_event=cancel_event)
+        else:
+            _train_command(repo, wt, repo.setup_cmd)
 
     runs = state_dir() / "runs"
     runs.mkdir(exist_ok=True)
@@ -898,12 +901,12 @@ def _merge_failure_reason(p: subprocess.CompletedProcess) -> str:
     return f"merge failed: {(lines[-1] if lines else '')[:200]}"
 
 
-def _train_command(repo, checkout: Path, command: str):
+def _train_command(repo, checkout: Path, command: str, *, cancel_event=None):
     """Apply the reviewed repository's train boundary, never silently fall back."""
     from .config import home
     if repo.train_isolation == 'appservice':
         try:
-            return sandboxing.run_appservice_train(checkout, command)
+            return sandboxing.run_appservice_train(checkout, command, cancel_event=cancel_event)
         except (OSError, RuntimeError, ValueError, subprocess.SubprocessError) as exc:
             return subprocess.CompletedProcess(command, 1, '', f'appservice train isolation failed: {type(exc).__name__}')
     if repo.train_isolation == 'systemd':
