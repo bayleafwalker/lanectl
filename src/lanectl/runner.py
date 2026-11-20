@@ -699,9 +699,9 @@ def execute(c: Claim, log: EventLog, adapter_fn=None, *, lease_guard=None,
     git(repo.path, "branch", "-D", branch, check=False)
     # A standalone clone, not a linked worktree: harnesses such as OpenCode resolve a
     # linked worktree to the main repository root and write there (2026-11-08 breach).
-    # Systemd trains must stage from a self-contained source: --shared would leave
-    # object alternates that the fenced stage cannot copy without pointing outside.
-    mode = "--shared" if repo.train_isolation != 'systemd' else "--no-hardlinks"
+    # Fenced stages need self-contained Git objects. Shared clones refer back
+    # to the canonical repository, which the appservice sandbox cannot see.
+    mode = "--no-hardlinks" if repo.train_isolation in ("systemd", "appservice") else "--shared"
     git(repo.path, "clone", "-q", mode, "--no-checkout", str(repo.path), str(wt))
     git(wt, "checkout", "-q", "-b", branch, rel.base_sha)
     git(wt, "remote", "remove", "origin", check=False)   # do not advertise the main checkout
