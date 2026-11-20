@@ -169,12 +169,17 @@ def run_appservice_opencode(*, model: str, worktree: Path, prompt: str, status_f
                             timeout_s: int, config: Path, cancel_event=None) -> AdapterResult:
     """Run the image's OpenCode executable through the appservice boundary."""
     from .sandbox import run_appservice_command
+    from .resident_gateway import GO_ROUTE
 
     started = _utcnow()
+    if model != GO_ROUTE:
+        return _record_result("", 125, started, model, status_file,
+                              diagnostic="model is outside the appservice pilot route")
     executable = shutil.which("opencode")
     if executable is None:
         return _record_result("", 127, started, model, status_file, diagnostic="OpenCode is missing")
-    argv = [executable, "run", "--standalone", "--format", "json", "--model", model, "--", prompt]
+    argv = [executable, "run", "--standalone", "--format", "json", "--model",
+            appservice_provider_config()["model"], "--", prompt]
     try:
         process = run_appservice_command(worktree, argv, timeout_s, cancel_event=cancel_event,
                                          opencode_config=config)
@@ -182,6 +187,14 @@ def run_appservice_opencode(*, model: str, worktree: Path, prompt: str, status_f
         return _record_result("", 125, started, model, status_file, diagnostic=type(exc).__name__)
     return _record_result(process.stdout, process.returncode, started, model, status_file,
                           interrupted=process.returncode in (124, 125, 130), diagnostic=process.stderr)
+
+
+def appservice_provider_config() -> dict:
+    from .resident_gateway import GO_ROUTE
+    from .resident_native import render_gateway_opencode
+
+    return render_gateway_opencode(GO_ROUTE.split("/", 1)[1], "http://127.0.0.1:18021/v1",
+                                   32768, 8192)
 
 
 def _record_result(output, exit_code, started, model, status_file, *, interrupted=False, diagnostic=""):

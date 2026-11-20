@@ -10,6 +10,7 @@ from __future__ import annotations
 import os
 from contextlib import ExitStack
 import hashlib
+import json
 import shlex
 import shutil
 import subprocess
@@ -170,10 +171,15 @@ def for_train(*, readonly, writable, timeout_s=1800, env=None):
 
 
 def appservice_opencode_config() -> Path:
+    from .adapters_opencode import appservice_provider_config
+
     value = os.environ.get("LANECTL_APPSERVICE_OPENCODE_CONFIG")
     if not value:
         raise ValueError("LANECTL_APPSERVICE_OPENCODE_CONFIG is required")
-    return _image_opencode_config(Path(value))
+    config = _image_opencode_config(Path(value))
+    if json.loads(config.read_text()) != appservice_provider_config():
+        raise ValueError("appservice OpenCode configuration must match the fixed pilot gateway")
+    return config
 
 
 def _image_opencode_config(path: Path) -> Path:

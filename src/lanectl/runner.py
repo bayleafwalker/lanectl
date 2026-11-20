@@ -365,9 +365,12 @@ def admit(lane_name: str, log: EventLog, only: str | None = None) -> Claim | str
             n = len(v.attempts) + 1
             attempt_id = f"{rel.id}-a{n}"
             worker = adapters.worker_for(model)
-            if lane.sandbox.get("mode") == "appservice" and worker != "opencode":
-                skipped.append(f"{rel.id}: appservice pilot requires OpenCode")
-                continue
+            if lane.sandbox.get("mode") == "appservice":
+                from .resident_gateway import GO_ROUTE
+
+                if model != GO_ROUTE:
+                    skipped.append(f"{rel.id}: model is outside the appservice pilot route")
+                    continue
             from . import reap
             identity = reap.process_identity()
             worker_unit = sandboxing.from_lane(lane.sandbox, (), lane.timeout_s + 120, attempt_id=attempt_id).unit
@@ -624,8 +627,10 @@ def _coordinate_execution(native):
             if isolation_errors:
                 raise coordination.CoordinationError(isolation_errors[0])
             if c.lane.sandbox.get("mode") == "appservice":
-                if c.worker != "opencode" or adapter_fn is not None:
-                    raise coordination.CoordinationError("appservice pilot requires isolated native OpenCode")
+                from .resident_gateway import GO_ROUTE
+
+                if c.model != GO_ROUTE or c.worker != "opencode" or adapter_fn is not None:
+                    raise coordination.CoordinationError("appservice pilot requires the fixed isolated OpenCode route")
                 try:
                     sandboxing.probe_appservice()
                 except (OSError, ValueError, RuntimeError, subprocess.SubprocessError) as exc:

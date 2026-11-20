@@ -106,6 +106,7 @@ def test_doctor_probes_appservice_without_systemd(estate, monkeypatch):
 
 
 def test_appservice_probe_failure_prevents_owner_start(estate, monkeypatch):
+    from lanectl.resident_gateway import GO_ROUTE
     from tests.stage8.test_runner_coordination import configure
     from tests.stage8.test_work_sync_extra import _set_work
 
@@ -115,7 +116,8 @@ def test_appservice_probe_failure_prevents_owner_start(estate, monkeypatch):
     claim = runner.admit("implement", log)
     owner = configure(monkeypatch)
     claim = replace(claim, repo=replace(claim.repo, train_isolation="appservice"),
-                    lane=replace(claim.lane, sandbox={"mode": "appservice"}), worker="opencode")
+                    lane=replace(claim.lane, sandbox={"mode": "appservice"}),
+                    worker="opencode", model=GO_ROUTE)
 
     def fail():
         raise RuntimeError("namespace unavailable")

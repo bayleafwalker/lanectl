@@ -6,6 +6,7 @@ import threading
 
 from lanectl import sandbox
 from lanectl.adapters_opencode import run_appservice_opencode, run_opencode
+from lanectl.resident_gateway import GO_ROUTE
 
 
 def test_env_selects_the_opencode_on_its_path(tmp_path):
@@ -31,14 +32,14 @@ def test_appservice_opencode_records_cancelled_execution(tmp_path, monkeypatch):
         assert checkout == tmp_path and timeout == 10 and cancel_event is cancelled
         assert opencode_config == config
         assert argv == ["/bin/opencode", "run", "--standalone", "--format", "json",
-                        "--model", "m", "--", "-starts-with-dash"]
+                        "--model", "resident-gateway/deepseek-v4.1-flash", "--", "-starts-with-dash"]
         cancel_event.set()
         output = '{"type":"text","part":{"type":"text","text":"DISPATCH_OUTCOME: ESCALATED"}}'
         return subprocess.CompletedProcess(argv, 130, output, "cancelled")
 
     monkeypatch.setattr(sandbox, "run_appservice_command", launch)
     status = tmp_path / "status.json"
-    result = run_appservice_opencode(model="m", worktree=tmp_path, prompt="-starts-with-dash",
+    result = run_appservice_opencode(model=GO_ROUTE, worktree=tmp_path, prompt="-starts-with-dash",
                                     status_file=status, timeout_s=10, config=config, cancel_event=cancelled)
     assert (result.outcome, result.exit_code) == ("failed", 130)
     assert json.loads(status.read_text())["usage"] == result.usage
