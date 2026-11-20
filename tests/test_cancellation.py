@@ -144,7 +144,7 @@ def test_cancel_kills_worker_even_when_sandbox_stop_raises():
 
 
 def test_appservice_train_mounts_only_the_checkout(tmp_path, monkeypatch):
-    from lanectl.sandbox import run_appservice_train
+    from lanectl.sandbox import run_appservice_command, run_appservice_train
 
     tools = [shutil.which(command) for command in ("bwrap", "bash")]
     if not all(tools) or not Path(tools[1]).resolve().is_relative_to("/nix/store"):
@@ -163,6 +163,11 @@ def test_appservice_train_mounts_only_the_checkout(tmp_path, monkeypatch):
     assert (checkout / "marker").read_text() == "ok"
     failure = run_appservice_train(checkout, "exit 41")
     assert failure.returncode == 41
+    native = run_appservice_command(
+        checkout, [tools[1], "-c", 'printf "%s" "$1"', "native-worker", 'prompt; exit 99'], 5,
+    )
+    assert native.returncode == 0, native.stderr
+    assert native.stdout == "prompt; exit 99"
 
     which = shutil.which
     monkeypatch.setattr(shutil, "which", lambda name: which("false") if name == "bwrap" else which(name))

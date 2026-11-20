@@ -170,7 +170,16 @@ def for_train(*, readonly, writable, timeout_s=1800, env=None):
 
 
 def run_appservice_train(checkout: Path, command: str, timeout_s: int = 1800, *, cancel_event=None):
-    """Run a train check with only its checkout and the image's tools mounted."""
+    """Run a shell check with only its checkout and the image's tools mounted."""
+    shell = shutil.which("bash")
+    if shell is None:
+        raise RuntimeError("appservice train isolation requires Bash")
+    return run_appservice_command(checkout, [shell, "-c", command], timeout_s,
+                                  cancel_event=cancel_event)
+
+
+def run_appservice_command(checkout: Path, command: list[str], timeout_s: int, *, cancel_event=None):
+    """Launch an image executable inside the same boundary used for train checks."""
     from .child_process import communicate
 
     if cancel_event is not None and cancel_event.is_set():
@@ -178,9 +187,9 @@ def run_appservice_train(checkout: Path, command: str, timeout_s: int = 1800, *,
 
     workspace = checkout.resolve(strict=True)
     launcher = shutil.which("bwrap")
-    shell = shutil.which("bash")
-    if launcher is None or shell is None or not Path("/nix/store").is_dir():
-        raise RuntimeError("appservice train isolation requires Bubblewrap and Nix image tools")
+    executable = Path(command[0]).resolve(strict=True)
+    if launcher is None or not executable.is_relative_to("/nix/store"):
+        raise RuntimeError("appservice isolation requires Bubblewrap and a Nix image executable")
 
     argv = [
         launcher, "--unshare-user", "--unshare-pid", "--disable-userns",
@@ -212,12 +221,12 @@ def run_appservice_train(checkout: Path, command: str, timeout_s: int = 1800, *,
                 "--setenv", "GIT_DIR", "/git-metadata",
                 "--setenv", "GIT_WORK_TREE", "/checkout",
             ])
-        argv.extend([str(Path(shell).resolve()), "-c", command])
+        argv.extend([str(executable), *command[1:]])
         status = stack.enter_context(tempfile.TemporaryFile())
         argv[1:1] = ["--json-status-fd", str(status.fileno())]
         process = stack.enter_context(subprocess.Popen(
             argv, start_new_session=True, text=True,
-            stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
             env={}, pass_fds=(status.fileno(),),
         ))
         out, err, stopped = communicate(process, timeout_s, cancel_event)
