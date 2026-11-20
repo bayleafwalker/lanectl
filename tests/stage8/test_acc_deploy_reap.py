@@ -40,7 +40,22 @@ def test_due_classifies_landed_superseded_expired(estate, tmp_path):
     _deployed(log, "train-ee", FUTURE)
     _deployed(log, "train-ff", PAST, passed=False, repo="other3")
     assert deploy.due(log.read(), NOW) == [
-        ("train-aa", "landed"), ("train-bb", "superseded"), ("train-cc", "expired")]
+        ("train-aa", "landed"), ("train-bb", "superseded"), ("train-cc", "expired"),
+        ("train-ff", "deploy-failed")]
+
+
+def test_reap_retries_failed_teardown_until_it_succeeds(estate, tmp_path, monkeypatch):
+    _declare(tmp_path)
+    log = estate[2]
+    _deployed(log, "train-aa", PAST)
+    _deployed(log, "train-bb", FUTURE, passed=False)
+    monkeypatch.setattr(deploy, "_run", lambda *args: (1, "timeout"))
+    assert all("teardown failed" in line for line in deploy.reap(log, now=NOW))
+    assert not deploy.live(log.read())
+    assert deploy.due(log.read(), NOW) == [("train-aa", "expired"), ("train-bb", "deploy-failed")]
+    monkeypatch.setattr(deploy, "_run", lambda *args: (0, ""))
+    assert len(deploy.reap(log, now=NOW)) == 2
+    assert deploy.due(log.read(), NOW) == []
 
 
 def test_reap_tears_down_due_deploys(estate, tmp_path, capsys):

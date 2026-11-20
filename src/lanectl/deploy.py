@@ -96,9 +96,8 @@ def deploy_train(log: EventLog, train_id: str) -> str:
             "train_id": train_id, "repo": repo.name, "namespace": ns, "passed": False,
             "expires_at": _expires_at(spec.ttl_s), "stage": stage,
             "tail": output[-TAIL_CHARS:]})
-        teardown(log, train_id, "deploy-failed")
-        return (f"{train_id}: {stage} failed (exit {rc}); torn down\n"
-                f"{output[-TAIL_CHARS:]}")
+        cleanup = teardown(log, train_id, "deploy-failed")
+        return f"{train_id}: {stage} failed (exit {rc})\n{output[-TAIL_CHARS:]}\n{cleanup}"
     expires_at = _expires_at(spec.ttl_s)
     log.append("train.deployed", {
         "train_id": train_id, "repo": repo.name, "namespace": ns, "passed": True,
@@ -112,7 +111,7 @@ def teardown(log: EventLog, train_id: str, reason: str) -> str:
     if found is None:
         # A deploy whose train.built is not in this log: the deploy event still
         # names the repo, so its declared teardown command is reachable.
-        data = live(log.read()).get(train_id) or {}
+        data = _unclosed(log.read()).get(train_id) or {}
         repo = load_repos().get(data.get("repo"))
         if repo is not None:
             found = None, repo, repo.deploy
@@ -131,18 +130,27 @@ def teardown(log: EventLog, train_id: str, reason: str) -> str:
     return f"{train_id}: teardown failed (exit {rc}, {reason})\n{output[-TAIL_CHARS:]}"
 
 
-def live(events: list[dict]) -> dict[str, dict]:
-    """Passed deploys that have not been torn down since, keyed by train id."""
+def _unclosed(events: list[dict]) -> dict[str, dict]:
+    """The latest deploy for each train that still requires cleanup."""
     out: dict[str, dict] = {}
     for ev in events:
         etype = ev.get("type")
         data = ev.get("data") or {}
         train_id = data.get("train_id")
-        if etype == "train.deployed" and data.get("passed"):
+        if etype == "train.deployed":
             out[train_id] = data
         elif etype == "train.torn_down" and train_id in out:
-            del out[train_id]
+            if data.get("passed") is False:
+                out[train_id] = dict(out[train_id], cleanup_reason=data["reason"])
+            else:
+                del out[train_id]
     return out
+
+
+def live(events: list[dict]) -> dict[str, dict]:
+    """Passed deploys that have not been successfully torn down."""
+    return {train_id: data for train_id, data in _unclosed(events).items()
+            if data.get("passed") and "cleanup_reason" not in data}
 
 
 def _expired(data: dict, now: datetime) -> bool:
@@ -151,15 +159,16 @@ def _expired(data: dict, now: datetime) -> bool:
 
 
 def due(events: list[dict], now: datetime) -> list[tuple[str, str]]:
-    """Live deploys to reap, in ``train.deployed`` order, with their reason.
+    """Deploys to reap, in ``train.deployed`` order, with their reason.
 
+    Failed deployments and unsuccessful teardowns are due immediately.
     An item that landed names the train (``landed``); a later passed deploy of
     the same repo replaces it (``superseded``); otherwise it is ``expired`` when
     its ``expires_at`` has passed.  Live deploys in none of those classes are
     not listed.
     """
     now = now if now.tzinfo is not None else now.replace(tzinfo=timezone.utc)
-    deploys = live(events)
+    deploys = _unclosed(events)
     landed = {((ev.get("data") or {}).get("train_id"))
               for ev in events if ev.get("type") == "item.landed"}
     last_deploy_at: dict[str, int] = {}
@@ -175,7 +184,11 @@ def due(events: list[dict], now: datetime) -> list[tuple[str, str]]:
     for train_id, data in deploys.items():
         at = last_deploy_at.get(train_id, -1)
         later = any(repo == repo_of.get(train_id) and i > at for i, repo in passed)
-        if train_id in landed:
+        if "cleanup_reason" in data:
+            out.append((train_id, data["cleanup_reason"]))
+        elif not data.get("passed"):
+            out.append((train_id, "deploy-failed"))
+        elif train_id in landed:
             out.append((train_id, "landed"))
         elif later:
             out.append((train_id, "superseded"))
