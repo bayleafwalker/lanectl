@@ -106,16 +106,28 @@ def project_items(events: list[dict]) -> dict[str, ItemView]:
                 if v.state in ("ready", "requeued") or (v.state in ("parked", "rejected") and not d.get("preserve_terminal", False)):
                     v.state = "ready"   # a new revision makes a parked item ready again
         elif t == "item.claimed":
+            predecessor = d.get("replaces_attempt_id")
+            if predecessor is not None:
+                previous = v.open_attempt
+                if previous is None or previous["attempt_id"] != predecessor or predecessor == d["attempt_id"]:
+                    raise ValueError("replacement claim does not match the open predecessor")
+                previous.update(superseded=True, infra=True)
             a = dict(d, ts=ev["ts"], item_id=iid)
             v.attempts.append(a)
             by_attempt[d["attempt_id"]] = a
             v.state = "claimed"
         elif t == "attempt.finished":
+            if by_attempt.get(d["attempt_id"], {}).get("superseded"):
+                continue
             by_attempt.get(d["attempt_id"], {}).update(finished=d)
             v.state = "implemented"
         elif t == "gate.result":
+            if by_attempt.get(d["attempt_id"], {}).get("superseded"):
+                continue
             v.state = "gated"
         elif t == "decision.recorded":
+            if by_attempt.get(d["attempt_id"], {}).get("superseded"):
+                continue
             by_attempt.get(d["attempt_id"], {}).update(
                 decision=d["decision"],
                 infra=bool(d["reasons"]) and str(d["reasons"][0]).startswith("infra:"))

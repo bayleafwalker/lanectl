@@ -620,6 +620,9 @@ _owner_context = threading.local()
 
 def _coordination_park(c, log, error):
     events = log.read()
+    if any(e["type"] == "item.claimed" and e.get("item_id") == c.rel.id
+           and e["data"].get("replaces_attempt_id") == c.attempt_id for e in events):
+        return f"{c.attempt_id}: superseded by owner takeover"
     if not any(e["type"] == "attempt.finished" and e["data"]["attempt_id"] == c.attempt_id for e in events):
         log.append("attempt.finished", {"attempt_id": c.attempt_id, "outcome": "failed",
                    "exit_code": -1, "head_sha": "", "elapsed_s": 0.0,

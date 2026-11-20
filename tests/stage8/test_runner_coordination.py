@@ -38,6 +38,24 @@ def test_appservice_replacement_binds_original_release_and_owner_item(estate):
                                          repo, lane, owner) is None
 
 
+def test_replacement_claim_fences_late_predecessor_projection(estate):
+    _, release, log = estate
+    release("replacement-projection", TEST)
+    original = runner.admit("implement", log)
+    claim = next(event["data"] for event in log.read() if event["type"] == "item.claimed")
+    successor = "replacement-projection-a2"
+    log.append("item.claimed", dict(claim, attempt_id=successor, replaces_attempt_id=original.attempt_id),
+               item_id=original.rel.id)
+    log.append("gate.result", {"attempt_id": original.attempt_id, "gate": "acceptance",
+                               "passed": True, "violations": []}, item_id=original.rel.id)
+    item = project_items(log.read())[original.rel.id]
+    assert item.state == "claimed" and item.open_attempt["attempt_id"] == successor
+    assert item.attempts[0]["superseded"] and item.attempts[0]["infra"]
+    before = log.read()
+    assert "superseded" in runner._coordination_park(original, log, "lease lost")
+    assert log.read() == before
+
+
 class Owner:
     def __init__(self):
         self.calls=[];self.active=True
