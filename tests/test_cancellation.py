@@ -228,6 +228,7 @@ def test_appservice_train_reads_linked_worktree_commit(tmp_path):
     result = run_appservice_train(
         train,
         f'test ! -e "{credential}" && '
+        '! (printf blocked > .git) && '
         f'test -z "$("{git_executable}" remote)" && '
         f'test -z "$("{git_executable}" for-each-ref refs/tags refs/heads/unrelated)" && '
         f'"{git_executable}" rev-parse HEAD',

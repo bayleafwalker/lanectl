@@ -24,7 +24,7 @@ PASS_ENV = ("PATH", "HOME", "USER", "LANG", "TERM", "XDG_CONFIG_HOME", "XDG_DATA
 
 @dataclass(frozen=True)
 class Sandbox:
-    mode: str                         # "systemd-run" | "none"
+    mode: str                         # "systemd-run" | "appservice" | "none"
     readonly: tuple[str, ...]         # roots mounted read-only (e.g. /projects)
     writable: tuple[str, ...]         # exceptions: the attempt checkout, scratch dirs
     timeout_s: int
@@ -68,7 +68,7 @@ class Sandbox:
 
     def cancel(self) -> bool:
         """Stop only this attempt's named transient service after authority loss."""
-        if self.mode == "none":
+        if self.mode in ("none", "appservice"):
             return True
         if not self.unit:
             return False
@@ -241,6 +241,9 @@ def run_appservice_command(checkout: Path, command: list[str], timeout_s: int, *
         "--bind", str(workspace), "/checkout", "--chdir", "/checkout",
         "--setenv", "PATH", "/bin", "--setenv", "HOME", "/tmp/home",
     ]
+    metadata = workspace / ".git"
+    if metadata.exists():
+        argv.extend(["--ro-bind", str(metadata), "/checkout/.git"])
     if opencode_config is not None:
         config = _image_opencode_config(opencode_config)
         argv.extend([
@@ -253,7 +256,7 @@ def run_appservice_command(checkout: Path, command: list[str], timeout_s: int, *
             "--setenv", "OPENCODE_DISABLE_FREE_MODELS", "1",
         ])
     with ExitStack() as stack:
-        if (workspace / ".git").is_file():
+        if metadata.is_file():
             clone = Path(stack.enter_context(tempfile.TemporaryDirectory(prefix="lanectl-train-git-"))) / "clone"
             subprocess.run(
                 ["git", "clone", "--quiet", "--no-local", "--no-checkout",

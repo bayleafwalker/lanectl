@@ -103,3 +103,24 @@ def test_doctor_probes_appservice_without_systemd(estate, monkeypatch):
     assert [(finding.check, finding.level) for finding in findings] == [
         ("appservice-worker", doctor.OK)
     ]
+
+
+def test_appservice_probe_failure_prevents_owner_start(estate, monkeypatch):
+    from tests.stage8.test_runner_coordination import configure
+    from tests.stage8.test_work_sync_extra import _set_work
+
+    _, release, log = estate
+    release("appservice-proof", "def test_ok():\n    assert True\n")
+    _set_work("appservice-proof", "target#12", True)
+    claim = runner.admit("implement", log)
+    owner = configure(monkeypatch)
+    claim = replace(claim, repo=replace(claim.repo, train_isolation="appservice"),
+                    lane=replace(claim.lane, sandbox={"mode": "appservice"}), worker="opencode")
+
+    def fail():
+        raise RuntimeError("namespace unavailable")
+
+    monkeypatch.setattr(runner.sandboxing, "probe_appservice", fail)
+    assert "parked" in runner.execute(claim, log)
+    assert owner.calls == []
+    assert "appservice isolation probe failed" in str(log.read())

@@ -226,6 +226,21 @@ def _coordinated(repo_name):
     return path.exists() and repo_name in tomllib.loads(path.read_text()).get("repos", {})
 
 
+def _coordination_isolation(rel, lane, repo):
+    if lane.sandbox.get("mode") == "appservice":
+        if repo is None or repo.train_isolation != "appservice":
+            return ["appservice workers require appservice train isolation"]
+        if rel.data_class != "public" or repo.data_class_floor != "public":
+            return ["appservice pilot accepts only public releases"]
+        return []
+    reasons = []
+    if lane.sandbox.get("mode") != "systemd-run":
+        reasons.append("coordinated execution requires credential-isolating systemd sandbox")
+    if getattr(repo, "train_isolation", "namespace") not in ("namespace", "systemd"):
+        reasons.append("coordinated execution requires namespace train isolation or systemd train isolation")
+    return reasons
+
+
 def _retry_admission(fn):
     @functools.wraps(fn)
     def bounded_retry(*args, **kwargs):
@@ -319,10 +334,10 @@ def admit(lane_name: str, log: EventLog, only: str | None = None) -> Claim | str
                 skipped.append(f"{rel.id}: bound capacity limit")
                 continue
             reasons = readiness(rel, lane, repos)
-            if _coordinated(rel.repo) and lane.sandbox.get("mode") != "systemd-run":
-                reasons.append("coordinated execution requires credential-isolating systemd sandbox")
-            if _coordinated(rel.repo) and getattr(repos.get(rel.repo), 'train_isolation', 'namespace') not in ('namespace', 'systemd'):
-                reasons.append("coordinated execution requires namespace train isolation or systemd train isolation")
+            if _coordinated(rel.repo):
+                reasons.extend(_coordination_isolation(rel, lane, repos.get(rel.repo)))
+            elif lane.sandbox.get("mode") == "appservice":
+                reasons.append("appservice workers require owner coordination")
             if _coordinated(rel.repo) and (not rel.work or not rel.work_complete
                                               or rel.work.split("#", 1)[0] != rel.repo):
                 reasons.append("coordinated releases require a complete Work outcome")
@@ -350,6 +365,9 @@ def admit(lane_name: str, log: EventLog, only: str | None = None) -> Claim | str
             n = len(v.attempts) + 1
             attempt_id = f"{rel.id}-a{n}"
             worker = adapters.worker_for(model)
+            if lane.sandbox.get("mode") == "appservice" and worker != "opencode":
+                skipped.append(f"{rel.id}: appservice pilot requires OpenCode")
+                continue
             from . import reap
             identity = reap.process_identity()
             worker_unit = sandboxing.from_lane(lane.sandbox, (), lane.timeout_s + 120, attempt_id=attempt_id).unit
@@ -589,7 +607,7 @@ def _coordinate_execution(native):
         try:
             owner = coordination.configured(c.repo.name)
             if owner is None:
-                if require_coordination:
+                if require_coordination or c.lane.sandbox.get("mode") == "appservice":
                     raise coordination.CoordinationError("owner coordination is not configured")
                 return native(c, log, adapter_fn, prompt=_claim_prompt(c, log))
             if expected_owner is not None:
@@ -602,10 +620,17 @@ def _coordinate_execution(native):
                             and getattr(client, key, None) != expected_owner[key]:
                         raise coordination.CoordinationError(
                             f"owner {key} changed since the preview")
-            if c.lane.sandbox.get("mode") != "systemd-run":
-                raise coordination.CoordinationError("coordinated execution requires credential-isolating systemd sandbox")
-            if c.repo.train_isolation not in ('namespace', 'systemd'):
-                raise coordination.CoordinationError("coordinated execution requires namespace train isolation or systemd train isolation")
+            isolation_errors = _coordination_isolation(c.rel, c.lane, c.repo)
+            if isolation_errors:
+                raise coordination.CoordinationError(isolation_errors[0])
+            if c.lane.sandbox.get("mode") == "appservice":
+                if c.worker != "opencode" or adapter_fn is not None:
+                    raise coordination.CoordinationError("appservice pilot requires isolated native OpenCode")
+                try:
+                    sandboxing.probe_appservice()
+                except (OSError, ValueError, RuntimeError, subprocess.SubprocessError) as exc:
+                    raise coordination.CoordinationError(
+                        f"appservice isolation probe failed ({type(exc).__name__})") from exc
             if (not c.rel.work or not c.rel.work_complete
                     or c.rel.work.split("#", 1)[0] != c.rel.repo):
                 raise coordination.CoordinationError("coordinated releases require a complete Work outcome")
@@ -732,7 +757,8 @@ def execute(c: Claim, log: EventLog, adapter_fn=None, *, lease_guard=None,
 
     runs = state_dir() / "runs"
     runs.mkdir(exist_ok=True)
-    shims = sb.shim_dir(state_dir() / "shims" / c.attempt_id, ("opencode", "codex", "claude"))
+    shims = (None if sb.mode == "appservice"
+             else sb.shim_dir(state_dir() / "shims" / c.attempt_id, ("opencode", "codex", "claude")))
     env = dict(native_env or os.environ, PATH=f"{shims}{os.pathsep}{os.environ.get('PATH', '')}") if shims else native_env
     if lease_guard is not None:
         lease_guard.assert_active()
@@ -740,7 +766,16 @@ def execute(c: Claim, log: EventLog, adapter_fn=None, *, lease_guard=None,
     started = time.monotonic()
     fn = adapter_fn or adapters.ADAPTERS[c.worker]
     try:
-        res = fn(model=c.model, worktree=wt, prompt=prompt,
+        if sb.mode == "appservice":
+            from .adapters_opencode import run_appservice_opencode
+
+            res = run_appservice_opencode(
+                model=c.model, worktree=wt, prompt=prompt, status_file=runs / f"{c.attempt_id}.json",
+                timeout_s=lane.timeout_s, config=sandboxing.appservice_opencode_config(),
+                cancel_event=cancel_event,
+            )
+        else:
+            res = fn(model=c.model, worktree=wt, prompt=prompt,
                  status_file=runs / f"{c.attempt_id}.json", timeout_s=lane.timeout_s,
                  external=c.model in lane.external_models, env=env,
                  **({"cancel_event": cancel_event} if cancel_event is not None and adapter_fn is None else {}),
