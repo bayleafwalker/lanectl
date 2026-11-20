@@ -180,7 +180,7 @@ def check_appservice_worker() -> Finding:
         sandbox.probe_appservice()
     except (OSError, ValueError, RuntimeError, subprocess.SubprocessError) as exc:
         return Finding(ERROR, "appservice-worker", f"appservice isolation probe failed ({type(exc).__name__})")
-    return Finding(OK, "appservice-worker", "Bubblewrap hides coordinator state and launches image OpenCode")
+    return Finding(OK, "appservice-worker", "Bubblewrap isolates OpenCode and the fixed model gateway is live")
 
 
 def check_worker_manager() -> Finding:

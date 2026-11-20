@@ -168,6 +168,21 @@ def request(origin, path="/v1/chat/completions", body=None, headers=None, method
         return response.status, response.headers, response.read()
 
 
+def test_appservice_readiness_requires_the_live_pilot_route(running, monkeypatch):
+    from lanectl import adapters_opencode, sandbox
+
+    upstream = Upstream()
+    _, origin = running(upstream=upstream)
+    monkeypatch.setattr(adapters_opencode, "APPSERVICE_GATEWAY_PORT", int(origin.rsplit(":", 1)[1]))
+    with pytest.raises(RuntimeError, match="does not advertise the fixed pilot route"):
+        sandbox.probe_appservice_gateway()
+
+    _, origin = running(route=gateway.GO_ROUTE, upstream=upstream)
+    monkeypatch.setattr(adapters_opencode, "APPSERVICE_GATEWAY_PORT", int(origin.rsplit(":", 1)[1]))
+    sandbox.probe_appservice_gateway()
+    assert upstream.requests == []
+
+
 def test_gateway_keeps_credentials_session_and_destination_out_of_client_control(running):
     upstream = Upstream()
     app, origin = running(route="opencode-go/deepseek-v4.1-flash", upstream=upstream)

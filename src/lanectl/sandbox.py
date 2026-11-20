@@ -10,6 +10,7 @@ from __future__ import annotations
 import os
 from contextlib import ExitStack
 import hashlib
+import http.client
 import json
 import shlex
 import shutil
@@ -213,6 +214,29 @@ def probe_appservice() -> None:
         )
         if result.returncode or not result.stdout.strip():
             raise RuntimeError("appservice isolation or OpenCode launch probe failed")
+    probe_appservice_gateway()
+
+
+def probe_appservice_gateway() -> None:
+    """Check the pod-local listener and route without submitting inference."""
+    from .adapters_opencode import APPSERVICE_GATEWAY_PORT
+    from .resident_gateway import GO_ROUTE
+
+    connection = http.client.HTTPConnection("127.0.0.1", APPSERVICE_GATEWAY_PORT, timeout=3)
+    try:
+        connection.request("GET", "/healthz")
+        response = connection.getresponse()
+        body = response.read(1025)
+        if response.status != 200 or len(body) > 1024:
+            raise RuntimeError("appservice model gateway returned an invalid health response")
+        status = json.loads(body)
+        if (not isinstance(status, dict) or status.get("status") != "live"
+                or status.get("route") != GO_ROUTE or status.get("fallback") != "none"):
+            raise RuntimeError("appservice model gateway does not advertise the fixed pilot route")
+    except (OSError, http.client.HTTPException, ValueError) as exc:
+        raise RuntimeError("appservice model gateway health check failed") from exc
+    finally:
+        connection.close()
 
 
 def run_appservice_train(checkout: Path, command: str, timeout_s: int = 1800, *, cancel_event=None):
