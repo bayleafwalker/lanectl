@@ -71,6 +71,8 @@ def owner():
                 result = {'run': {'run_id': 'run_test'}}
             elif op.endswith(('lease.acquire-v1', 'lease.heartbeat-v1')):
                 result = {'lease': dict(state['lease'])}
+                if op.endswith('lease.acquire-v1') and state.get('took_over'):
+                    result['took_over'] = state['took_over']
             elif op.endswith('public.item-v1'):
                 result = state['completion']
             elif op == 'work.public.list-v1':
@@ -120,6 +122,19 @@ def coord(url, tmp_path):
 
 def start(c):
     return c.start('release-a1', 123, 'scripted/model', 'sha256:' + 'a' * 64)
+
+
+def test_takeover_receipt_survives_acquire_replays_without_receipt(tmp_path):
+    with owner() as (url, state):
+        state['took_over'] = 'lease_predecessor'
+        assert start(coord(url, tmp_path))['took_over'] == 'lease_predecessor'
+        state['took_over'] = None
+        for _ in range(2):
+            replacement = coord(url, tmp_path)
+            assert start(replacement)['took_over'] == 'lease_predecessor'
+            assert replacement.recorded_binding('release-a1')['took_over'] == 'lease_predecessor'
+        state['lease']['lease_id'] = 'lease_other'
+        assert 'took_over' not in start(coord(url, tmp_path))
 
 
 def test_full_protocol_and_owner_retains_settlement(tmp_path):
