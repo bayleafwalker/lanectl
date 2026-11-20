@@ -1,8 +1,12 @@
 import os
+from pathlib import Path
+import shutil
 import subprocess
 import sys
 import threading
 import time
+
+import pytest
 
 from lanectl.child_process import communicate
 
@@ -69,3 +73,71 @@ def test_timeout_stops_sandbox_before_draining_its_inherited_pipes(tmp_path):
     assert stopped == "timeout" and time.monotonic() - before < 2
     time.sleep(2.1)
     assert not marker.exists()
+
+
+@pytest.mark.parametrize("cancel", [False, True])
+def test_bubblewrap_worker_descendant_completion(tmp_path, cancel):
+    bwrap = shutil.which("bwrap")
+    bash = shutil.which("bash")
+    sleep = shutil.which("sleep")
+    if not all((bwrap, bash, sleep)):
+        pytest.skip("requires Bubblewrap, Bash and sleep")
+    bash, sleep = (Path(command).resolve() for command in (bash, sleep))
+    if not all(path.is_relative_to("/nix/store") for path in (bash, sleep)):
+        pytest.skip("requires the Nix-packaged appservice tools")
+
+    # Nix coreutils can resolve sleep to a multi-call binary.
+    script = (
+        '((exec -a sleep "$1" .5) && printf complete > completed) & '
+        'printf ready > started; wait'
+    )
+    proc = subprocess.Popen(
+        [bwrap, "--unshare-user", "--unshare-pid", "--disable-userns",
+         "--die-with-parent", "--clearenv", "--ro-bind", "/nix/store", "/nix/store",
+         "--bind", str(tmp_path), "/attempt", "--dev", "/dev", "--chdir", "/attempt",
+         str(bash), "-ec", script, "worker-probe", str(sleep)],
+        start_new_session=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+        text=True,
+    )
+    flag = threading.Event()
+    try:
+        deadline = time.monotonic() + 5
+        while not (tmp_path / "started").exists() and proc.poll() is None:
+            if time.monotonic() >= deadline:
+                pytest.fail("Bubblewrap worker did not start")
+            time.sleep(.01)
+        assert (tmp_path / "started").exists(), proc.communicate(timeout=1)
+        if cancel:
+            flag.set()
+        _, error, stopped = communicate(proc, 5, flag)
+        assert stopped == ("cancelled" if cancel else None), error
+        if cancel:
+            time.sleep(.6)
+        assert (tmp_path / "completed").exists() == (not cancel), error
+    finally:
+        if proc.poll() is None:
+            flag.set()
+            communicate(proc, 1, flag)
+
+
+def test_cancel_kills_worker_even_when_sandbox_stop_raises():
+    proc = subprocess.Popen(
+        [sys.executable, "-c", "import time; time.sleep(30)"],
+        start_new_session=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    cancelled = threading.Event()
+    cancelled.set()
+
+    def stop():
+        raise RuntimeError("sandbox stop failed")
+
+    try:
+        with pytest.raises(RuntimeError, match="sandbox stop failed"):
+            communicate(proc, 5, cancelled, on_stop=stop)
+        assert proc.poll() is not None
+    finally:
+        if proc.poll() is None:
+            proc.kill()
+            proc.communicate(timeout=5)

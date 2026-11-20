@@ -11,13 +11,15 @@ def communicate(proc, timeout_s, cancel_event=None, on_stop=None):
         stopped = ("cancelled" if cancel_event is not None and cancel_event.is_set()
                    else "timeout" if time.monotonic() >= deadline else None)
         if stopped:
-            if on_stop is not None:
-                on_stop()
             try:
-                os.killpg(proc.pid, signal.SIGKILL)
-            except ProcessLookupError:
-                pass
-            out, err = proc.communicate(timeout=10)
+                if on_stop is not None:
+                    on_stop()
+            finally:
+                try:
+                    os.killpg(proc.pid, signal.SIGKILL)
+                except ProcessLookupError:
+                    pass
+                out, err = proc.communicate(timeout=10)
             return out, err, stopped
         try:
             out, err = proc.communicate(timeout=min(.1, max(.001, deadline - time.monotonic())))
