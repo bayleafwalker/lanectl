@@ -84,6 +84,15 @@ GID 11001 with mode 0440. The process ran as UID/GID 11001 with
 `fsGroup: 11001` and verified read permission and the read-only mount flag.
 This verifies the mount shape used by the gateway credential reader.
 
+The published candidate built from LANECTL `e73580c` and gitops-nixos
+`f812aeb` ran the packaged readiness probe in Job
+`sovite/lanectl-appservice-app-probe-e73580c-r2` on `k8s-worker-2`. The pod
+reported `Succeeded` at image digest
+`sha256:25c65acc057f28c811c1f8722931a36dd7f910a2c88d7a1bef25a7388fbc8544`.
+The probe used real OpenCode and Bubblewrap, image-generated configuration,
+and a synthetic loopback gateway. The gateway's ledger directory used mode
+0700. The pilot namespace `lanectl` was absent from appservice at readback.
+
 Use the appservice image and persistent state for the scheduled pilot. Add an
 explicit appservice sandbox profile that hides the coordinator journal,
 credential files and environment from the worker and exposes the attempt
