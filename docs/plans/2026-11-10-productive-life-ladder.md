@@ -56,6 +56,29 @@ Capstone test: replay the backlog against an empty repository. The 60 ordered re
 frozen acceptance tests are a private curriculum; a model that rebuilds lanectl from them is
 qualified, and the specs, not the code, are shown to be the asset.
 
+## Appservice execution for rung 5
+
+The appservice qualification recorded in Vuoro Cloud work item 2683 uses the
+published `lanectl-appservice-candidate` image with pod user namespaces.
+Bubblewrap isolates the attempt filesystem. A Longhorn volume preserved state
+when the probe moved between workers. The image's coordinated `doctor` check
+still requires a user systemd manager.
+
+Use the appservice image and persistent state for the scheduled pilot. Add an
+explicit appservice sandbox profile that hides the coordinator journal,
+credential files and environment from the worker and exposes the attempt
+checkout plus its declared runtime dependencies. Use the owner heartbeat's
+cancellation signal to stop the entire attempt, including descendants. Check
+the sandbox during `doctor` and before coordinated admission. Keep one public
+pilot policy writer with its own provider budget, and keep the workstation
+runner off that policy stream during the pilot.
+
+Qualify with a scheduled public claim and a real accepted outcome. Interrupt
+an attempt, resume from the persistent retry journal on a replacement pod,
+and verify that the stale runner cannot settle. Capture Kubernetes deployment,
+health and cleanup evidence for the train namespace. Exercise these checks on
+demand, including credential invisibility and cancellation on lost lease.
+
 ## This week (order)
 
 1. Rung 1: publish homelab-analytics releases from its sprintctl backlog (pending items include
