@@ -241,6 +241,37 @@ def _coordination_isolation(rel, lane, repo):
     return reasons
 
 
+def appservice_replacement(events, rel, repo, lane, owner):
+    """Reconstruct the next attempt only for the same open, bound release."""
+    from .resident_gateway import GO_ROUTE
+
+    view = project_items(events).get(rel.id)
+    if (lane.sandbox.get("mode") != "appservice" or _coordination_isolation(rel, lane, repo)
+            or view is None or view.state != "claimed" or not view.attempts
+            or not rel.work or not rel.work_complete):
+        return None
+    predecessor = view.attempts[-1]["attempt_id"]
+    claim = next((event["data"] for event in reversed(events)
+                  if event["type"] == "item.claimed" and event.get("item_id") == rel.id
+                  and event["data"]["attempt_id"] == predecessor), None)
+    if (claim is None or claim["lane"] != lane.lane or claim["model"] != GO_ROUTE
+            or claim["release_revision"] != rel.revision or claim["base_sha"] != rel.base_sha):
+        return None
+    binding = delivery_policy.claim_binding(events, rel.id, claim)
+    if binding is None:
+        return None
+    try:
+        effective = delivery_policy.effective_lane(binding, lane)
+    except (ValueError, KeyError, TypeError):
+        return None
+    if GO_ROUTE not in eligible_models(rel, effective, repo):
+        return None
+    old = owner.recorded_binding(predecessor)
+    if old is None or rel.work != f"{rel.repo}#{old['item_id']}":
+        return None
+    return predecessor, Claim(rel, repo, effective, f"{rel.id}-a{len(view.attempts) + 1}", GO_ROUTE, "opencode")
+
+
 def _retry_admission(fn):
     @functools.wraps(fn)
     def bounded_retry(*args, **kwargs):

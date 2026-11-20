@@ -1,5 +1,6 @@
 """Native execution must retain owner authority through terminal settlement."""
 from contextlib import contextmanager
+from dataclasses import replace
 from pathlib import Path
 from types import SimpleNamespace
 import os
@@ -10,6 +11,31 @@ from lanectl.events import project_items
 from tests.stage8.test_work_sync_extra import _set_work
 
 TEST='from calc import sub\n\ndef test_sub():\n    assert sub(5,3)==2\n'
+
+
+def test_appservice_replacement_binds_original_release_and_owner_item(estate):
+    from lanectl.resident_gateway import GO_ROUTE
+
+    _, release, log = estate
+    release("replacement", TEST)
+    original = runner.admit("implement", log)
+    rel = replace(original.rel, work="target#12", work_complete=True)
+    lane = replace(original.lane, sandbox={"mode": "appservice"}, routing={GO_ROUTE: 1.0})
+    repo = replace(original.repo, train_isolation="appservice")
+    binding = runner.delivery_policy.snapshot(lane)
+    events = log.read()
+    for event in events:
+        if event["type"] in ("release.published", "item.claimed"):
+            event["data"]["effective_policy"] = binding
+        if event["type"] == "item.claimed":
+            event["data"]["model"] = GO_ROUTE
+    owner = SimpleNamespace(recorded_binding=lambda _: {"item_id": 12})
+    predecessor, candidate = runner.appservice_replacement(events, rel, repo, lane, owner)
+    assert predecessor == original.attempt_id
+    assert candidate.attempt_id == "replacement-a2"
+    assert runner.appservice_replacement(events, replace(rel, work="target#13"), repo, lane, owner) is None
+    assert runner.appservice_replacement(events, replace(rel, revision=rel.revision + 1),
+                                         repo, lane, owner) is None
 
 
 class Owner:
