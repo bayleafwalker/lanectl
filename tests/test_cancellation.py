@@ -163,3 +163,31 @@ def test_appservice_train_mounts_only_the_checkout(tmp_path, monkeypatch):
     assert (checkout / "marker").read_text() == "ok"
     failure = run_appservice_train(checkout, "exit 41")
     assert failure.returncode == 41
+
+
+def test_appservice_train_reads_linked_worktree_commit(tmp_path):
+    from lanectl.sandbox import run_appservice_train
+
+    tools = [shutil.which(command) for command in ("bwrap", "bash", "git")]
+    if not all(tools) or not all(
+        Path(tool).resolve().is_relative_to("/nix/store") for tool in tools[1:]
+    ):
+        pytest.skip("requires the Nix-packaged appservice tools")
+
+    canonical = tmp_path / "canonical"
+    train = tmp_path / "train"
+    subprocess.run(["git", "init", "-q", str(canonical)], check=True)
+    def git(*args):
+        return subprocess.check_output(["git", "-C", str(canonical), *args], text=True).strip()
+
+    git("-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid",
+        "commit", "-q", "--allow-empty", "-m", "canonical")
+    git("worktree", "add", "-q", "--detach", str(train))
+    credential = canonical / "private"
+    credential.write_text("synthetic")
+    git_executable = Path(tools[-1]).resolve()
+    result = run_appservice_train(
+        train, f'test ! -e "{credential}" && "{git_executable}" rev-parse HEAD'
+    )
+    assert result.returncode == 0, result.stderr
+    assert result.stdout.strip() == git("rev-parse", "HEAD")

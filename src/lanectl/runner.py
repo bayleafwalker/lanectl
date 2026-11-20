@@ -904,7 +904,7 @@ def _train_command(repo, checkout: Path, command: str):
     if repo.train_isolation == 'appservice':
         try:
             return sandboxing.run_appservice_train(checkout, command)
-        except (OSError, RuntimeError, ValueError, subprocess.TimeoutExpired) as exc:
+        except (OSError, RuntimeError, ValueError, subprocess.SubprocessError) as exc:
             return subprocess.CompletedProcess(command, 1, '', f'appservice train isolation failed: {type(exc).__name__}')
     if repo.train_isolation == 'systemd':
         # The separate-UID host service stages its own checkout; its root-owned

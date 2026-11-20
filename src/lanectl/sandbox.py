@@ -8,10 +8,12 @@ Added 2026-11-08 after OpenCode workers wrote into the main checkout.
 from __future__ import annotations
 
 import os
+from contextlib import ExitStack
 import hashlib
 import shlex
 import shutil
 import subprocess
+import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -185,13 +187,30 @@ def run_appservice_train(checkout: Path, command: str, timeout_s: int = 1800):
         "--dev", "/dev", "--tmpfs", "/tmp", "--dir", "/tmp/home",
         "--bind", str(workspace), "/checkout", "--chdir", "/checkout",
         "--setenv", "PATH", "/bin", "--setenv", "HOME", "/tmp/home",
-        str(Path(shell).resolve()), "-c", command,
     ]
-    with subprocess.Popen(
-        argv, start_new_session=True, text=True,
-        stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-        env={},
-    ) as process:
+    with ExitStack() as stack:
+        if (workspace / ".git").is_file():
+            clone = Path(stack.enter_context(tempfile.TemporaryDirectory(prefix="lanectl-train-git-"))) / "clone"
+            subprocess.run(
+                ["git", "clone", "--quiet", "--no-local", "--no-checkout",
+                 str(workspace), str(clone)],
+                check=True, capture_output=True, timeout=timeout_s,
+            )
+            subprocess.run(
+                ["git", "-C", str(clone), "read-tree", "HEAD"],
+                check=True, capture_output=True, timeout=timeout_s,
+            )
+            argv.extend([
+                "--ro-bind", str(clone / ".git"), "/git-metadata",
+                "--setenv", "GIT_DIR", "/git-metadata",
+                "--setenv", "GIT_WORK_TREE", "/checkout",
+            ])
+        argv.extend([str(Path(shell).resolve()), "-c", command])
+        process = stack.enter_context(subprocess.Popen(
+            argv, start_new_session=True, text=True,
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            env={},
+        ))
         out, err, stopped = communicate(process, timeout_s)
         if stopped:
             return subprocess.CompletedProcess(command, 124, out, err + "appservice train timed out")
