@@ -54,6 +54,20 @@ def _of(log, etype):
     return [e["data"] for e in log.read() if e["type"] == etype]
 
 
+def test_appservice_deploy_refuses_dirty_checked_worktree(estate, tmp_path, monkeypatch):
+    from dataclasses import replace
+
+    out = _declare(tmp_path)
+    train = _train(estate, "dirty-appservice")
+    repos = deploy.load_repos()
+    repos["target"] = replace(repos["target"], train_isolation="appservice")
+    monkeypatch.setattr(deploy, "load_repos", lambda: repos)
+    (Path(train["worktree"]) / "unreviewed.txt").write_text("outside the checked commit")
+    assert "checkout is dirty" in deploy.deploy_train(estate[2], train["train_id"])
+    assert not (out / "deployed.txt").exists()
+    assert _of(estate[2], "train.deployed") == []
+
+
 def _main(repo):
     return subprocess.run(["git", "-C", repo, "rev-parse", "main"], capture_output=True, text=True).stdout
 

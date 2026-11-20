@@ -83,11 +83,16 @@ def deploy_train(log: EventLog, train_id: str) -> str:
         return f"{train_id}: repo {built.get('repo')} declares no deploy"
     from .runner import git
     checked_sha = built.get("checked_sha")
-    if checked_sha and git(repo.path, "rev-parse", f"train/{train_id}") != checked_sha:
+    if checked_sha and git(repo.path, "rev-parse", "--verify", f"train/{train_id}", check=False) != checked_sha:
         return f"{train_id}: checked tip changed; not deploying"
+    worktree = Path(built["worktree"]).resolve()
+    if repo.train_isolation == "appservice":
+        if not checked_sha or git(worktree, "rev-parse", "--verify", "HEAD", check=False) != checked_sha:
+            return f"{train_id}: appservice deploy checkout is not the checked train"
+        if git(worktree, "status", "--porcelain"):
+            return f"{train_id}: appservice deploy checkout is dirty"
     ns = namespace(train_id)
     env = deploy_env(spec, train_id)
-    worktree = Path(built["worktree"]).resolve()
     for stage, cmd in (("deploy", spec.cmd), ("health", spec.health_cmd)):
         rc, output = _run(cmd, worktree, env)
         if rc == 0:
