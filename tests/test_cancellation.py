@@ -183,11 +183,17 @@ def test_appservice_train_reads_linked_worktree_commit(tmp_path):
     git("-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid",
         "commit", "-q", "--allow-empty", "-m", "canonical")
     git("worktree", "add", "-q", "--detach", str(train))
+    git("branch", "unrelated")
+    git("tag", "unrelated")
     credential = canonical / "private"
     credential.write_text("synthetic")
     git_executable = Path(tools[-1]).resolve()
     result = run_appservice_train(
-        train, f'test ! -e "{credential}" && "{git_executable}" rev-parse HEAD'
+        train,
+        f'test ! -e "{credential}" && '
+        f'test -z "$("{git_executable}" remote)" && '
+        f'test -z "$("{git_executable}" for-each-ref refs/tags refs/heads/unrelated)" && '
+        f'"{git_executable}" rev-parse HEAD',
     )
     assert result.returncode == 0, result.stderr
     assert result.stdout.strip() == git("rev-parse", "HEAD")

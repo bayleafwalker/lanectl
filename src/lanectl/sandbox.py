@@ -193,11 +193,15 @@ def run_appservice_train(checkout: Path, command: str, timeout_s: int = 1800):
             clone = Path(stack.enter_context(tempfile.TemporaryDirectory(prefix="lanectl-train-git-"))) / "clone"
             subprocess.run(
                 ["git", "clone", "--quiet", "--no-local", "--no-checkout",
-                 str(workspace), str(clone)],
+                 "--single-branch", "--no-tags", str(workspace), str(clone)],
                 check=True, capture_output=True, timeout=timeout_s,
             )
             subprocess.run(
                 ["git", "-C", str(clone), "read-tree", "HEAD"],
+                check=True, capture_output=True, timeout=timeout_s,
+            )
+            subprocess.run(
+                ["git", "-C", str(clone), "remote", "remove", "origin"],
                 check=True, capture_output=True, timeout=timeout_s,
             )
             argv.extend([
