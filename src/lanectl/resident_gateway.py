@@ -187,20 +187,29 @@ def _systemd_credential_acl(fd, info, directory):
         return False
 
 
-def read_credential(name, environment=None):
+def read_credential(name, environment=None, *, appservice_directory: Path | None = None):
     if not isinstance(name, str) or re.fullmatch(r"[A-Za-z0-9_-]{1,64}", name) is None:
         raise GatewayError("invalid credential name")
-    directory = (os.environ if environment is None else environment).get("CREDENTIALS_DIRECTORY", "")
+    directory = (str(appservice_directory) if appservice_directory is not None
+                 else (os.environ if environment is None else environment).get("CREDENTIALS_DIRECTORY", ""))
     if not directory or not Path(directory).is_absolute():
-        raise GatewayError("systemd credentials directory is required")
+        raise GatewayError("absolute credentials directory is required")
     parent = os.open(directory, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
     try:
         fd = os.open(name, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK, dir_fd=parent)
         try:
             info = os.fstat(fd)
             private = info.st_uid in (0, os.geteuid()) and not info.st_mode & 0o077
+            if appservice_directory is None:
+                permitted = private or _systemd_credential_acl(fd, info, directory)
+            else:
+                # The Secret key is a read-only subPath mount in the gateway
+                # container. The owning group is the pod's dedicated fsGroup.
+                group_readable = (info.st_uid, info.st_gid, stat.S_IMODE(info.st_mode)) == (
+                    0, os.getegid(), 0o440)
+                permitted = bool(os.fstatvfs(fd).f_flag & os.ST_RDONLY) and (private or group_readable)
             if (not stat.S_ISREG(info.st_mode)
-                    or not (private or _systemd_credential_acl(fd, info, directory))):
+                    or not permitted):
                 raise GatewayError("upstream credential must be a private regular file")
             with os.fdopen(fd, "rb", closefd=False) as stream:
                 data = stream.read(8193)
@@ -679,6 +688,7 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("command", choices=("run", "check-config"))
     parser.add_argument("--config", required=True, type=Path)
+    parser.add_argument("--appservice-credentials-directory", type=Path)
     args = parser.parse_args(argv)
     try:
         if args.command == "check-config":
@@ -687,7 +697,11 @@ def main(argv=None):
                               "model": config.model, "qualified": False, "fallback": "none"}))
             return 0
         config = load_config(args.config)
-        app = Gateway(config, read_credential(config.credential_name))
+        if args.appservice_credentials_directory is not None and (
+                config.route != GO_ROUTE or config.listen_socket is not None or config.listen_port != 18021):
+            raise GatewayError("appservice credentials require the fixed loopback pilot route")
+        app = Gateway(config, read_credential(config.credential_name,
+                                              appservice_directory=args.appservice_credentials_directory))
         with app.make_server() as server:
             server.serve_forever()
     except (OSError, ValueError, sqlite3.Error) as exc:
