@@ -56,6 +56,44 @@ def test_replacement_claim_fences_late_predecessor_projection(estate):
     assert log.read() == before
 
 
+def test_tick_recovery_waits_for_owner_before_writing_replacement(estate, monkeypatch):
+    from lanectl.resident_gateway import GO_ROUTE
+
+    _, release, log = estate
+    release("replace-via-owner", TEST)
+    old = runner.admit("implement", log)
+    rel = replace(old.rel, work="target#12", work_complete=True)
+    lane = replace(old.lane, sandbox={"mode": "appservice"}, routing={GO_ROUTE: 1.0})
+    repo = replace(old.repo, train_isolation="appservice")
+    fresh = runner.Claim(rel, repo, lane, "replace-via-owner-a2", GO_ROUTE, "opencode")
+    seen = []
+    held = True
+
+    def acquire(*args, **kwargs):
+        seen.append(("start", args[0]))
+        if held:
+            raise coordination.CoordinationError("lease-held")
+
+    owner = SimpleNamespace(
+        start=acquire,
+        heartbeat=lambda attempt: seen.append(("heartbeat", attempt)),
+        assert_takeover=lambda prior, attempt: seen.append(("verify", prior, attempt)),
+    )
+    monkeypatch.setattr(runner, "load_lane", lambda _: lane)
+    monkeypatch.setattr(runner, "load_releases", lambda: [rel])
+    monkeypatch.setattr(runner, "load_repos", lambda: {rel.repo: repo})
+    monkeypatch.setattr(runner, "readiness", lambda *args: [])
+    monkeypatch.setattr(runner, "appservice_replacement", lambda *args: (old.attempt_id, fresh))
+    monkeypatch.setattr(coordination, "configured", lambda _: owner)
+    before = log.read()
+    assert runner.recover_appservice(lane.lane, log) is None
+    assert log.read() == before
+    held = False
+    assert runner.recover_appservice(lane.lane, log) == fresh
+    assert seen[-2:] == [("heartbeat", fresh.attempt_id), ("verify", old.attempt_id, fresh.attempt_id)]
+    assert project_items(log.read())[rel.id].open_attempt["attempt_id"] == fresh.attempt_id
+
+
 class Owner:
     def __init__(self):
         self.calls=[];self.active=True

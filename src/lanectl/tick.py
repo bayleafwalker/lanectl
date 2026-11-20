@@ -21,7 +21,7 @@ def _run(log, max_items, lane) -> list[str]:
     """The ``lanectl run`` loop, returning the lines it would print."""
     lines: list[str] = []
     for _ in range(max_items):
-        claim = runner.admit(lane, log)
+        claim = runner.recover_appservice(lane, log) or runner.admit(lane, log)
         if isinstance(claim, str):
             lines.append(claim)
             return lines

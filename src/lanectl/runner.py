@@ -272,6 +272,50 @@ def appservice_replacement(events, rel, repo, lane, owner):
     return predecessor, Claim(rel, repo, effective, f"{rel.id}-a{len(view.attempts) + 1}", GO_ROUTE, "opencode")
 
 
+def recover_appservice(lane_name, log):
+    """Acquire a fresh owner lease before replacing an interrupted local claim."""
+    from . import coordination, reap
+
+    lane = load_lane(lane_name)
+    if lane.sandbox.get("mode") != "appservice":
+        return None
+    repos = load_repos()
+    with log.locked():
+        events = log.read()
+        for rel in load_releases():
+            repo = repos.get(rel.repo)
+            if repo is None or readiness(rel, lane, repos):
+                continue
+            owner = coordination.configured(rel.repo)
+            if owner is None:
+                continue
+            found = appservice_replacement(events, rel, repo, lane, owner)
+            if found is None:
+                continue
+            predecessor, c = found
+            prompt_digest = hashlib.sha256(render_prompt(rel, c.lane, repo).encode()).hexdigest()
+            try:
+                owner.start(c.attempt_id, int(rel.work.split("#", 1)[1]), c.model,
+                            "sha256:" + prompt_digest,
+                            recipe_id=f"lanectl/{c.lane.lane}/v{c.lane.revision}")
+                owner.heartbeat(c.attempt_id)
+                owner.assert_takeover(predecessor, c.attempt_id)
+            except coordination.CoordinationError:
+                continue
+            reconcile_capacity(log, events, predecessor, actual=None, outcome="recovered", item_id=rel.id)
+            log.append("item.claimed", {
+                "attempt_id": c.attempt_id, "replaces_attempt_id": predecessor,
+                "lane": c.lane.lane, "lane_revision": c.lane.revision,
+                "lane_digest": c.lane.digest, "effective_policy": delivery_policy.resolve(events, rel.id),
+                "model": c.model, "worker": c.worker, "release_revision": rel.revision,
+                "base_sha": rel.base_sha, "branch": f"lane/{c.attempt_id}",
+                "runner_process": reap.process_identity(), "worker_unit": None,
+            }, item_id=rel.id)
+            reserve_capacity(log, log.read(), rel, provider_for(c.model), c.attempt_id)
+            return c
+    return None
+
+
 def _retry_admission(fn):
     @functools.wraps(fn)
     def bounded_retry(*args, **kwargs):
