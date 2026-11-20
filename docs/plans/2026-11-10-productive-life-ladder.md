@@ -91,7 +91,22 @@ reported `Succeeded` at image digest
 `sha256:25c65acc057f28c811c1f8722931a36dd7f910a2c88d7a1bef25a7388fbc8544`.
 The probe used real OpenCode and Bubblewrap, image-generated configuration,
 and a synthetic loopback gateway. The gateway's ledger directory used mode
-0700. The pilot namespace `lanectl` was absent from appservice at readback.
+0700.
+
+Appservice main revision `4273d241` deployed the `lanectl` namespace and
+`pilot-state` claim. The 5 GiB RWO Longhorn volume
+`pvc-90a0ba29-655c-4e30-9f9c-e279daf19d94` carried the live backup-tier label.
+`lanectl-state-write-75091dbc` on `k8s-worker-2` wrote the marker and
+`lanectl-state-read-75091dbc` on `k8s-worker-3` verified it read-only.
+Full backup `lanectl-pilot-75091dbc` joined that source and its same-named
+snapshot, reported Completed at 100% and stored 130023424 bytes on the
+Hetzner object storage target. Separate claim `pilot-restore-75091dbc`
+bound to `pvc-72e530a6-4383-4eee-9ace-87627fa82c8e` from the exact backup URI.
+`lanectl-restore-read-75091dbc` on `k8s-worker-3` mounted it read-only
+and verified marker SHA-256
+`5d8d20fdfdfbc422a158d376426abfac777d811ddc5f1c6e704c695fe44567a4`.
+The restore claim was retained. Active attempt recovery and stale-owner
+settlement refusal require a coordinated pilot attempt.
 
 Use the appservice image and persistent state for the scheduled pilot. Add an
 explicit appservice sandbox profile that hides the coordinator journal,
