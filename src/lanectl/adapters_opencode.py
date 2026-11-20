@@ -13,6 +13,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import shutil
 import signal
 import subprocess
 import tempfile
@@ -162,14 +163,36 @@ def run_opencode(*, model: str, worktree: Path, prompt: str, status_file: Path,
             proc.kill()
             output, _ = proc.communicate()
 
+    code = proc.returncode
+    if timed_out:
+        code = 130 if cancel_event is not None and cancel_event.is_set() else 124
+    return _record_result(output, code, started, model, status_file, interrupted=timed_out)
+
+
+def run_appservice_opencode(*, model: str, worktree: Path, prompt: str, status_file: Path,
+                            timeout_s: int, cancel_event=None) -> AdapterResult:
+    """Run the image's OpenCode executable through the appservice boundary."""
+    from .sandbox import run_appservice_command
+
+    started = _utcnow()
+    executable = shutil.which("opencode")
+    if executable is None:
+        return _record_result("", 127, started, model, status_file, diagnostic="OpenCode is missing")
+    argv = [executable, "run", "--standalone", "--format", "json", "--model", model, "--", prompt]
+    try:
+        process = run_appservice_command(worktree, argv, timeout_s, cancel_event=cancel_event)
+    except (OSError, ValueError, RuntimeError, subprocess.SubprocessError) as exc:
+        return _record_result("", 125, started, model, status_file, diagnostic=type(exc).__name__)
+    return _record_result(process.stdout, process.returncode, started, model, status_file,
+                          interrupted=process.returncode in (124, 125, 130), diagnostic=process.stderr)
+
+
+def _record_result(output, exit_code, started, model, status_file, *, interrupted=False, diagnostic=""):
     output = output or ""
     final_text, usage = parse_stream(output)
-    if timed_out:
-        outcome, exit_code, reason = "failed", 124, None
-        if cancel_event is not None and cancel_event.is_set():
-            exit_code = 130
+    if interrupted:
+        outcome, reason = "failed", None
     else:
-        exit_code = proc.returncode
         marker_text = _marker_text(output)
         if _ESCALATED.search(marker_text):
             outcome = "escalated"
@@ -180,7 +203,7 @@ def run_opencode(*, model: str, worktree: Path, prompt: str, status_file: Path,
         else:
             outcome, reason = "failed", None
 
-    tail = final_text[-2000:]
+    tail = (final_text or diagnostic)[-2000:]
     ended = _utcnow()
     _write_status(status_file, {
         "outcome": outcome, "exit_code": exit_code, "usage": usage, "model": model,
