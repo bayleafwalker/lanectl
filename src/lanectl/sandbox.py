@@ -246,7 +246,9 @@ def run_appservice_command(checkout: Path, command: list[str], timeout_s: int, *
         argv.extend(["--ro-bind", str(metadata), "/checkout/.git"])
     if opencode_config is not None:
         config = _image_opencode_config(opencode_config)
+        # Bun needs procfs at startup. Mount a fresh view inside --unshare-pid.
         argv.extend([
+            "--proc", "/proc",
             "--setenv", "OPENCODE_CONFIG", str(config),
             "--setenv", "OPENCODE_DISABLE_PROJECT_CONFIG", "1",
             "--setenv", "OPENCODE_CONFIG_PROJECT_DISABLE", "1",
