@@ -29,11 +29,14 @@ def namespace(train_id: str) -> str:
     return f"lane-dev-{train_id}"
 
 
-def deploy_env(spec: DeploySpec, train_id: str) -> dict[str, str]:
+def deploy_env(spec: DeploySpec, train_id: str, *, checked_sha: str | None = None) -> dict[str, str]:
     """The stripped environment: allow-listed variables plus the LANE_ vars."""
     env = {name: os.environ[name] for name in spec.env_allow if name in os.environ}
+    env.pop("LANE_CHECKED_SHA", None)
     env.update(LANE_NAMESPACE=namespace(train_id), LANE_TRAIN_ID=train_id,
                LANE_TTL_S=str(spec.ttl_s))
+    if checked_sha is not None:
+        env["LANE_CHECKED_SHA"] = checked_sha
     return env
 
 
@@ -92,14 +95,14 @@ def deploy_train(log: EventLog, train_id: str) -> str:
         if git(worktree, "status", "--porcelain"):
             return f"{train_id}: appservice deploy checkout is dirty"
     ns = namespace(train_id)
-    env = deploy_env(spec, train_id)
+    env = deploy_env(spec, train_id, checked_sha=checked_sha if repo.train_isolation == "appservice" else None)
     for stage, cmd in (("deploy", spec.cmd), ("health", spec.health_cmd)):
         rc, output = _run(cmd, worktree, env)
         if rc == 0:
             continue
         log.append("train.deployed", {
             "train_id": train_id, "repo": repo.name, "namespace": ns, "passed": False,
-            "expires_at": _expires_at(spec.ttl_s), "stage": stage,
+            "expires_at": _expires_at(spec.ttl_s), "stage": stage, "checked_sha": checked_sha,
             "tail": output[-TAIL_CHARS:]})
         cleanup = teardown(log, train_id, "deploy-failed")
         return f"{train_id}: {stage} failed (exit {rc})\n{output[-TAIL_CHARS:]}\n{cleanup}"
@@ -112,11 +115,11 @@ def deploy_train(log: EventLog, train_id: str) -> str:
 
 def teardown(log: EventLog, train_id: str, reason: str) -> str:
     """Run the repo's teardown command and record a ``train.torn_down`` event."""
+    data = _unclosed(log.read()).get(train_id) or {}
     found = _spec_for(log, train_id)
     if found is None:
         # A deploy whose train.built is not in this log: the deploy event still
         # names the repo, so its declared teardown command is reachable.
-        data = _unclosed(log.read()).get(train_id) or {}
         repo = load_repos().get(data.get("repo"))
         if repo is not None:
             found = None, repo, repo.deploy
@@ -125,7 +128,8 @@ def teardown(log: EventLog, train_id: str, reason: str) -> str:
     _, repo, spec = found
     if spec is None:
         return f"{train_id}: repo declares no deploy"
-    env = deploy_env(spec, train_id)
+    env = deploy_env(spec, train_id, checked_sha=data.get("checked_sha")
+                     if repo.train_isolation == "appservice" else None)
     rc, output = _run(spec.teardown_cmd, repo.path, env)
     log.append("train.torn_down", {
         "train_id": train_id, "namespace": namespace(train_id), "reason": reason,

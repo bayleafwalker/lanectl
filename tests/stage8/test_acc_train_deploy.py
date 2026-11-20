@@ -73,14 +73,16 @@ def _main(repo):
 
 
 def test_namespace_and_env_are_stripped(monkeypatch):
-    spec = type("S", (), {"env_allow": ("KEEP_ME", "UNSET_ONE"), "ttl_s": 60})()
+    spec = type("S", (), {"env_allow": ("KEEP_ME", "UNSET_ONE", "LANE_CHECKED_SHA"), "ttl_s": 60})()
     monkeypatch.setenv("KEEP_ME", "kept")
     monkeypatch.setenv("SECRET_TOKEN", "leak")
+    monkeypatch.setenv("LANE_CHECKED_SHA", "untrusted")
     monkeypatch.delenv("UNSET_ONE", raising=False)
     assert deploy.namespace("train-1") == "lane-dev-train-1"
     assert deploy.deploy_env(spec, "train-1") == {
         "KEEP_ME": "kept", "LANE_NAMESPACE": "lane-dev-train-1",
         "LANE_TRAIN_ID": "train-1", "LANE_TTL_S": "60"}
+    assert deploy.deploy_env(spec, "train-1", checked_sha="a" * 40)["LANE_CHECKED_SHA"] == "a" * 40
 
 
 def test_deploy_passes_records_event_and_sees_only_allowed_env(estate, tmp_path, monkeypatch):
