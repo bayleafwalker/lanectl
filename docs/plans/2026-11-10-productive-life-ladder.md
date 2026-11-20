@@ -77,6 +77,13 @@ was hidden both by its original path and through the inner `/proc/1/root`.
 This qualifies OpenCode startup on that pod configuration. The scheduled
 coordinator, provider route and end-to-end run require their own evidence.
 
+The synthetic credential Job `sovite/lanectl-credential-probe-bc61b71`
+completed on `k8s-worker-2` with the same image digest. A Secret key mounted
+read-only using `subPath` appeared as a regular file owned by UID 0 and
+GID 11001 with mode 0440. The process ran as UID/GID 11001 with
+`fsGroup: 11001` and verified read permission and the read-only mount flag.
+This verifies the mount shape used by the gateway credential reader.
+
 Use the appservice image and persistent state for the scheduled pilot. Add an
 explicit appservice sandbox profile that hides the coordinator journal,
 credential files and environment from the worker and exposes the attempt
