@@ -1,5 +1,6 @@
 """Native execution must retain owner authority through terminal settlement."""
 from contextlib import contextmanager
+from dataclasses import replace
 from pathlib import Path
 from types import SimpleNamespace
 import os
@@ -10,6 +11,94 @@ from lanectl.events import project_items
 from tests.stage8.test_work_sync_extra import _set_work
 
 TEST='from calc import sub\n\ndef test_sub():\n    assert sub(5,3)==2\n'
+
+
+def test_appservice_replacement_binds_original_release_and_owner_item(estate):
+    from lanectl.resident_gateway import GO_ROUTE
+
+    _, release, log = estate
+    release("replacement", TEST)
+    original = runner.admit("implement", log)
+    rel = replace(original.rel, work="target#12", work_complete=True)
+    lane = replace(original.lane, sandbox={"mode": "appservice"}, routing={GO_ROUTE: 1.0})
+    repo = replace(original.repo, train_isolation="appservice")
+    binding = runner.delivery_policy.snapshot(lane)
+    events = log.read()
+    for event in events:
+        if event["type"] in ("release.published", "item.claimed"):
+            event["data"]["effective_policy"] = binding
+        if event["type"] == "item.claimed":
+            event["data"]["model"] = GO_ROUTE
+    owner = SimpleNamespace(recorded_binding=lambda _: {"item_id": 12})
+    predecessor, candidate = runner.appservice_replacement(events, rel, repo, lane, owner)
+    assert predecessor == original.attempt_id
+    assert candidate.attempt_id == "replacement-a2"
+    assert runner.appservice_replacement(events, replace(rel, work="target#13"), repo, lane, owner) is None
+    assert runner.appservice_replacement(events, replace(rel, revision=rel.revision + 1),
+                                         repo, lane, owner) is None
+
+
+def test_replacement_claim_fences_late_predecessor_projection(estate):
+    _, release, log = estate
+    release("replacement-projection", TEST)
+    original = runner.admit("implement", log)
+    claim = next(event["data"] for event in log.read() if event["type"] == "item.claimed")
+    successor = "replacement-projection-a2"
+    log.append("item.claimed", dict(claim, attempt_id=successor, replaces_attempt_id=original.attempt_id),
+               item_id=original.rel.id)
+    log.append("gate.result", {"attempt_id": original.attempt_id, "gate": "acceptance",
+                               "passed": True, "violations": []}, item_id=original.rel.id)
+    for event in ("item.parked", "item.requeued"):
+        log.append(event, {"attempt_id": original.attempt_id, "reason": "late decision"},
+                   item_id=original.rel.id)
+    item = project_items(log.read())[original.rel.id]
+    assert item.state == "claimed" and item.open_attempt["attempt_id"] == successor
+    assert item.attempts[0]["superseded"] and item.attempts[0]["infra"]
+    before = log.read()
+    assert "superseded" in runner._coordination_park(original, log, "lease lost")
+    assert log.read() == before
+
+
+def test_tick_recovery_waits_for_owner_before_writing_replacement(estate, monkeypatch):
+    from lanectl.resident_gateway import GO_ROUTE
+
+    _, release, log = estate
+    release("replace-via-owner", TEST)
+    old = runner.admit("implement", log)
+    rel = replace(old.rel, work="target#12", work_complete=True)
+    lane = replace(old.lane, sandbox={"mode": "appservice"}, routing={GO_ROUTE: 1.0})
+    repo = replace(old.repo, train_isolation="appservice")
+    fresh = runner.Claim(rel, repo, lane, "replace-via-owner-a2", GO_ROUTE, "opencode")
+    seen = []
+    held = True
+
+    def acquire(*args, **kwargs):
+        seen.append(("start", args[0]))
+        if held:
+            raise coordination.CoordinationError("lease-held")
+
+    owner = SimpleNamespace(
+        start=acquire,
+        heartbeat=lambda attempt: seen.append(("heartbeat", attempt)),
+        assert_takeover=lambda prior, attempt: seen.append(("verify", prior, attempt)),
+    )
+    monkeypatch.setattr(runner, "load_lane", lambda _: lane)
+    monkeypatch.setattr(runner, "load_releases", lambda: [rel])
+    monkeypatch.setattr(runner, "load_repos", lambda: {rel.repo: repo})
+    monkeypatch.setattr(runner, "readiness", lambda *args: [])
+    monkeypatch.setattr(runner, "appservice_replacement", lambda *args: (old.attempt_id, fresh))
+    monkeypatch.setattr(coordination, "configured", lambda _: owner)
+    before = log.read()
+    with monkeypatch.context() as denial:
+        denial.setattr(runner, "_provider_admission", lambda *args: {"decision": "block"})
+        assert runner.recover_appservice(lane.lane, log) is None
+        assert seen == [] and log.read() == before
+    assert runner.recover_appservice(lane.lane, log) is None
+    assert log.read() == before
+    held = False
+    assert runner.recover_appservice(lane.lane, log) == fresh
+    assert seen[-2:] == [("heartbeat", fresh.attempt_id), ("verify", old.attempt_id, fresh.attempt_id)]
+    assert project_items(log.read())[rel.id].open_attempt["attempt_id"] == fresh.attempt_id
 
 
 class Owner:

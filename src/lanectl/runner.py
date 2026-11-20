@@ -226,6 +226,112 @@ def _coordinated(repo_name):
     return path.exists() and repo_name in tomllib.loads(path.read_text()).get("repos", {})
 
 
+def _coordination_isolation(rel, lane, repo):
+    if lane.sandbox.get("mode") == "appservice":
+        if repo is None or repo.train_isolation != "appservice":
+            return ["appservice workers require appservice train isolation"]
+        if rel.data_class != "public" or repo.data_class_floor != "public":
+            return ["appservice pilot accepts only public releases"]
+        return []
+    reasons = []
+    if lane.sandbox.get("mode") != "systemd-run":
+        reasons.append("coordinated execution requires credential-isolating systemd sandbox")
+    if getattr(repo, "train_isolation", "namespace") not in ("namespace", "systemd"):
+        reasons.append("coordinated execution requires namespace train isolation or systemd train isolation")
+    return reasons
+
+
+def appservice_replacement(events, rel, repo, lane, owner):
+    """Reconstruct the next attempt only for the same open, bound release."""
+    from .resident_gateway import GO_ROUTE
+
+    view = project_items(events).get(rel.id)
+    if (lane.sandbox.get("mode") != "appservice" or _coordination_isolation(rel, lane, repo)
+            or view is None or view.state != "claimed" or not view.attempts
+            or not rel.work or not rel.work_complete):
+        return None
+    predecessor = view.attempts[-1]["attempt_id"]
+    claim = next((event["data"] for event in reversed(events)
+                  if event["type"] == "item.claimed" and event.get("item_id") == rel.id
+                  and event["data"]["attempt_id"] == predecessor), None)
+    if (claim is None or claim["lane"] != lane.lane or claim["model"] != GO_ROUTE
+            or claim["release_revision"] != rel.revision or claim["base_sha"] != rel.base_sha):
+        return None
+    binding = delivery_policy.claim_binding(events, rel.id, claim)
+    if binding is None:
+        return None
+    try:
+        effective = delivery_policy.effective_lane(binding, lane)
+    except (ValueError, KeyError, TypeError):
+        return None
+    if eligible_models(rel, effective, repo).get(GO_ROUTE, 0) <= 0:
+        return None
+    old = owner.recorded_binding(predecessor)
+    if old is None or rel.work != f"{rel.repo}#{old['item_id']}":
+        return None
+    return predecessor, Claim(rel, repo, effective, f"{rel.id}-a{len(view.attempts) + 1}", GO_ROUTE, "opencode")
+
+
+def _provider_admission(events, rel, model):
+    from . import steering
+
+    try:
+        policy = capacity.AllocationPolicy.load()
+    except capacity.PolicyError:
+        policy = None
+    provider = provider_for(model)
+    spec = policy.providers.get(provider) if policy is not None else None
+    return steering.admission(events, policy, datetime.now(timezone.utc),
+                              provider, rel.size, model,
+                              enforce=spec is not None and spec.admission_mode == "enforce")
+
+
+def recover_appservice(lane_name, log):
+    """Acquire a fresh owner lease before replacing an interrupted local claim."""
+    from . import coordination, reap
+
+    lane = load_lane(lane_name)
+    if lane.sandbox.get("mode") != "appservice":
+        return None
+    repos = load_repos()
+    with log.locked():
+        events = log.read()
+        for rel in load_releases():
+            repo = repos.get(rel.repo)
+            if repo is None or readiness(rel, lane, repos):
+                continue
+            owner = coordination.configured(rel.repo)
+            if owner is None:
+                continue
+            found = appservice_replacement(events, rel, repo, lane, owner)
+            if found is None:
+                continue
+            predecessor, c = found
+            if readiness(rel, c.lane, repos) or _provider_admission(events, rel, c.model)["decision"] == "block":
+                continue
+            prompt_digest = hashlib.sha256(render_prompt(rel, c.lane, repo).encode()).hexdigest()
+            try:
+                owner.start(c.attempt_id, int(rel.work.split("#", 1)[1]), c.model,
+                            "sha256:" + prompt_digest,
+                            recipe_id=f"lanectl/{c.lane.lane}/v{c.lane.revision}")
+                owner.heartbeat(c.attempt_id)
+                owner.assert_takeover(predecessor, c.attempt_id)
+            except coordination.CoordinationError:
+                continue
+            reconcile_capacity(log, events, predecessor, actual=None, outcome="recovered", item_id=rel.id)
+            log.append("item.claimed", {
+                "attempt_id": c.attempt_id, "replaces_attempt_id": predecessor,
+                "lane": c.lane.lane, "lane_revision": c.lane.revision,
+                "lane_digest": c.lane.digest, "effective_policy": delivery_policy.resolve(events, rel.id),
+                "model": c.model, "worker": c.worker, "release_revision": rel.revision,
+                "base_sha": rel.base_sha, "branch": f"lane/{c.attempt_id}",
+                "runner_process": reap.process_identity(), "worker_unit": None,
+            }, item_id=rel.id)
+            reserve_capacity(log, log.read(), rel, provider_for(c.model), c.attempt_id)
+            return c
+    return None
+
+
 def _retry_admission(fn):
     @functools.wraps(fn)
     def bounded_retry(*args, **kwargs):
@@ -319,10 +425,10 @@ def admit(lane_name: str, log: EventLog, only: str | None = None) -> Claim | str
                 skipped.append(f"{rel.id}: bound capacity limit")
                 continue
             reasons = readiness(rel, lane, repos)
-            if _coordinated(rel.repo) and lane.sandbox.get("mode") != "systemd-run":
-                reasons.append("coordinated execution requires credential-isolating systemd sandbox")
-            if _coordinated(rel.repo) and getattr(repos.get(rel.repo), 'train_isolation', 'namespace') not in ('namespace', 'systemd'):
-                reasons.append("coordinated execution requires namespace train isolation or systemd train isolation")
+            if _coordinated(rel.repo):
+                reasons.extend(_coordination_isolation(rel, lane, repos.get(rel.repo)))
+            elif lane.sandbox.get("mode") == "appservice":
+                reasons.append("appservice workers require owner coordination")
             if _coordinated(rel.repo) and (not rel.work or not rel.work_complete
                                               or rel.work.split("#", 1)[0] != rel.repo):
                 reasons.append("coordinated releases require a complete Work outcome")
@@ -334,22 +440,19 @@ def admit(lane_name: str, log: EventLog, only: str | None = None) -> Claim | str
             if model is None:
                 skipped.append(f"{rel.id}: no eligible model")
                 continue
-            from . import steering
-            try:
-                policy = capacity.AllocationPolicy.load()
-            except capacity.PolicyError:
-                policy = None
-            provider = provider_for(model)
-            spec = policy.providers.get(provider) if policy is not None else None
-            verdict = steering.admission(events, policy, datetime.now(timezone.utc),
-                                         provider, rel.size, model,
-                                         enforce=spec is not None and spec.admission_mode == "enforce")
+            verdict = _provider_admission(events, rel, model)
             if verdict["decision"] == "block":
                 skipped.append(f"{rel.id}: {'; '.join(verdict['reasons'])}")
                 continue
             n = len(v.attempts) + 1
             attempt_id = f"{rel.id}-a{n}"
             worker = adapters.worker_for(model)
+            if lane.sandbox.get("mode") == "appservice":
+                from .resident_gateway import GO_ROUTE
+
+                if model != GO_ROUTE:
+                    skipped.append(f"{rel.id}: model is outside the appservice pilot route")
+                    continue
             from . import reap
             identity = reap.process_identity()
             worker_unit = sandboxing.from_lane(lane.sandbox, (), lane.timeout_s + 120, attempt_id=attempt_id).unit
@@ -568,6 +671,9 @@ _owner_context = threading.local()
 
 def _coordination_park(c, log, error):
     events = log.read()
+    if any(e["type"] == "item.claimed" and e.get("item_id") == c.rel.id
+           and e["data"].get("replaces_attempt_id") == c.attempt_id for e in events):
+        return f"{c.attempt_id}: superseded by owner takeover"
     if not any(e["type"] == "attempt.finished" and e["data"]["attempt_id"] == c.attempt_id for e in events):
         log.append("attempt.finished", {"attempt_id": c.attempt_id, "outcome": "failed",
                    "exit_code": -1, "head_sha": "", "elapsed_s": 0.0,
@@ -589,7 +695,7 @@ def _coordinate_execution(native):
         try:
             owner = coordination.configured(c.repo.name)
             if owner is None:
-                if require_coordination:
+                if require_coordination or c.lane.sandbox.get("mode") == "appservice":
                     raise coordination.CoordinationError("owner coordination is not configured")
                 return native(c, log, adapter_fn, prompt=_claim_prompt(c, log))
             if expected_owner is not None:
@@ -602,10 +708,19 @@ def _coordinate_execution(native):
                             and getattr(client, key, None) != expected_owner[key]:
                         raise coordination.CoordinationError(
                             f"owner {key} changed since the preview")
-            if c.lane.sandbox.get("mode") != "systemd-run":
-                raise coordination.CoordinationError("coordinated execution requires credential-isolating systemd sandbox")
-            if c.repo.train_isolation not in ('namespace', 'systemd'):
-                raise coordination.CoordinationError("coordinated execution requires namespace train isolation or systemd train isolation")
+            isolation_errors = _coordination_isolation(c.rel, c.lane, c.repo)
+            if isolation_errors:
+                raise coordination.CoordinationError(isolation_errors[0])
+            if c.lane.sandbox.get("mode") == "appservice":
+                from .resident_gateway import GO_ROUTE
+
+                if c.model != GO_ROUTE or c.worker != "opencode" or adapter_fn is not None:
+                    raise coordination.CoordinationError("appservice pilot requires the fixed isolated OpenCode route")
+                try:
+                    sandboxing.probe_appservice()
+                except (OSError, ValueError, RuntimeError, subprocess.SubprocessError) as exc:
+                    raise coordination.CoordinationError(
+                        f"appservice isolation probe failed ({type(exc).__name__})") from exc
             if (not c.rel.work or not c.rel.work_complete
                     or c.rel.work.split("#", 1)[0] != c.rel.repo):
                 raise coordination.CoordinationError("coordinated releases require a complete Work outcome")
@@ -699,9 +814,9 @@ def execute(c: Claim, log: EventLog, adapter_fn=None, *, lease_guard=None,
     git(repo.path, "branch", "-D", branch, check=False)
     # A standalone clone, not a linked worktree: harnesses such as OpenCode resolve a
     # linked worktree to the main repository root and write there (2026-11-08 breach).
-    # Systemd trains must stage from a self-contained source: --shared would leave
-    # object alternates that the fenced stage cannot copy without pointing outside.
-    mode = "--shared" if repo.train_isolation != 'systemd' else "--no-hardlinks"
+    # Fenced stages need self-contained Git objects. Shared clones refer back
+    # to the canonical repository, which the appservice sandbox cannot see.
+    mode = "--no-hardlinks" if repo.train_isolation in ("systemd", "appservice") else "--shared"
     git(repo.path, "clone", "-q", mode, "--no-checkout", str(repo.path), str(wt))
     git(wt, "checkout", "-q", "-b", branch, rel.base_sha)
     git(wt, "remote", "remove", "origin", check=False)   # do not advertise the main checkout
@@ -725,11 +840,15 @@ def execute(c: Claim, log: EventLog, adapter_fn=None, *, lease_guard=None,
         for target in config.get("repos", {}).values():
             native_env.pop(target.get("token_env", ""), None)
     if repo.setup_cmd:
-        _train_command(repo, wt, repo.setup_cmd)
+        if repo.train_isolation == "appservice":
+            _train_command(repo, wt, repo.setup_cmd, cancel_event=cancel_event)
+        else:
+            _train_command(repo, wt, repo.setup_cmd)
 
     runs = state_dir() / "runs"
     runs.mkdir(exist_ok=True)
-    shims = sb.shim_dir(state_dir() / "shims" / c.attempt_id, ("opencode", "codex", "claude"))
+    shims = (None if sb.mode == "appservice"
+             else sb.shim_dir(state_dir() / "shims" / c.attempt_id, ("opencode", "codex", "claude")))
     env = dict(native_env or os.environ, PATH=f"{shims}{os.pathsep}{os.environ.get('PATH', '')}") if shims else native_env
     if lease_guard is not None:
         lease_guard.assert_active()
@@ -737,7 +856,16 @@ def execute(c: Claim, log: EventLog, adapter_fn=None, *, lease_guard=None,
     started = time.monotonic()
     fn = adapter_fn or adapters.ADAPTERS[c.worker]
     try:
-        res = fn(model=c.model, worktree=wt, prompt=prompt,
+        if sb.mode == "appservice":
+            from .adapters_opencode import run_appservice_opencode
+
+            res = run_appservice_opencode(
+                model=c.model, worktree=wt, prompt=prompt, status_file=runs / f"{c.attempt_id}.json",
+                timeout_s=lane.timeout_s, config=sandboxing.appservice_opencode_config(),
+                cancel_event=cancel_event,
+            )
+        else:
+            res = fn(model=c.model, worktree=wt, prompt=prompt,
                  status_file=runs / f"{c.attempt_id}.json", timeout_s=lane.timeout_s,
                  external=c.model in lane.external_models, env=env,
                  **({"cancel_event": cancel_event} if cancel_event is not None and adapter_fn is None else {}),
@@ -747,6 +875,8 @@ def execute(c: Claim, log: EventLog, adapter_fn=None, *, lease_guard=None,
     except Exception as exc:  # adapter crash is an attempt outcome, not a runner crash
         res = adapters.AdapterResult("failed", 1, f"adapter error: {exc}", None)
     elapsed = round(time.monotonic() - started, 1)
+    if lease_guard is not None:
+        lease_guard.assert_active()
     main_changed = _main_fingerprint(repo) != main_before
     # With a write sandbox the worker cannot touch main, so a change there is the
     # planner/integrator working concurrently: record it, do not fail the attempt.
@@ -781,7 +911,7 @@ def execute(c: Claim, log: EventLog, adapter_fn=None, *, lease_guard=None,
     elif res.outcome == "failed" and head == seed_sha:
         gates = {}   # nothing to gate; decide() classifies this as infra
     else:
-        gates = run_gates(c, wt, seed_sha, head, acc, res.outcome, sb)
+        gates = run_gates(c, wt, seed_sha, head, acc, res.outcome, sb, cancel_event=cancel_event)
     for g, vs in gates.items():
         log.append("gate.result", {"attempt_id": c.attempt_id, "gate": g, "passed": not vs,
                                    "violations": vs}, item_id=rel.id)
@@ -831,13 +961,15 @@ def record_decision(log: EventLog, *, item_id: str, attempt_id: str, model: str,
                "lane_revision": lane_revision, "rules_revision": decision.RULES_REVISION,
                "gates_failed": sorted(g for g, vs in (gates or {}).items() if vs)}, item_id=item_id)
     if follow in ("requeue", "requeue-infra"):
-        log.append("item.requeued", {"reason": reasons[0] if reasons else dec}, item_id=item_id)
+        log.append("item.requeued", {"attempt_id": attempt_id, "reason": reasons[0] if reasons else dec},
+                   item_id=item_id)
     elif follow == "park":
-        log.append("item.parked", {"reason": "; ".join(reasons)[:500]}, item_id=item_id)
+        log.append("item.parked", {"attempt_id": attempt_id, "reason": "; ".join(reasons)[:500]},
+                   item_id=item_id)
 
 
 def run_gates(c: Claim, wt: Path, seed_sha: str, head: str, acc: dict[str, bytes],
-              worker_outcome: str, sb=None) -> dict[str, list[str]]:
+              worker_outcome: str, sb=None, *, cancel_event=None) -> dict[str, list[str]]:
     wrap = sb.wrap_shell if sb else None
     rel, repo, lane = c.rel, c.repo, c.lane
     try:
@@ -849,27 +981,35 @@ def run_gates(c: Claim, wt: Path, seed_sha: str, head: str, acc: dict[str, bytes
                                                 repo.protected_paths)}
     if diffpolicy.is_protected_violation(gates["diff-policy"]) or worker_outcome == "escalated":
         return gates
+
+    def run_appservice_gate(cmd, checkout, timeout):
+        return _train_command(repo, checkout, cmd, timeout_s=timeout, cancel_event=cancel_event)
+
+    run = run_appservice_gate if repo.train_isolation == "appservice" else None
     new_tests = {ch.path: (wt / ch.path).read_bytes() for ch in changes
                  if ch.status == "A" and match(ch.path, lane.test_globs) and (wt / ch.path).is_file()}
     gates["fail-on-base"] = failonbase.check(repo.path, rel.base_sha, new_tests, repo.test_cmd,
-                                             repo.setup_cmd, wrap=wrap)
+                                             repo.setup_cmd, wrap=wrap, run=run)
     acc_tests = {f: d for f, d in acc.items() if match(f, lane.test_globs)}
     if rel.acceptance.fail_on_base and acc_tests:
         gates["acceptance-on-base"] = [f"spec-gap {v}" for v in failonbase.check(
-            repo.path, rel.base_sha, acc_tests, repo.test_cmd, repo.setup_cmd, wrap=wrap)]
+            repo.path, rel.base_sha, acc_tests, repo.test_cmd, repo.setup_cmd, wrap=wrap, run=run)]
     for f, data in acc.items():   # belt and braces: gate the planner's bytes, not the worker's
         (wt / f).write_bytes(data)
     fails = []
     for cmd in rel.acceptance.exec:
-        p = subprocess.run(wrap(cmd, wt) if wrap else cmd, shell=True, cwd=wt,
-                           capture_output=True, text=True, timeout=1800)
+        if run is None:
+            p = subprocess.run(wrap(cmd, wt) if wrap else cmd, shell=True, cwd=wt,
+                               capture_output=True, text=True, timeout=1800)
+        else:
+            p = run(cmd, wt, 1800)
         if p.returncode:
             fails.append(f"exit {p.returncode}: {cmd} :: {(p.stdout + p.stderr)[-600:]}")
     gates["acceptance"] = fails
     # Gate jobs are extra repo-declared checks, so they run only after acceptance
     # is green and while the planner's acceptance bytes are still in the worktree.
     if not fails and repo.gate_jobs:
-        gates.update(gatejobs.run_jobs(repo.gate_jobs, wt, wrap))
+        gates.update(gatejobs.run_jobs(repo.gate_jobs, wt, wrap, run=run))
     git(wt, "checkout", "-q", "--", ".", check=False)
     return gates
 
@@ -898,9 +1038,14 @@ def _merge_failure_reason(p: subprocess.CompletedProcess) -> str:
     return f"merge failed: {(lines[-1] if lines else '')[:200]}"
 
 
-def _train_command(repo, checkout: Path, command: str):
+def _train_command(repo, checkout: Path, command: str, *, timeout_s=1800, cancel_event=None):
     """Apply the reviewed repository's train boundary, never silently fall back."""
     from .config import home
+    if repo.train_isolation == 'appservice':
+        try:
+            return sandboxing.run_appservice_train(checkout, command, timeout_s, cancel_event=cancel_event)
+        except (OSError, RuntimeError, ValueError, subprocess.SubprocessError) as exc:
+            return subprocess.CompletedProcess(command, 125, '', f'appservice train isolation failed: {type(exc).__name__}')
     if repo.train_isolation == 'systemd':
         # The separate-UID host service stages its own checkout; its root-owned
         # receipt is the only result and there is no environment/namespace fallback.

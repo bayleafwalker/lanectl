@@ -97,6 +97,8 @@ def select(events: list[dict], now: datetime, older_than_s: float, claim_filter=
     claims = [e for e in events if e["type"] == "item.claimed" and e["item_id"]]
     finished = {e["data"]["attempt_id"] for e in events if e["type"] == "attempt.finished"}
     decided = {e["data"]["attempt_id"] for e in events if e["type"] == "decision.recorded"}
+    decided.update(e["data"]["replaces_attempt_id"] for e in claims
+                   if e["data"].get("replaces_attempt_id") is not None)
     undecided = []
     for e in events:   # finished, old, never decided: the runner died mid-step
         aid = e["data"].get("attempt_id")

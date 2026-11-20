@@ -9,6 +9,7 @@ import socket
 import http.client
 import errno
 import threading
+from types import SimpleNamespace
 import urllib.error
 import urllib.request
 
@@ -168,6 +169,21 @@ def request(origin, path="/v1/chat/completions", body=None, headers=None, method
         return response.status, response.headers, response.read()
 
 
+def test_appservice_readiness_requires_the_live_pilot_route(running, monkeypatch):
+    from lanectl import adapters_opencode, sandbox
+
+    upstream = Upstream()
+    _, origin = running(upstream=upstream)
+    monkeypatch.setattr(adapters_opencode, "APPSERVICE_GATEWAY_PORT", int(origin.rsplit(":", 1)[1]))
+    with pytest.raises(RuntimeError, match="does not advertise the fixed pilot route"):
+        sandbox.probe_appservice_gateway()
+
+    _, origin = running(route=gateway.GO_ROUTE, upstream=upstream)
+    monkeypatch.setattr(adapters_opencode, "APPSERVICE_GATEWAY_PORT", int(origin.rsplit(":", 1)[1]))
+    sandbox.probe_appservice_gateway()
+    assert upstream.requests == []
+
+
 def test_gateway_keeps_credentials_session_and_destination_out_of_client_control(running):
     upstream = Upstream()
     app, origin = running(route="opencode-go/deepseek-v4.1-flash", upstream=upstream)
@@ -253,6 +269,25 @@ def test_secret_loader_uses_only_named_systemd_credential(tmp_path):
     path.chmod(0o644)
     with pytest.raises(gateway.GatewayError):
         gateway.read_credential("upstream-token", {"CREDENTIALS_DIRECTORY": str(tmp_path)})
+
+
+def test_appservice_secret_loader_requires_read_only_mount_and_private_file(tmp_path, monkeypatch):
+    path = tmp_path / "upstream-token"
+    path.write_text("synthetic-pilot-token\n")
+    path.chmod(0o400)
+    with pytest.raises(gateway.GatewayError, match="private regular file"):
+        gateway.read_credential(path.name, appservice_directory=tmp_path)
+
+    monkeypatch.setattr(gateway.os, "fstatvfs", lambda fd: SimpleNamespace(f_flag=gateway.os.ST_RDONLY))
+    assert gateway.read_credential(path.name, appservice_directory=tmp_path) == "synthetic-pilot-token"
+    path.chmod(0o444)
+    with pytest.raises(gateway.GatewayError, match="private regular file"):
+        gateway.read_credential(path.name, appservice_directory=tmp_path)
+    link = tmp_path / "linked-token"
+    link.symlink_to(path)
+    with pytest.raises(OSError) as exc:
+        gateway.read_credential(link.name, appservice_directory=tmp_path)
+    assert exc.value.errno == errno.ELOOP
 
 
 def test_real_transport_refuses_redirect_and_ambient_proxy(tmp_path, monkeypatch):

@@ -62,7 +62,80 @@ The appservice qualification recorded in Vuoro Cloud work item 2683 uses the
 published `lanectl-appservice-candidate` image with pod user namespaces.
 Bubblewrap isolates the attempt filesystem. A Longhorn volume preserved state
 when the probe moved between workers. The image's coordinated `doctor` check
-still requires a user systemd manager.
+required a user systemd manager in that candidate. The appservice worker profile
+in PR #45 adds a Bubblewrap readiness probe.
+
+On 2026-11-20, the credential-free Job `sovite/lanectl-proc-probe-857d16f`
+on `k8s-worker-3` exited 0 with OpenCode 2.3.0 in Bubblewrap's private PID
+namespace. It used the candidate digest
+`sha256:a23826fee5c500442b0f968ecf442012f5a4509945512ff57d4d9393b6aea3d6`,
+`hostUsers: false`, the existing Sovite localhost seccomp profile, a read-only
+root, all capabilities dropped and no service-account token. The outer
+container used `procMount: Unmasked`, which appservice admitted with a
+restricted-policy warning. The probe checked that the outer filesystem marker
+was hidden both by its original path and through the inner `/proc/1/root`.
+This qualifies OpenCode startup on that pod configuration. The scheduled
+coordinator, provider route and end-to-end run require their own evidence.
+
+The synthetic credential Job `sovite/lanectl-credential-probe-bc61b71`
+completed on `k8s-worker-2` with the same image digest. A Secret key mounted
+read-only using `subPath` appeared as a regular file owned by UID 0 and
+GID 11001 with mode 0440. The process ran as UID/GID 11001 with
+`fsGroup: 11001` and verified read permission and the read-only mount flag.
+This verifies the mount shape used by the gateway credential reader.
+
+The published candidate built from LANECTL `e73580c` and gitops-nixos
+`f812aeb` ran the packaged readiness probe in Job
+`sovite/lanectl-appservice-app-probe-e73580c-r2` on `k8s-worker-2`. The pod
+reported `Succeeded` at image digest
+`sha256:25c65acc057f28c811c1f8722931a36dd7f910a2c88d7a1bef25a7388fbc8544`.
+The probe used real OpenCode and Bubblewrap, image-generated configuration,
+and a synthetic loopback gateway. The gateway's ledger directory used mode
+0700.
+
+The follow-up candidate from LANECTL `45b41f1` disables the optional OpenCode
+title agent. Job `lanectl/lanectl-native-smoke-45b41f1` succeeded on
+`k8s-worker-2` at digest
+`sha256:8662e91738bfcab119e7368a24798137e41dda6b0045911bc377bbd79f51ac04`.
+Under the pilot namespace's default-deny policy, isolated OpenCode returned
+the expected response through the loopback gateway with exactly one synthetic
+upstream request. Live inference requires the pilot provider binding.
+
+The gateway-enabled image from LANECTL `19c63cc` has digest
+`sha256:17dbbcae53742a00ebee5f5a85195bd0ae676d5a9316ac6e9a18dcc022daeb62`.
+Job `lanectl/lanectl-gateway-cli-probe-19c63cc` completed on
+`k8s-worker-2`. The packaged gateway read a synthetic Secret key via a
+read-only mount and served the fixed route on loopback. The probe's Secret
+and ConfigMap were removed after the Job. It made no live inference request.
+
+Appservice main revision `4273d241` deployed the `lanectl` namespace and
+`pilot-state` claim. The 5 GiB RWO Longhorn volume
+`pvc-90a0ba29-655c-4e30-9f9c-e279daf19d94` carried the live backup-tier label.
+`lanectl-state-write-75091dbc` on `k8s-worker-2` wrote the marker and
+`lanectl-state-read-75091dbc` on `k8s-worker-3` verified it read-only.
+Full backup `lanectl-pilot-75091dbc` joined that source and its same-named
+snapshot, reported Completed at 100% and stored 130023424 bytes on the
+Hetzner object storage target. Separate claim `pilot-restore-75091dbc`
+bound to `pvc-72e530a6-4383-4eee-9ace-87627fa82c8e` from the exact backup URI.
+`lanectl-restore-read-75091dbc` on `k8s-worker-3` mounted it read-only
+and verified marker SHA-256
+`5d8d20fdfdfbc422a158d376426abfac777d811ddc5f1c6e704c695fe44567a4`.
+The restore claim was retained. Active attempt recovery and stale-owner
+settlement refusal require a coordinated pilot attempt.
+
+The current periodic reaper establishes local process death and an inactive
+systemd unit before closing a claim. A replacement appservice pod has a
+different process namespace and appservice claims carry no systemd unit.
+Validate recovery against the Vuoro owner and the persistent retry journal.
+The current runner gateway permits run resolution but does not expose
+`work.lease.read-v1`. Use a fresh run and acquire key for an interrupted
+attempt. The existing owner acquire operation refuses a live lease and
+atomically supersedes a stale one. Replaying the abandoned acquire key can
+renew the old lease identity, which would leave the predecessor able to
+present it. Keep exact replay for a replacement's own uncertain request.
+Require the new owner binding and its takeover receipt before running work
+or retiring the predecessor's local claim. A local claim timestamp cannot
+establish owner authority.
 
 Use the appservice image and persistent state for the scheduled pilot. Add an
 explicit appservice sandbox profile that hides the coordinator journal,

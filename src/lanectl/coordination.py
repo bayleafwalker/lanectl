@@ -207,6 +207,19 @@ class Coordinator:
         """
         return self._saved(key)
 
+    def assert_takeover(self, predecessor, replacement):
+        """Match an owner receipt to two distinct attempts for the same item."""
+        previous = self._binding(predecessor)
+        current = self._binding(replacement)
+        self._check_lease(current['lease'])
+        old_lease = previous['lease']['lease_id']
+        if (predecessor == replacement
+                or previous['item_id'] != current['item_id']
+                or previous['run_id'] == current['run_id']
+                or old_lease == current['lease']['lease_id']
+                or current.get('took_over') != old_lease):
+            raise CoordinationError('owner takeover does not match the predecessor attempt')
+
     def saved_metadata(self, attempt_id):
         """Optional intent metadata saved with the run registration request."""
         saved = self._saved(attempt_id + ':run')
@@ -239,9 +252,22 @@ class Coordinator:
                     'skill_digests': []}, 'idempotency_key': prefix + '-run'}
         run = self._call(attempt_id + ':run', 'work.run.register-v1', intent, run_args)['run']['run_id']
         args = {'item_id': item_id, 'run_id': run, 'idempotency_key': prefix + '-claim'}
-        lease = self._call(attempt_id + ':claim', 'work.lease.acquire-v1', intent, args, revalidate=True)['lease']
+        claim_key = attempt_id + ':claim'
+        previous = self._saved(claim_key)
+        result = self._call(claim_key, 'work.lease.acquire-v1', intent, args, revalidate=True)
+        lease = result['lease']
         self._check_lease(lease)
         binding = {'run_id': run, 'lease': lease, 'item_id': item_id}
+        receipt = result.get('took_over')
+        if not receipt and previous is not None and previous[2] is not None:
+            earlier = previous[2]
+            if earlier['lease']['lease_id'] == lease['lease_id']:
+                receipt = earlier.get('took_over')
+        recorded = self.recorded_binding(attempt_id)
+        if not receipt and recorded is not None and recorded['lease']['lease_id'] == lease['lease_id']:
+            receipt = recorded.get('took_over')
+        if receipt:
+            binding['took_over'] = receipt
         self._put(attempt_id, identity, binding)
         self._lost.pop(attempt_id, None)
         return binding

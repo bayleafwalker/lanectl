@@ -8,10 +8,14 @@ Added 2026-11-08 after OpenCode workers wrote into the main checkout.
 from __future__ import annotations
 
 import os
+from contextlib import ExitStack
 import hashlib
+import http.client
+import json
 import shlex
 import shutil
 import subprocess
+import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -22,7 +26,7 @@ PASS_ENV = ("PATH", "HOME", "USER", "LANG", "TERM", "XDG_CONFIG_HOME", "XDG_DATA
 
 @dataclass(frozen=True)
 class Sandbox:
-    mode: str                         # "systemd-run" | "none"
+    mode: str                         # "systemd-run" | "appservice" | "none"
     readonly: tuple[str, ...]         # roots mounted read-only (e.g. /projects)
     writable: tuple[str, ...]         # exceptions: the attempt checkout, scratch dirs
     timeout_s: int
@@ -66,7 +70,7 @@ class Sandbox:
 
     def cancel(self) -> bool:
         """Stop only this attempt's named transient service after authority loss."""
-        if self.mode == "none":
+        if self.mode in ("none", "appservice"):
             return True
         if not self.unit:
             return False
@@ -165,3 +169,159 @@ def for_train(*, readonly, writable, timeout_s=1800, env=None):
                    clean_environment=True,
                    guard_completion=True,
                    environment=tuple((name, source[name]) for name in PASS_ENV if source.get(name)))
+
+
+def appservice_opencode_config() -> Path:
+    from .adapters_opencode import appservice_provider_config
+
+    value = os.environ.get("LANECTL_APPSERVICE_OPENCODE_CONFIG")
+    if not value:
+        raise ValueError("LANECTL_APPSERVICE_OPENCODE_CONFIG is required")
+    config = _image_opencode_config(Path(value))
+    if json.loads(config.read_text()) != appservice_provider_config():
+        raise ValueError("appservice OpenCode configuration must match the fixed pilot gateway")
+    return config
+
+
+def _image_opencode_config(path: Path) -> Path:
+    config = path.resolve(strict=True)
+    if not config.is_relative_to("/nix/store") or not config.is_file():
+        raise ValueError("appservice OpenCode configuration must come from the Nix image")
+    return config
+
+
+def probe_appservice() -> None:
+    """Prove the worker image can launch and deny reads outside the checkout."""
+    config = appservice_opencode_config()
+    opencode = shutil.which("opencode")
+    shell = shutil.which("bash")
+    if opencode is None or shell is None:
+        raise RuntimeError("appservice isolation requires image-provided OpenCode and Bash")
+    executable = Path(opencode).resolve(strict=True)
+    if not executable.is_relative_to("/nix/store"):
+        raise ValueError("appservice OpenCode executable must come from the Nix image")
+    with tempfile.TemporaryDirectory(prefix="lanectl-appservice-probe-") as temp:
+        root = Path(temp)
+        checkout = root / "checkout"
+        checkout.mkdir()
+        marker = root / "coordinator-marker"
+        marker.write_text("appservice isolation probe")
+        result = run_appservice_command(
+            checkout, [shell, "-c",
+                       'test ! -e "$1" && test -z "${CREDENTIALS_DIRECTORY:-}" && exec "$2" --version',
+                       "lanectl-appservice-probe", str(marker), str(executable)],
+            10, opencode_config=config,
+        )
+        if result.returncode or not result.stdout.strip():
+            raise RuntimeError("appservice isolation or OpenCode launch probe failed")
+    probe_appservice_gateway()
+
+
+def probe_appservice_gateway() -> None:
+    """Check the pod-local listener and route without submitting inference."""
+    from .adapters_opencode import APPSERVICE_GATEWAY_PORT
+    from .resident_gateway import GO_ROUTE
+
+    connection = http.client.HTTPConnection("127.0.0.1", APPSERVICE_GATEWAY_PORT, timeout=3)
+    try:
+        connection.request("GET", "/healthz")
+        response = connection.getresponse()
+        body = response.read(1025)
+        if response.status != 200 or len(body) > 1024:
+            raise RuntimeError("appservice model gateway returned an invalid health response")
+        status = json.loads(body)
+        if (not isinstance(status, dict) or status.get("status") != "live"
+                or status.get("route") != GO_ROUTE or status.get("fallback") != "none"):
+            raise RuntimeError("appservice model gateway does not advertise the fixed pilot route")
+    except (OSError, http.client.HTTPException, ValueError) as exc:
+        raise RuntimeError("appservice model gateway health check failed") from exc
+    finally:
+        connection.close()
+
+
+def run_appservice_train(checkout: Path, command: str, timeout_s: int = 1800, *, cancel_event=None):
+    """Run a shell check with only its checkout and the image's tools mounted."""
+    shell = shutil.which("bash")
+    if shell is None:
+        raise RuntimeError("appservice train isolation requires Bash")
+    return run_appservice_command(checkout, [shell, "-c", command], timeout_s,
+                                  cancel_event=cancel_event)
+
+
+def run_appservice_command(checkout: Path, command: list[str], timeout_s: int, *, cancel_event=None,
+                           opencode_config: Path | None = None):
+    """Launch an image executable inside the same boundary used for train checks."""
+    from .child_process import communicate
+
+    if cancel_event is not None and cancel_event.is_set():
+        return subprocess.CompletedProcess(command, 130, "", "appservice train cancelled")
+
+    workspace = checkout.resolve(strict=True)
+    launcher = shutil.which("bwrap")
+    executable = Path(command[0]).resolve(strict=True)
+    if launcher is None or not executable.is_relative_to("/nix/store"):
+        raise RuntimeError("appservice isolation requires Bubblewrap and a Nix image executable")
+
+    argv = [
+        launcher, "--unshare-user", "--unshare-pid", "--disable-userns",
+        "--die-with-parent", "--clearenv",
+        "--ro-bind", "/nix/store", "/nix/store",
+        "--ro-bind", "/bin", "/bin",
+        "--dev", "/dev", "--tmpfs", "/tmp", "--dir", "/tmp/home",
+        "--bind", str(workspace), "/checkout", "--chdir", "/checkout",
+        "--setenv", "PATH", "/bin", "--setenv", "HOME", "/tmp/home",
+    ]
+    metadata = workspace / ".git"
+    if metadata.exists():
+        argv.extend(["--ro-bind", str(metadata), "/checkout/.git"])
+    if opencode_config is not None:
+        config = _image_opencode_config(opencode_config)
+        # Bun needs procfs at startup. Mount a fresh view inside --unshare-pid.
+        argv.extend([
+            "--proc", "/proc",
+            "--setenv", "OPENCODE_CONFIG", str(config),
+            "--setenv", "OPENCODE_DISABLE_PROJECT_CONFIG", "1",
+            "--setenv", "OPENCODE_CONFIG_PROJECT_DISABLE", "1",
+            "--setenv", "OPENCODE_DISABLE_CLAUDE_CODE", "1",
+            "--setenv", "OPENCODE_DISABLE_MODELS_FETCH", "1",
+            "--setenv", "OPENCODE_DISABLE_AUTOUPDATE", "1",
+            "--setenv", "OPENCODE_DISABLE_FREE_MODELS", "1",
+        ])
+    with ExitStack() as stack:
+        if metadata.is_file():
+            clone = Path(stack.enter_context(tempfile.TemporaryDirectory(prefix="lanectl-train-git-"))) / "clone"
+            subprocess.run(
+                ["git", "clone", "--quiet", "--no-local", "--no-checkout",
+                 "--single-branch", "--no-tags", str(workspace), str(clone)],
+                check=True, capture_output=True, timeout=timeout_s,
+            )
+            subprocess.run(
+                ["git", "-C", str(clone), "read-tree", "HEAD"],
+                check=True, capture_output=True, timeout=timeout_s,
+            )
+            subprocess.run(
+                ["git", "-C", str(clone), "remote", "remove", "origin"],
+                check=True, capture_output=True, timeout=timeout_s,
+            )
+            argv.extend([
+                "--ro-bind", str(clone / ".git"), "/git-metadata",
+                "--setenv", "GIT_DIR", "/git-metadata",
+                "--setenv", "GIT_WORK_TREE", "/checkout",
+            ])
+        argv.extend([str(executable), *command[1:]])
+        status = stack.enter_context(tempfile.TemporaryFile())
+        argv[1:1] = ["--json-status-fd", str(status.fileno())]
+        process = stack.enter_context(subprocess.Popen(
+            argv, start_new_session=True, text=True,
+            stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            env={}, pass_fds=(status.fileno(),),
+        ))
+        out, err, stopped = communicate(process, timeout_s, cancel_event)
+        if stopped == "cancelled":
+            return subprocess.CompletedProcess(command, 130, out, err + "appservice train cancelled")
+        if stopped == "timeout":
+            return subprocess.CompletedProcess(command, 124, out, err + "appservice train timed out")
+        status.seek(0)
+        if b'"exit-code"' not in status.read() or err.startswith("bwrap:"):
+            return subprocess.CompletedProcess(command, 125, out, err + "appservice sandbox launch failed")
+        return subprocess.CompletedProcess(command, process.returncode, out, err)

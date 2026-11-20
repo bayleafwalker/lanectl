@@ -157,17 +157,24 @@ def _validate_config(raw):
 def render_config(raw):
     """Pure rendering; a valid source template is not an execution grant."""
     raw = _validate_config(raw)
-    model = ROUTES[raw["route"]]
+    return render_gateway_opencode(
+        ROUTES[raw["route"]], raw["gateway_base_url"], raw["context_tokens"], raw["output_tokens"],
+        headers={"x-opencode-session": "{env:LANECTL_RESIDENT_EPISODE}",
+                 "User-Agent": "lanectl-resident/1"},
+    )
+
+
+def render_gateway_opencode(model, origin, context_tokens, output_tokens, *, headers=None):
+    """Render credential-free OpenCode configuration for a fixed model gateway."""
     actions = ("read", "edit", "glob", "grep", "shell")
     return {
         "model": f"{PROVIDER}/{model}", "update": "disable", "snapshots": False,
         "providers": {PROVIDER: {
             "name": "Protected resident gateway", "package": "@opencode/ai/providers/openai-compatible",
-            "settings": {"baseURL": raw["gateway_base_url"], "apiKey": "resident-gateway", "encoding": "none"},
-            "headers": {"x-opencode-session": "{env:LANECTL_RESIDENT_EPISODE}",
-                        "User-Agent": "lanectl-resident/1"},
+            "settings": {"baseURL": origin, "apiKey": "resident-gateway", "encoding": "none"},
+            "headers": headers or {},
             "models": {model: {"name": model, "limit": {
-                "context": raw["context_tokens"], "output": raw["output_tokens"]}}},
+                "context": context_tokens, "output": output_tokens}}},
         }},
         "policies": [
             {"action": "provider.use", "resource": "*", "effect": "deny"},

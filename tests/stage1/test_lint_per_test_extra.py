@@ -3,7 +3,7 @@ import shlex
 import subprocess
 import sys
 
-from lanectl.gates.failonbase import run_tests_at
+from lanectl.gates.failonbase import check, run_tests_at
 from lanectl.lint_release import classify_failure
 
 PY = sys.executable
@@ -62,3 +62,12 @@ def test_run_tests_at_without_tail_returns_the_full_output(tmp_path):
     assert code == 0
     assert "START" in output
     assert len(output) > 2000
+
+    def failed_launcher(command, checkout, timeout):
+        assert command == "setup"
+        assert (checkout / "t.py").exists()
+        return subprocess.CompletedProcess(command, 125, "", "sandbox unavailable")
+
+    assert check(repo, sha, {"t.py": b"x = 1\n"}, test_cmd, "setup", run=failed_launcher) == [
+        "base check could not establish a test failure (exit 125): sandbox unavailable"
+    ]

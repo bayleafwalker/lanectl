@@ -14,7 +14,7 @@ from pathlib import Path
 from .config import GateJob
 
 
-def run_jobs(jobs: tuple[GateJob, ...], worktree: Path, wrap=None) -> dict[str, list[str]]:
+def run_jobs(jobs: tuple[GateJob, ...], worktree: Path, wrap=None, *, run=None) -> dict[str, list[str]]:
     """Run ``jobs`` in order; one ``job:<name>`` entry per job.
 
     ``wrap(cmd, worktree)`` is the attempt sandbox, exactly as for acceptance
@@ -23,10 +23,13 @@ def run_jobs(jobs: tuple[GateJob, ...], worktree: Path, wrap=None) -> dict[str, 
     """
     out: dict[str, list[str]] = {}
     for job in jobs:
-        cmd = wrap(job.cmd, worktree) if wrap else job.cmd
         try:
-            p = subprocess.run(cmd, shell=True, cwd=worktree, capture_output=True,
-                               text=True, timeout=job.timeout_s)
+            if run is None:
+                cmd = wrap(job.cmd, worktree) if wrap else job.cmd
+                p = subprocess.run(cmd, shell=True, cwd=worktree, capture_output=True,
+                                   text=True, timeout=job.timeout_s)
+            else:
+                p = run(job.cmd, worktree, job.timeout_s)
         except subprocess.TimeoutExpired:
             out[f"job:{job.name}"] = [f"timeout after {job.timeout_s}s: {job.name}"]
             continue

@@ -141,3 +141,97 @@ def test_cancel_kills_worker_even_when_sandbox_stop_raises():
         if proc.poll() is None:
             proc.kill()
             proc.communicate(timeout=5)
+
+
+def test_appservice_train_mounts_only_the_checkout(tmp_path, monkeypatch):
+    from lanectl.sandbox import run_appservice_command, run_appservice_train
+
+    tools = [shutil.which(command) for command in ("bwrap", "bash")]
+    if not all(tools) or not Path(tools[1]).resolve().is_relative_to("/nix/store"):
+        pytest.skip("requires the Nix-packaged appservice tools")
+
+    checkout = tmp_path / "checkout"
+    checkout.mkdir()
+    credential = tmp_path / "owner-token"
+    credential.write_text("synthetic")
+    monkeypatch.setenv("CREDENTIALS_DIRECTORY", str(tmp_path))
+    result = run_appservice_train(
+        checkout,
+        f'test -z "${{CREDENTIALS_DIRECTORY:-}}" && test ! -e "{credential}" && printf ok > marker',
+    )
+    assert result.returncode == 0, result.stderr
+    assert (checkout / "marker").read_text() == "ok"
+    failure = run_appservice_train(checkout, "exit 41")
+    assert failure.returncode == 41
+    native = run_appservice_command(
+        checkout, [tools[1], "-c", 'printf "%s" "$1"', "native-worker", 'prompt; exit 99'], 5,
+    )
+    assert native.returncode == 0, native.stderr
+    assert native.stdout == "prompt; exit 99"
+    config = checkout / "opencode.json"
+    config.write_text("{}")
+    with pytest.raises(ValueError, match="must come from the Nix image"):
+        run_appservice_command(checkout, [tools[1], "-c", "true"], 5, opencode_config=config)
+
+    which = shutil.which
+    monkeypatch.setattr(shutil, "which", lambda name: which("false") if name == "bwrap" else which(name))
+    assert run_appservice_train(checkout, "exit 1").returncode == 125
+
+
+def test_appservice_train_stops_on_lease_loss(tmp_path):
+    from lanectl.sandbox import run_appservice_train
+
+    bwrap, bash = map(shutil.which, ("bwrap", "bash"))
+    if not bwrap or not bash or not Path(bash).resolve().is_relative_to("/nix/store"):
+        pytest.skip("requires the Nix-packaged appservice tools")
+
+    cancelled = threading.Event()
+    started = tmp_path / "started"
+
+    class LeaseLost:
+        def is_set(self):
+            if started.exists():
+                cancelled.set()
+            return cancelled.is_set()
+
+    result = run_appservice_train(
+        tmp_path, '(printf ready > started; while :; do :; done) & wait',
+        timeout_s=5, cancel_event=LeaseLost(),
+    )
+    assert cancelled.is_set(), result.stderr
+    assert result.returncode == 130, result.stderr
+
+
+def test_appservice_train_reads_linked_worktree_commit(tmp_path):
+    from lanectl.sandbox import run_appservice_train
+
+    tools = [shutil.which(command) for command in ("bwrap", "bash", "git")]
+    if not all(tools) or not all(
+        Path(tool).resolve().is_relative_to("/nix/store") for tool in tools[1:]
+    ):
+        pytest.skip("requires the Nix-packaged appservice tools")
+
+    canonical = tmp_path / "canonical"
+    train = tmp_path / "train"
+    subprocess.run(["git", "init", "-q", str(canonical)], check=True)
+    def git(*args):
+        return subprocess.check_output(["git", "-C", str(canonical), *args], text=True).strip()
+
+    git("-c", "user.name=Fixture", "-c", "user.email=fixture@example.invalid",
+        "commit", "-q", "--allow-empty", "-m", "canonical")
+    git("worktree", "add", "-q", "--detach", str(train))
+    git("branch", "unrelated")
+    git("tag", "unrelated")
+    credential = canonical / "private"
+    credential.write_text("synthetic")
+    git_executable = Path(tools[-1]).resolve()
+    result = run_appservice_train(
+        train,
+        f'test ! -e "{credential}" && '
+        '! (printf blocked > .git) && '
+        f'test -z "$("{git_executable}" remote)" && '
+        f'test -z "$("{git_executable}" for-each-ref refs/tags refs/heads/unrelated)" && '
+        f'"{git_executable}" rev-parse HEAD',
+    )
+    assert result.returncode == 0, result.stderr
+    assert result.stdout.strip() == git("rev-parse", "HEAD")

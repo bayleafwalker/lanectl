@@ -13,16 +13,20 @@ from __future__ import annotations
 import json
 import os
 import re
+import shutil
 import signal
 import subprocess
 import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import TYPE_CHECKING
 
-from .adapters import AdapterResult
+if TYPE_CHECKING:
+    from .adapters import AdapterResult
 
 _ESCALATED = re.compile(r"DISPATCH_OUTCOME:\s*ESCALATED\b")
 _ESCALATION_REASON = re.compile(r"ESCALATION_REASON:\s*(.+)")
+APPSERVICE_GATEWAY_PORT = 18021
 
 
 def _empty_usage() -> dict:
@@ -133,14 +137,8 @@ def run_opencode(*, model: str, worktree: Path, prompt: str, status_file: Path,
             text=True, start_new_session=True, env=env,
         )
     except OSError as exc:
-        usage = _empty_usage()
-        ended = _utcnow()
-        _write_status(status_file, {
-            "outcome": "failed", "exit_code": 127, "usage": usage, "model": model,
-            "started": started, "ended": ended, "final_message_tail": str(exc),
-            "escalation_reason": None,
-        })
-        return AdapterResult("failed", 127, f"opencode launch error: {exc}", None, usage)
+        return _record_result("", 127, started, model, status_file,
+                              diagnostic=f"opencode launch error: {exc}")
 
     timed_out = False
     try:
@@ -162,14 +160,55 @@ def run_opencode(*, model: str, worktree: Path, prompt: str, status_file: Path,
             proc.kill()
             output, _ = proc.communicate()
 
+    code = proc.returncode
+    if timed_out:
+        code = 130 if cancel_event is not None and cancel_event.is_set() else 124
+    return _record_result(output, code, started, model, status_file, interrupted=timed_out)
+
+
+def run_appservice_opencode(*, model: str, worktree: Path, prompt: str, status_file: Path,
+                            timeout_s: int, config: Path, cancel_event=None) -> AdapterResult:
+    """Run the image's OpenCode executable through the appservice boundary."""
+    from .sandbox import run_appservice_command
+    from .resident_gateway import GO_ROUTE
+
+    started = _utcnow()
+    if model != GO_ROUTE:
+        return _record_result("", 125, started, model, status_file,
+                              diagnostic="model is outside the appservice pilot route")
+    executable = shutil.which("opencode")
+    if executable is None:
+        return _record_result("", 127, started, model, status_file, diagnostic="OpenCode is missing")
+    argv = [executable, "run", "--standalone", "--format", "json", "--model",
+            appservice_provider_config()["model"], "--", prompt]
+    try:
+        process = run_appservice_command(worktree, argv, timeout_s, cancel_event=cancel_event,
+                                         opencode_config=config)
+    except (OSError, ValueError, RuntimeError, subprocess.SubprocessError) as exc:
+        return _record_result("", 125, started, model, status_file, diagnostic=type(exc).__name__)
+    return _record_result(process.stdout, process.returncode, started, model, status_file,
+                          interrupted=process.returncode in (124, 125, 130), diagnostic=process.stderr)
+
+
+def appservice_provider_config() -> dict:
+    from .resident_gateway import GO_ROUTE
+    from .resident_native import render_gateway_opencode
+
+    config = render_gateway_opencode(GO_ROUTE.split("/", 1)[1],
+                                     f"http://127.0.0.1:{APPSERVICE_GATEWAY_PORT}/v1",
+                                     32768, 8192)
+    config["agents"] = {"title": {"disabled": True}}
+    return config
+
+
+def _record_result(output, exit_code, started, model, status_file, *, interrupted=False, diagnostic=""):
+    from .adapters import AdapterResult
+
     output = output or ""
     final_text, usage = parse_stream(output)
-    if timed_out:
-        outcome, exit_code, reason = "failed", 124, None
-        if cancel_event is not None and cancel_event.is_set():
-            exit_code = 130
+    if interrupted:
+        outcome, reason = "failed", None
     else:
-        exit_code = proc.returncode
         marker_text = _marker_text(output)
         if _ESCALATED.search(marker_text):
             outcome = "escalated"
@@ -180,7 +219,7 @@ def run_opencode(*, model: str, worktree: Path, prompt: str, status_file: Path,
         else:
             outcome, reason = "failed", None
 
-    tail = final_text[-2000:]
+    tail = (final_text or diagnostic)[-2000:]
     ended = _utcnow()
     _write_status(status_file, {
         "outcome": outcome, "exit_code": exit_code, "usage": usage, "model": model,
