@@ -136,8 +136,12 @@ def project_items(events: list[dict]) -> dict[str, ItemView]:
         elif t == "item.landed":
             v.state = "landed"
         elif t == "item.parked":
+            if by_attempt.get(d.get("attempt_id"), {}).get("superseded"):
+                continue
             v.state, v.last_reason = "parked", d["reason"]
         elif t == "item.requeued":
+            if by_attempt.get(d.get("attempt_id"), {}).get("superseded"):
+                continue
             v.state, v.last_reason = "requeued", d["reason"]
     return items
 

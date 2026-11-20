@@ -875,6 +875,8 @@ def execute(c: Claim, log: EventLog, adapter_fn=None, *, lease_guard=None,
     except Exception as exc:  # adapter crash is an attempt outcome, not a runner crash
         res = adapters.AdapterResult("failed", 1, f"adapter error: {exc}", None)
     elapsed = round(time.monotonic() - started, 1)
+    if lease_guard is not None:
+        lease_guard.assert_active()
     main_changed = _main_fingerprint(repo) != main_before
     # With a write sandbox the worker cannot touch main, so a change there is the
     # planner/integrator working concurrently: record it, do not fail the attempt.
@@ -959,9 +961,11 @@ def record_decision(log: EventLog, *, item_id: str, attempt_id: str, model: str,
                "lane_revision": lane_revision, "rules_revision": decision.RULES_REVISION,
                "gates_failed": sorted(g for g, vs in (gates or {}).items() if vs)}, item_id=item_id)
     if follow in ("requeue", "requeue-infra"):
-        log.append("item.requeued", {"reason": reasons[0] if reasons else dec}, item_id=item_id)
+        log.append("item.requeued", {"attempt_id": attempt_id, "reason": reasons[0] if reasons else dec},
+                   item_id=item_id)
     elif follow == "park":
-        log.append("item.parked", {"reason": "; ".join(reasons)[:500]}, item_id=item_id)
+        log.append("item.parked", {"attempt_id": attempt_id, "reason": "; ".join(reasons)[:500]},
+                   item_id=item_id)
 
 
 def run_gates(c: Claim, wt: Path, seed_sha: str, head: str, acc: dict[str, bytes],

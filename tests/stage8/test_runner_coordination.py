@@ -48,6 +48,9 @@ def test_replacement_claim_fences_late_predecessor_projection(estate):
                item_id=original.rel.id)
     log.append("gate.result", {"attempt_id": original.attempt_id, "gate": "acceptance",
                                "passed": True, "violations": []}, item_id=original.rel.id)
+    for event in ("item.parked", "item.requeued"):
+        log.append(event, {"attempt_id": original.attempt_id, "reason": "late decision"},
+                   item_id=original.rel.id)
     item = project_items(log.read())[original.rel.id]
     assert item.state == "claimed" and item.open_attempt["attempt_id"] == successor
     assert item.attempts[0]["superseded"] and item.attempts[0]["infra"]
