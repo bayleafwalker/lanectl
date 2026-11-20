@@ -123,6 +123,14 @@ and verified marker SHA-256
 The restore claim was retained. Active attempt recovery and stale-owner
 settlement refusal require a coordinated pilot attempt.
 
+The current periodic reaper establishes local process death and an inactive
+systemd unit before closing a claim. A replacement appservice pod has a
+different process namespace and appservice claims carry no systemd unit.
+Validate recovery against the Vuoro owner and the persistent retry journal.
+The current runner gateway permits run resolution but does not expose
+`work.lease.read-v1`. Resolve that contract before treating a recovered
+claim as eligible. A local claim timestamp cannot establish owner authority.
+
 Use the appservice image and persistent state for the scheduled pilot. Add an
 explicit appservice sandbox profile that hides the coordinator journal,
 credential files and environment from the worker and exposes the attempt
