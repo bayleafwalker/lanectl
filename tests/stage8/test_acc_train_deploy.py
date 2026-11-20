@@ -54,19 +54,35 @@ def _of(log, etype):
     return [e["data"] for e in log.read() if e["type"] == etype]
 
 
+def test_appservice_deploy_refuses_dirty_checked_worktree(estate, tmp_path, monkeypatch):
+    from dataclasses import replace
+
+    out = _declare(tmp_path)
+    train = _train(estate, "dirty-appservice")
+    repos = deploy.load_repos()
+    repos["target"] = replace(repos["target"], train_isolation="appservice")
+    monkeypatch.setattr(deploy, "load_repos", lambda: repos)
+    (Path(train["worktree"]) / "unreviewed.txt").write_text("outside the checked commit")
+    assert "checkout is dirty" in deploy.deploy_train(estate[2], train["train_id"])
+    assert not (out / "deployed.txt").exists()
+    assert _of(estate[2], "train.deployed") == []
+
+
 def _main(repo):
     return subprocess.run(["git", "-C", repo, "rev-parse", "main"], capture_output=True, text=True).stdout
 
 
 def test_namespace_and_env_are_stripped(monkeypatch):
-    spec = type("S", (), {"env_allow": ("KEEP_ME", "UNSET_ONE"), "ttl_s": 60})()
+    spec = type("S", (), {"env_allow": ("KEEP_ME", "UNSET_ONE", "LANE_CHECKED_SHA"), "ttl_s": 60})()
     monkeypatch.setenv("KEEP_ME", "kept")
     monkeypatch.setenv("SECRET_TOKEN", "leak")
+    monkeypatch.setenv("LANE_CHECKED_SHA", "untrusted")
     monkeypatch.delenv("UNSET_ONE", raising=False)
     assert deploy.namespace("train-1") == "lane-dev-train-1"
     assert deploy.deploy_env(spec, "train-1") == {
         "KEEP_ME": "kept", "LANE_NAMESPACE": "lane-dev-train-1",
         "LANE_TRAIN_ID": "train-1", "LANE_TTL_S": "60"}
+    assert deploy.deploy_env(spec, "train-1", checked_sha="a" * 40)["LANE_CHECKED_SHA"] == "a" * 40
 
 
 def test_deploy_passes_records_event_and_sees_only_allowed_env(estate, tmp_path, monkeypatch):

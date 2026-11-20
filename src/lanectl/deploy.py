@@ -29,11 +29,14 @@ def namespace(train_id: str) -> str:
     return f"lane-dev-{train_id}"
 
 
-def deploy_env(spec: DeploySpec, train_id: str) -> dict[str, str]:
+def deploy_env(spec: DeploySpec, train_id: str, *, checked_sha: str | None = None) -> dict[str, str]:
     """The stripped environment: allow-listed variables plus the LANE_ vars."""
     env = {name: os.environ[name] for name in spec.env_allow if name in os.environ}
+    env.pop("LANE_CHECKED_SHA", None)
     env.update(LANE_NAMESPACE=namespace(train_id), LANE_TRAIN_ID=train_id,
                LANE_TTL_S=str(spec.ttl_s))
+    if checked_sha is not None:
+        env["LANE_CHECKED_SHA"] = checked_sha
     return env
 
 
@@ -83,22 +86,26 @@ def deploy_train(log: EventLog, train_id: str) -> str:
         return f"{train_id}: repo {built.get('repo')} declares no deploy"
     from .runner import git
     checked_sha = built.get("checked_sha")
-    if checked_sha and git(repo.path, "rev-parse", f"train/{train_id}") != checked_sha:
+    if checked_sha and git(repo.path, "rev-parse", "--verify", f"train/{train_id}", check=False) != checked_sha:
         return f"{train_id}: checked tip changed; not deploying"
-    ns = namespace(train_id)
-    env = deploy_env(spec, train_id)
     worktree = Path(built["worktree"]).resolve()
+    if repo.train_isolation == "appservice":
+        if not checked_sha or git(worktree, "rev-parse", "--verify", "HEAD", check=False) != checked_sha:
+            return f"{train_id}: appservice deploy checkout is not the checked train"
+        if git(worktree, "status", "--porcelain"):
+            return f"{train_id}: appservice deploy checkout is dirty"
+    ns = namespace(train_id)
+    env = deploy_env(spec, train_id, checked_sha=checked_sha if repo.train_isolation == "appservice" else None)
     for stage, cmd in (("deploy", spec.cmd), ("health", spec.health_cmd)):
         rc, output = _run(cmd, worktree, env)
         if rc == 0:
             continue
         log.append("train.deployed", {
             "train_id": train_id, "repo": repo.name, "namespace": ns, "passed": False,
-            "expires_at": _expires_at(spec.ttl_s), "stage": stage,
+            "expires_at": _expires_at(spec.ttl_s), "stage": stage, "checked_sha": checked_sha,
             "tail": output[-TAIL_CHARS:]})
-        teardown(log, train_id, "deploy-failed")
-        return (f"{train_id}: {stage} failed (exit {rc}); torn down\n"
-                f"{output[-TAIL_CHARS:]}")
+        cleanup = teardown(log, train_id, "deploy-failed")
+        return f"{train_id}: {stage} failed (exit {rc})\n{output[-TAIL_CHARS:]}\n{cleanup}"
     expires_at = _expires_at(spec.ttl_s)
     log.append("train.deployed", {
         "train_id": train_id, "repo": repo.name, "namespace": ns, "passed": True,
@@ -108,11 +115,11 @@ def deploy_train(log: EventLog, train_id: str) -> str:
 
 def teardown(log: EventLog, train_id: str, reason: str) -> str:
     """Run the repo's teardown command and record a ``train.torn_down`` event."""
+    data = _unclosed(log.read()).get(train_id) or {}
     found = _spec_for(log, train_id)
     if found is None:
         # A deploy whose train.built is not in this log: the deploy event still
         # names the repo, so its declared teardown command is reachable.
-        data = live(log.read()).get(train_id) or {}
         repo = load_repos().get(data.get("repo"))
         if repo is not None:
             found = None, repo, repo.deploy
@@ -121,7 +128,8 @@ def teardown(log: EventLog, train_id: str, reason: str) -> str:
     _, repo, spec = found
     if spec is None:
         return f"{train_id}: repo declares no deploy"
-    env = deploy_env(spec, train_id)
+    env = deploy_env(spec, train_id, checked_sha=data.get("checked_sha")
+                     if repo.train_isolation == "appservice" else None)
     rc, output = _run(spec.teardown_cmd, repo.path, env)
     log.append("train.torn_down", {
         "train_id": train_id, "namespace": namespace(train_id), "reason": reason,
@@ -131,18 +139,27 @@ def teardown(log: EventLog, train_id: str, reason: str) -> str:
     return f"{train_id}: teardown failed (exit {rc}, {reason})\n{output[-TAIL_CHARS:]}"
 
 
-def live(events: list[dict]) -> dict[str, dict]:
-    """Passed deploys that have not been torn down since, keyed by train id."""
+def _unclosed(events: list[dict]) -> dict[str, dict]:
+    """The latest deploy for each train that still requires cleanup."""
     out: dict[str, dict] = {}
     for ev in events:
         etype = ev.get("type")
         data = ev.get("data") or {}
         train_id = data.get("train_id")
-        if etype == "train.deployed" and data.get("passed"):
+        if etype == "train.deployed":
             out[train_id] = data
         elif etype == "train.torn_down" and train_id in out:
-            del out[train_id]
+            if data.get("passed") is False:
+                out[train_id] = dict(out[train_id], cleanup_reason=data["reason"])
+            else:
+                del out[train_id]
     return out
+
+
+def live(events: list[dict]) -> dict[str, dict]:
+    """Passed deploys that have not been successfully torn down."""
+    return {train_id: data for train_id, data in _unclosed(events).items()
+            if data.get("passed") and "cleanup_reason" not in data}
 
 
 def _expired(data: dict, now: datetime) -> bool:
@@ -151,15 +168,16 @@ def _expired(data: dict, now: datetime) -> bool:
 
 
 def due(events: list[dict], now: datetime) -> list[tuple[str, str]]:
-    """Live deploys to reap, in ``train.deployed`` order, with their reason.
+    """Deploys to reap, in ``train.deployed`` order, with their reason.
 
+    Failed deployments and unsuccessful teardowns are due immediately.
     An item that landed names the train (``landed``); a later passed deploy of
     the same repo replaces it (``superseded``); otherwise it is ``expired`` when
     its ``expires_at`` has passed.  Live deploys in none of those classes are
     not listed.
     """
     now = now if now.tzinfo is not None else now.replace(tzinfo=timezone.utc)
-    deploys = live(events)
+    deploys = _unclosed(events)
     landed = {((ev.get("data") or {}).get("train_id"))
               for ev in events if ev.get("type") == "item.landed"}
     last_deploy_at: dict[str, int] = {}
@@ -175,7 +193,11 @@ def due(events: list[dict], now: datetime) -> list[tuple[str, str]]:
     for train_id, data in deploys.items():
         at = last_deploy_at.get(train_id, -1)
         later = any(repo == repo_of.get(train_id) and i > at for i, repo in passed)
-        if train_id in landed:
+        if "cleanup_reason" in data:
+            out.append((train_id, data["cleanup_reason"]))
+        elif not data.get("passed"):
+            out.append((train_id, "deploy-failed"))
+        elif train_id in landed:
             out.append((train_id, "landed"))
         elif later:
             out.append((train_id, "superseded"))
