@@ -87,3 +87,19 @@ def test_doctor_names_environment_only_repos_and_errors_on_coordinated_ones(esta
     cfg.write_text('[repos.target]\ncredential_name="runner"\n')
     findings=doctor.check_train_isolation(root,repos)
     assert any(f.level==doctor.ERROR and 'target' in f.detail for f in findings)
+
+
+def test_doctor_probes_appservice_without_systemd(estate, monkeypatch):
+    root = Path(os.environ["LANECTL_HOME"])
+    repo_policy("appservice")
+    (root / "governance/vuoro.toml").write_text('[repos.target]\ncredential_name="runner"\n')
+    monkeypatch.delenv("LANECTL_APPSERVICE_OPENCODE_CONFIG", raising=False)
+    findings = doctor.check_train_isolation(root, load_repos())
+    assert [(finding.check, finding.level) for finding in findings] == [
+        ("appservice-worker", doctor.ERROR)
+    ]
+    monkeypatch.setattr(doctor.sandbox, "probe_appservice", lambda: None)
+    findings = doctor.check_train_isolation(root, load_repos())
+    assert [(finding.check, finding.level) for finding in findings] == [
+        ("appservice-worker", doctor.OK)
+    ]

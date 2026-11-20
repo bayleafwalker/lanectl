@@ -169,6 +169,46 @@ def for_train(*, readonly, writable, timeout_s=1800, env=None):
                    environment=tuple((name, source[name]) for name in PASS_ENV if source.get(name)))
 
 
+def appservice_opencode_config() -> Path:
+    value = os.environ.get("LANECTL_APPSERVICE_OPENCODE_CONFIG")
+    if not value:
+        raise ValueError("LANECTL_APPSERVICE_OPENCODE_CONFIG is required")
+    return _image_opencode_config(Path(value))
+
+
+def _image_opencode_config(path: Path) -> Path:
+    config = path.resolve(strict=True)
+    if not config.is_relative_to("/nix/store") or not config.is_file():
+        raise ValueError("appservice OpenCode configuration must come from the Nix image")
+    return config
+
+
+def probe_appservice() -> None:
+    """Prove the worker image can launch and deny reads outside the checkout."""
+    config = appservice_opencode_config()
+    opencode = shutil.which("opencode")
+    shell = shutil.which("bash")
+    if opencode is None or shell is None:
+        raise RuntimeError("appservice isolation requires image-provided OpenCode and Bash")
+    executable = Path(opencode).resolve(strict=True)
+    if not executable.is_relative_to("/nix/store"):
+        raise ValueError("appservice OpenCode executable must come from the Nix image")
+    with tempfile.TemporaryDirectory(prefix="lanectl-appservice-probe-") as temp:
+        root = Path(temp)
+        checkout = root / "checkout"
+        checkout.mkdir()
+        marker = root / "coordinator-marker"
+        marker.write_text("appservice isolation probe")
+        result = run_appservice_command(
+            checkout, [shell, "-c",
+                       'test ! -e "$1" && test -z "${CREDENTIALS_DIRECTORY:-}" && exec "$2" --version',
+                       "lanectl-appservice-probe", str(marker), str(executable)],
+            10, opencode_config=config,
+        )
+        if result.returncode or not result.stdout.strip():
+            raise RuntimeError("appservice isolation or OpenCode launch probe failed")
+
+
 def run_appservice_train(checkout: Path, command: str, timeout_s: int = 1800, *, cancel_event=None):
     """Run a shell check with only its checkout and the image's tools mounted."""
     shell = shutil.which("bash")
@@ -202,9 +242,7 @@ def run_appservice_command(checkout: Path, command: list[str], timeout_s: int, *
         "--setenv", "PATH", "/bin", "--setenv", "HOME", "/tmp/home",
     ]
     if opencode_config is not None:
-        config = opencode_config.resolve(strict=True)
-        if not config.is_relative_to("/nix/store") or not config.is_file():
-            raise ValueError("appservice OpenCode configuration must come from the Nix image")
+        config = _image_opencode_config(opencode_config)
         argv.extend([
             "--setenv", "OPENCODE_CONFIG", str(config),
             "--setenv", "OPENCODE_DISABLE_PROJECT_CONFIG", "1",

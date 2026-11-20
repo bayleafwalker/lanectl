@@ -21,6 +21,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 
+from . import sandbox
 from .capacity import AllocationPolicy, parse_ts, project
 from .config import RepoSpec, WorkRelease, home, load_lane, load_release, load_repos
 from .deploy import list_deploys
@@ -157,7 +158,7 @@ def check_train_isolation(root: Path, repos: dict[str, RepoSpec]) -> list[Findin
         return [Finding(ERROR, 'train-isolation', 'coordination repos must be a table')]
     if not coordinated:
         return []
-    unfenced = {name for name, repo in repos.items() if repo.train_isolation not in ('namespace', 'systemd')}
+    unfenced = {name for name, repo in repos.items() if repo.train_isolation == 'environment'}
     findings = []
     unsafe = sorted(unfenced.intersection(coordinated))
     if unsafe:
@@ -166,9 +167,20 @@ def check_train_isolation(root: Path, repos: dict[str, RepoSpec]) -> list[Findin
     if unfenced:
         findings.append(Finding(WARN, 'train-isolation',
             'environment-only trains can read same-user credential files: ' + ', '.join(sorted(unfenced))))
-    if (repos.keys() & coordinated.keys()) - unfenced:
+    active = repos.keys() & coordinated.keys()
+    if any(repos[name].train_isolation in ('namespace', 'systemd') for name in active):
         findings.append(check_worker_manager())
+    if any(repos[name].train_isolation == 'appservice' for name in active):
+        findings.append(check_appservice_worker())
     return findings
+
+
+def check_appservice_worker() -> Finding:
+    try:
+        sandbox.probe_appservice()
+    except (OSError, ValueError, RuntimeError, subprocess.SubprocessError) as exc:
+        return Finding(ERROR, "appservice-worker", f"appservice isolation probe failed ({type(exc).__name__})")
+    return Finding(OK, "appservice-worker", "Bubblewrap hides coordinator state and launches image OpenCode")
 
 
 def check_worker_manager() -> Finding:
