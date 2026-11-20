@@ -128,8 +128,14 @@ systemd unit before closing a claim. A replacement appservice pod has a
 different process namespace and appservice claims carry no systemd unit.
 Validate recovery against the Vuoro owner and the persistent retry journal.
 The current runner gateway permits run resolution but does not expose
-`work.lease.read-v1`. Resolve that contract before treating a recovered
-claim as eligible. A local claim timestamp cannot establish owner authority.
+`work.lease.read-v1`. Use a fresh run and acquire key for an interrupted
+attempt. The existing owner acquire operation refuses a live lease and
+atomically supersedes a stale one. Replaying the abandoned acquire key can
+renew the old lease identity, which would leave the predecessor able to
+present it. Keep exact replay for a replacement's own uncertain request.
+Require the new owner binding and its takeover receipt before running work
+or retiring the predecessor's local claim. A local claim timestamp cannot
+establish owner authority.
 
 Use the appservice image and persistent state for the scheduled pilot. Add an
 explicit appservice sandbox profile that hides the coordinator journal,
