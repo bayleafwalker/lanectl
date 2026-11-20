@@ -101,6 +101,13 @@ Under the pilot namespace's default-deny policy, isolated OpenCode returned
 the expected response through the loopback gateway with exactly one synthetic
 upstream request. Live inference requires the pilot provider binding.
 
+The gateway-enabled image from LANECTL `19c63cc` has digest
+`sha256:17dbbcae53742a00ebee5f5a85195bd0ae676d5a9316ac6e9a18dcc022daeb62`.
+Job `lanectl/lanectl-gateway-cli-probe-19c63cc` completed on
+`k8s-worker-2`. The packaged gateway read a synthetic Secret key via a
+read-only mount and served the fixed route on loopback. The probe's Secret
+and ConfigMap were removed after the Job. It made no live inference request.
+
 Appservice main revision `4273d241` deployed the `lanectl` namespace and
 `pilot-state` claim. The 5 GiB RWO Longhorn volume
 `pvc-90a0ba29-655c-4e30-9f9c-e279daf19d94` carried the live backup-tier label.
