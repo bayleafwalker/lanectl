@@ -93,6 +93,14 @@ The probe used real OpenCode and Bubblewrap, image-generated configuration,
 and a synthetic loopback gateway. The gateway's ledger directory used mode
 0700.
 
+The follow-up candidate from LANECTL `45b41f1` disables the optional OpenCode
+title agent. Job `lanectl/lanectl-native-smoke-45b41f1` succeeded on
+`k8s-worker-2` at digest
+`sha256:8662e91738bfcab119e7368a24798137e41dda6b0045911bc377bbd79f51ac04`.
+Under the pilot namespace's default-deny policy, isolated OpenCode returned
+the expected response through the loopback gateway with exactly one synthetic
+upstream request. Live inference requires the pilot provider binding.
+
 Appservice main revision `4273d241` deployed the `lanectl` namespace and
 `pilot-state` claim. The 5 GiB RWO Longhorn volume
 `pvc-90a0ba29-655c-4e30-9f9c-e279daf19d94` carried the live backup-tier label.
