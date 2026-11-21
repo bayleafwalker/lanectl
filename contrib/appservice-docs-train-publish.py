@@ -8,6 +8,7 @@ from pathlib import Path, PurePosixPath
 import re
 import shutil
 import subprocess
+import sys
 from tempfile import TemporaryDirectory, mkdtemp
 from uuid import uuid4
 
@@ -245,12 +246,42 @@ def return_binding(args, binding):
     print(f"{namespace}/{name}")
 
 
+def reconcile_handoffs(args):
+    cmd = ["kubectl", "--kubeconfig", str(args.return_binding_kubeconfig),
+           "--namespace", "lanectl-train-handoff", "--request-timeout=10s"]
+    objects = json.loads(subprocess.check_output([*cmd, "get", "configmaps", "-o", "json"], timeout=30))
+    by_name = {item["metadata"]["name"]: item for item in objects["items"]}
+    failed = False
+    with TemporaryDirectory(prefix="lanectl-handoff-reconcile-") as scratch:
+        request = Path(scratch) / "request.json"
+        for name, item in sorted(by_name.items()):
+            match = re.fullmatch(r"request-(train-[a-z0-9][a-z0-9-]{0,39})-([a-f0-9]{40})", name)
+            if match is None:
+                continue
+            train, commit = match.groups()
+            selected = argparse.Namespace(**(vars(args) | {"train": train, "consume_request": request}))
+            try:
+                response = by_name.get(f"binding-{train}-{commit}")
+                local_binding = args.bindings_directory / train / f"{commit}.json"
+                if (response and response.get("immutable") is True and local_binding.is_file()
+                        and response.get("data") == {"binding.json": local_binding.read_text()}):
+                    continue
+                request.write_text(json.dumps(item))
+                return_binding(selected, consume_request(selected))
+            except (OSError, ValueError, KeyError, TypeError, RuntimeError, subprocess.SubprocessError) as error:
+                print(f"{name}: {error}", file=sys.stderr)
+                failed = True
+    return int(failed)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--repository", required=True, type=Path)
     parser.add_argument("--events", type=Path, help="Trusted LANECTL train event log")
-    parser.add_argument("--train", required=True)
+    parser.add_argument("--train")
     transfer = parser.add_mutually_exclusive_group()
+    transfer.add_argument("--reconcile-handoffs", action="store_true",
+                          help="Process pending requests using the scoped owner kubeconfig")
     transfer.add_argument("--export-bundle", type=Path, help="Export a passing receipt and incremental Git bundle")
     transfer.add_argument("--consume-request", type=Path, help="Immutable ConfigMap JSON obtained from the handoff namespace")
     transfer.add_argument("--submit-kubeconfig", type=Path,
@@ -264,11 +295,13 @@ def main():
     parser.add_argument("--insecure-registry", action="store_true")
     parser.add_argument("--bindings-directory", type=Path)
     args = parser.parse_args()
-    if not re.fullmatch(r"train-[a-z0-9][a-z0-9-]{0,39}", args.train):
+    if not args.reconcile_handoffs and not re.fullmatch(r"train-[a-z0-9][a-z0-9-]{0,39}", args.train or ""):
         parser.error("invalid train ID")
-    if args.return_binding_kubeconfig is not None and args.consume_request is None:
+    if args.return_binding_kubeconfig is not None and args.consume_request is None and not args.reconcile_handoffs:
         parser.error("returning a binding requires --consume-request")
-    if args.consume_request is None and args.events is None:
+    if args.reconcile_handoffs and args.return_binding_kubeconfig is None:
+        parser.error("--reconcile-handoffs requires --return-binding-kubeconfig")
+    if not args.reconcile_handoffs and args.consume_request is None and args.events is None:
         parser.error("--events is required when not consuming a request")
     if args.export_bundle is not None:
         if not args.export_bundle.is_absolute():
@@ -288,6 +321,8 @@ def main():
         parser.error("registry must be an image repository without a tag")
     if not args.bindings_directory.is_absolute():
         parser.error("bindings directory must be absolute")
+    if args.reconcile_handoffs:
+        return reconcile_handoffs(args)
     binding = consume_request(args) if args.consume_request is not None else publish(args)
     if args.return_binding_kubeconfig is not None:
         return_binding(args, binding)
@@ -296,4 +331,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())
