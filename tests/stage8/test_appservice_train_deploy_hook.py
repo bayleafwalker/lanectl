@@ -78,3 +78,41 @@ def test_teardown_waits_for_foreground_cascade(tmp_path, monkeypatch):
     subprocess.run([sys.executable, str(HOOK), "teardown", "--binding", str(binding),
                     "--kubeconfig", str(tmp_path / "scope")], check=True)
     assert confirmed.is_file()
+
+
+def test_projected_identity_uses_rotatable_token_file(tmp_path, monkeypatch):
+    fake_kubectl = tmp_path / "kubectl"
+    fake_kubectl.write_text('#!/bin/sh\ncat "$2" > "$CAPTURE"\nprintf "%s" "$2" > "$TEMP_CONFIG"\n')
+    fake_kubectl.chmod(0o755)
+    capture = tmp_path / "capture.json"
+    config_path = tmp_path / "config-path"
+    identity = tmp_path / "identity"
+    identity.mkdir()
+    commit = "a" * 40
+    binding = tmp_path / "binding.json"
+    binding.write_text(json.dumps({"commit": commit, "image": "registry.example/train@sha256:" + "c" * 64,
+                                   "port": 8080, "health_path": "/healthz"}))
+    monkeypatch.setenv("PATH", f"{tmp_path}:{os.environ.get('PATH', os.defpath)}")
+    monkeypatch.setenv("CAPTURE", str(capture))
+    monkeypatch.setenv("TEMP_CONFIG", str(config_path))
+    monkeypatch.setenv("LANE_TRAIN_ID", "train-proof")
+    monkeypatch.setenv("LANE_NAMESPACE", "lane-dev-train-proof")
+    monkeypatch.setenv("LANE_CHECKED_SHA", commit)
+    monkeypatch.setenv("KUBERNETES_SERVICE_HOST", "2001:db8::5")
+    monkeypatch.setenv("KUBERNETES_SERVICE_PORT_HTTPS", "443")
+    command = [sys.executable, str(HOOK), "teardown", "--binding", str(binding),
+               "--projected-identity", str(identity)]
+    failure = subprocess.run(command, capture_output=True, text=True, check=False)
+    assert failure.returncode and "projected identity requires" in failure.stderr
+    assert not capture.exists()
+
+    (identity / "token").write_text("synthetic-projected-token")
+    (identity / "ca.crt").write_text("synthetic-ca")
+    subprocess.run(command, check=True)
+    config = json.loads(capture.read_text())
+    assert config["clusters"][0]["cluster"] == {
+        "server": "https://[2001:db8::5]:443", "certificate-authority": str(identity / "ca.crt")
+    }
+    assert config["users"][0]["user"] == {"tokenFile": str(identity / "token")}
+    assert config["contexts"][0]["context"]["namespace"] == "lane-dev-train-proof"
+    assert not Path(config_path.read_text()).exists()
