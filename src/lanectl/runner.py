@@ -129,6 +129,8 @@ def provider_for(model: str) -> str:
     """
     if model.startswith("claude-"):
         return "anthropic"
+    if model.startswith("anthropic-api/"):
+        return "anthropic-api"
     try:
         return adapters.worker_for(model)
     except ValueError:
@@ -243,7 +245,7 @@ def _coordination_isolation(rel, lane, repo):
 
 def appservice_replacement(events, rel, repo, lane, owner):
     """Reconstruct the next attempt only for the same open, bound release."""
-    from .resident_gateway import GO_ROUTE
+    from .adapters_opencode import appservice_route
 
     view = project_items(events).get(rel.id)
     if (lane.sandbox.get("mode") != "appservice" or _coordination_isolation(rel, lane, repo)
@@ -254,7 +256,8 @@ def appservice_replacement(events, rel, repo, lane, owner):
     claim = next((event["data"] for event in reversed(events)
                   if event["type"] == "item.claimed" and event.get("item_id") == rel.id
                   and event["data"]["attempt_id"] == predecessor), None)
-    if (claim is None or claim["lane"] != lane.lane or claim["model"] != GO_ROUTE
+    route = appservice_route()
+    if (claim is None or claim["lane"] != lane.lane or claim["model"] != route
             or claim["release_revision"] != rel.revision or claim["base_sha"] != rel.base_sha):
         return None
     binding = delivery_policy.claim_binding(events, rel.id, claim)
@@ -264,12 +267,12 @@ def appservice_replacement(events, rel, repo, lane, owner):
         effective = delivery_policy.effective_lane(binding, lane)
     except (ValueError, KeyError, TypeError):
         return None
-    if eligible_models(rel, effective, repo).get(GO_ROUTE, 0) <= 0:
+    if eligible_models(rel, effective, repo).get(route, 0) <= 0:
         return None
     old = owner.recorded_binding(predecessor)
     if old is None or rel.work != f"{rel.repo}#{old['item_id']}":
         return None
-    return predecessor, Claim(rel, repo, effective, f"{rel.id}-a{len(view.attempts) + 1}", GO_ROUTE, "opencode")
+    return predecessor, Claim(rel, repo, effective, f"{rel.id}-a{len(view.attempts) + 1}", route, "opencode")
 
 
 def _provider_admission(events, rel, model):
@@ -436,6 +439,12 @@ def admit(lane_name: str, log: EventLog, only: str | None = None) -> Claim | str
                 skipped.append(f"{rel.id}: {'; '.join(reasons)}")
                 continue
             alternatives = candidate_weights(rel, lane, v, repos.get(rel.repo), events=events)
+            appservice = lane.sandbox.get("mode") == "appservice"
+            if appservice:
+                from .adapters_opencode import appservice_route
+
+                route = appservice_route()
+                alternatives = {model: weight for model, weight in alternatives.items() if model == route}
             model = pick_model(rel, lane, v, repos.get(rel.repo), weights=alternatives)
             if model is None:
                 skipped.append(f"{rel.id}: no eligible model")
@@ -446,13 +455,10 @@ def admit(lane_name: str, log: EventLog, only: str | None = None) -> Claim | str
                 continue
             n = len(v.attempts) + 1
             attempt_id = f"{rel.id}-a{n}"
-            worker = adapters.worker_for(model)
-            if lane.sandbox.get("mode") == "appservice":
-                from .resident_gateway import GO_ROUTE
-
-                if model != GO_ROUTE:
-                    skipped.append(f"{rel.id}: model is outside the appservice pilot route")
-                    continue
+            if not appservice and model.startswith("anthropic-api/"):
+                skipped.append(f"{rel.id}: paid Anthropic requires the isolated appservice route")
+                continue
+            worker = "opencode" if appservice else adapters.worker_for(model)
             from . import reap
             identity = reap.process_identity()
             worker_unit = sandboxing.from_lane(lane.sandbox, (), lane.timeout_s + 120, attempt_id=attempt_id).unit
@@ -712,9 +718,9 @@ def _coordinate_execution(native):
             if isolation_errors:
                 raise coordination.CoordinationError(isolation_errors[0])
             if c.lane.sandbox.get("mode") == "appservice":
-                from .resident_gateway import GO_ROUTE
+                from .adapters_opencode import appservice_route
 
-                if c.model != GO_ROUTE or c.worker != "opencode" or adapter_fn is not None:
+                if c.model != appservice_route() or c.worker != "opencode" or adapter_fn is not None:
                     raise coordination.CoordinationError("appservice pilot requires the fixed isolated OpenCode route")
                 try:
                     sandboxing.probe_appservice()

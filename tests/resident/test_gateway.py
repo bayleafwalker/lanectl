@@ -256,6 +256,83 @@ def test_sse_bytes_are_forwarded_without_changing_tool_calls(running):
     assert body == sse
 
 
+def test_anthropic_messages_are_pinned_and_streamed(running):
+    sse = (
+        b'event: content_block_start\ndata: {"type":"content_block_start",'
+        b'"content_block":{"type":"tool_use","id":"toolu_1","name":"read","input":{}}}\n\n'
+        b'event: message_stop\ndata: {"type":"message_stop"}\n\n'
+    )
+    upstream = Upstream(response=Response(sse, "text/event-stream"))
+    app, origin = running(route=gateway.ANTHROPIC_ROUTE, upstream=upstream,
+                        upstream_base_url=gateway.ANTHROPIC_BASE, max_requests_per_window=3)
+    model = gateway.ANTHROPIC_ROUTE.split("/")[1]
+    for path, body, status in (
+        ("/v1/chat/completions", payload(model, max_tokens=32), 404),
+        ("/v1/messages", payload("another-model", max_tokens=32), 400),
+        ("/v1/messages", payload(model, max_tokens=8193), 400),
+        ("/v1/messages", payload(model, max_tokens=32, thinking={"type": "enabled"}), 400),
+        ("/v1/messages", payload(model, max_tokens=32, tools=[{"type": "web_search"}]), 400),
+    ):
+        with pytest.raises(urllib.error.HTTPError) as error:
+            request(origin, path=path, body=body)
+        assert error.value.code == status
+    assert upstream.requests == []
+    cache_control = {"type": "ephemeral"}
+    body = payload(model, max_tokens=32, stream=True,
+                   thinking={"type": "adaptive", "block_binding": {"prefix_mismatch_behavior": "drop_block"}},
+                   system=[{"type": "text", "text": "system", "cache_control": cache_control}],
+                   tools=[{"name": "read", "input_schema": {"type": "object"}, "cache_control": cache_control}])
+    status, _, response = request(origin, path="/v1/messages", body=body,
+                                  headers={"x-api-key": "untrusted", "anthropic-version": "untrusted"})
+    assert status == 200 and response == sse
+    forwarded = upstream.requests[0]
+    assert forwarded.full_url == gateway.ANTHROPIC_BASE + "/messages"
+    normalized = json.loads(forwarded.data)
+    assert "thinking" not in normalized
+    assert normalized["system"][0]["cache_control"] == cache_control
+    assert normalized["tools"][0]["cache_control"] == cache_control
+    assert gateway.build_opener(app.config).url == forwarded.full_url
+    headers = {k.lower(): v for k, v in forwarded.header_items()}
+    assert headers["x-api-key"] == "protected-upstream-secret"
+    assert headers["anthropic-version"] == "2023-06-01"
+    assert "authorization" not in headers
+
+
+def test_anthropic_requires_exact_origin_and_explicit_allowance(tmp_path):
+    raw = raw_config(tmp_path, gateway.ANTHROPIC_ROUTE)
+    with pytest.raises(gateway.GatewayError, match="Messages API origin"):
+        gateway.validate_config(dict(raw, max_requests_per_window=3))
+    with pytest.raises(gateway.GatewayError, match="request allowance"):
+        gateway.validate_config(dict(raw, upstream_base_url=gateway.ANTHROPIC_BASE))
+
+
+def test_appservice_paid_profile_requires_matching_config_and_listener(running, monkeypatch):
+    from lanectl import adapters_opencode, runner, sandbox
+
+    monkeypatch.delenv("LANECTL_APPSERVICE_ROUTE", raising=False)
+    assert adapters_opencode.appservice_route() == gateway.GO_ROUTE
+    monkeypatch.setenv("LANECTL_APPSERVICE_ROUTE", gateway.ANTHROPIC_ROUTE)
+    config = adapters_opencode.appservice_provider_config()
+    provider, model = config["model"].split("/")
+    assert gateway.ANTHROPIC_ROUTE.endswith("/" + model)
+    assert config["providers"][provider]["package"] == "@opencode/ai/providers/anthropic"
+    assert config["providers"][provider]["settings"]["apiKey"] == "resident-gateway"
+    assert runner.provider_for(gateway.ANTHROPIC_ROUTE) == "anthropic-api"
+
+    _, go_origin = running(route=gateway.GO_ROUTE)
+    monkeypatch.setattr(adapters_opencode, "APPSERVICE_GATEWAY_PORT", int(go_origin.rsplit(":", 1)[1]))
+    with pytest.raises(RuntimeError, match="does not advertise the fixed pilot route"):
+        sandbox.probe_appservice_gateway()
+    _, paid_origin = running(route=gateway.ANTHROPIC_ROUTE,
+                             upstream_base_url=gateway.ANTHROPIC_BASE, max_requests_per_window=3)
+    monkeypatch.setattr(adapters_opencode, "APPSERVICE_GATEWAY_PORT", int(paid_origin.rsplit(":", 1)[1]))
+    sandbox.probe_appservice_gateway()
+
+    monkeypatch.setenv("LANECTL_APPSERVICE_ROUTE", "auto")
+    with pytest.raises(ValueError, match="unknown appservice model route"):
+        adapters_opencode.appservice_provider_config()
+
+
 def test_secret_loader_uses_only_named_systemd_credential(tmp_path):
     path = tmp_path / "upstream-token"
     path.write_text("my-private-token\n")
