@@ -110,9 +110,9 @@ def reconcile_inbox_cli(argv):
         return reconcile_inbox(config)
 
 
-def preview_command(kubeconfig, *args, manifest=None):
+def preview_command(kubeconfig, *args, manifest=None, namespace=PREVIEW_INBOX):
     return subprocess.run(
-        ["kubectl", "--kubeconfig", str(kubeconfig), "--namespace", PREVIEW_INBOX,
+        ["kubectl", "--kubeconfig", str(kubeconfig), "--namespace", namespace,
          "--request-timeout=10s", *args],
         input=None if manifest is None else json.dumps(manifest), capture_output=True,
         text=True, check=True, timeout=15,
@@ -121,15 +121,19 @@ def preview_command(kubeconfig, *args, manifest=None):
 
 def request_preview_cli(argv):
     parser = argparse.ArgumentParser(description="Submit a checked preview request and await its receipt")
-    parser.add_argument("action", choices=("deploy", "teardown"))
+    parser.add_argument("action", choices=("deploy", "health", "teardown"))
     parser.add_argument("--kubeconfig", type=Path, required=True)
     parser.add_argument("--wait-seconds", type=int, required=True)
     args = parser.parse_args(argv)
     if args.wait_seconds < 0 or os.environ["LANE_NAMESPACE"] != "lanectl-train-preview":
         parser.error("preview requests require the preview namespace and a nonnegative wait")
-    intent = {"schema": "lanectl.preview-intent/v1", "action": args.action,
+    intent = {"schema": "lanectl.preview-intent/v1", "action": "deploy" if args.action == "health" else args.action,
               "train": os.environ["LANE_TRAIN_ID"], "commit": os.environ["LANE_CHECKED_SHA"]}
-    print(json.dumps(request_preview(args.kubeconfig, intent, args.wait_seconds), sort_keys=True))
+    if args.action == "health":
+        result = check_preview_health(args.kubeconfig, intent)
+    else:
+        result = request_preview(args.kubeconfig, intent, args.wait_seconds)
+    print(json.dumps(result, sort_keys=True))
 
 
 def read_preview_object(kubeconfig, name):
@@ -158,26 +162,45 @@ def request_preview(kubeconfig, intent, wait_seconds):
             raise
     deadline = time.monotonic() + wait_seconds
     while True:
-        if intent["action"] == "deploy" and read_preview_object(
-            kubeconfig, preview_intent_name(dict(intent, action="teardown"))
-        ) is not None:
-            raise ValueError("preview was retired by a teardown request")
-        receipt = read_preview_object(kubeconfig, f"result-{name}")
-        if receipt is not None:
-            result = json.loads(receipt["result.json"])
-            expected = {"schema": "lanectl.preview-result/v1", "namespace": "lanectl-train-preview",
-                        "state": "ready" if intent["action"] == "deploy" else "absent",
-                        **{key: intent[key] for key in ("action", "train", "commit")}}
-            if (not isinstance(result, dict) or any(result.get(key) != value for key, value in expected.items())
-                    or not isinstance(result.get("image"), str) or not re.fullmatch(
-                        r"[a-z0-9][a-z0-9./:_-]*@sha256:[a-f0-9]{64}", result["image"]
-                    )):
-                raise ValueError("preview receipt does not match the exact requested effect")
+        result = read_preview_result(kubeconfig, intent)
+        if result is not None:
             return result
         remaining = deadline - time.monotonic()
         if remaining <= 0:
             raise TimeoutError(f"preview receipt pending for {name}")
         time.sleep(min(2, remaining))
+
+
+def read_preview_result(kubeconfig, intent):
+    name = preview_intent_name(intent)
+    if intent["action"] == "deploy" and read_preview_object(
+        kubeconfig, preview_intent_name(dict(intent, action="teardown"))
+    ) is not None:
+        raise ValueError("preview was retired by a teardown request")
+    receipt = read_preview_object(kubeconfig, f"result-{name}")
+    if receipt is not None:
+        result = json.loads(receipt["result.json"])
+        expected = {"schema": "lanectl.preview-result/v1", "namespace": "lanectl-train-preview",
+                    "state": "ready" if intent["action"] == "deploy" else "absent",
+                    **{key: intent[key] for key in ("action", "train", "commit")}}
+        if (not isinstance(result, dict) or any(result.get(key) != value for key, value in expected.items())
+                or not isinstance(result.get("image"), str) or not re.fullmatch(
+                    r"[a-z0-9][a-z0-9./:_-]*@sha256:[a-f0-9]{64}", result["image"]
+                )):
+            raise ValueError("preview receipt does not match the exact requested effect")
+        return result
+
+
+def check_preview_health(kubeconfig, intent):
+    result = read_preview_result(kubeconfig, intent)
+    if result is None:
+        raise ValueError("preview has no readiness receipt")
+    raw = preview_command(kubeconfig, "get", "deployment", f"lane-{intent['train']}",
+                          "--ignore-not-found", "-o", "json", namespace=result["namespace"])
+    deployment = checked_deployment(raw, intent["commit"], result["image"])
+    if not deployment_ready(deployment):
+        raise ValueError("exact checked preview is no longer ready")
+    return result
 
 
 def reconcile_inbox(kubeconfig):
@@ -294,6 +317,24 @@ def projected_kubeconfig(identity, namespace):
     }
 
 
+def checked_deployment(raw, commit, image):
+    if not raw:
+        return None
+    resource = json.loads(raw)
+    if (resource["metadata"].get("annotations", {}).get("lanectl.io/checked-sha") != commit
+            or resource["spec"]["template"]["spec"]["containers"][0]["image"] != image):
+        raise ValueError("existing Deployment does not match the checked train binding")
+    return resource
+
+
+def deployment_ready(deployment):
+    if not deployment or deployment["metadata"].get("deletionTimestamp"):
+        return False
+    status = deployment.get("status", {})
+    return (status.get("observedGeneration") == deployment["metadata"]["generation"]
+            and status.get("readyReplicas") == 1)
+
+
 def operate(action, kubeconfig, namespace, commit, image, path, port, name):
     command = ["kubectl", "--kubeconfig", str(kubeconfig), "--namespace", namespace, "--request-timeout=10s"]
 
@@ -303,13 +344,7 @@ def operate(action, kubeconfig, namespace, commit, image, path, port, name):
 
     def deployment():
         raw = kube("get", "deployment", name, "--ignore-not-found", "-o", "json")
-        if not raw:
-            return None
-        resource = json.loads(raw)
-        if (resource["metadata"].get("annotations", {}).get("lanectl.io/checked-sha") != commit
-                or resource["spec"]["template"]["spec"]["containers"][0]["image"] != image):
-            raise ValueError("existing Deployment does not match the checked train binding")
-        return resource
+        return checked_deployment(raw, commit, image)
 
     existing = deployment()
     if action == "deploy":
@@ -348,11 +383,8 @@ def operate(action, kubeconfig, namespace, commit, image, path, port, name):
         current = deployment()
         if action == "teardown" and current is None:
             return
-        if action == "health" and current is not None:
-            status = current.get("status", {})
-            if (status.get("observedGeneration") == current["metadata"]["generation"]
-                    and status.get("readyReplicas") == 1):
-                return
+        if action == "health" and deployment_ready(current):
+            return
         time.sleep(0.5)
     raise RuntimeError(f"train {action} did not complete")
 
