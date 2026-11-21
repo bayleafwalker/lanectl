@@ -107,6 +107,60 @@ def submit_bundle(args):
     print(f"{namespace}/{name}")
 
 
+def publication_intent(args):
+    receipt = checked_receipt(args)["data"]
+    commit = receipt["checked_sha"]
+    if args.checked_sha != commit:
+        raise ValueError("publication commit differs from the passing train")
+    attempts = set(receipt["attempts"])
+    landed = set()
+    for line in args.events.read_text().splitlines():
+        if not line.strip():
+            continue
+        event = json.loads(line)
+        data = event["data"]
+        if event["type"] == "item.landed" and data.get("train_id") == args.train:
+            if data.get("landed_sha") != commit:
+                raise ValueError("publication train has a conflicting landed commit")
+            landed.add(data["attempt_id"])
+    if not attempts or attempts != landed:
+        raise ValueError("publication requires a landing receipt for every checked attempt")
+    return {"schema": "lanectl.publication-intent/v1", "repo": "lanectl",
+            "train": args.train, "base": receipt["base_sha"], "commit": commit}
+
+
+def submit_publication(args):
+    intent = publication_intent(args)
+    namespace = "lanectl-train-publication"
+    name = f"publish-{args.train}-{intent['commit']}"
+    with TemporaryDirectory(prefix="lanectl-publication-") as scratch:
+        export = Path(scratch) / "export"
+        if export_bundle(args, export) != intent["commit"] or publication_intent(args) != intent:
+            raise ValueError("checked publication changed during export")
+        receipt = (export / "events.jsonl").read_text()
+        bundle = (export / "train.bundle").read_bytes()
+        if not 1 <= len(receipt.encode()) <= 4096 or not 1 <= len(bundle) <= 500000:
+            raise ValueError("checked publication exceeds the handoff payload bounds")
+        data = {"publication.json": json.dumps(intent, sort_keys=True), "events.jsonl": receipt}
+        binary = {"train.bundle": base64.b64encode(bundle).decode("ascii")}
+        manifest = {"apiVersion": "v1", "kind": "ConfigMap", "immutable": True,
+                    "metadata": {"name": name, "namespace": namespace}, "data": data, "binaryData": binary}
+        cmd = ["kubectl", "--kubeconfig", str(args.submit_publication_kubeconfig),
+               "--namespace", namespace, "--request-timeout=10s"]
+        result = subprocess.run([*cmd, "create", "-f", "-"], input=json.dumps(manifest),
+                                capture_output=True, text=True, timeout=15)
+        if result.returncode:
+            raw = subprocess.check_output(
+                [*cmd, "get", "configmap", name, "--ignore-not-found", "-o", "json"], timeout=15)
+            if not raw:
+                raise RuntimeError("publication request was not acknowledged")
+            stored = json.loads(raw)
+            if (stored.get("immutable") is not True or stored.get("data") != data
+                    or stored.get("binaryData") != binary):
+                raise ValueError("existing publication request differs from the exact checked export")
+    print(f"{namespace}/{name}")
+
+
 def consume_request(args, existing_binding=None):
     request = json.loads(args.consume_request.read_text())
     metadata = request["metadata"]
@@ -309,6 +363,9 @@ def main():
     transfer.add_argument("--consume-request", type=Path, help="Immutable ConfigMap JSON obtained from the handoff namespace")
     transfer.add_argument("--submit-kubeconfig", type=Path,
                           help="Submit the checked export using the dedicated handoff identity")
+    transfer.add_argument("--submit-publication-kubeconfig", type=Path,
+                          help="Submit an owner publication request after LANECTL local landing")
+    parser.add_argument("--checked-sha", help="Exact commit from the protected publication hook")
     parser.add_argument("--return-binding-kubeconfig", type=Path,
                         help="Publish the verified owner response using a separate owner identity")
     parser.add_argument("--document", type=PurePosixPath)
@@ -331,6 +388,11 @@ def main():
             parser.error("bundle destination must be absolute")
         export_bundle(args, args.export_bundle)
         print(args.export_bundle)
+        return
+    if args.submit_publication_kubeconfig is not None:
+        if not re.fullmatch(r"[a-f0-9]{40}", args.checked_sha or ""):
+            parser.error("--submit-publication-kubeconfig requires --checked-sha")
+        submit_publication(args)
         return
     if args.submit_kubeconfig is not None:
         submit_bundle(args)
