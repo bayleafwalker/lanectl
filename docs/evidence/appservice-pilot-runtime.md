@@ -9,13 +9,15 @@ Observed on 2026-11-21 in the `lanectl` namespace. The scheduler runs the public
 | Scoped train deployment | `lanectl deploy run train-20261119191729` served the exact checked `lanectl#2` train at commit `e444afe558ff6bbdfafc6d116670fae49227455b`. HTTP readiness passed. Foreground teardown left zero Deployments, ReplicaSets and Pods. The scoped identity was denied Secret reads and deployment creates outside the train namespace. [LANECTL #48](https://github.com/bayleafwalker/lanectl/pull/48) |
 | Runner replacement | In `pilot-takeover-recovery-fixed`, Vuoro refused a second runner process while generation one was fresh. After expiry, LANECTL verified generation two using the same scoped runner identity. Vuoro recorded the predecessor as `replaced-by-holder` and refused its late outcome as `lease-ended`. The replacement reported an outcome and the disposable item and sprint were closed. [LANECTL #49](https://github.com/bayleafwalker/lanectl/pull/49) |
 | Scheduled rollout | Flux applied appservice revision `b55bdaf28c6ed0476a73616ed8953a0f16f4c447`. Scheduled job `pilot-29921190` completed on the recovery image at 14:30:50 UTC. Admission reported `items_per_day 1/1`. [Appservice #2194](https://github.com/bayleafwalker/appservice/pull/2194) |
+| Projected handoff writer | A disposable Job used the scheduled coordinator's projected Kubernetes identity to submit the checked-train request. Admission rejected an unrelated ConfigMap. The model gateway container has no writer token mount. [Appservice #2202](https://github.com/bayleafwalker/appservice/pull/2202) [Appservice #2203](https://github.com/bayleafwalker/appservice/pull/2203) |
+| Standing owner publisher | Flux applied revision `da7e7c6ee83e708d08b2fbe55f0b0ccc41e807ea`. The unprivileged owner built disposable checked commit `1fdddbabf2105c0d67c98ca1348e485fdf2a203a`, pushed the image, and returned an immutable binding for digest `sha256:19734eda293384c5a43cf9da62483396197545ca4bbd067570c755a5dabbe64f`. Scheduled job `train-owner-publisher-29921305` succeeded at 16:25:54 UTC. A fresh owner also recovered the exact existing binding for the historical checked train. [Appservice #2205](https://github.com/bayleafwalker/appservice/pull/2205) [Appservice #2207](https://github.com/bayleafwalker/appservice/pull/2207) [LANECTL #64](https://github.com/bayleafwalker/lanectl/pull/64) |
+| Owner-produced preview | A temporary projected identity could read the new fixture binding and create a Deployment in its dedicated preview namespace. It was denied Deployment creation in the default namespace and listing of handoff ConfigMaps. The image passed readiness. Foreground teardown completed, and the temporary namespace, grants and fixture handoff records were removed. |
 
-The train deployment was an on-demand replay. The scheduled tick reached
-admission, and the disposable Job exercised live coordination. A scheduled
-product release through claim, execution, train deployment, cleanup and owner
-settlement remains to be observed. The scheduled coordinator currently has
-the Work runner mount. A train deployment also requires an image binding for
-its exact checked commit and a client authorized in the train namespace.
+The owner publication and preview proof used a disposable checked document and
+temporary deployment grants. A scheduled product release through claim,
+execution, deployment, cleanup and owner settlement remains open. The
+scheduled coordinator has the Work runner and handoff writer mounts. Standing
+preview deployment and canonical GitHub publication need scoped authority.
 
 The detailed probe outputs and owner receipts are host-persistent under
 `/projects/dev/_artifacts/lanectl-appservice-20261121-qualification`,
