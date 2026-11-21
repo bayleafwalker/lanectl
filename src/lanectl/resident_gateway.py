@@ -33,6 +33,8 @@ from .resident import assert_protected_file
 GO_ROUTE = "opencode-go/deepseek-v4.1-flash"
 LOCAL_ROUTE = "local/worker-fast"
 GO_BASE = "https://opencode.ai/inference/go/openai/v1"
+ANTHROPIC_ROUTE = "anthropic-api/claude-haiku-5-5"
+ANTHROPIC_BASE = "https://api.anthropic.com/v1"
 USER_AGENT = "lanectl-resident/0.2 native-opencode-gateway"
 
 
@@ -98,8 +100,8 @@ def validate_config(raw):
             or set(raw) - fields):
         raise GatewayError("invalid gateway configuration schema or unknown field")
     route = raw.get("route")
-    if route not in (GO_ROUTE, LOCAL_ROUTE):
-        raise GatewayError("select exactly the Go or local resident route")
+    if route not in (GO_ROUTE, LOCAL_ROUTE, ANTHROPIC_ROUTE):
+        raise GatewayError("select one supported fixed resident route")
     origin = raw.get("upstream_base_url")
     if not isinstance(origin, str):
         raise GatewayError("an explicit upstream origin is required")
@@ -117,6 +119,8 @@ def validate_config(raw):
     origin = origin.rstrip("/")
     if route == GO_ROUTE and origin != GO_BASE:
         raise GatewayError("Go requires the exact subscription endpoint; no paid fallback")
+    if route == ANTHROPIC_ROUTE and origin != ANTHROPIC_BASE:
+        raise GatewayError("Anthropic requires the exact Messages API origin")
     credential = raw.get("credential_name", "upstream-token")
     if not isinstance(credential, str) or re.fullmatch(r"[A-Za-z0-9_-]{1,64}", credential) is None:
         raise GatewayError("invalid systemd credential name")
@@ -137,8 +141,8 @@ def validate_config(raw):
     limit = raw.get("max_requests_per_window")
     if limit is not None:
         _bounded_int(limit, 1, 100000, "max_requests_per_window")
-    if route == GO_ROUTE and limit is None:
-        raise GatewayError("Go requires an explicit persistent request allowance")
+    if route in (GO_ROUTE, ANTHROPIC_ROUTE) and limit is None:
+        raise GatewayError("commercial routes require an explicit persistent request allowance")
     return GatewayConfig(
         route=route, upstream_base_url=origin,
         listen_port=_bounded_int(raw.get("listen_port", 18021), 1024, 65535, "listen_port"),
@@ -288,6 +292,73 @@ def normalize_request(config, data):
                 and part["type"] == "text" and isinstance(part["text"], str) for part in content):
             continue
         raise GatewayError("resident routes accept text and native function calls only")
+    try:
+        return json.dumps(body, separators=(",", ":"), ensure_ascii=False, allow_nan=False).encode()
+    except (ValueError, UnicodeError, RecursionError) as exc:
+        raise GatewayError("invalid JSON value or UTF-8 text") from exc
+
+
+def normalize_messages_request(config, data):
+    """Accept native text and client-side tools on the fixed Messages route."""
+    if len(data) > config.max_request_bytes:
+        raise GatewayError("request body exceeds byte bound")
+    body = _json(data)
+    fields = {"model", "messages", "system", "tools", "tool_choice", "max_tokens", "stream"}
+    if not isinstance(body, dict) or set(body) - fields or body.get("model") != config.model:
+        raise GatewayError("request must target the configured Messages model")
+    _bounded_int(body.get("max_tokens"), 1, config.max_output_tokens, "max_tokens")
+    if type(body.get("stream", False)) is not bool:
+        raise GatewayError("stream must be a boolean")
+
+    def is_text(block):
+        return (isinstance(block, dict) and set(block) == {"type", "text"}
+                and block["type"] == "text" and isinstance(block["text"], str))
+
+    system = body.get("system", "")
+    if not isinstance(system, str) and not (
+            isinstance(system, list) and all(is_text(block) for block in system)):
+        raise GatewayError("system content must be text")
+    tools = body.get("tools", [])
+    if not isinstance(tools, list) or len(tools) > 128 or any(
+            not isinstance(tool, dict) or set(tool) - {"name", "description", "input_schema"}
+            or not isinstance(tool.get("name"), str) or not isinstance(tool.get("input_schema"), dict)
+            for tool in tools):
+        raise GatewayError("only client-side tools are allowed")
+    choice = body.get("tool_choice")
+    if choice is not None and (not isinstance(choice, dict)
+            or set(choice) - {"type", "name", "disable_parallel_tool_use"}
+            or choice.get("type") not in ("auto", "none", "any", "tool")
+            or ("name" in choice and choice["name"] not in [tool["name"] for tool in tools])):
+        raise GatewayError("invalid tool choice")
+    messages = body.get("messages")
+    if not isinstance(messages, list) or not messages or len(messages) > 4096:
+        raise GatewayError("a bounded nonempty message list is required")
+    for message in messages:
+        if (not isinstance(message, dict) or set(message) != {"role", "content"}
+                or message["role"] not in ("user", "assistant")):
+            raise GatewayError("invalid Messages entry")
+        role, content = message["role"], message["content"]
+        if isinstance(content, str):
+            continue
+        if not isinstance(content, list) or not content:
+            raise GatewayError("Messages content must be text or client-side tool blocks")
+        for block in content:
+            if is_text(block):
+                continue
+            if (role == "assistant" and isinstance(block, dict)
+                    and set(block) == {"type", "id", "name", "input"} and block["type"] == "tool_use"
+                    and isinstance(block["id"], str) and isinstance(block["name"], str)
+                    and isinstance(block["input"], dict)):
+                continue
+            if (role == "user" and isinstance(block, dict)
+                    and not (set(block) - {"type", "tool_use_id", "content", "is_error"})
+                    and block.get("type") == "tool_result" and isinstance(block.get("tool_use_id"), str)
+                    and type(block.get("is_error", False)) is bool):
+                result = block.get("content", "")
+                if isinstance(result, str) or (
+                        isinstance(result, list) and all(is_text(part) for part in result)):
+                    continue
+            raise GatewayError("unsupported Messages content block")
     try:
         return json.dumps(body, separators=(",", ":"), ensure_ascii=False, allow_nan=False).encode()
     except (ValueError, UnicodeError, RecursionError) as exc:
@@ -585,7 +656,9 @@ class Gateway:
                     self.error_response(404, "unsupported model endpoint")
 
             def do_POST(self):
-                if self.path != "/v1/chat/completions":
+                anthropic = app.config.route == ANTHROPIC_ROUTE
+                endpoint = "/v1/messages" if anthropic else "/v1/chat/completions"
+                if self.path != endpoint:
                     self.error_response(404, "unsupported model endpoint")
                     return
                 try:
@@ -598,7 +671,8 @@ class Gateway:
                     data = self.rfile.read(size)
                     if len(data) != size:
                         raise GatewayError("incomplete request body")
-                    body = normalize_request(app.config, data)
+                    normalize = normalize_messages_request if anthropic else normalize_request
+                    body = normalize(app.config, data)
                 except (ValueError, OSError):
                     self.error_response(400, "invalid fixed-model request")
                     return
@@ -621,11 +695,17 @@ class Gateway:
         try:
             reservation = self.ledger.reserve(self.config.route, self.config.max_requests_per_window,
                                                self.config.window_s)
-            headers = {"Content-Type": "application/json", "Authorization": "Bearer " + self.token,
-                       "User-Agent": USER_AGENT, "Accept-Encoding": "identity"}
+            anthropic = self.config.route == ANTHROPIC_ROUTE
+            headers = {"Content-Type": "application/json", "User-Agent": USER_AGENT,
+                       "Accept-Encoding": "identity"}
+            if anthropic:
+                headers.update({"x-api-key": self.token, "anthropic-version": "2023-06-01"})
+            else:
+                headers["Authorization"] = "Bearer " + self.token
             if self.config.route == GO_ROUTE:
                 headers["x-opencode-session"] = self.config.session_id
-            request = urllib.request.Request(self.config.upstream_base_url + "/chat/completions",
+            endpoint = "/messages" if anthropic else "/chat/completions"
+            request = urllib.request.Request(self.config.upstream_base_url + endpoint,
                                              data=body, method="POST", headers=headers)
             deadline = time.monotonic() + self.config.timeout_s
             with self.opener.open(request, timeout=self.config.timeout_s) as response:
@@ -654,7 +734,10 @@ class Gateway:
                     tail = (tail + chunk)[-1024:]
                     handler.wfile.write(f"{len(chunk):x}\r\n".encode() + chunk + b"\r\n")
                     handler.wfile.flush()
-                if content_type == "text/event-stream" and re.search(rb"(?:^|\n)data:[ \t]*\[DONE\][ \t\r\n]*$", tail) is None:
+                marker = (rb'(?:^|\n)event: message_stop\r?\n'
+                          rb'data:[ \t]*\{[ \t]*"type":[ \t]*"message_stop"[ \t]*\}[ \t\r\n]*$'
+                          if anthropic else rb"(?:^|\n)data:[ \t]*\[DONE\][ \t\r\n]*$")
+                if content_type == "text/event-stream" and re.search(marker, tail) is None:
                     raise GatewayError("upstream stream ended without its completion marker")
                 # Only a complete, bounded response receives a terminal chunk.
                 # A midstream error is an HTTP framing failure, never a clean

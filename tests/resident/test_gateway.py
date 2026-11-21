@@ -256,6 +256,47 @@ def test_sse_bytes_are_forwarded_without_changing_tool_calls(running):
     assert body == sse
 
 
+def test_anthropic_messages_are_pinned_and_streamed(running):
+    sse = (
+        b'event: content_block_start\ndata: {"type":"content_block_start",'
+        b'"content_block":{"type":"tool_use","id":"toolu_1","name":"read","input":{}}}\n\n'
+        b'event: message_stop\ndata: {"type":"message_stop"}\n\n'
+    )
+    upstream = Upstream(response=Response(sse, "text/event-stream"))
+    _, origin = running(route=gateway.ANTHROPIC_ROUTE, upstream=upstream,
+                        upstream_base_url=gateway.ANTHROPIC_BASE, max_requests_per_window=3)
+    model = gateway.ANTHROPIC_ROUTE.split("/")[1]
+    for path, body, status in (
+        ("/v1/chat/completions", payload(model, max_tokens=32), 404),
+        ("/v1/messages", payload("another-model", max_tokens=32), 400),
+        ("/v1/messages", payload(model, max_tokens=8193), 400),
+        ("/v1/messages", payload(model, max_tokens=32, tools=[{"type": "web_search"}]), 400),
+    ):
+        with pytest.raises(urllib.error.HTTPError) as error:
+            request(origin, path=path, body=body)
+        assert error.value.code == status
+    assert upstream.requests == []
+    body = payload(model, max_tokens=32, stream=True,
+                   tools=[{"name": "read", "input_schema": {"type": "object"}}])
+    status, _, response = request(origin, path="/v1/messages", body=body,
+                                  headers={"x-api-key": "untrusted", "anthropic-version": "untrusted"})
+    assert status == 200 and response == sse
+    forwarded = upstream.requests[0]
+    assert forwarded.full_url == gateway.ANTHROPIC_BASE + "/messages"
+    headers = {k.lower(): v for k, v in forwarded.header_items()}
+    assert headers["x-api-key"] == "protected-upstream-secret"
+    assert headers["anthropic-version"] == "2023-06-01"
+    assert "authorization" not in headers
+
+
+def test_anthropic_requires_exact_origin_and_explicit_allowance(tmp_path):
+    raw = raw_config(tmp_path, gateway.ANTHROPIC_ROUTE)
+    with pytest.raises(gateway.GatewayError, match="Messages API origin"):
+        gateway.validate_config(dict(raw, max_requests_per_window=3))
+    with pytest.raises(gateway.GatewayError, match="request allowance"):
+        gateway.validate_config(dict(raw, upstream_base_url=gateway.ANTHROPIC_BASE))
+
+
 def test_secret_loader_uses_only_named_systemd_credential(tmp_path):
     path = tmp_path / "upstream-token"
     path.write_text("my-private-token\n")
