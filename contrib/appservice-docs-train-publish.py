@@ -2,6 +2,7 @@
 """Build and publish a checked LANECTL documentation train on the owner host."""
 import argparse
 import base64
+from contextlib import contextmanager
 import json
 import os
 from pathlib import Path, PurePosixPath
@@ -182,6 +183,12 @@ def consume_request(args, existing_binding=None):
                    for value in (base, commit))
             or metadata.get("name") != f"request-{args.train}-{commit}"):
         raise ValueError("request identity does not match a passing checked train receipt")
+    with import_checked_bundle(args, args.train, base, commit, receipt, bundle) as selected:
+        return publish(selected, existing_binding)
+
+
+@contextmanager
+def import_checked_bundle(args, train, base, commit, receipt, bundle):
     trusted = args.repository.resolve(strict=True)
     trusted_tip = git(trusted, "rev-parse", "--verify", "refs/remotes/origin/main").decode().strip()
     git(trusted, "merge-base", "--is-ancestor", base, trusted_tip)
@@ -193,16 +200,49 @@ def consume_request(args, existing_binding=None):
         events.write_bytes(receipt)
         archive.write_bytes(bundle)
         git(root, "init", "--quiet", "--bare", str(repository))
-        git(repository, "fetch", "--quiet", "--no-tags", str(trusted), base)
+        git(repository, "-c", "maintenance.auto=false", "fetch", "--quiet", "--no-tags", str(trusted), base)
         git(repository, "bundle", "verify", str(archive))
-        ref = f"refs/heads/train/{args.train}"
+        ref = f"refs/heads/train/{train}"
         head = git(repository, "bundle", "list-heads", str(archive)).decode().strip()
         if head != f"{commit} {ref}":
             raise ValueError("request bundle does not advertise the exact checked train")
-        git(repository, "fetch", "--quiet", "--no-tags", str(archive), f"{ref}:{ref}")
+        git(repository, "-c", "maintenance.auto=false", "fetch", "--quiet", "--no-tags", str(archive), f"{ref}:{ref}")
         git(repository, "merge-base", "--is-ancestor", base, commit)
-        selected = argparse.Namespace(**(vars(args) | {"repository": repository, "events": events}))
-        return publish(selected, existing_binding)
+        selected = argparse.Namespace(**(vars(args) | {"repository": repository, "events": events, "train": train}))
+        yield selected
+
+
+
+@contextmanager
+def publication_checkout(args):
+    request = json.loads(args.verify_publication_request.read_text())
+    metadata = request.get("metadata", {})
+    data = request.get("data", {})
+    binary = request.get("binaryData", {})
+    if (request.get("kind") != "ConfigMap" or metadata.get("namespace") != "lanectl-train-publication"
+            or request.get("immutable") is not True or set(data) != {"publication.json", "events.jsonl"}
+            or set(binary) != {"train.bundle"}):
+        raise ValueError("invalid immutable publication request")
+    intent = json.loads(data["publication.json"])
+    if (not isinstance(intent, dict) or set(intent) != {"schema", "repo", "train", "base", "commit"}
+            or intent["schema"] != "lanectl.publication-intent/v1" or intent["repo"] != "lanectl"):
+        raise ValueError("invalid publication intent")
+    train, base, commit = (intent[key] for key in ("train", "base", "commit"))
+    if (not isinstance(train, str) or not re.fullmatch(r"train-[a-z0-9](?:[a-z0-9-]{0,38}[a-z0-9])?", train)
+            or any(not isinstance(sha, str) or not re.fullmatch(r"[a-f0-9]{40}", sha)
+                   for sha in (base, commit))
+            or base == commit or metadata.get("name") != f"publish-{train}-{commit}"):
+        raise ValueError("publication resource does not name the exact checked train")
+    receipt = data["events.jsonl"].encode("utf-8")
+    bundle = base64.b64decode(binary["train.bundle"], validate=True)
+    if not 1 <= len(receipt) <= 4096 or not 1 <= len(bundle) <= 500000:
+        raise ValueError("publication exceeds the handoff payload bounds")
+    with import_checked_bundle(args, train, base, commit, receipt, bundle) as selected:
+        checked = checked_receipt(selected)["data"]
+        if (checked["base_sha"] != base or checked["checked_sha"] != commit
+                or not checked.get("attempts")):
+            raise ValueError("publication intent differs from the passing train receipt")
+        yield intent, selected
 
 
 def git(repository, *args):
@@ -363,6 +403,8 @@ def main():
     transfer.add_argument("--consume-request", type=Path, help="Immutable ConfigMap JSON obtained from the handoff namespace")
     transfer.add_argument("--submit-kubeconfig", type=Path,
                           help="Submit the checked export using the dedicated handoff identity")
+    transfer.add_argument("--verify-publication-request", type=Path,
+                          help="Verify an immutable checked publication request without publishing")
     transfer.add_argument("--submit-publication-kubeconfig", type=Path,
                           help="Submit an owner publication request after LANECTL local landing")
     parser.add_argument("--checked-sha", help="Exact commit from the protected publication hook")
@@ -375,6 +417,11 @@ def main():
     parser.add_argument("--insecure-registry", action="store_true")
     parser.add_argument("--bindings-directory", type=Path)
     args = parser.parse_args()
+    if args.verify_publication_request is not None:
+        with publication_checkout(args) as (intent, _):
+            verified = json.dumps(intent, sort_keys=True)
+        print(verified)
+        return
     if not args.reconcile_handoffs and not re.fullmatch(r"train-[a-z0-9][a-z0-9-]{0,39}", args.train or ""):
         parser.error("invalid train ID")
     if args.return_binding_kubeconfig is not None and args.consume_request is None and not args.reconcile_handoffs:

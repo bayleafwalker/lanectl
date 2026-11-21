@@ -62,3 +62,34 @@ def test_publication_requires_complete_checked_landing_and_exact_replay(tmp_path
     manifest["binaryData"]["train.bundle"] = "different"
     with pytest.raises(ValueError, match="differs from the exact"):
         hook.submit_publication(args)
+
+
+def test_publication_owner_rejects_intent_that_disagrees_with_imported_receipt(tmp_path, monkeypatch):
+    from contextlib import contextmanager
+
+    train, base, commit = "train-proof", "a" * 40, "b" * 40
+    intent = {"schema": "lanectl.publication-intent/v1", "repo": "lanectl", "train": train,
+              "base": base, "commit": commit}
+    path = tmp_path / "publication.json"
+    path.write_text(json.dumps({
+        "kind": "ConfigMap", "immutable": True,
+        "metadata": {"namespace": "lanectl-train-publication", "name": f"publish-{train}-{commit}"},
+        "data": {"publication.json": json.dumps(intent), "events.jsonl": "{}"},
+        "binaryData": {"train.bundle": "eA=="},
+    }))
+    checked = {"base_sha": "c" * 40, "checked_sha": commit, "attempts": ["attempt-a1"]}
+
+    @contextmanager
+    def import_bundle(args, actual_train, actual_base, actual_commit, receipt, bundle):
+        assert (actual_train, actual_base, actual_commit, receipt, bundle) == (train, base, commit, b"{}", b"x")
+        yield object()
+
+    monkeypatch.setattr(hook, "import_checked_bundle", import_bundle)
+    monkeypatch.setattr(hook, "checked_receipt", lambda _: {"data": checked})
+    args = SimpleNamespace(verify_publication_request=path)
+    with pytest.raises(ValueError, match="differs from the passing train"):
+        with hook.publication_checkout(args):
+            pytest.fail("mismatched intent reached the publication owner")
+    checked["base_sha"] = base
+    with hook.publication_checkout(args) as (verified, _):
+        assert verified == intent
