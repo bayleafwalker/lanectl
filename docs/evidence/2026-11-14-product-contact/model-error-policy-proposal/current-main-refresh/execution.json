@@ -1,0 +1,7 @@
+{
+  "returncode": 0,
+  "elapsed_s": 31.732,
+  "requested_model": "claude-sonnet-5-5",
+  "preparation_only": true,
+  "canonical_activated": false
+}

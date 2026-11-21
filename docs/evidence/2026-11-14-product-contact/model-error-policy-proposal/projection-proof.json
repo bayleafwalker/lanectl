@@ -1,0 +1,13 @@
+{
+  "scope": "pure in-memory event projection only, not actual approve, repair, train or land",
+  "current_state": "parked",
+  "current_R2_attempts_used": 2,
+  "hypothetical_approved_state": "candidate",
+  "hypothetical_approved_R2_attempts_used": 2,
+  "hypothetical_repaired_land_model_clean": false,
+  "hypothetical_repaired_land_ruled": true,
+  "experiments_not_added": true,
+  "source_log_sha256": "203d4b14fae161b96a6ec3bd79480b3c4c4d04fecdd5c42a9d38bad455ecb53e",
+  "source_log_unchanged": true,
+  "policy_activated": false
+}

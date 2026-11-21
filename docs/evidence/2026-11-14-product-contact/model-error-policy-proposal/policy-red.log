@@ -1,0 +1,66 @@
+Using CPython 3.13.16
+Creating virtual environment at: .venv
+   Building lanectl @ file:///projects/dev/_wt/lanectl-model-error-policy-20261114
+      Built lanectl @ file:///projects/dev/_wt/lanectl-model-error-policy-20261114
+warning: Failed to hardlink files; falling back to full copy. This may lead to degraded performance.
+         If the cache and target directories are on different filesystems, hardlinking may not be supported.
+         If this is intentional, set `export UV_LINK_MODE=copy` or use `--link-mode=copy` to suppress this warning.
+Installed 8 packages in 83ms
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+_____ test_model_error_permission_keeps_budget_and_automatic_cycle_closed ______
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x79d5b7befce0>
+tmp_path = PosixPath('/tmp/pytest-of-bayleaf/pytest-15232/test_model_error_permission_ke0')
+
+    def test_model_error_permission_keeps_budget_and_automatic_cycle_closed(monkeypatch, tmp_path):
+        policy = authority()
+        event = {'type': 'integrator.fix', 'data': {
+            'attempt_id': 'fixture-a3', 'commit': 'f' * 40, 'fix_class': 'model-error'}}
+>       assert landing.fix_budget([event], policy, {'f' * 40: 30}) == []
+E       assert ['fixture-a3:...p, spec-gap)'] == []
+E         
+E         Left contains one more item: "fixture-a3: fix ffffffffffffffffffffffffffffffffffffffff class 'model-error' is not allowed (allowed: gate-gap, spec-gap)"
+E         Use -v to get more diff
+
+tests/stage8/test_model_error_repair_policy.py:20: AssertionError
+____ test_cumulative_model_error_repairs_cannot_each_spend_the_whole_budget ____
+
+tmp_path = PosixPath('/tmp/pytest-of-bayleaf/pytest-15232/test_cumulative_model_error_re0')
+
+    def test_cumulative_model_error_repairs_cannot_each_spend_the_whole_budget(tmp_path):
+        root = tmp_path / 'repo'
+        root.mkdir()
+    
+        def git(*args):
+            return subprocess.run(['git', '-C', str(root), *args], check=True,
+                                  capture_output=True, text=True).stdout.strip()
+    
+        git('init', '-b', 'main')
+        git('config', 'user.name', 'fixture')
+        git('config', 'user.email', 'fixture@example.invalid')
+        (root / 'base').write_text('base\n')
+        git('add', 'base')
+        git('commit', '-m', 'test: establish fixture base')
+        base = git('rev-parse', 'HEAD')
+        git('checkout', '-b', 'train/policy-fixture')
+        repo = RepoSpec('fixture', root, 'main', '', '', tmp_path / 'worktrees')
+        train = {'train_id': 'policy-fixture', 'base_sha': base}
+        for index, lines in enumerate((16, 15), 1):
+            path = root / f'correction-{index}'
+            path.write_text('fixture\n' * lines)
+            git('add', path.name)
+            git('commit', '-m', f'fix(fixture-a3): [model-error] correction {index}')
+            warnings = integrator._fix_warnings(repo, train, [], authority())
+            if index == 1:
+>               assert warnings == []
+E               AssertionError: assert ['integrator ...lass or size'] == []
+E                 
+E                 Left contains one more item: 'integrator fix 5607fdea4ed08b29c3313047000fc1d73aee871b exceeds allowed class or size'
+E                 Use -v to get more diff
+
+tests/stage8/test_model_error_repair_policy.py:59: AssertionError
+=========================== short test summary info ============================
+FAILED tests/stage8/test_model_error_repair_policy.py::test_model_error_permission_keeps_budget_and_automatic_cycle_closed
+FAILED tests/stage8/test_model_error_repair_policy.py::test_cumulative_model_error_repairs_cannot_each_spend_the_whole_budget
+2 failed in 1.24s

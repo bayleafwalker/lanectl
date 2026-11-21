@@ -1,0 +1,7 @@
+{
+  "returncode": 0,
+  "elapsed_s": 148.287,
+  "command": "uv run pytest -q",
+  "bus_runtime": "/run/user/1000",
+  "preparation_only": true
+}

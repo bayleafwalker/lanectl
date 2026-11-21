@@ -1,0 +1,72 @@
+diff --git a/apps/web/frontend/lib/attention-record.ts b/apps/web/frontend/lib/attention-record.ts
+index 22fca64..dbfc493 100644
+--- a/apps/web/frontend/lib/attention-record.ts
++++ b/apps/web/frontend/lib/attention-record.ts
+@@ -209,7 +209,7 @@ export async function getAttentionRecord(
+       "get",
+       "/reports/transaction-anomalies/records/{item_id}",
+       { params: { path: { item_id: itemId } } }
+-    );
++    ).catch(() => { throw protocolError(); });
+     return readRecord("anomaly", itemId, response, ROW_FIELDS.anomaly);
+   }
+   if (kind === "upcoming_cost") {
+@@ -217,7 +217,7 @@ export async function getAttentionRecord(
+       "get",
+       "/reports/upcoming-fixed-costs/records/{item_id}",
+       { params: { path: { item_id: itemId } } }
+-    );
++    ).catch(() => { throw protocolError(); });
+     return readRecord("upcoming_cost", itemId, response, ROW_FIELDS.upcoming_cost);
+   }
+   if (kind === "contract_review") {
+@@ -225,13 +225,13 @@ export async function getAttentionRecord(
+       "get",
+       "/reports/contract-review-candidates/records/{item_id}",
+       { params: { path: { item_id: itemId } } }
+-    );
++    ).catch(() => { throw protocolError(); });
+     return readRecord("contract_review", itemId, response, ROW_FIELDS.contract_review);
+   }
+   const response = await backendRequest(
+     "get",
+     "/reports/contract-renewal-watchlist/records/{item_id}",
+     { params: { path: { item_id: itemId } } }
+-  );
++  ).catch(() => { throw protocolError(); });
+   return readRecord("contract_renewal", itemId, response, ROW_FIELDS.contract_renewal);
+ }
+diff --git a/tests/test_attention_record_boundary_worker.py b/tests/test_attention_record_boundary_worker.py
+index fe47518..6e9e0df 100644
+--- a/tests/test_attention_record_boundary_worker.py
++++ b/tests/test_attention_record_boundary_worker.py
+@@ -134,3 +134,29 @@ def test_attention_key_codec_preserves_whole_utf8_identity() -> None:
+     assert result["dec"] == ["\uFEFFa", "\uFEFF", "a/b_%_雪", "renewal_🙂/x", "x"]
+     assert result["invalid"] == [None] * 11
+     assert result["reject"] is True
++
++
++def test_transport_rejections_are_sanitized_without_catching_redirect() -> None:
++    node, modules, output = _node(), _modules(), Path(tempfile.mkdtemp(prefix="hla-worker-record-out-"))
++    subprocess.run(
++        [str(modules / ".bin/tsc"), str(WEB / "lib/attention-record.ts"), "--target", "ES2022", "--module", "commonjs", "--moduleResolution", "node", "--lib", "ES2022,DOM", "--types", "node", "--skipLibCheck", "--outDir", str(output)],
++        cwd=WEB, check=True, capture_output=True, text=True,
++    )
++    probe = """const M=require('module'),load=M._load;
++const secret=Object.assign(new Error('SECRET /records/key body'),{cause:'SECRET'});
++let status=500;
++M._load=function(r,p,i){
++  if(r==='./backend')return{backendRequest:async()=>status===401?new Response(null,{status}):Promise.reject(secret)};
++  if(r==='next/navigation')return{redirect:()=>{throw Error('NEXT_REDIRECT')}};
++  return load.call(this,r,p,i)
++};
++const c=require(process.argv[1]);
++(async()=>{for(const k of ['anomaly','upcoming_cost','contract_review','contract_renewal']){try{await c.getAttentionRecord(k,'eA');throw Error('resolved')}catch(e){if(e===secret||e.message!=='malformed attention record response'||e.cause!==undefined||/SECRET/.test(JSON.stringify(e)))throw e}}
++status=401;
++try{await c.getAttentionRecord('anomaly','eA')}catch(e){if(e.message==='NEXT_REDIRECT')process.exit(0);throw e}
++throw Error('redirect swallowed')})().catch(e=>{console.error(e);process.exit(1)})"""
++    log = subprocess.run(
++        [node, "-e", probe, str(output / "attention-record.js")],
++        cwd=WEB, capture_output=True, text=True, timeout=30,
++    )
++    assert log.returncode == 0, log.stdout + log.stderr

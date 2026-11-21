@@ -1,0 +1,29 @@
+Error: SECRET /records/key body
+    at [eval]:1:61
+    at runScriptInThisContext (node:internal/vm:209:10)
+    at node:internal/process/execution:118:14
+    at [eval]-wrapper:6:24
+    at runScript (node:internal/process/execution:101:62)
+    at evalScript (node:internal/process/execution:133:3)F
+
+=================================== FAILURES ===================================
+______ test_transport_rejections_are_sanitized_without_catching_redirect _______
+tests/test_attention_record_boundary_worker.py:146: in test_transport_rejections_are_sanitized_without_catching_redirect
+    assert log.returncode == 0, log.stdout + log.stderr
+E   AssertionError: Error: SECRET /records/key body
+E         at [eval]:1:61
+E         at runScriptInThisContext (node:internal/vm:209:10)
+E         at node:internal/process/execution:118:14
+E         at [eval]-wrapper:6:24
+E         at runScript (node:internal/process/execution:101:62)
+E         at evalScript (node:internal/process/execution:133:3)
+E         at node:internal/main/eval_string:51:3 {
+E       cause: 'SECRET'
+E     }
+E     
+E   assert 1 == 0
+E    +  where 1 = CompletedProcess(args=['/projects/dev/homelab-analytics/.tooling/node-v20.20.1-linux-x64/bin/node', '-e', "const M=req...lScript (node:internal/process/execution:133:3)\n    at node:internal/main/eval_string:51:3 {\n  cause: 'SECRET'\n}\n").returncode
+=========================== short test summary info ============================
+FAILED tests/test_attention_record_boundary_worker.py::test_transport_rejections_are_sanitized_without_catching_redirect
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+======================= 1 failed, 2 deselected in 3.30s ========================

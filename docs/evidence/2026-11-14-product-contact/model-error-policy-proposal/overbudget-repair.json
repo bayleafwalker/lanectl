@@ -1,0 +1,27 @@
+{
+  "attempt": "hla-attention-client-boundary-a3",
+  "base": "94ecb4c5504034e23d93c3b9dd03f1acaf6b3863",
+  "head": "a3b3d76a1fe190920ad46aeefb6d12bbc93694e6",
+  "seed": "b5353d9f794c9a5a6dad2772100fc9768b45efd3",
+  "repair_paths": [
+    {
+      "path": "apps/web/frontend/lib/attention-record.ts",
+      "added": 4,
+      "deleted": 4
+    },
+    {
+      "path": "tests/test_attention_record_boundary_worker.py",
+      "added": 26,
+      "deleted": 0
+    }
+  ],
+  "repair_cumulative_added_deleted": 34,
+  "repair_limit": 30,
+  "seed_to_tip_added_deleted": 669,
+  "M": 700,
+  "adopted": false,
+  "state": "parked/exhausted",
+  "attempts_used": 2,
+  "reason": "34 exceeds30; worker reported insertions only as30. Root independently rejected budget claim.",
+  "patch_sha256": "63c74ef68598df460963ebaf325a5783b74b45c422422c47ff15d59d9dc7ce16"
+}
