@@ -5,7 +5,7 @@ federation gateway listening on loopback. Supply an explicit batch of newly
 completed LANECTL work IDs.
 
 ```sh
-python -I -m lanectl.settlement_summary \
+lanectl-settlement-summary \
   --vuoro-token-file /run/vuoro-identity/token 4 8
 ```
 
