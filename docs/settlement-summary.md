@@ -21,3 +21,18 @@ Use a separate Claude federation rule for the lane, a provider workspace
 with an operator-verified spend cap, and a gateway request allowance.
 The scheduler must supply new, distinct completed IDs. This worker reads
 explicit IDs and does not discover work or track previous summaries.
+
+## Source-side batch selection
+
+Run `lanectl-settlement-batch /path/to/events.jsonl --checkpoint /path/to/ack.json`
+from the trusted scheduler side. On the first run omit `--checkpoint`.
+The command reads the ledger without changing it and emits only a batch of
+work IDs plus a proposed checkpoint. It selects successful, closed
+`work.synced` events that record an owner confirmation for `lanectl`.
+Pass only the IDs to the summary Pod.
+
+Record the returned checkpoint after the batch's summary is retained.
+An empty batch can be acknowledged immediately. Retry a failed batch from
+the previous checkpoint. A checkpoint counts validated events and binds
+the last one by digest, so a ledger replacement at that position fails closed.
+The scheduler must serialize selections and acknowledgements for a ledger.
