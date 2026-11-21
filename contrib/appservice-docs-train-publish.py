@@ -245,6 +245,42 @@ def publication_checkout(args):
         yield intent, selected
 
 
+def reconcile_publications(args):
+    from lanectl import integrator, work
+
+    canonical = "https://github.com/bayleafwalker/lanectl.git"
+    cmd = ["kubectl", "--kubeconfig", str(args.reconcile_publications),
+           "--namespace", "lanectl-train-publication", "--request-timeout=10s"]
+    objects = json.loads(subprocess.check_output([*cmd, "get", "configmaps", "-o", "json"], timeout=30))
+    failed = False
+
+    def run(command, **kwargs):
+        return subprocess.run([str(args.publication_executor), *command], **kwargs)
+
+    with TemporaryDirectory(prefix="lanectl-publication-inbox-") as scratch:
+        request = Path(scratch) / "publication.json"
+        for item in objects["items"]:
+            name = item["metadata"]["name"]
+            if not name.startswith("publish-"):
+                continue
+            try:
+                request.write_text(json.dumps(item))
+                selected = argparse.Namespace(**(vars(args) | {"verify_publication_request": request}))
+                with publication_checkout(selected) as (intent, imported):
+                    git(imported.repository, "remote", "add", "origin", canonical)
+                    repo = argparse.Namespace(path=imported.repository, main="main")
+                    if not work.merged(repo, intent["commit"]):
+                        integrator.publish(repo, intent["train"], intent["commit"], run=run)
+                        if not work.merged(repo, intent["commit"]):
+                            raise RuntimeError("publication has no fresh canonical ancestry proof")
+                print(f"{name}: canonical PR merge verified")
+            except (ValueError, OSError, KeyError, TypeError, RuntimeError,
+                    subprocess.SubprocessError, work._SyncFailed) as error:
+                print(f"{name}: {error}", file=sys.stderr)
+                failed = True
+    return int(failed)
+
+
 def git(repository, *args):
     return subprocess.check_output(["git", "-C", str(repository), *args])
 
@@ -403,6 +439,10 @@ def main():
     transfer.add_argument("--consume-request", type=Path, help="Immutable ConfigMap JSON obtained from the handoff namespace")
     transfer.add_argument("--submit-kubeconfig", type=Path,
                           help="Submit the checked export using the dedicated handoff identity")
+    transfer.add_argument("--reconcile-publications", type=Path, metavar="KUBECONFIG",
+                          help="Process the checked publication inbox using the owner's Kubernetes identity")
+    parser.add_argument("--publication-executor", type=Path,
+                        help="Owner-installed executable that supplies scoped Git and GitHub authority")
     transfer.add_argument("--verify-publication-request", type=Path,
                           help="Verify an immutable checked publication request without publishing")
     transfer.add_argument("--submit-publication-kubeconfig", type=Path,
@@ -417,6 +457,10 @@ def main():
     parser.add_argument("--insecure-registry", action="store_true")
     parser.add_argument("--bindings-directory", type=Path)
     args = parser.parse_args()
+    if args.reconcile_publications is not None:
+        if args.publication_executor is None or not args.publication_executor.is_absolute():
+            parser.error("--reconcile-publications requires an absolute --publication-executor")
+        return reconcile_publications(args)
     if args.verify_publication_request is not None:
         with publication_checkout(args) as (intent, _):
             verified = json.dumps(intent, sort_keys=True)
