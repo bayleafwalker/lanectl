@@ -35,6 +35,7 @@ LOCAL_ROUTE = "local/worker-fast"
 GO_BASE = "https://opencode.ai/inference/go/openai/v1"
 ANTHROPIC_ROUTE = "anthropic-api/claude-haiku-5-5"
 ANTHROPIC_BASE = "https://api.anthropic.com/v1"
+ANTHROPIC_EXCHANGE = ANTHROPIC_BASE + "/oauth/token"
 USER_AGENT = "lanectl-resident/0.2 native-opencode-gateway"
 
 
@@ -448,9 +449,9 @@ attributes. A deadline interrupts blocked header/body reads; each read also gets
 only the remaining timeout. DNS/connect use the platform's bounded resolver and
 socket connection behavior, which still need qualification on the target host.
 """
-    def __init__(self, config):
+    def __init__(self, config, *, url=None):
         endpoint = "/messages" if config.route == ANTHROPIC_ROUTE else "/chat/completions"
-        self.url = config.upstream_base_url + endpoint
+        self.url = url or config.upstream_base_url + endpoint
         self.parsed = urlsplit(self.url)
         self.context = ssl.create_default_context(cafile=str(config.ca_file) if config.ca_file else None)
 
@@ -605,9 +606,77 @@ class BoundedUnixServer(BoundedServer):
         # process's descriptor must not unlink or replace that capability.
 
 
+class AnthropicFederation:
+    """Resolve the workspace bearer within the gateway's single-request lock."""
+
+    def __init__(self, config, environment=None, *, opener=None):
+        env = os.environ if environment is None else environment
+        if config.route != ANTHROPIC_ROUTE or config.listen_socket is not None or config.listen_port != 18021:
+            raise GatewayError("Claude federation requires the fixed appservice pilot route")
+        if any(name in env for name in ("ANTHROPIC_API_KEY", "ANTHROPIC_AUTH_TOKEN",
+                                        "ANTHROPIC_PROFILE", "ANTHROPIC_IDENTITY_TOKEN")):
+            raise GatewayError("Claude federation requires a projected token without credential overrides")
+        self.token_file = Path(env.get("ANTHROPIC_IDENTITY_TOKEN_FILE", ""))
+        if not self.token_file.is_absolute():
+            raise GatewayError("Claude federation requires an absolute projected token path")
+        self.exchange = {"grant_type": "urn:ietf:params:oauth:grant-type:jwt-bearer"}
+        for field, pattern in (
+            ("federation_rule_id", r"fdrl_[A-Za-z0-9_-]{1,128}"),
+            ("organization_id", r"[0-9a-fA-F]{8}(?:-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}"),
+            ("workspace_id", r"wrkspc_[A-Za-z0-9_-]{1,128}"),
+            ("service_account_id", r"svac_[A-Za-z0-9_-]{1,128}"),
+        ):
+            value = env.get("ANTHROPIC_" + field.upper(), "")
+            if not re.fullmatch(pattern, value):
+                raise GatewayError("Claude federation identifiers are missing or malformed")
+            self.exchange[field] = value
+        self.opener = opener if opener is not None else FixedHTTPS(config, url=ANTHROPIC_EXCHANGE)
+        self.token = ""
+        self.refresh_at = 0.0
+
+    def bearer(self):
+        now = time.monotonic()
+        if now < self.refresh_at:
+            return self.token
+        with self.token_file.open("rb") as source:
+            raw_assertion = source.read(16385)
+        assertion = raw_assertion.strip()
+        if len(raw_assertion) > 16384 or not re.fullmatch(rb"[A-Za-z0-9_-]+(?:\.[A-Za-z0-9_-]+){2}", assertion):
+            raise GatewayError("invalid projected Claude identity token")
+        request = urllib.request.Request(
+            ANTHROPIC_EXCHANGE,
+            data=json.dumps(dict(self.exchange, assertion=assertion.decode("ascii"))).encode(),
+            method="POST",
+            headers={"Content-Type": "application/json", "Accept-Encoding": "identity"},
+        )
+        try:
+            with self.opener.open(request, timeout=15) as response:
+                body = bytearray()
+                while chunk := response.read1(16385 - len(body)):
+                    body.extend(chunk)
+                    if len(body) > 16384:
+                        raise GatewayError("Claude federation response exceeds its byte bound")
+        except urllib.error.HTTPError as exc:
+            exc.close()
+            raise GatewayError("Claude federation exchange refused") from None
+        result = _json(body)
+        if (not isinstance(result, dict) or result.get("token_type") != "Bearer"
+                or result.get("scope") != "workspace:inference"):
+            raise GatewayError("invalid Claude federation response")
+        token = result.get("access_token")
+        expires = result.get("expires_in")
+        if (not isinstance(token, str) or not re.fullmatch(r"sk-ant-oat01-[A-Za-z0-9_-]{1,2048}", token)
+                or type(expires) is not int or not 60 <= expires <= 600):
+            raise GatewayError("invalid Claude federation token or lifetime")
+        self.token = token
+        self.refresh_at = now + expires - 30
+        return token
+
+
 class Gateway:
-    def __init__(self, config, token, *, opener=None):
+    def __init__(self, config, token, *, opener=None, federation=None):
         self.config, self.token = config, token
+        self.federation = federation
         self.opener = build_opener(config) if opener is None else opener
         self.ledger = RequestLedger(config.state_file)
         self.inflight = threading.BoundedSemaphore(1)
@@ -711,7 +780,11 @@ class Gateway:
             headers = {"Content-Type": "application/json", "User-Agent": USER_AGENT,
                        "Accept-Encoding": "identity"}
             if anthropic:
-                headers.update({"x-api-key": self.token, "anthropic-version": "2023-06-01"})
+                headers["anthropic-version"] = "2023-06-01"
+                if self.federation is None:
+                    headers["x-api-key"] = self.token
+                else:
+                    headers["Authorization"] = "Bearer " + self.federation.bearer()
             else:
                 headers["Authorization"] = "Bearer " + self.token
             if self.config.route == GO_ROUTE:
@@ -783,7 +856,9 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("command", choices=("run", "check-config"))
     parser.add_argument("--config", required=True, type=Path)
-    parser.add_argument("--appservice-credentials-directory", type=Path)
+    credentials = parser.add_mutually_exclusive_group()
+    credentials.add_argument("--appservice-credentials-directory", type=Path)
+    credentials.add_argument("--anthropic-federation", action="store_true")
     args = parser.parse_args(argv)
     try:
         if args.command == "check-config":
@@ -796,8 +871,11 @@ def main(argv=None):
                 config.route not in (GO_ROUTE, ANTHROPIC_ROUTE)
                 or config.listen_socket is not None or config.listen_port != 18021):
             raise GatewayError("appservice credentials require the fixed loopback pilot route")
-        app = Gateway(config, read_credential(config.credential_name,
-                                              appservice_directory=args.appservice_credentials_directory))
+        if args.anthropic_federation:
+            app = Gateway(config, None, federation=AnthropicFederation(config))
+        else:
+            app = Gateway(config, read_credential(config.credential_name,
+                                                  appservice_directory=args.appservice_credentials_directory))
         with app.make_server() as server:
             server.serve_forever()
     except (OSError, ValueError, sqlite3.Error) as exc:

@@ -144,11 +144,11 @@ class Upstream:
 def running(tmp_path):
     servers = []
 
-    def start(*, route="local/worker-fast", upstream=None, **settings):
+    def start(*, route="local/worker-fast", upstream=None, federation=None, **settings):
         config = gateway.validate_config(dict(raw_config(tmp_path, route), **settings))
         # Ephemeral test listener; production configuration rejects port zero.
         app = gateway.Gateway(replace(config, listen_port=0), "protected-upstream-secret",
-                              opener=upstream or Upstream())
+                              opener=upstream or Upstream(), federation=federation)
         server = app.make_server()
         thread = threading.Thread(target=server.serve_forever, daemon=True)
         thread.start()
@@ -296,6 +296,58 @@ def test_anthropic_messages_are_pinned_and_streamed(running):
     assert headers["x-api-key"] == "protected-upstream-secret"
     assert headers["anthropic-version"] == "2023-06-01"
     assert "authorization" not in headers
+
+
+def test_claude_federation_sends_only_bearer_and_rereads_rotated_projection(tmp_path, running):
+    raw = dict(raw_config(tmp_path, gateway.ANTHROPIC_ROUTE), upstream_base_url=gateway.ANTHROPIC_BASE,
+               max_requests_per_window=3)
+    config = gateway.validate_config(raw)
+    token_file = tmp_path / "token"
+    token_file.write_text("header.claims.signature")
+    env = {
+        "ANTHROPIC_IDENTITY_TOKEN_FILE": str(token_file),
+        "ANTHROPIC_FEDERATION_RULE_ID": "fdrl_example",
+        "ANTHROPIC_ORGANIZATION_ID": "00000000-0000-0000-0000-000000000000",
+        "ANTHROPIC_WORKSPACE_ID": "wrkspc_example",
+        "ANTHROPIC_SERVICE_ACCOUNT_ID": "svac_example",
+    }
+    response = b'{"access_token":"sk-ant-oat01-test","token_type":"Bearer","expires_in":600,"scope":"workspace:inference"}'
+    exchange = Upstream(response=Response(response))
+    auth = gateway.AnthropicFederation(config, env, opener=exchange)
+    upstream = Upstream(response=Response(b'{"content":[]}'))
+    app, origin = running(route=config.route, upstream=upstream, federation=auth,
+                        upstream_base_url=config.upstream_base_url, max_requests_per_window=3)
+    assert request(origin, path="/v1/messages", body=payload(config.model, max_tokens=32))[0] == 200
+    with app.inflight:
+        assert auth.bearer() == "sk-ant-oat01-test"
+    assert len(exchange.requests) == 1
+    exchange_request = exchange.requests[0]
+    assert exchange_request.full_url == gateway.ANTHROPIC_EXCHANGE
+    assert json.loads(exchange_request.data) == {
+        "grant_type": "urn:ietf:params:oauth:grant-type:jwt-bearer",
+        "assertion": "header.claims.signature",
+        "federation_rule_id": "fdrl_example",
+        "organization_id": "00000000-0000-0000-0000-000000000000",
+        "workspace_id": "wrkspc_example",
+        "service_account_id": "svac_example",
+    }
+    headers = {key.lower(): value for key, value in upstream.requests[0].header_items()}
+    assert headers["authorization"] == "Bearer sk-ant-oat01-test" and "x-api-key" not in headers
+
+    token_file.write_text("header.rotated.signature")
+    auth.refresh_at = 0
+    exchange.response = Response(response.replace(b"test", b"next"))
+    assert auth.bearer() == "sk-ant-oat01-next"
+    assert json.loads(exchange.requests[1].data)["assertion"] == "header.rotated.signature"
+
+    auth.refresh_at = 0
+    exchange.response = Response(b'{"access_token":"invalid"}')
+    with pytest.raises(urllib.error.HTTPError) as error:
+        request(origin, path="/v1/messages", body=payload(config.model, max_tokens=32))
+    assert error.value.code == 502 and len(upstream.requests) == 1
+
+    with pytest.raises(gateway.GatewayError):
+        gateway.AnthropicFederation(config, dict(env, ANTHROPIC_API_KEY=""))
 
 
 def test_anthropic_requires_exact_origin_and_explicit_allowance(tmp_path):
