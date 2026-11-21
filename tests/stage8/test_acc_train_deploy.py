@@ -147,3 +147,28 @@ def test_cli_run_and_down(estate, tmp_path, capsys):
     (down,) = _of(estate[2], "train.torn_down")
     assert down["reason"] == "manual"
     assert deploy.live(estate[2].read()) == {}
+
+
+def test_prepare_failure_keeps_train_pending_and_does_not_contact_deploy(estate, tmp_path, monkeypatch):
+    from dataclasses import replace
+
+    out = _declare(tmp_path)
+    train = _train(estate, "prep-appservice")
+    subprocess.run(["git", "-C", train["worktree"], "clean", "-fd"], check=True, capture_output=True)
+    repos = deploy.load_repos()
+    config = repos["target"]
+    spec = replace(config.deploy, prepare_cmd=f'test -f {out}/ready && echo "$LANE_CHECKED_SHA" > {out}/prepared',
+                   cmd=f'test -f {out}/prepared && {config.deploy.cmd}')
+    repos["target"] = replace(config, train_isolation="appservice", deploy=spec)
+    monkeypatch.setattr(deploy, "load_repos", lambda: repos)
+    train_id = train["train_id"]
+
+    assert "preparation failed" in deploy.deploy_train(estate[2], train_id)
+    assert _of(estate[2], "train.deployed") == []
+    assert _of(estate[2], "train.torn_down") == []
+    assert not (out / "deployed.txt").exists()
+
+    (out / "ready").touch()
+    assert "deployed to" in deploy.deploy_train(estate[2], train_id)
+    assert (out / "prepared").read_text().strip() == train["checked_sha"]
+    assert _of(estate[2], "train.deployed")[-1]["passed"]
