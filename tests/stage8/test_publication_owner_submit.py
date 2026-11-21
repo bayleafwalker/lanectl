@@ -93,3 +93,43 @@ def test_publication_owner_rejects_intent_that_disagrees_with_imported_receipt(t
     checked["base_sha"] = base
     with hook.publication_checkout(args) as (verified, _):
         assert verified == intent
+
+
+def test_publication_inbox_processes_other_requests_and_demands_fresh_ancestry(tmp_path, monkeypatch, capsys):
+    from contextlib import contextmanager
+
+    from lanectl import integrator, work
+
+    first, second = "a" * 40, "b" * 40
+    inbox = {"items": [
+        {"metadata": {"name": f"publish-train-first-{first}"}},
+        {"metadata": {"name": "kube-root-ca.crt"}},
+        {"metadata": {"name": f"publish-train-second-{second}"}},
+    ]}
+    monkeypatch.setattr(hook.subprocess, "check_output", lambda *_, **__: json.dumps(inbox))
+    remotes = []
+    monkeypatch.setattr(hook, "git", lambda _, *parts: remotes.append(parts))
+
+    @contextmanager
+    def checkout(args):
+        name = json.loads(args.verify_publication_request.read_text())["metadata"]["name"]
+        train, commit = name.removeprefix("publish-").rsplit("-", 1)
+        yield {"train": train, "commit": commit}, SimpleNamespace(repository=tmp_path)
+
+    calls = []
+
+    def publish(repo, train, commit, *, run):
+        calls.append((train, commit))
+        return "owner acknowledgement"
+
+    monkeypatch.setattr(hook, "publication_checkout", checkout)
+    monkeypatch.setattr(integrator, "publish", publish)
+    monkeypatch.setattr(work, "merged", lambda repo, sha: sha == second)
+    args = SimpleNamespace(reconcile_publications=Path("/owner/scope"),
+                           publication_executor=Path("/owner/forge-exec"))
+    assert hook.reconcile_publications(args) == 1
+    assert calls == [("train-first", first)]
+    assert remotes == [("remote", "add", "origin", "https://github.com/bayleafwalker/lanectl.git")] * 2
+    output = capsys.readouterr()
+    assert "no fresh canonical ancestry proof" in output.err
+    assert f"publish-train-second-{second}: canonical PR merge verified" in output.out
