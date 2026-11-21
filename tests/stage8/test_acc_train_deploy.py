@@ -4,8 +4,11 @@ import subprocess
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
+import pytest
+
 from lanectl import cli, deploy, runner
 from lanectl.adapters import AdapterResult
+from lanectl.coordination import CoordinationError
 
 SUB_TEST = "from calc import sub\n\ndef test_sub():\n    assert sub(5, 3) == 2\n"
 
@@ -169,6 +172,19 @@ def test_prepare_failure_keeps_train_pending_and_does_not_contact_deploy(estate,
     assert not (out / "deployed.txt").exists()
 
     (out / "ready").touch()
+
+    class Guard:
+        def assert_active(self):
+            if (out / "prepared").exists():
+                raise CoordinationError("lease lost during preparation")
+
+    with monkeypatch.context() as scoped:
+        scoped.setattr(runner._owner_context, "guard", Guard(), raising=False)
+        with pytest.raises(CoordinationError, match="lease lost during preparation"):
+            deploy.deploy_train(estate[2], train_id)
+    assert not (out / "deployed.txt").exists()
+    assert _of(estate[2], "train.deployed") == []
+
     assert "deployed to" in deploy.deploy_train(estate[2], train_id)
     assert (out / "prepared").read_text().strip() == train["checked_sha"]
     assert _of(estate[2], "train.deployed")[-1]["passed"]

@@ -13,7 +13,9 @@ import time
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("action", choices=("deploy", "health", "teardown"))
+    parser.add_argument("action", choices=("await-binding", "deploy", "health", "teardown"))
+    parser.add_argument("--wait-seconds", type=int, default=0,
+                        help="Time to wait for the exact immutable owner response")
     bindings = parser.add_mutually_exclusive_group(required=True)
     bindings.add_argument("--binding", type=Path)
     bindings.add_argument("--bindings-directory", type=Path,
@@ -25,6 +27,10 @@ def main():
     credentials.add_argument("--projected-identity", type=Path,
                              help="Kubernetes projection containing token and ca.crt")
     args = parser.parse_args()
+    if args.action == "await-binding" and not args.binding_from_handoff:
+        parser.error("await-binding requires --binding-from-handoff")
+    if args.wait_seconds < 0 or (args.wait_seconds and args.action != "await-binding"):
+        parser.error("--wait-seconds must be nonnegative and only applies to await-binding")
     train = os.environ["LANE_TRAIN_ID"]
     namespace = os.environ["LANE_NAMESPACE"]
     commit = os.environ["LANE_CHECKED_SHA"]
@@ -47,28 +53,42 @@ def main():
         if not isinstance(binding, dict):
             raise ValueError("train binding must be a JSON object")
     if args.kubeconfig is not None:
-        deploy_bound(args.action, args.kubeconfig, namespace, train, commit, binding)
+        deploy_bound(args.action, args.kubeconfig, namespace, train, commit, binding,
+                     wait_seconds=args.wait_seconds)
         return
     with TemporaryDirectory(prefix="lanectl-train-") as scratch:
         config = Path(scratch) / "kubeconfig"
         config.write_text(json.dumps(projected_kubeconfig(args.projected_identity, namespace)))
-        deploy_bound(args.action, config, namespace, train, commit, binding)
+        deploy_bound(args.action, config, namespace, train, commit, binding,
+                     wait_seconds=args.wait_seconds)
 
 
-def deploy_bound(action, kubeconfig, namespace, train, commit, binding):
-    if binding is None:
-        name = f"binding-{train}-{commit}"
+def handoff_binding(kubeconfig, train, commit, wait_seconds):
+    name = f"binding-{train}-{commit}"
+    deadline = time.monotonic() + wait_seconds
+    while True:
         raw = subprocess.run(
             ["kubectl", "--kubeconfig", str(kubeconfig), "--namespace", "lanectl-train-handoff",
-             "--request-timeout=10s", "get", "configmap", name, "-o", "json"],
+             "--request-timeout=10s", "get", "configmap", name, "--ignore-not-found", "-o", "json"],
             capture_output=True, text=True, check=True, timeout=15,
         ).stdout
-        configmap = json.loads(raw)
-        metadata = configmap.get("metadata", {})
-        if (configmap.get("immutable") is not True or metadata.get("name") != name
-                or metadata.get("namespace") != "lanectl-train-handoff"):
-            raise ValueError("owner binding must be the exact immutable handoff ConfigMap")
-        binding = json.loads(configmap["data"]["binding.json"])
+        if raw:
+            break
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            raise ValueError(f"no published image binding for {train} at {commit}")
+        time.sleep(min(2, remaining))
+    configmap = json.loads(raw)
+    metadata = configmap.get("metadata", {})
+    if (configmap.get("immutable") is not True or metadata.get("name") != name
+            or metadata.get("namespace") != "lanectl-train-handoff"):
+        raise ValueError("owner binding must be the exact immutable handoff ConfigMap")
+    return json.loads(configmap["data"]["binding.json"])
+
+
+def deploy_bound(action, kubeconfig, namespace, train, commit, binding, *, wait_seconds):
+    if binding is None:
+        binding = handoff_binding(kubeconfig, train, commit, wait_seconds)
 
     image = binding["image"]
     if binding["commit"] != commit or not re.fullmatch(
@@ -79,7 +99,8 @@ def deploy_bound(action, kubeconfig, namespace, train, commit, binding):
     path = binding["health_path"]
     if type(port) is not int or not 1024 <= port <= 65535 or not re.fullmatch(r"/[a-zA-Z0-9/_-]*", path):
         raise ValueError("invalid train health endpoint")
-    operate(action, kubeconfig, namespace, commit, image, path, port)
+    if action != "await-binding":
+        operate(action, kubeconfig, namespace, commit, image, path, port)
 
 
 def projected_kubeconfig(identity, namespace):
