@@ -79,3 +79,31 @@ def test_more_invalid_tables_name_the_repo(tmp_path, extra):
     with pytest.raises(ContractError) as excinfo:
         _load(tmp_path, extra)
     assert "target" in str(excinfo.value)
+
+
+def test_appservice_deployment_profile_preserves_existing_governance(tmp_path, monkeypatch):
+    profile = tmp_path / "preview.toml"
+    profile.write_text("""
+[target]
+namespace = "lanectl-train-preview"
+cmd = "request-preview deploy"
+health_cmd = "request-preview health"
+teardown_cmd = "request-preview teardown"
+""")
+    monkeypatch.setenv("LANECTL_APPSERVICE_DEPLOY_PROFILE", str(profile))
+    with pytest.raises(ContractError, match="existing appservice repo"):
+        _load(tmp_path)
+    appservice = 'train_isolation = "appservice"\n'
+    repo = _load(tmp_path, appservice)
+    assert repo.deploy.namespace == "lanectl-train-preview"
+    assert repo.path.as_posix() == "/tmp/target"
+    with pytest.raises(ContractError, match="already declared"):
+        _load(tmp_path, appservice + """
+[repos.target.deploy]
+cmd = "up"
+health_cmd = "ok"
+teardown_cmd = "down"
+""")
+    profile.write_text(profile.read_text().replace("[target]", "[unregistered]"))
+    with pytest.raises(ContractError, match="unregistered"):
+        _load(tmp_path, appservice)
