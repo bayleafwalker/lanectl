@@ -133,3 +133,14 @@ def test_publication_inbox_processes_other_requests_and_demands_fresh_ancestry(t
     output = capsys.readouterr()
     assert "no fresh canonical ancestry proof" in output.err
     assert f"publish-train-second-{second}: canonical PR merge verified" in output.out
+
+    def unavailable(repo, sha):
+        if sha == first:
+            raise work._SyncFailed("canonical read unavailable")
+        return True
+
+    monkeypatch.setattr(work, "merged", unavailable)
+    assert hook.reconcile_publications(args) == 1
+    output = capsys.readouterr()
+    assert "canonical read unavailable" in output.err
+    assert f"publish-train-second-{second}: canonical PR merge verified" in output.out

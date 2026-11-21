@@ -274,7 +274,8 @@ def reconcile_publications(args):
                         if not work.merged(repo, intent["commit"]):
                             raise RuntimeError("publication has no fresh canonical ancestry proof")
                 print(f"{name}: canonical PR merge verified")
-            except (ValueError, OSError, KeyError, TypeError, RuntimeError, subprocess.SubprocessError) as error:
+            except (ValueError, OSError, KeyError, TypeError, RuntimeError,
+                    subprocess.SubprocessError, work._SyncFailed) as error:
                 print(f"{name}: {error}", file=sys.stderr)
                 failed = True
     return int(failed)
