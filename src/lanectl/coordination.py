@@ -33,6 +33,10 @@ def _digest(value):
 class CoordinationError(RuntimeError):
     """A refused or uncertain operation. Never interpret this as permission."""
 
+    def __init__(self, message, *, code=None):
+        super().__init__(message)
+        self.code = code
+
 
 class _NoRedirect(HTTPRedirectHandler):
     def redirect_request(self, req, fp, code, msg, headers, newurl):
@@ -82,7 +86,7 @@ class VuoroClient:
                 code = json.loads(exc.read(8192)).get('error', {}).get('code', 'http-error')
             except (ValueError, AttributeError):
                 code = 'http-error'
-            raise CoordinationError(f'owner refused: {code} (HTTP {exc.code})') from None
+            raise CoordinationError(f'owner refused: {code} (HTTP {exc.code})', code=code) from None
         except (URLError, OSError, ValueError) as exc:
             raise CoordinationError('owner response unavailable or invalid; operation remains uncertain') from exc
 
@@ -131,7 +135,7 @@ class VuoroClient:
                 raise CoordinationError('owner response correlation mismatch')
         if not isinstance(response, dict) or response.get('status') != 'accepted':
             code = response.get('error', {}).get('code', 'invalid-response') if isinstance(response, dict) else 'invalid-response'
-            raise CoordinationError(f'owner refused: {code}')
+            raise CoordinationError(f'owner refused: {code}', code=code)
         if not isinstance(response.get('result'), dict):
             raise CoordinationError('invalid owner result')
         return response['result']
@@ -212,13 +216,40 @@ class Coordinator:
         previous = self._binding(predecessor)
         current = self._binding(replacement)
         self._check_lease(current['lease'])
-        old_lease = previous['lease']['lease_id']
+        old_lease = previous['lease']
+        new_lease = current['lease']
+        mismatch = 'owner takeover does not match the predecessor attempt'
         if (predecessor == replacement
                 or previous['item_id'] != current['item_id']
                 or previous['run_id'] == current['run_id']
-                or old_lease == current['lease']['lease_id']
-                or current.get('took_over') != old_lease):
-            raise CoordinationError('owner takeover does not match the predecessor attempt')
+                or old_lease['lease_id'] == new_lease['lease_id']):
+            raise CoordinationError(mismatch)
+        took_over = current.get('took_over')
+        if took_over == old_lease['lease_id']:
+            return
+
+        # A replacement using the same runner grant ends its previous lease
+        # without a takeover receipt. Confirm the old lease is ended at the
+        # owner, using the same grant that confirmed the replacement.
+        old_generation = old_lease.get('generation')
+        new_generation = new_lease.get('generation')
+        if (took_over is not None or type(old_generation) is not int
+                or type(new_generation) is not int or new_generation != old_generation + 1):
+            raise CoordinationError(mismatch)
+        try:
+            old_expiry = datetime.fromisoformat(old_lease['expires_at'].replace('Z', '+00:00'))
+            if old_expiry > datetime.now(timezone.utc):
+                raise CoordinationError(mismatch)
+        except (KeyError, TypeError, ValueError, AttributeError) as error:
+            raise CoordinationError(mismatch) from error
+        args = {'lease_id': old_lease['lease_id'], 'run_id': previous['run_id']}
+        try:
+            self.client.invoke(self.client.envelope('work.lease.heartbeat-v1', args, None))
+        except CoordinationError as error:
+            if error.code == 'lease-ended':
+                return
+            raise CoordinationError(mismatch) from error
+        raise CoordinationError(mismatch)
 
     def saved_metadata(self, attempt_id):
         """Optional intent metadata saved with the run registration request."""

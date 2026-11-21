@@ -460,3 +460,32 @@ def test_coordinate_requires_scoped_work_read(tmp_path, monkeypatch, capsys, sta
             ('work.public.list-v1', {})
         ]
         assert not local_state.exists()
+
+
+def test_same_holder_replacement_requires_owner_to_confirm_predecessor_ended(tmp_path):
+    with owner() as (url, state):
+        coordinator = coord(url, tmp_path)
+        old = start(coordinator)
+        state["lease"]["lease_id"] = "lease_replacement"
+        state["lease"]["generation"] = 2
+        state["run_id"] = "run_replacement"
+        coordinator.start("release-a2", 123, "scripted/model", "sha256:" + "a" * 64)
+
+        restarted = coord(url, tmp_path)
+        count = len(state["calls"])
+        with pytest.raises(CoordinationError, match="does not match the predecessor"):
+            restarted.assert_takeover("release-a1", "release-a2")
+        assert len(state["calls"]) == count
+        old["lease"]["expires_at"] = "2000-01-01T00:00:00Z"
+        with coordinator._db() as db:
+            db.execute("UPDATE bindings SET binding=? WHERE attempt=?", (json.dumps(old), "release-a1"))
+        for denial in (None, "lease-expired", "lease-not-found"):
+            state["deny"] = denial
+            with pytest.raises(CoordinationError, match="does not match the predecessor"):
+                restarted.assert_takeover("release-a1", "release-a2")
+
+        state["deny"] = "lease-ended"
+        restarted.assert_takeover("release-a1", "release-a2")
+        assert state["calls"][-1]["arguments"] == {
+            "lease_id": old["lease"]["lease_id"], "run_id": old["run_id"]
+        }
