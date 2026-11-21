@@ -107,3 +107,27 @@ teardown_cmd = "down"
     profile.write_text(profile.read_text().replace("[target]", "[unregistered]"))
     with pytest.raises(ContractError, match="unregistered"):
         _load(tmp_path, appservice)
+
+
+def test_publication_command_is_limited_to_appservice_pr_landing(tmp_path):
+    command = 'publication_cmd = "/protected/submit"\n'
+    with pytest.raises(ContractError, match="Appservice PR landing"):
+        _load(tmp_path, command)
+    spec = _load(tmp_path, command + 'train_isolation = "appservice"\nlanding = "pr"\n')
+    assert spec.publication_cmd == "/protected/submit"
+
+
+def test_mounted_publication_hook_selects_canonical_pr_landing(tmp_path, monkeypatch):
+    profile = tmp_path / "preview.toml"
+    profile.write_text("""
+[target]
+cmd = "request-preview deploy"
+health_cmd = "request-preview health"
+teardown_cmd = "request-preview teardown"
+publication_cmd = "/protected/submit"
+""")
+    monkeypatch.setenv("LANECTL_APPSERVICE_DEPLOY_PROFILE", str(profile))
+    spec = _load(tmp_path, 'train_isolation = "appservice"\nlanding = "local"\n')
+    assert spec.landing == "pr"
+    assert spec.publication_cmd == "/protected/submit"
+    assert spec.deploy.health_cmd == "request-preview health"

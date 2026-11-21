@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import fcntl
 import json
+import re
 import subprocess
 import socket
 from pathlib import Path
@@ -37,6 +38,21 @@ def publish(repo, train_id, sha, *, run=subprocess.run):
     An ambiguous response is retried by querying the same head branch. Merge
     success is independently proven against canonical main by work.merged.
     """
+    command = getattr(repo, "publication_cmd", None)
+    if command:
+        if (not re.fullmatch(r"train-[a-z0-9](?:[a-z0-9-]{0,38}[a-z0-9])?", train_id)
+                or not re.fullmatch(r"[a-f0-9]{40}", sha)):
+            raise ValueError("publication requires the exact checked train and commit")
+        if runner.git(repo.path, "rev-parse", "--verify", f"refs/heads/train/{train_id}") != sha:
+            raise RuntimeError("publication commit differs from the checked train ref")
+        env = {"LANE_TRAIN_ID": train_id, "LANE_CHECKED_SHA": sha, "LANE_REPOSITORY": repo.name}
+        rc, _ = deploy._run(command, repo.path, env)
+        if rc:
+            raise RuntimeError(f"publication owner command failed (exit {rc})")
+        if not work.merged(repo, sha, run):
+            return f"{train_id}: awaiting canonical publication"
+        return f"{train_id}: canonical PR merge verified"
+
     remote = runner.git(repo.path, 'config', '--get', 'claude.canonicalRemote', check=False) or 'origin'
     url = runner.git(repo.path, 'remote', 'get-url', remote)
     if 'github.com' not in url:

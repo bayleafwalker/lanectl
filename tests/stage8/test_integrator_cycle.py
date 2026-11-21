@@ -91,3 +91,30 @@ def test_served_integration_without_host_is_not_unrestricted(monkeypatch):
     monkeypatch.setattr(integrator,'_authority',lambda:AUTH)
     monkeypatch.setattr(integrator,'_cycle',lambda *a: (_ for _ in ()).throw(AssertionError('effects without host pin')))
     assert 'designated' in integrator.cycle(log)[0]
+
+
+def test_protected_publication_hook_never_substitutes_for_canonical_ancestry(tmp_path, monkeypatch):
+    from types import SimpleNamespace
+
+    sha = "a" * 40
+    repo = SimpleNamespace(path=tmp_path, name="lanectl", publication_cmd="/protected/submit")
+    calls = []
+    monkeypatch.setattr(integrator.runner, "git", lambda *args: sha)
+
+    def submit(cmd, cwd, env):
+        calls.append((cmd, cwd, env))
+        return 0, "publisher accepted request"
+
+    monkeypatch.setattr(integrator.deploy, "_run", submit)
+    monkeypatch.setattr(integrator.work, "merged", lambda *args: False)
+    assert "awaiting canonical" in integrator.publish(repo, "train-proof", sha)
+    assert calls == [("/protected/submit", tmp_path, {
+        "LANE_TRAIN_ID": "train-proof", "LANE_CHECKED_SHA": sha, "LANE_REPOSITORY": "lanectl",
+    })]
+    monkeypatch.setattr(integrator.work, "merged", lambda *args: True)
+    assert "merge verified" in integrator.publish(repo, "train-proof", sha)
+    import pytest
+
+    with pytest.raises(RuntimeError, match="differs from the checked"):
+        integrator.publish(repo, "train-proof", "b" * 40)
+    assert len(calls) == 2
