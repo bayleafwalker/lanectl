@@ -146,7 +146,7 @@ def consume_request(args):
             raise ValueError("request bundle does not advertise the exact checked train")
         git(repository, "fetch", "--quiet", "--no-tags", str(archive), f"{ref}:{ref}")
         git(repository, "merge-base", "--is-ancestor", base, commit)
-        publish(argparse.Namespace(**(vars(args) | {"repository": repository, "events": events})))
+        return publish(argparse.Namespace(**(vars(args) | {"repository": repository, "events": events})))
 
 
 def git(repository, *args):
@@ -182,8 +182,7 @@ def publish(args):
     binding.parent.mkdir(parents=True, exist_ok=True)
     if binding.exists():
         verify_binding(args, binding, commit)
-        print(binding)
-        return
+        return binding
     with TemporaryDirectory(prefix=".train-publish-", dir=binding.parent) as scratch:
         root = Path(scratch)
         doc = root / "document"
@@ -219,7 +218,31 @@ def publish(args):
             os.link(staged, binding)
         except FileExistsError:
             verify_binding(args, binding, commit)
-    print(binding)
+    return binding
+
+
+def return_binding(args, binding):
+    namespace = "lanectl-train-handoff"
+    name = f"binding-{args.train}-{binding.stem}"
+    contents = binding.read_text()
+    manifest = {
+        "apiVersion": "v1", "kind": "ConfigMap",
+        "metadata": {"name": name, "namespace": namespace},
+        "immutable": True, "data": {"binding.json": contents},
+    }
+    cmd = ["kubectl", "--kubeconfig", str(args.return_binding_kubeconfig), "--namespace", namespace,
+           "--request-timeout=10s"]
+    result = subprocess.run([*cmd, "create", "-f", "-"], input=json.dumps(manifest),
+                            capture_output=True, text=True, timeout=15)
+    if result.returncode:
+        exists = f'Error from server (AlreadyExists): error when creating "STDIN": configmaps "{name}" already exists'
+        if result.stderr.strip() != exists:
+            raise RuntimeError(f"owner binding submission failed: {result.stderr.strip()}")
+        existing = json.loads(subprocess.check_output([*cmd, "get", "configmap", name, "-o", "json"],
+                                                      timeout=15))
+        if existing.get("immutable") is not True or existing.get("data") != manifest["data"]:
+            raise ValueError("the immutable response differs from the verified binding")
+    print(f"{namespace}/{name}")
 
 
 def main():
@@ -232,6 +255,8 @@ def main():
     transfer.add_argument("--consume-request", type=Path, help="Immutable ConfigMap JSON obtained from the handoff namespace")
     transfer.add_argument("--submit-kubeconfig", type=Path,
                           help="Submit the checked export using the dedicated handoff identity")
+    parser.add_argument("--return-binding-kubeconfig", type=Path,
+                        help="Publish the verified owner response using a separate owner identity")
     parser.add_argument("--document", type=PurePosixPath)
     parser.add_argument("--nixpkgs-flake", type=Path)
     parser.add_argument("--image-policy", type=Path)
@@ -241,6 +266,8 @@ def main():
     args = parser.parse_args()
     if not re.fullmatch(r"train-[a-z0-9][a-z0-9-]{0,39}", args.train):
         parser.error("invalid train ID")
+    if args.return_binding_kubeconfig is not None and args.consume_request is None:
+        parser.error("returning a binding requires --consume-request")
     if args.consume_request is None and args.events is None:
         parser.error("--events is required when not consuming a request")
     if args.export_bundle is not None:
@@ -261,10 +288,11 @@ def main():
         parser.error("registry must be an image repository without a tag")
     if not args.bindings_directory.is_absolute():
         parser.error("bindings directory must be absolute")
-    if args.consume_request is not None:
-        consume_request(args)
+    binding = consume_request(args) if args.consume_request is not None else publish(args)
+    if args.return_binding_kubeconfig is not None:
+        return_binding(args, binding)
     else:
-        publish(args)
+        print(binding)
 
 
 if __name__ == "__main__":
