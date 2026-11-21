@@ -107,7 +107,7 @@ def submit_bundle(args):
     print(f"{namespace}/{name}")
 
 
-def consume_request(args):
+def consume_request(args, existing_binding=None):
     request = json.loads(args.consume_request.read_text())
     metadata = request["metadata"]
     data, binary = request["data"], request["binaryData"]
@@ -147,7 +147,8 @@ def consume_request(args):
             raise ValueError("request bundle does not advertise the exact checked train")
         git(repository, "fetch", "--quiet", "--no-tags", str(archive), f"{ref}:{ref}")
         git(repository, "merge-base", "--is-ancestor", base, commit)
-        return publish(argparse.Namespace(**(vars(args) | {"repository": repository, "events": events})))
+        selected = argparse.Namespace(**(vars(args) | {"repository": repository, "events": events}))
+        return publish(selected, existing_binding)
 
 
 def git(repository, *args):
@@ -174,13 +175,28 @@ def verify_binding(args, binding, commit):
     verify_image(args, spec["image"], commit)
 
 
-def publish(args):
+def restore_binding(args, binding, commit, contents):
+    with TemporaryDirectory(prefix=".train-restore-", dir=binding.parent) as scratch:
+        staged = Path(scratch) / "binding.json"
+        staged.write_text(contents)
+        verify_binding(args, staged, commit)
+        try:
+            os.link(staged, binding)
+        except FileExistsError:
+            if binding.read_text() != contents:
+                raise ValueError("local binding differs from the immutable owner response")
+    return binding
+
+
+def publish(args, existing_binding=None):
     commit = checked_commit(args)
     entry = git(args.repository, "ls-tree", commit, "--", str(args.document))
     if not entry.startswith((b"100644 blob ", b"100755 blob ")):
         raise ValueError("checked train documentation must be a regular Git blob")
     binding = args.bindings_directory / args.train / f"{commit}.json"
     binding.parent.mkdir(parents=True, exist_ok=True)
+    if existing_binding is not None:
+        return restore_binding(args, binding, commit, existing_binding)
     if binding.exists():
         verify_binding(args, binding, commit)
         return binding
@@ -263,11 +279,18 @@ def reconcile_handoffs(args):
             try:
                 response = by_name.get(f"binding-{train}-{commit}")
                 local_binding = args.bindings_directory / train / f"{commit}.json"
-                if (response and response.get("immutable") is True and local_binding.is_file()
-                        and response.get("data") == {"binding.json": local_binding.read_text()}):
+                if response is None:
+                    request.write_text(json.dumps(item))
+                    return_binding(selected, consume_request(selected))
                     continue
-                request.write_text(json.dumps(item))
-                return_binding(selected, consume_request(selected))
+                data = response.get("data")
+                if (response.get("immutable") is not True or not isinstance(data, dict)
+                        or set(data) != {"binding.json"} or not isinstance(data["binding.json"], str)):
+                    raise ValueError("invalid immutable owner response")
+                contents = data["binding.json"]
+                if not local_binding.is_file() or local_binding.read_text() != contents:
+                    request.write_text(json.dumps(item))
+                    consume_request(selected, contents)
             except (OSError, ValueError, KeyError, TypeError, RuntimeError, subprocess.SubprocessError) as error:
                 print(f"{name}: {error}", file=sys.stderr)
                 failed = True
