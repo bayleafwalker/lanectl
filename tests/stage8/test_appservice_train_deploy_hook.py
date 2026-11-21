@@ -177,3 +177,49 @@ def test_projected_identity_uses_rotatable_token_file(tmp_path, monkeypatch):
     assert config["users"][0]["user"] == {"tokenFile": str(identity / "token")}
     assert config["contexts"][0]["context"]["namespace"] == "lane-dev-train-proof"
     assert not Path(config_path.read_text()).exists()
+
+
+def test_reconcile_requires_exact_owner_response_and_observed_readiness(monkeypatch):
+    import importlib.util
+
+    import pytest
+
+    spec = importlib.util.spec_from_file_location("preview_hook", HOOK)
+    hook = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(hook)
+    train, commit = "train-proof", "a" * 40
+    intent = {"schema": "lanectl.preview-intent/v1", "action": "deploy",
+              "train": train, "commit": commit}
+    image = "registry.example/train@sha256:" + "b" * 64
+    response = {"kind": "ConfigMap", "immutable": True, "metadata": {
+        "namespace": "lanectl-train-handoff", "name": f"binding-{train}-{commit}"},
+        "data": {"binding.json": json.dumps({"commit": commit, "image": image,
+                                            "port": 18080, "health_path": "/document"})}}
+    calls = []
+
+    def operate(action, kubeconfig, namespace, checked_sha, digest, path, port, name):
+        calls.append(action)
+        assert (namespace, checked_sha, digest, name) == (
+            "lanectl-train-preview", commit, image, "lane-train-proof")
+
+    monkeypatch.setattr(hook, "operate", operate)
+    with pytest.raises(ValueError, match="exact immutable"):
+        hook.reconcile_intent(intent, dict(response, immutable=False), Path("/scope"))
+    with pytest.raises(ValueError, match="exact immutable"):
+        hook.reconcile_intent(dict(intent, commit="c" * 40), response, Path("/scope"))
+    assert calls == []
+    result = hook.reconcile_intent(intent, response, Path("/scope"))
+    assert calls == ["deploy", "health"]
+    assert result == {"schema": "lanectl.preview-result/v1", "action": "deploy",
+                      "train": train, "commit": commit, "image": image,
+                      "namespace": "lanectl-train-preview", "state": "ready"}
+    assert hook.reconcile_intent(dict(intent, action="teardown"), response, Path("/scope"))["state"] == "absent"
+    assert calls[-1] == "teardown"
+
+    def remains_unready(*args):
+        if args[0] == "health":
+            raise RuntimeError("health did not complete")
+
+    monkeypatch.setattr(hook, "operate", remains_unready)
+    with pytest.raises(RuntimeError, match="health did not complete"):
+        hook.reconcile_intent(intent, response, Path("/scope"))

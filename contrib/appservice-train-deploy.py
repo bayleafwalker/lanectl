@@ -7,11 +7,14 @@ import os
 from pathlib import Path
 import re
 import subprocess
+import sys
 from tempfile import TemporaryDirectory
 import time
 
 
 def main():
+    if len(sys.argv) > 1 and sys.argv[1] == "reconcile":
+        return reconcile_cli(sys.argv[2:])
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("action", choices=("await-binding", "deploy", "health", "teardown"))
     parser.add_argument("--wait-seconds", type=int, default=0,
@@ -64,6 +67,41 @@ def main():
                      wait_seconds=args.wait_seconds)
 
 
+def reconcile_cli(argv):
+    parser = argparse.ArgumentParser(description="Reconcile one checked preview intent")
+    parser.add_argument("--intent", type=Path, required=True)
+    parser.add_argument("--owner-response", type=Path, required=True)
+    parser.add_argument("--projected-identity", type=Path, required=True)
+    args = parser.parse_args(argv)
+    intent = json.loads(args.intent.read_text())
+    response = json.loads(args.owner_response.read_text())
+    with TemporaryDirectory(prefix="lanectl-preview-") as scratch:
+        config = Path(scratch) / "kubeconfig"
+        config.write_text(json.dumps(projected_kubeconfig(args.projected_identity, "lanectl-train-preview")))
+        print(json.dumps(reconcile_intent(intent, response, config), sort_keys=True))
+
+
+def reconcile_intent(intent, response, kubeconfig):
+    if (not isinstance(intent, dict) or set(intent) != {"schema", "action", "train", "commit"}
+            or intent["schema"] != "lanectl.preview-intent/v1"):
+        raise ValueError("invalid preview intent")
+    action, train, commit = (intent[key] for key in ("action", "train", "commit"))
+    if (action not in ("deploy", "teardown") or not isinstance(train, str)
+            or not re.fullmatch(r"train-[a-z0-9](?:[a-z0-9-]{0,38}[a-z0-9])?", train)
+            or not isinstance(commit, str) or not re.fullmatch(r"[0-9a-f]{40}", commit)):
+        raise ValueError("preview intent requires a checked train and deploy or teardown")
+    if not isinstance(response, dict) or response.get("kind") != "ConfigMap":
+        raise ValueError("preview requires an immutable owner response")
+    binding = parse_handoff_binding(response, train, commit)
+    scope = "lanectl-train-preview"
+    deploy_bound(action, kubeconfig, scope, train, commit, binding, wait_seconds=0)
+    if action == "deploy":
+        deploy_bound("health", kubeconfig, scope, train, commit, binding, wait_seconds=0)
+    return {"schema": "lanectl.preview-result/v1", "action": action, "train": train,
+            "commit": commit, "image": binding["image"], "namespace": scope,
+            "state": "ready" if action == "deploy" else "absent"}
+
+
 def handoff_binding(kubeconfig, train, commit, wait_seconds):
     name = f"binding-{train}-{commit}"
     deadline = time.monotonic() + wait_seconds
@@ -79,7 +117,11 @@ def handoff_binding(kubeconfig, train, commit, wait_seconds):
         if remaining <= 0:
             raise ValueError(f"no published image binding for {train} at {commit}")
         time.sleep(min(2, remaining))
-    configmap = json.loads(raw)
+    return parse_handoff_binding(json.loads(raw), train, commit)
+
+
+def parse_handoff_binding(configmap, train, commit):
+    name = f"binding-{train}-{commit}"
     metadata = configmap.get("metadata", {})
     if (configmap.get("immutable") is not True or metadata.get("name") != name
             or metadata.get("namespace") != "lanectl-train-handoff"):
