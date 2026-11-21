@@ -80,6 +80,47 @@ def test_teardown_waits_for_foreground_cascade(tmp_path, monkeypatch):
     assert confirmed.is_file()
 
 
+def test_await_binding_reads_exact_response_without_creating_workloads(tmp_path, monkeypatch):
+    fake_kubectl = tmp_path / "kubectl"
+    fake_kubectl.write_text(
+        "#!/bin/sh\n"
+        'printf "%s %s %s %s\n" "$4" "$6" "$7" "$8" >>"$CALLS"\n'
+        'case "$6:$7" in\n'
+        'get:configmap) cat "$RESPONSE";;\n'
+        'get:deployment) exit 0;;\n'
+        'create:-f) cat >"$MANIFEST";;\n'
+        '*) exit 91;;\n'
+        "esac\n"
+    )
+    fake_kubectl.chmod(0o755)
+    calls, manifest, response = (tmp_path / name for name in ("calls", "manifest", "response"))
+    train, commit = "train-proof", "a" * 40
+    binding_name = f"binding-{train}-{commit}"
+    binding = {"commit": commit, "port": 18080, "health_path": "/document",
+               "image": f"registry.example/train@sha256:{'b' * 64}"}
+    response.write_text(json.dumps({
+        "immutable": True, "metadata": {"name": binding_name, "namespace": "lanectl-train-handoff"},
+        "data": {"binding.json": json.dumps(binding)},
+    }))
+    monkeypatch.setenv("PATH", f"{tmp_path}:{os.environ.get('PATH', os.defpath)}")
+    for name, value in {
+        "CALLS": calls, "MANIFEST": manifest, "RESPONSE": response, "LANE_TRAIN_ID": train,
+        "LANE_NAMESPACE": f"lane-dev-{train}", "LANE_CHECKED_SHA": commit,
+    }.items():
+        monkeypatch.setenv(name, str(value))
+
+    common = ["--binding-from-handoff", "--kubeconfig", str(tmp_path / "scope")]
+    subprocess.run([sys.executable, str(HOOK), "await-binding", *common], check=True)
+    assert calls.read_text().splitlines() == [f"lanectl-train-handoff get configmap {binding_name}"]
+    assert not manifest.exists()
+
+    response.write_text("")
+    missed = subprocess.run([sys.executable, str(HOOK), "await-binding", *common],
+                            capture_output=True, text=True, check=False)
+    assert missed.returncode and "no published image binding" in missed.stderr
+    assert not manifest.exists()
+
+
 def test_projected_identity_uses_rotatable_token_file(tmp_path, monkeypatch):
     fake_kubectl = tmp_path / "kubectl"
     fake_kubectl.write_text('#!/bin/sh\ncat "$2" > "$CAPTURE"\nprintf "%s" "$2" > "$TEMP_CONFIG"\n')
