@@ -89,9 +89,13 @@ def test_projected_identity_uses_rotatable_token_file(tmp_path, monkeypatch):
     identity = tmp_path / "identity"
     identity.mkdir()
     commit = "a" * 40
-    binding = tmp_path / "binding.json"
-    binding.write_text(json.dumps({"commit": commit, "image": "registry.example/train@sha256:" + "c" * 64,
-                                   "port": 8080, "health_path": "/healthz"}))
+    bindings = tmp_path / "bindings"
+    train = bindings / "train-proof"
+    train.mkdir(parents=True)
+    binding = train / f"{commit}.json"
+    spec = {"commit": commit, "image": "registry.example/train@sha256:" + "c" * 64,
+            "port": 8080, "health_path": "/healthz"}
+    (train / f"{'b' * 40}.json").write_text(json.dumps(spec))
     monkeypatch.setenv("PATH", f"{tmp_path}:{os.environ.get('PATH', os.defpath)}")
     monkeypatch.setenv("CAPTURE", str(capture))
     monkeypatch.setenv("TEMP_CONFIG", str(config_path))
@@ -100,8 +104,12 @@ def test_projected_identity_uses_rotatable_token_file(tmp_path, monkeypatch):
     monkeypatch.setenv("LANE_CHECKED_SHA", commit)
     monkeypatch.setenv("KUBERNETES_SERVICE_HOST", "2001:db8::5")
     monkeypatch.setenv("KUBERNETES_SERVICE_PORT_HTTPS", "443")
-    command = [sys.executable, str(HOOK), "teardown", "--binding", str(binding),
+    command = [sys.executable, str(HOOK), "teardown", "--bindings-directory", str(bindings),
                "--projected-identity", str(identity)]
+    stale = subprocess.run(command, capture_output=True, text=True, check=False)
+    assert stale.returncode and "no published image binding" in stale.stderr
+    assert not capture.exists()
+    binding.write_text(json.dumps(spec))
     failure = subprocess.run(command, capture_output=True, text=True, check=False)
     assert failure.returncode and "projected identity requires" in failure.stderr
     assert not capture.exists()

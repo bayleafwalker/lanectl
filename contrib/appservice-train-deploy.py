@@ -14,7 +14,10 @@ import time
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("action", choices=("deploy", "health", "teardown"))
-    parser.add_argument("--binding", required=True, type=Path)
+    bindings = parser.add_mutually_exclusive_group(required=True)
+    bindings.add_argument("--binding", type=Path)
+    bindings.add_argument("--bindings-directory", type=Path,
+                          help="Owner-provided root containing <train>/<checked-commit>.json")
     credentials = parser.add_mutually_exclusive_group(required=True)
     credentials.add_argument("--kubeconfig", type=Path)
     credentials.add_argument("--projected-identity", type=Path,
@@ -28,7 +31,14 @@ def main():
     if not re.fullmatch(r"[0-9a-f]{40}", commit):
         raise ValueError("checked train commit is required")
 
-    binding = json.loads(args.binding.read_text())
+    binding_path = args.binding
+    if args.bindings_directory is not None:
+        if not args.bindings_directory.is_absolute():
+            raise ValueError("train bindings directory must be absolute")
+        binding_path = args.bindings_directory / train / f"{commit}.json"
+        if not binding_path.is_file():
+            raise ValueError(f"no published image binding for {train} at {commit}")
+    binding = json.loads(binding_path.read_text())
     image = binding["image"]
     if binding["commit"] != commit or not re.fullmatch(
         r"[a-z0-9][a-z0-9./:_-]*@sha256:[0-9a-f]{64}", image
