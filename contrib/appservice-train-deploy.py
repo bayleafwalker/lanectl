@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 """Deploy a digest-pinned train image inside an already provisioned namespace."""
 import argparse
+import ipaddress
 import json
 import os
 from pathlib import Path
 import re
 import subprocess
+from tempfile import TemporaryDirectory
 import time
 
 
@@ -13,7 +15,10 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("action", choices=("deploy", "health", "teardown"))
     parser.add_argument("--binding", required=True, type=Path)
-    parser.add_argument("--kubeconfig", required=True, type=Path)
+    credentials = parser.add_mutually_exclusive_group(required=True)
+    credentials.add_argument("--kubeconfig", type=Path)
+    credentials.add_argument("--projected-identity", type=Path,
+                             help="Kubernetes projection containing token and ca.crt")
     args = parser.parse_args()
     train = os.environ["LANE_TRAIN_ID"]
     namespace = os.environ["LANE_NAMESPACE"]
@@ -34,7 +39,36 @@ def main():
     if type(port) is not int or not 1024 <= port <= 65535 or not re.fullmatch(r"/[a-zA-Z0-9/_-]*", path):
         raise ValueError("invalid train health endpoint")
 
-    command = ["kubectl", "--kubeconfig", str(args.kubeconfig), "--namespace", namespace, "--request-timeout=10s"]
+    if args.kubeconfig is not None:
+        operate(args.action, args.kubeconfig, namespace, commit, image, path, port)
+        return
+    with TemporaryDirectory(prefix="lanectl-train-") as scratch:
+        config = Path(scratch) / "kubeconfig"
+        config.write_text(json.dumps(projected_kubeconfig(args.projected_identity, namespace)))
+        operate(args.action, config, namespace, commit, image, path, port)
+
+
+def projected_kubeconfig(identity, namespace):
+    token, ca = identity / "token", identity / "ca.crt"
+    if not identity.is_absolute() or not token.is_file() or not ca.is_file():
+        raise ValueError("projected identity requires an absolute mount with token and ca.crt")
+    host = ipaddress.ip_address(os.environ["KUBERNETES_SERVICE_HOST"])
+    port = int(os.environ["KUBERNETES_SERVICE_PORT_HTTPS"])
+    if not 1 <= port <= 65535:
+        raise ValueError("invalid Kubernetes service port")
+    address = f"[{host}]" if host.version == 6 else str(host)
+    return {
+        "apiVersion": "v1", "kind": "Config", "current-context": "train",
+        "clusters": [{"name": "appservice", "cluster": {
+            "server": f"https://{address}:{port}", "certificate-authority": str(ca)}}],
+        "users": [{"name": "train", "user": {"tokenFile": str(token)}}],
+        "contexts": [{"name": "train", "context": {
+            "cluster": "appservice", "user": "train", "namespace": namespace}}],
+    }
+
+
+def operate(action, kubeconfig, namespace, commit, image, path, port):
+    command = ["kubectl", "--kubeconfig", str(kubeconfig), "--namespace", namespace, "--request-timeout=10s"]
 
     def kube(*arguments, data=None):
         return subprocess.run([*command, *arguments], input=data,
@@ -51,7 +85,7 @@ def main():
         return resource
 
     existing = deployment()
-    if args.action == "deploy":
+    if action == "deploy":
         if existing is None:
             labels = {"app.kubernetes.io/name": "lane-train"}
             probe = {"httpGet": {"path": path, "port": port}}
@@ -78,22 +112,22 @@ def main():
             kube("create", "-f", "-", data=json.dumps(manifest))
         return
 
-    if args.action == "teardown" and existing is not None:
+    if action == "teardown" and existing is not None:
         # Keep the Deployment visible until Kubernetes has collected its dependents.
         kube("delete", "deployment", "lane-train", "--ignore-not-found",
              "--cascade=foreground", "--wait=false")
     deadline = time.monotonic() + 45
     while time.monotonic() < deadline:
         current = deployment()
-        if args.action == "teardown" and current is None:
+        if action == "teardown" and current is None:
             return
-        if args.action == "health" and current is not None:
+        if action == "health" and current is not None:
             status = current.get("status", {})
             if (status.get("observedGeneration") == current["metadata"]["generation"]
                     and status.get("readyReplicas") == 1):
                 return
         time.sleep(0.5)
-    raise RuntimeError(f"train {args.action} did not complete")
+    raise RuntimeError(f"train {action} did not complete")
 
 
 if __name__ == "__main__":
