@@ -84,7 +84,7 @@ def deploy_train(log: EventLog, train_id: str) -> str:
         return f"{train_id}: train did not pass its check; not deploying"
     if spec is None:
         return f"{train_id}: repo {built.get('repo')} declares no deploy"
-    from .runner import git
+    from .runner import _owner_context, git
     checked_sha = built.get("checked_sha")
     if checked_sha and git(repo.path, "rev-parse", "--verify", f"train/{train_id}", check=False) != checked_sha:
         return f"{train_id}: checked tip changed; not deploying"
@@ -103,6 +103,9 @@ def deploy_train(log: EventLog, train_id: str) -> str:
         return refused
     ns = namespace(train_id)
     env = deploy_env(spec, train_id, checked_sha=checked_sha if repo.train_isolation == "appservice" else None)
+    guard = getattr(_owner_context, "guard", None)
+    if guard is not None:
+        guard.assert_active()
     if spec.prepare_cmd:
         rc, output = _run(spec.prepare_cmd, worktree, env)
         if rc:
@@ -112,6 +115,8 @@ def deploy_train(log: EventLog, train_id: str) -> str:
         refused = check_checkout()
         if refused:
             return refused
+        if guard is not None:
+            guard.assert_active()
     for stage, cmd in (("deploy", spec.cmd), ("health", spec.health_cmd)):
         rc, output = _run(cmd, worktree, env)
         if rc == 0:
