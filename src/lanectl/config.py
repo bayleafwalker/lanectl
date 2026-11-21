@@ -60,6 +60,7 @@ class DeploySpec:
     teardown_cmd: str
     ttl_s: int = 3600
     env_allow: tuple[str, ...] = ()     # inherited variables; everything else is stripped
+    prepare_cmd: str | None = None
 
 
 @dataclass(frozen=True)
@@ -146,6 +147,7 @@ def _deploy(repo: str, raw) -> DeploySpec:
         teardown_cmd=_required_str(repo, "deploy", "teardown_cmd", raw),
         ttl_s=_positive_int(repo, "deploy", "ttl_s", raw.get("ttl_s", 3600)),
         env_allow=tuple(env_allow),
+        prepare_cmd=_required_str(repo, "deploy", "prepare_cmd", raw) if "prepare_cmd" in raw else None,
     )
 
 

@@ -89,13 +89,29 @@ def deploy_train(log: EventLog, train_id: str) -> str:
     if checked_sha and git(repo.path, "rev-parse", "--verify", f"train/{train_id}", check=False) != checked_sha:
         return f"{train_id}: checked tip changed; not deploying"
     worktree = Path(built["worktree"]).resolve()
-    if repo.train_isolation == "appservice":
+    def check_checkout():
+        if repo.train_isolation != "appservice":
+            return None
         if not checked_sha or git(worktree, "rev-parse", "--verify", "HEAD", check=False) != checked_sha:
             return f"{train_id}: appservice deploy checkout is not the checked train"
         if git(worktree, "status", "--porcelain"):
             return f"{train_id}: appservice deploy checkout is dirty"
+        return None
+
+    refused = check_checkout()
+    if refused:
+        return refused
     ns = namespace(train_id)
     env = deploy_env(spec, train_id, checked_sha=checked_sha if repo.train_isolation == "appservice" else None)
+    if spec.prepare_cmd:
+        rc, output = _run(spec.prepare_cmd, worktree, env)
+        if rc:
+            return f"{train_id}: preparation failed (exit {rc})\n{output[-TAIL_CHARS:]}"
+        if checked_sha and git(repo.path, "rev-parse", "--verify", f"train/{train_id}", check=False) != checked_sha:
+            return f"{train_id}: checked tip changed during preparation; not deploying"
+        refused = check_checkout()
+        if refused:
+            return refused
     for stage, cmd in (("deploy", spec.cmd), ("health", spec.health_cmd)):
         rc, output = _run(cmd, worktree, env)
         if rc == 0:
