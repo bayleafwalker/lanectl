@@ -177,3 +177,126 @@ def test_projected_identity_uses_rotatable_token_file(tmp_path, monkeypatch):
     assert config["users"][0]["user"] == {"tokenFile": str(identity / "token")}
     assert config["contexts"][0]["context"]["namespace"] == "lane-dev-train-proof"
     assert not Path(config_path.read_text()).exists()
+
+
+def test_reconcile_requires_exact_owner_response_and_observed_readiness(monkeypatch):
+    import importlib.util
+
+    import pytest
+
+    spec = importlib.util.spec_from_file_location("preview_hook", HOOK)
+    hook = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(hook)
+    train, commit = "train-proof", "a" * 40
+    intent = {"schema": "lanectl.preview-intent/v1", "action": "deploy",
+              "train": train, "commit": commit}
+    image = "registry.example/train@sha256:" + "b" * 64
+    response = {"kind": "ConfigMap", "immutable": True, "metadata": {
+        "namespace": "lanectl-train-handoff", "name": f"binding-{train}-{commit}"},
+        "data": {"binding.json": json.dumps({"commit": commit, "image": image,
+                                            "port": 18080, "health_path": "/document"})}}
+    calls = []
+
+    def operate(action, kubeconfig, namespace, checked_sha, digest, path, port, name):
+        calls.append(action)
+        assert (namespace, checked_sha, digest, name) == (
+            "lanectl-train-preview", commit, image, "lane-train-proof")
+
+    monkeypatch.setattr(hook, "operate", operate)
+    with pytest.raises(ValueError, match="exact immutable"):
+        hook.reconcile_intent(intent, dict(response, immutable=False), Path("/scope"))
+    with pytest.raises(ValueError, match="exact immutable"):
+        hook.reconcile_intent(dict(intent, commit="c" * 40), response, Path("/scope"))
+    assert calls == []
+    result = hook.reconcile_intent(intent, response, Path("/scope"))
+    assert calls == ["deploy", "health"]
+    assert result == {"schema": "lanectl.preview-result/v1", "action": "deploy",
+                      "train": train, "commit": commit, "image": image,
+                      "namespace": "lanectl-train-preview", "state": "ready"}
+    assert hook.reconcile_intent(dict(intent, action="teardown"), response, Path("/scope"))["state"] == "absent"
+    assert calls[-1] == "teardown"
+
+    def remains_unready(*args):
+        if args[0] == "health":
+            raise RuntimeError("health did not complete")
+
+    monkeypatch.setattr(hook, "operate", remains_unready)
+    with pytest.raises(RuntimeError, match="health did not complete"):
+        hook.reconcile_intent(intent, response, Path("/scope"))
+
+
+def test_preview_inbox_resumes_unfinished_intents_and_never_redeploys_after_teardown(monkeypatch):
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location("preview_hook", HOOK)
+    hook = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(hook)
+
+    def request(action, train):
+        intent = {"schema": "lanectl.preview-intent/v1", "action": action,
+                  "train": train, "commit": "a" * 40}
+        return {"metadata": {"name": hook.preview_intent_name(intent)}, "immutable": True,
+                "data": {"intent.json": json.dumps(intent)}}
+
+    objects = [request("deploy", "train-missing"), request("deploy", "train-proof"),
+               request("teardown", "train-proof")]
+    calls = []
+
+    def execute(intent, response, kubeconfig, *, read_binding):
+        assert read_binding and response is None
+        calls.append((intent["train"], intent["action"]))
+        if intent["train"] == "train-missing":
+            raise ValueError("binding not yet published")
+        return {"state": "absent"}
+
+    def exchange(kubeconfig, *args, manifest=None):
+        if manifest is None:
+            return json.dumps({"items": objects})
+        objects.append(manifest)
+
+    monkeypatch.setattr(hook, "reconcile_intent", execute)
+    monkeypatch.setattr(hook, "preview_command", exchange)
+    assert hook.reconcile_inbox(Path("/scope")) == 1
+    assert calls == [("train-missing", "deploy"), ("train-proof", "teardown")]
+    assert objects[-1]["immutable"] is True
+    assert objects[-1]["metadata"]["name"] == "result-" + objects[-2]["metadata"]["name"]
+    assert hook.reconcile_inbox(Path("/scope")) == 1
+    assert calls[-1] == ("train-missing", "deploy")
+    assert len(calls) == 3
+
+
+def test_preview_request_replays_exact_intent_and_rejects_wrong_receipt(monkeypatch):
+    import importlib.util
+
+    import pytest
+
+    spec = importlib.util.spec_from_file_location("preview_hook", HOOK)
+    hook = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(hook)
+    intent = {"schema": "lanectl.preview-intent/v1", "action": "deploy",
+              "train": "train-proof", "commit": "a" * 40}
+    name = hook.preview_intent_name(intent)
+    receipt = {"schema": "lanectl.preview-result/v1", "action": "deploy",
+               "train": "train-proof", "commit": "b" * 40,
+               "image": "registry.example/train@sha256:" + "c" * 64,
+               "namespace": "lanectl-train-preview", "state": "ready"}
+    existing = {name: {"intent.json": json.dumps(intent, sort_keys=True)}}
+
+    def submit(kubeconfig, *args, manifest):
+        assert manifest["metadata"]["name"] == name
+        raise subprocess.CalledProcessError(1, "kubectl create")
+
+    def read(kubeconfig, key):
+        if key == f"result-{name}":
+            return {"result.json": json.dumps(receipt)}
+        return existing.get(key)
+
+    monkeypatch.setattr(hook, "preview_command", submit)
+    monkeypatch.setattr(hook, "read_preview_object", read)
+    with pytest.raises(ValueError, match="does not match"):
+        hook.request_preview(Path("/scope"), intent, 0)
+    receipt["commit"] = intent["commit"]
+    assert hook.request_preview(Path("/scope"), intent, 0) == receipt
+    existing[hook.preview_intent_name(dict(intent, action="teardown"))] = {}
+    with pytest.raises(ValueError, match="retired"):
+        hook.request_preview(Path("/scope"), intent, 0)
