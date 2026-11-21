@@ -219,8 +219,7 @@ def probe_appservice() -> None:
 
 def probe_appservice_gateway() -> None:
     """Check the pod-local listener and route without submitting inference."""
-    from .adapters_opencode import APPSERVICE_GATEWAY_PORT
-    from .resident_gateway import GO_ROUTE
+    from .adapters_opencode import APPSERVICE_GATEWAY_PORT, appservice_route
 
     connection = http.client.HTTPConnection("127.0.0.1", APPSERVICE_GATEWAY_PORT, timeout=3)
     try:
@@ -231,7 +230,7 @@ def probe_appservice_gateway() -> None:
             raise RuntimeError("appservice model gateway returned an invalid health response")
         status = json.loads(body)
         if (not isinstance(status, dict) or status.get("status") != "live"
-                or status.get("route") != GO_ROUTE or status.get("fallback") != "none"):
+                or status.get("route") != appservice_route() or status.get("fallback") != "none"):
             raise RuntimeError("appservice model gateway does not advertise the fixed pilot route")
     except (OSError, http.client.HTTPException, ValueError) as exc:
         raise RuntimeError("appservice model gateway health check failed") from exc

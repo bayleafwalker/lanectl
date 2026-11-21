@@ -303,16 +303,26 @@ def normalize_messages_request(config, data):
     if len(data) > config.max_request_bytes:
         raise GatewayError("request body exceeds byte bound")
     body = _json(data)
-    fields = {"model", "messages", "system", "tools", "tool_choice", "max_tokens", "stream"}
+    fields = {"model", "messages", "system", "tools", "tool_choice", "max_tokens", "stream", "thinking"}
     if not isinstance(body, dict) or set(body) - fields or body.get("model") != config.model:
         raise GatewayError("request must target the configured Messages model")
     _bounded_int(body.get("max_tokens"), 1, config.max_output_tokens, "max_tokens")
     if type(body.get("stream", False)) is not bool:
         raise GatewayError("stream must be a boolean")
 
+    if body.pop("thinking", {"type": "disabled"}) not in (
+            {"type": "disabled"},
+            {"type": "adaptive", "block_binding": {"prefix_mismatch_behavior": "drop_block"}},
+    ):
+        raise GatewayError("unsupported Messages thinking configuration")
+
+    def has_valid_cache_control(block):
+        return "cache_control" not in block or block["cache_control"] == {"type": "ephemeral"}
+
     def is_text(block):
-        return (isinstance(block, dict) and set(block) == {"type", "text"}
-                and block["type"] == "text" and isinstance(block["text"], str))
+        return (isinstance(block, dict) and not (set(block) - {"type", "text", "cache_control"})
+                and block.get("type") == "text" and isinstance(block.get("text"), str)
+                and has_valid_cache_control(block))
 
     system = body.get("system", "")
     if not isinstance(system, str) and not (
@@ -320,7 +330,8 @@ def normalize_messages_request(config, data):
         raise GatewayError("system content must be text")
     tools = body.get("tools", [])
     if not isinstance(tools, list) or len(tools) > 128 or any(
-            not isinstance(tool, dict) or set(tool) - {"name", "description", "input_schema"}
+            not isinstance(tool, dict) or set(tool) - {"name", "description", "input_schema", "cache_control"}
+            or not has_valid_cache_control(tool)
             or not isinstance(tool.get("name"), str) or not isinstance(tool.get("input_schema"), dict)
             for tool in tools):
         raise GatewayError("only client-side tools are allowed")
@@ -438,7 +449,8 @@ only the remaining timeout. DNS/connect use the platform's bounded resolver and
 socket connection behavior, which still need qualification on the target host.
 """
     def __init__(self, config):
-        self.url = config.upstream_base_url + "/chat/completions"
+        endpoint = "/messages" if config.route == ANTHROPIC_ROUTE else "/chat/completions"
+        self.url = config.upstream_base_url + endpoint
         self.parsed = urlsplit(self.url)
         self.context = ssl.create_default_context(cafile=str(config.ca_file) if config.ca_file else None)
 
@@ -781,7 +793,8 @@ def main(argv=None):
             return 0
         config = load_config(args.config)
         if args.appservice_credentials_directory is not None and (
-                config.route != GO_ROUTE or config.listen_socket is not None or config.listen_port != 18021):
+                config.route not in (GO_ROUTE, ANTHROPIC_ROUTE)
+                or config.listen_socket is not None or config.listen_port != 18021):
             raise GatewayError("appservice credentials require the fixed loopback pilot route")
         app = Gateway(config, read_credential(config.credential_name,
                                               appservice_directory=args.appservice_credentials_directory))
