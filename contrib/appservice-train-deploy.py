@@ -13,6 +13,10 @@ import time
 
 
 def main():
+    if len(sys.argv) > 1 and sys.argv[1] == "request-preview":
+        return request_preview_cli(sys.argv[2:])
+    if len(sys.argv) > 1 and sys.argv[1] == "reconcile-inbox":
+        return reconcile_inbox_cli(sys.argv[2:])
     if len(sys.argv) > 1 and sys.argv[1] == "reconcile":
         return reconcile_cli(sys.argv[2:])
     parser = argparse.ArgumentParser(description=__doc__)
@@ -81,7 +85,10 @@ def reconcile_cli(argv):
         print(json.dumps(reconcile_intent(intent, response, config), sort_keys=True))
 
 
-def reconcile_intent(intent, response, kubeconfig):
+PREVIEW_INBOX = "lanectl-train-preview-inbox"
+
+
+def preview_intent_name(intent):
     if (not isinstance(intent, dict) or set(intent) != {"schema", "action", "train", "commit"}
             or intent["schema"] != "lanectl.preview-intent/v1"):
         raise ValueError("invalid preview intent")
@@ -90,9 +97,130 @@ def reconcile_intent(intent, response, kubeconfig):
             or not re.fullmatch(r"train-[a-z0-9](?:[a-z0-9-]{0,38}[a-z0-9])?", train)
             or not isinstance(commit, str) or not re.fullmatch(r"[0-9a-f]{40}", commit)):
         raise ValueError("preview intent requires a checked train and deploy or teardown")
-    if not isinstance(response, dict) or response.get("kind") != "ConfigMap":
-        raise ValueError("preview requires an immutable owner response")
-    binding = parse_handoff_binding(response, train, commit)
+    return f"preview-{action}-{train}-{commit}"
+
+
+def reconcile_inbox_cli(argv):
+    parser = argparse.ArgumentParser(description="Reconcile pending checked preview intents")
+    parser.add_argument("--projected-identity", type=Path, required=True)
+    args = parser.parse_args(argv)
+    with TemporaryDirectory(prefix="lanectl-preview-inbox-") as scratch:
+        config = Path(scratch) / "kubeconfig"
+        config.write_text(json.dumps(projected_kubeconfig(args.projected_identity, PREVIEW_INBOX)))
+        return reconcile_inbox(config)
+
+
+def preview_command(kubeconfig, *args, manifest=None):
+    return subprocess.run(
+        ["kubectl", "--kubeconfig", str(kubeconfig), "--namespace", PREVIEW_INBOX,
+         "--request-timeout=10s", *args],
+        input=None if manifest is None else json.dumps(manifest), capture_output=True,
+        text=True, check=True, timeout=15,
+    ).stdout
+
+
+def request_preview_cli(argv):
+    parser = argparse.ArgumentParser(description="Submit a checked preview request and await its receipt")
+    parser.add_argument("action", choices=("deploy", "teardown"))
+    parser.add_argument("--kubeconfig", type=Path, required=True)
+    parser.add_argument("--wait-seconds", type=int, required=True)
+    args = parser.parse_args(argv)
+    if args.wait_seconds < 0 or os.environ["LANE_NAMESPACE"] != "lanectl-train-preview":
+        parser.error("preview requests require the preview namespace and a nonnegative wait")
+    intent = {"schema": "lanectl.preview-intent/v1", "action": args.action,
+              "train": os.environ["LANE_TRAIN_ID"], "commit": os.environ["LANE_CHECKED_SHA"]}
+    print(json.dumps(request_preview(args.kubeconfig, intent, args.wait_seconds), sort_keys=True))
+
+
+def read_preview_object(kubeconfig, name):
+    raw = preview_command(kubeconfig, "get", "configmap", name, "--ignore-not-found", "-o", "json")
+    if not raw:
+        return None
+    obj = json.loads(raw)
+    metadata = obj.get("metadata", {})
+    if obj.get("immutable") is not True or (metadata.get("namespace"), metadata.get("name")) != (
+        PREVIEW_INBOX, name
+    ):
+        raise ValueError(f"{name}: expected an exact immutable preview resource")
+    return obj["data"]
+
+
+def request_preview(kubeconfig, intent, wait_seconds):
+    name = preview_intent_name(intent)
+    data = {"intent.json": json.dumps(intent, sort_keys=True)}
+    try:
+        preview_command(kubeconfig, "create", "-f", "-", manifest={
+            "apiVersion": "v1", "kind": "ConfigMap", "immutable": True,
+            "metadata": {"name": name, "namespace": PREVIEW_INBOX}, "data": data,
+        })
+    except subprocess.CalledProcessError:
+        if read_preview_object(kubeconfig, name) != data:
+            raise
+    deadline = time.monotonic() + wait_seconds
+    while True:
+        if intent["action"] == "deploy" and read_preview_object(
+            kubeconfig, preview_intent_name(dict(intent, action="teardown"))
+        ) is not None:
+            raise ValueError("preview was retired by a teardown request")
+        receipt = read_preview_object(kubeconfig, f"result-{name}")
+        if receipt is not None:
+            result = json.loads(receipt["result.json"])
+            expected = {"schema": "lanectl.preview-result/v1", "namespace": "lanectl-train-preview",
+                        "state": "ready" if intent["action"] == "deploy" else "absent",
+                        **{key: intent[key] for key in ("action", "train", "commit")}}
+            if (not isinstance(result, dict) or any(result.get(key) != value for key, value in expected.items())
+                    or not isinstance(result.get("image"), str) or not re.fullmatch(
+                        r"[a-z0-9][a-z0-9./:_-]*@sha256:[a-f0-9]{64}", result["image"]
+                    )):
+                raise ValueError("preview receipt does not match the exact requested effect")
+            return result
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            raise TimeoutError(f"preview receipt pending for {name}")
+        time.sleep(min(2, remaining))
+
+
+def reconcile_inbox(kubeconfig):
+    objects = json.loads(preview_command(kubeconfig, "get", "configmaps", "-o", "json"))["items"]
+    indexed = {obj["metadata"]["name"]: obj for obj in objects}
+    failed = False
+    for name, obj in sorted(indexed.items()):
+        if not name.startswith(("preview-deploy-", "preview-teardown-")):
+            continue
+        try:
+            data = obj.get("data") or {}
+            if obj.get("immutable") is not True or set(data) != {"intent.json"}:
+                raise ValueError(f"{name}: invalid immutable preview intent")
+            intent = json.loads(data["intent.json"])
+            if name != preview_intent_name(intent):
+                raise ValueError(f"{name}: preview intent identity differs from its name")
+            if f"result-{name}" in indexed:
+                continue
+            if intent["action"] == "deploy" and preview_intent_name(
+                dict(intent, action="teardown")
+            ) in indexed:
+                continue
+            result = reconcile_intent(intent, None, kubeconfig, read_binding=True)
+            preview_command(kubeconfig, "create", "-f", "-", manifest={
+                "apiVersion": "v1", "kind": "ConfigMap", "immutable": True,
+                "metadata": {"name": f"result-{name}", "namespace": PREVIEW_INBOX},
+                "data": {"result.json": json.dumps(result, sort_keys=True)},
+            })
+        except (ValueError, KeyError, TypeError, OSError, RuntimeError, subprocess.SubprocessError) as error:
+            print(f"{name}: {error}", file=sys.stderr)
+            failed = True
+    return int(failed)
+
+
+def reconcile_intent(intent, response, kubeconfig, *, read_binding=False):
+    preview_intent_name(intent)
+    action, train, commit = (intent[key] for key in ("action", "train", "commit"))
+    if read_binding:
+        binding = handoff_binding(kubeconfig, train, commit, 0)
+    else:
+        if not isinstance(response, dict) or response.get("kind") != "ConfigMap":
+            raise ValueError("preview requires an immutable owner response")
+        binding = parse_handoff_binding(response, train, commit)
     scope = "lanectl-train-preview"
     deploy_bound(action, kubeconfig, scope, train, commit, binding, wait_seconds=0)
     if action == "deploy":
@@ -230,4 +358,4 @@ def operate(action, kubeconfig, namespace, commit, image, path, port, name):
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())
