@@ -208,6 +208,7 @@ def load_repos(root: Path | None = None) -> dict[str, RepoSpec]:
                 if "publication_cmd" in repo:
                     raise ContractError(f"{name}: publication_cmd is already declared in repos.toml")
                 repo["publication_cmd"] = deploy.pop("publication_cmd")
+                repo["landing"] = "pr"
             repo["deploy"] = deploy
     out = {}
     for name, r in repos.items():
