@@ -79,7 +79,9 @@ def main():
         return
 
     if args.action == "teardown" and existing is not None:
-        kube("delete", "deployment", "lane-train", "--ignore-not-found", "--wait=false")
+        # Keep the Deployment visible until Kubernetes has collected its dependents.
+        kube("delete", "deployment", "lane-train", "--ignore-not-found",
+             "--cascade=foreground", "--wait=false")
     deadline = time.monotonic() + 45
     while time.monotonic() < deadline:
         current = deployment()
