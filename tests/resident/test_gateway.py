@@ -298,7 +298,8 @@ def test_anthropic_messages_are_pinned_and_streamed(running):
     assert "authorization" not in headers
 
 
-def test_claude_federation_sends_only_bearer_and_rereads_rotated_projection(tmp_path, running):
+@pytest.mark.parametrize("scope", ["workspace:inference", "workspace:developer"])
+def test_claude_federation_sends_only_bearer_and_rereads_rotated_projection(tmp_path, running, scope):
     raw = dict(raw_config(tmp_path, gateway.ANTHROPIC_ROUTE), upstream_base_url=gateway.ANTHROPIC_BASE,
                max_requests_per_window=3)
     config = gateway.validate_config(raw)
@@ -312,6 +313,9 @@ def test_claude_federation_sends_only_bearer_and_rereads_rotated_projection(tmp_
         "ANTHROPIC_SERVICE_ACCOUNT_ID": "svac_example",
     }
     response = b'{"access_token":"sk-ant-oat01-test","token_type":"Bearer","expires_in":600,"scope":"workspace:inference"}'
+    if scope == "workspace:developer":
+        env["ANTHROPIC_FEDERATION_SCOPE"] = scope
+        response = response.replace(b"workspace:inference", scope.encode())
     exchange = Upstream(response=Response(response))
     auth = gateway.AnthropicFederation(config, env, opener=exchange)
     upstream = Upstream(response=Response(b'{"content":[]}'))
@@ -341,7 +345,7 @@ def test_claude_federation_sends_only_bearer_and_rereads_rotated_projection(tmp_
     assert json.loads(exchange.requests[1].data)["assertion"] == "header.rotated.signature"
 
     auth.refresh_at = 0
-    exchange.response = Response(b'{"access_token":"invalid"}')
+    exchange.response = Response(response.replace(scope.encode(), b"org:admin"))
     with pytest.raises(urllib.error.HTTPError) as error:
         request(origin, path="/v1/messages", body=payload(config.model, max_tokens=32))
     assert error.value.code == 502 and len(upstream.requests) == 1

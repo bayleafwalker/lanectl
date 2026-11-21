@@ -619,6 +619,9 @@ class AnthropicFederation:
         self.token_file = Path(env.get("ANTHROPIC_IDENTITY_TOKEN_FILE", ""))
         if not self.token_file.is_absolute():
             raise GatewayError("Claude federation requires an absolute projected token path")
+        self.expected_scope = env.get("ANTHROPIC_FEDERATION_SCOPE", "workspace:inference")
+        if self.expected_scope not in ("workspace:inference", "workspace:developer"):
+            raise GatewayError("Claude federation requires an allowed workspace scope")
         self.exchange = {"grant_type": "urn:ietf:params:oauth:grant-type:jwt-bearer"}
         for field, pattern in (
             ("federation_rule_id", r"fdrl_[A-Za-z0-9_-]{1,128}"),
@@ -661,7 +664,7 @@ class AnthropicFederation:
             raise GatewayError("Claude federation exchange refused") from None
         result = _json(body)
         if (not isinstance(result, dict) or result.get("token_type") != "Bearer"
-                or result.get("scope") != "workspace:inference"):
+                or result.get("scope") != self.expected_scope):
             raise GatewayError("invalid Claude federation response")
         token = result.get("access_token")
         expires = result.get("expires_in")
