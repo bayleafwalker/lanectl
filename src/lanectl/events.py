@@ -22,10 +22,13 @@ def state_dir() -> Path:
 
 
 class EventLog:
-    def __init__(self, path: Path | None = None):
+    def __init__(self, path: Path | None = None, *, create: bool = True):
+        if not create and path is None:
+            raise ValueError("read-only event log requires an explicit path")
         self.path = path or state_dir() / "events.jsonl"
-        self.path.parent.mkdir(parents=True, exist_ok=True)
-        self.path.touch(exist_ok=True)
+        if create:
+            self.path.parent.mkdir(parents=True, exist_ok=True)
+            self.path.touch(exist_ok=True)
 
     @contextmanager
     def locked(self):
