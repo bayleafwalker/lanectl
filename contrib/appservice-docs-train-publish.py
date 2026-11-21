@@ -5,8 +5,9 @@ import json
 import os
 from pathlib import Path, PurePosixPath
 import re
+import shutil
 import subprocess
-from tempfile import TemporaryDirectory
+from tempfile import TemporaryDirectory, mkdtemp
 from uuid import uuid4
 
 
@@ -32,21 +33,50 @@ in pkgs.dockerTools.buildLayeredImage {
 '''
 
 
-def checked_commit(args):
+def checked_receipt(args):
     lines = (json.loads(line) for line in args.events.read_text().splitlines() if line.strip())
     latest = None
     for event in lines:
         if event["type"] == "train.built" and event["data"].get("train_id") == args.train:
-            latest = event["data"]
-    if latest is None or latest.get("repo") != "lanectl" or latest.get("passed") is not True:
+            latest = event
+    if latest is None or latest["data"].get("repo") != "lanectl" or latest["data"].get("passed") is not True:
         raise ValueError("train has no passing LANECTL build receipt")
-    commit = latest.get("checked_sha")
+    commit = latest["data"].get("checked_sha")
     if not isinstance(commit, str) or not re.fullmatch("[a-f0-9]{40}", commit):
         raise ValueError("train receipt has no checked commit")
     tip = git(args.repository, "rev-parse", "--verify", f"refs/heads/train/{args.train}").decode().strip()
     if tip != commit:
         raise ValueError("train ref differs from the checked commit")
-    return commit
+    return latest
+
+
+def checked_commit(args):
+    return checked_receipt(args)["data"]["checked_sha"]
+
+
+def export_bundle(args):
+    receipt = checked_receipt(args)
+    commit = receipt["data"]["checked_sha"]
+    base = receipt["data"].get("base_sha")
+    if not isinstance(base, str) or not re.fullmatch("[a-f0-9]{40}", base) or base == commit:
+        raise ValueError("passing receipt must identify a distinct base commit")
+    git(args.repository, "merge-base", "--is-ancestor", base, commit)
+    destination = args.export_bundle
+    staging = Path(mkdtemp(prefix=".checked-train-", dir=destination.parent))
+    try:
+        git(args.repository, "bundle", "create", str(staging / "train.bundle"),
+            f"refs/heads/train/{args.train}", f"^{base}")
+        head = git(args.repository, "bundle", "list-heads", str(staging / "train.bundle")).decode().strip()
+        if head != f"{commit} refs/heads/train/{args.train}" or checked_receipt(args) != receipt:
+            raise ValueError("train changed during bundle export")
+        (staging / "events.jsonl").write_text(json.dumps(receipt) + "\n")
+        if destination.exists():
+            raise FileExistsError(destination)
+        staging.rename(destination)
+    finally:
+        if staging.exists():
+            shutil.rmtree(staging)
+    print(destination)
 
 
 def git(repository, *args):
@@ -127,15 +157,23 @@ def main():
     parser.add_argument("--repository", required=True, type=Path)
     parser.add_argument("--events", required=True, type=Path, help="Trusted LANECTL train event log")
     parser.add_argument("--train", required=True)
-    parser.add_argument("--document", required=True, type=PurePosixPath)
-    parser.add_argument("--nixpkgs-flake", required=True, type=Path)
-    parser.add_argument("--image-policy", required=True, type=Path)
-    parser.add_argument("--registry", required=True, help="Destination image repository without tag")
+    parser.add_argument("--export-bundle", type=Path, help="Export a passing receipt and incremental Git bundle")
+    parser.add_argument("--document", type=PurePosixPath)
+    parser.add_argument("--nixpkgs-flake", type=Path)
+    parser.add_argument("--image-policy", type=Path)
+    parser.add_argument("--registry", help="Destination image repository without tag")
     parser.add_argument("--insecure-registry", action="store_true")
-    parser.add_argument("--bindings-directory", required=True, type=Path)
+    parser.add_argument("--bindings-directory", type=Path)
     args = parser.parse_args()
     if not re.fullmatch(r"train-[a-z0-9-]{1,40}", args.train):
         parser.error("invalid train ID")
+    if args.export_bundle is not None:
+        if not args.export_bundle.is_absolute():
+            parser.error("bundle destination must be absolute")
+        export_bundle(args)
+        return
+    if None in (args.document, args.nixpkgs_flake, args.image_policy, args.registry, args.bindings_directory):
+        parser.error("publishing requires --document, --nixpkgs-flake, --image-policy, --registry and --bindings-directory")
     if (not args.document.parts or args.document.parts[0] != "docs" or ".." in args.document.parts
             or args.document.suffix != ".md"):
         parser.error("document must be a Markdown path within docs/")
