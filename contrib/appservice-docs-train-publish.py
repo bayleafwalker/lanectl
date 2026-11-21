@@ -106,6 +106,49 @@ def submit_bundle(args):
     print(f"{namespace}/{name}")
 
 
+def consume_request(args):
+    request = json.loads(args.consume_request.read_text())
+    metadata = request["metadata"]
+    data, binary = request["data"], request["binaryData"]
+    if (request.get("kind") != "ConfigMap" or metadata.get("namespace") != "lanectl-train-handoff"
+            or request.get("immutable") is not True or set(data) != {"events.jsonl"}
+            or set(binary) != {"train.bundle"}):
+        raise ValueError("invalid checked train request")
+    receipt = data["events.jsonl"].encode("utf-8")
+    bundle = base64.b64decode(binary["train.bundle"], validate=True)
+    if not 1 <= len(receipt) <= 4096 or not 1 <= len(bundle) <= 500000:
+        raise ValueError("checked train request exceeds the handoff payload bounds")
+    event = json.loads(receipt)
+    details = event["data"]
+    base, commit = details.get("base_sha"), details.get("checked_sha")
+    if (event["type"] != "train.built" or details.get("repo") != "lanectl"
+            or details.get("train_id") != args.train or details.get("passed") is not True
+            or any(not isinstance(value, str) or not re.fullmatch("[a-f0-9]{40}", value)
+                   for value in (base, commit))
+            or metadata.get("name") != f"request-{args.train}-{commit}"):
+        raise ValueError("request identity does not match a passing checked train receipt")
+    trusted = args.repository.resolve(strict=True)
+    trusted_tip = git(trusted, "rev-parse", "--verify", "refs/remotes/origin/main").decode().strip()
+    git(trusted, "merge-base", "--is-ancestor", base, trusted_tip)
+    with TemporaryDirectory(prefix="lanectl-train-owner-") as scratch:
+        root = Path(scratch)
+        repository = root / "repository.git"
+        events = root / "events.jsonl"
+        archive = root / "train.bundle"
+        events.write_bytes(receipt)
+        archive.write_bytes(bundle)
+        git(root, "init", "--quiet", "--bare", str(repository))
+        git(repository, "fetch", "--quiet", "--no-tags", str(trusted), base)
+        git(repository, "bundle", "verify", str(archive))
+        ref = f"refs/heads/train/{args.train}"
+        head = git(repository, "bundle", "list-heads", str(archive)).decode().strip()
+        if head != f"{commit} {ref}":
+            raise ValueError("request bundle does not advertise the exact checked train")
+        git(repository, "fetch", "--quiet", "--no-tags", str(archive), f"{ref}:{ref}")
+        git(repository, "merge-base", "--is-ancestor", base, commit)
+        publish(argparse.Namespace(**(vars(args) | {"repository": repository, "events": events})))
+
+
 def git(repository, *args):
     return subprocess.check_output(["git", "-C", str(repository), *args])
 
@@ -182,10 +225,11 @@ def publish(args):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--repository", required=True, type=Path)
-    parser.add_argument("--events", required=True, type=Path, help="Trusted LANECTL train event log")
+    parser.add_argument("--events", type=Path, help="Trusted LANECTL train event log")
     parser.add_argument("--train", required=True)
     transfer = parser.add_mutually_exclusive_group()
     transfer.add_argument("--export-bundle", type=Path, help="Export a passing receipt and incremental Git bundle")
+    transfer.add_argument("--consume-request", type=Path, help="Immutable ConfigMap JSON obtained from the handoff namespace")
     transfer.add_argument("--submit-kubeconfig", type=Path,
                           help="Submit the checked export using the dedicated handoff identity")
     parser.add_argument("--document", type=PurePosixPath)
@@ -197,6 +241,8 @@ def main():
     args = parser.parse_args()
     if not re.fullmatch(r"train-[a-z0-9][a-z0-9-]{0,39}", args.train):
         parser.error("invalid train ID")
+    if args.consume_request is None and args.events is None:
+        parser.error("--events is required when not consuming a request")
     if args.export_bundle is not None:
         if not args.export_bundle.is_absolute():
             parser.error("bundle destination must be absolute")
@@ -215,7 +261,10 @@ def main():
         parser.error("registry must be an image repository without a tag")
     if not args.bindings_directory.is_absolute():
         parser.error("bindings directory must be absolute")
-    publish(args)
+    if args.consume_request is not None:
+        consume_request(args)
+    else:
+        publish(args)
 
 
 if __name__ == "__main__":
