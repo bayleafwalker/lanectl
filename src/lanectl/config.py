@@ -82,6 +82,7 @@ class RepoSpec:
     # tracker item closes only once the landed commit is on origin/<main> (operator, 2026-11-10).
     landing: str = "local"
     train_isolation: str = "namespace"
+    publication_cmd: str | None = None
 
 
 _GATE_JOB_NAME = re.compile(r"[a-z0-9][a-z0-9-]*")     # gate names are also event keys
@@ -201,12 +202,25 @@ def load_repos(root: Path | None = None) -> dict[str, RepoSpec]:
                 raise ContractError(f"{name}: deployment profile requires an existing appservice repo")
             if "deploy" in repo:
                 raise ContractError(f"{name}: deploy is already declared in repos.toml")
+            if not isinstance(deploy, dict):
+                raise ContractError(f"{name}: deployment profile must be a table")
+            if "publication_cmd" in deploy:
+                if "publication_cmd" in repo:
+                    raise ContractError(f"{name}: publication_cmd is already declared in repos.toml")
+                repo["publication_cmd"] = deploy.pop("publication_cmd")
             repo["deploy"] = deploy
     out = {}
     for name, r in repos.items():
         floor = r.get("data_class_floor", "public")
         if floor not in DATA_CLASSES:
             raise ContractError(f"{name}: data_class_floor must be one of {DATA_CLASSES}")
+        isolation = _train_isolation(name, r.get("train_isolation", "namespace"))
+        landing = _landing(name, r.get("landing", "local"))
+        publication = None
+        if "publication_cmd" in r:
+            if isolation != "appservice" or landing != "pr":
+                raise ContractError(f"{name}: publication_cmd requires Appservice PR landing")
+            publication = _required_str(name, "publication", "publication_cmd", r)
         out[name] = RepoSpec(name=name, path=Path(r["path"]), main=r.get("main", "main"),
                              test_cmd=r["test_cmd"], check_cmd=r["check_cmd"],
                              worktree_root=Path(r["worktree_root"]),
@@ -216,8 +230,7 @@ def load_repos(root: Path | None = None) -> dict[str, RepoSpec]:
                              routing={k: float(v) for k, v in r.get("routing", {}).items()},
                              gate_jobs=_gate_jobs(name, r.get("gate_jobs", ())),
                              deploy=_deploy(name, r["deploy"]) if "deploy" in r else None,
-                             landing=_landing(name, r.get("landing", "local")),
-                             train_isolation=_train_isolation(name, r.get("train_isolation", "namespace")))
+                             landing=landing, train_isolation=isolation, publication_cmd=publication)
     return out
 
 

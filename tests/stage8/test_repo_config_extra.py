@@ -107,3 +107,11 @@ teardown_cmd = "down"
     profile.write_text(profile.read_text().replace("[target]", "[unregistered]"))
     with pytest.raises(ContractError, match="unregistered"):
         _load(tmp_path, appservice)
+
+
+def test_publication_command_is_limited_to_appservice_pr_landing(tmp_path):
+    command = 'publication_cmd = "/protected/submit"\n'
+    with pytest.raises(ContractError, match="Appservice PR landing"):
+        _load(tmp_path, command)
+    spec = _load(tmp_path, command + 'train_isolation = "appservice"\nlanding = "pr"\n')
+    assert spec.publication_cmd == "/protected/submit"
