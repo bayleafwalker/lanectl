@@ -300,3 +300,37 @@ def test_preview_request_replays_exact_intent_and_rejects_wrong_receipt(monkeypa
     existing[hook.preview_intent_name(dict(intent, action="teardown"))] = {}
     with pytest.raises(ValueError, match="retired"):
         hook.request_preview(Path("/scope"), intent, 0)
+
+
+def test_preview_health_rejects_deleted_or_stale_workload_after_ready_receipt(monkeypatch):
+    import importlib.util
+
+    import pytest
+
+    spec = importlib.util.spec_from_file_location("preview_hook", HOOK)
+    hook = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(hook)
+    commit = "a" * 40
+    image = "registry.example/train@sha256:" + "b" * 64
+    intent = {"action": "deploy", "train": "train-proof", "commit": commit}
+    receipt = {"namespace": "lanectl-train-preview", "image": image}
+    monkeypatch.setattr(hook, "read_preview_result", lambda *_: receipt)
+    deployment = {
+        "metadata": {"generation": 2, "annotations": {"lanectl.io/checked-sha": commit}},
+        "spec": {"template": {"spec": {"containers": [{"image": image}]}}},
+        "status": {"observedGeneration": 1, "readyReplicas": 1},
+    }
+
+    def read(kubeconfig, *args, namespace):
+        assert args[:3] == ("get", "deployment", "lane-train-proof")
+        assert namespace == "lanectl-train-preview"
+        return json.dumps(deployment)
+
+    monkeypatch.setattr(hook, "preview_command", read)
+    with pytest.raises(ValueError, match="no longer ready"):
+        hook.check_preview_health(Path("/scope"), intent)
+    deployment["status"]["observedGeneration"] = 2
+    assert hook.check_preview_health(Path("/scope"), intent) == receipt
+    deployment["metadata"]["deletionTimestamp"] = "2026-11-21T16:00:00Z"
+    with pytest.raises(ValueError, match="no longer ready"):
+        hook.check_preview_health(Path("/scope"), intent)
