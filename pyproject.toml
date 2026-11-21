@@ -8,6 +8,7 @@ dependencies = []
 [project.scripts]
 lanectl = "lanectl.cli:main"
 lanectl-model-gateway = "lanectl.resident_gateway:main"
+lanectl-settlement-summary = "lanectl.settlement_summary:main"
 
 [dependency-groups]
 dev = ["pytest>=8", "hypothesis>=6"]
