@@ -61,6 +61,7 @@ class DeploySpec:
     ttl_s: int = 3600
     env_allow: tuple[str, ...] = ()     # inherited variables; everything else is stripped
     prepare_cmd: str | None = None
+    namespace: str | None = None
 
 
 @dataclass(frozen=True)
@@ -141,12 +142,17 @@ def _deploy(repo: str, raw) -> DeploySpec:
         if entry.startswith("LANE_"):
             raise ContractError(
                 f"{repo}: deploy env_allow {entry!r} is reserved for lanectl (LANE_ prefix)")
+    namespace = raw.get("namespace")
+    if "namespace" in raw and (not isinstance(namespace, str)
+                              or not re.fullmatch(r"[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?", namespace)):
+        raise ContractError(f"{repo}: deploy namespace must be a Kubernetes namespace name")
     return DeploySpec(
         cmd=_required_str(repo, "deploy", "cmd", raw),
         health_cmd=_required_str(repo, "deploy", "health_cmd", raw),
         teardown_cmd=_required_str(repo, "deploy", "teardown_cmd", raw),
         ttl_s=_positive_int(repo, "deploy", "ttl_s", raw.get("ttl_s", 3600)),
         env_allow=tuple(env_allow),
+        namespace=namespace,
         prepare_cmd=_required_str(repo, "deploy", "prepare_cmd", raw) if "prepare_cmd" in raw else None,
     )
 

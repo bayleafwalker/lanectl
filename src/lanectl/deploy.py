@@ -29,11 +29,12 @@ def namespace(train_id: str) -> str:
     return f"lane-dev-{train_id}"
 
 
-def deploy_env(spec: DeploySpec, train_id: str, *, checked_sha: str | None = None) -> dict[str, str]:
+def deploy_env(spec: DeploySpec, train_id: str, *, checked_sha: str | None = None,
+               target_namespace: str | None = None) -> dict[str, str]:
     """The stripped environment: allow-listed variables plus the LANE_ vars."""
     env = {name: os.environ[name] for name in spec.env_allow if name in os.environ}
     env.pop("LANE_CHECKED_SHA", None)
-    env.update(LANE_NAMESPACE=namespace(train_id), LANE_TRAIN_ID=train_id,
+    env.update(LANE_NAMESPACE=target_namespace or namespace(train_id), LANE_TRAIN_ID=train_id,
                LANE_TTL_S=str(spec.ttl_s))
     if checked_sha is not None:
         env["LANE_CHECKED_SHA"] = checked_sha
@@ -101,8 +102,12 @@ def deploy_train(log: EventLog, train_id: str) -> str:
     refused = check_checkout()
     if refused:
         return refused
-    ns = namespace(train_id)
-    env = deploy_env(spec, train_id, checked_sha=checked_sha if repo.train_isolation == "appservice" else None)
+    ns = spec.namespace or namespace(train_id)
+    previous = _unclosed(log.read()).get(train_id)
+    if previous is not None and (previous.get("namespace") or namespace(train_id)) != ns:
+        return f"{train_id}: previous deployment needs teardown before changing namespace"
+    env = deploy_env(spec, train_id, target_namespace=ns,
+                     checked_sha=checked_sha if repo.train_isolation == "appservice" else None)
     guard = getattr(_owner_context, "guard", None)
     if guard is not None:
         guard.assert_active()
@@ -149,11 +154,12 @@ def teardown(log: EventLog, train_id: str, reason: str) -> str:
     _, repo, spec = found
     if spec is None:
         return f"{train_id}: repo declares no deploy"
-    env = deploy_env(spec, train_id, checked_sha=data.get("checked_sha")
+    ns = data.get("namespace") or namespace(train_id)
+    env = deploy_env(spec, train_id, target_namespace=ns, checked_sha=data.get("checked_sha")
                      if repo.train_isolation == "appservice" else None)
     rc, output = _run(spec.teardown_cmd, repo.path, env)
     log.append("train.torn_down", {
-        "train_id": train_id, "namespace": namespace(train_id), "reason": reason,
+        "train_id": train_id, "namespace": ns, "reason": reason,
         "passed": rc == 0})
     if rc == 0:
         return f"{train_id}: torn down ({reason})"

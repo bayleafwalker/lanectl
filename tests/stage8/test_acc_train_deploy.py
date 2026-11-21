@@ -188,3 +188,21 @@ def test_prepare_failure_keeps_train_pending_and_does_not_contact_deploy(estate,
     assert "deployed to" in deploy.deploy_train(estate[2], train_id)
     assert (out / "prepared").read_text().strip() == train["checked_sha"]
     assert _of(estate[2], "train.deployed")[-1]["passed"]
+
+
+def test_namespace_change_requires_cleanup_in_recorded_namespace(estate, tmp_path):
+    out = _declare(tmp_path)
+    train_id = _train(estate, "namespace-change")["train_id"]
+    log = estate[2]
+    config = Path(os.environ["LANECTL_HOME"]) / "governance" / "repos.toml"
+    config.write_text(config.read_text().replace(
+        "env_allow =", 'namespace = "lanectl-train-preview"\nenv_allow =',
+    ).replace("echo down >>", "echo down $LANE_NAMESPACE >>"))
+    assert "deployed to lanectl-train-preview" in deploy.deploy_train(log, train_id)
+    assert _of(log, "train.deployed")[-1]["namespace"] == "lanectl-train-preview"
+    config.write_text(config.read_text().replace('namespace = "lanectl-train-preview"\n', ""))
+    assert "needs teardown" in deploy.deploy_train(log, train_id)
+    assert len(_of(log, "train.deployed")) == 1
+    assert "torn down" in deploy.teardown(log, train_id, "manual")
+    assert (out / "down.txt").read_text().strip() == "down lanectl-train-preview"
+    assert _of(log, "train.torn_down")[-1]["namespace"] == "lanectl-train-preview"

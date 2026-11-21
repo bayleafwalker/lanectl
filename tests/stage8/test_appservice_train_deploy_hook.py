@@ -45,6 +45,18 @@ def test_deploy_uses_only_exact_digest_bound_to_train(tmp_path, monkeypatch):
     assert pod["containers"][0]["readinessProbe"]["httpGet"] == {"path": "/healthz", "port": 8080}
 
 
+    monkeypatch.setenv("LANE_NAMESPACE", "default")
+    manifest.unlink()
+    assert subprocess.run(command, capture_output=True, check=False).returncode
+    assert not manifest.exists()
+
+    monkeypatch.setenv("LANE_NAMESPACE", "lanectl-train-preview")
+    subprocess.run(command, capture_output=True, check=True)
+    deployed = json.loads(manifest.read_text())
+    assert deployed["metadata"]["namespace"] == "lanectl-train-preview"
+    assert deployed["metadata"]["name"] == "lane-train-proof"
+    assert deployed["spec"]["selector"]["matchLabels"] == {"app.kubernetes.io/name": "lane-train-proof"}
+
 def test_teardown_waits_for_foreground_cascade(tmp_path, monkeypatch):
     fake_kubectl = tmp_path / "kubectl"
     fake_kubectl.write_text(

@@ -34,7 +34,8 @@ def main():
     train = os.environ["LANE_TRAIN_ID"]
     namespace = os.environ["LANE_NAMESPACE"]
     commit = os.environ["LANE_CHECKED_SHA"]
-    if not re.fullmatch(r"train-[a-z0-9-]{1,40}", train) or namespace != f"lane-dev-{train}":
+    if (not re.fullmatch(r"train-[a-z0-9-]{0,39}[a-z0-9]", train)
+            or namespace not in (f"lane-dev-{train}", "lanectl-train-preview")):
         raise ValueError("namespace must match the LANECTL train")
     if not re.fullmatch(r"[0-9a-f]{40}", commit):
         raise ValueError("checked train commit is required")
@@ -100,7 +101,8 @@ def deploy_bound(action, kubeconfig, namespace, train, commit, binding, *, wait_
     if type(port) is not int or not 1024 <= port <= 65535 or not re.fullmatch(r"/[a-zA-Z0-9/_-]*", path):
         raise ValueError("invalid train health endpoint")
     if action != "await-binding":
-        operate(action, kubeconfig, namespace, commit, image, path, port)
+        name = f"lane-{train}" if namespace == "lanectl-train-preview" else "lane-train"
+        operate(action, kubeconfig, namespace, commit, image, path, port, name)
 
 
 def projected_kubeconfig(identity, namespace):
@@ -122,7 +124,7 @@ def projected_kubeconfig(identity, namespace):
     }
 
 
-def operate(action, kubeconfig, namespace, commit, image, path, port):
+def operate(action, kubeconfig, namespace, commit, image, path, port, name):
     command = ["kubectl", "--kubeconfig", str(kubeconfig), "--namespace", namespace, "--request-timeout=10s"]
 
     def kube(*arguments, data=None):
@@ -130,7 +132,7 @@ def operate(action, kubeconfig, namespace, commit, image, path, port):
                               stdout=subprocess.PIPE, text=True, check=True, timeout=15).stdout
 
     def deployment():
-        raw = kube("get", "deployment", "lane-train", "--ignore-not-found", "-o", "json")
+        raw = kube("get", "deployment", name, "--ignore-not-found", "-o", "json")
         if not raw:
             return None
         resource = json.loads(raw)
@@ -142,11 +144,11 @@ def operate(action, kubeconfig, namespace, commit, image, path, port):
     existing = deployment()
     if action == "deploy":
         if existing is None:
-            labels = {"app.kubernetes.io/name": "lane-train"}
+            labels = {"app.kubernetes.io/name": name}
             probe = {"httpGet": {"path": path, "port": port}}
             manifest = {
                 "apiVersion": "apps/v1", "kind": "Deployment",
-                "metadata": {"name": "lane-train", "namespace": namespace,
+                "metadata": {"name": name, "namespace": namespace,
                              "annotations": {"lanectl.io/checked-sha": commit}},
                 "spec": {"replicas": 1, "selector": {"matchLabels": labels}, "template": {
                     "metadata": {"labels": labels}, "spec": {
@@ -169,7 +171,7 @@ def operate(action, kubeconfig, namespace, commit, image, path, port):
 
     if action == "teardown" and existing is not None:
         # Keep the Deployment visible until Kubernetes has collected its dependents.
-        kube("delete", "deployment", "lane-train", "--ignore-not-found",
+        kube("delete", "deployment", name, "--ignore-not-found",
              "--cascade=foreground", "--wait=false")
     deadline = time.monotonic() + 45
     while time.monotonic() < deadline:
