@@ -18,6 +18,8 @@ def main():
     bindings.add_argument("--binding", type=Path)
     bindings.add_argument("--bindings-directory", type=Path,
                           help="Owner-provided root containing <train>/<checked-commit>.json")
+    bindings.add_argument("--binding-from-handoff", action="store_true",
+                          help="Read the exact immutable owner binding from lanectl-train-handoff")
     credentials = parser.add_mutually_exclusive_group(required=True)
     credentials.add_argument("--kubeconfig", type=Path)
     credentials.add_argument("--projected-identity", type=Path,
@@ -38,7 +40,36 @@ def main():
         binding_path = args.bindings_directory / train / f"{commit}.json"
         if not binding_path.is_file():
             raise ValueError(f"no published image binding for {train} at {commit}")
-    binding = json.loads(binding_path.read_text())
+    if args.binding_from_handoff:
+        binding = None
+    else:
+        binding = json.loads(binding_path.read_text())
+        if not isinstance(binding, dict):
+            raise ValueError("train binding must be a JSON object")
+    if args.kubeconfig is not None:
+        deploy_bound(args.action, args.kubeconfig, namespace, train, commit, binding)
+        return
+    with TemporaryDirectory(prefix="lanectl-train-") as scratch:
+        config = Path(scratch) / "kubeconfig"
+        config.write_text(json.dumps(projected_kubeconfig(args.projected_identity, namespace)))
+        deploy_bound(args.action, config, namespace, train, commit, binding)
+
+
+def deploy_bound(action, kubeconfig, namespace, train, commit, binding):
+    if binding is None:
+        name = f"binding-{train}-{commit}"
+        raw = subprocess.run(
+            ["kubectl", "--kubeconfig", str(kubeconfig), "--namespace", "lanectl-train-handoff",
+             "--request-timeout=10s", "get", "configmap", name, "-o", "json"],
+            capture_output=True, text=True, check=True, timeout=15,
+        ).stdout
+        configmap = json.loads(raw)
+        metadata = configmap.get("metadata", {})
+        if (configmap.get("immutable") is not True or metadata.get("name") != name
+                or metadata.get("namespace") != "lanectl-train-handoff"):
+            raise ValueError("owner binding must be the exact immutable handoff ConfigMap")
+        binding = json.loads(configmap["data"]["binding.json"])
+
     image = binding["image"]
     if binding["commit"] != commit or not re.fullmatch(
         r"[a-z0-9][a-z0-9./:_-]*@sha256:[0-9a-f]{64}", image
@@ -48,14 +79,7 @@ def main():
     path = binding["health_path"]
     if type(port) is not int or not 1024 <= port <= 65535 or not re.fullmatch(r"/[a-zA-Z0-9/_-]*", path):
         raise ValueError("invalid train health endpoint")
-
-    if args.kubeconfig is not None:
-        operate(args.action, args.kubeconfig, namespace, commit, image, path, port)
-        return
-    with TemporaryDirectory(prefix="lanectl-train-") as scratch:
-        config = Path(scratch) / "kubeconfig"
-        config.write_text(json.dumps(projected_kubeconfig(args.projected_identity, namespace)))
-        operate(args.action, config, namespace, commit, image, path, port)
+    operate(action, kubeconfig, namespace, commit, image, path, port)
 
 
 def projected_kubeconfig(identity, namespace):
