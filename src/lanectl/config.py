@@ -191,8 +191,19 @@ def lane_from_raw(raw: dict, digest: str, source: str = "lane") -> LaneRevision:
 
 def load_repos(root: Path | None = None) -> dict[str, RepoSpec]:
     raw = tomllib.loads(((root or home()) / "governance" / "repos.toml").read_text())
+    repos = raw["repos"]
+    profile = os.environ.get("LANECTL_APPSERVICE_DEPLOY_PROFILE")
+    if profile:
+        deployments = tomllib.loads(Path(profile).read_text())
+        for name, deploy in deployments.items():
+            repo = repos.get(name)
+            if repo is None or repo.get("train_isolation") != "appservice":
+                raise ContractError(f"{name}: deployment profile requires an existing appservice repo")
+            if "deploy" in repo:
+                raise ContractError(f"{name}: deploy is already declared in repos.toml")
+            repo["deploy"] = deploy
     out = {}
-    for name, r in raw["repos"].items():
+    for name, r in repos.items():
         floor = r.get("data_class_floor", "public")
         if floor not in DATA_CLASSES:
             raise ContractError(f"{name}: data_class_floor must be one of {DATA_CLASSES}")
