@@ -26,6 +26,7 @@ in pkgs.dockerTools.buildLayeredImage {
     Entrypoint = [ "${pkgs.python3}/bin/python3" "-I" "-m" "http.server"
       "18080" "--bind" "0.0.0.0" "--directory" served ];
     Labels."org.opencontainers.image.revision" = commit;
+    Labels."io.lanectl.train.document" = builtins.getEnv "TRAIN_DOCUMENT_PATH";
   };
 }
 '''
@@ -52,6 +53,26 @@ def git(repository, *args):
     return subprocess.check_output(["git", "-C", str(repository), *args])
 
 
+def verify_image(args, image, commit):
+    if not re.fullmatch(re.escape(args.registry) + r"@sha256:[0-9a-f]{64}", image):
+        raise ValueError("binding does not name a digest in the configured registry")
+    tls = [] if not args.insecure_registry else ["--tls-verify=false"]
+    config = json.loads(subprocess.check_output(
+        ["skopeo", "--policy", str(args.image_policy), "inspect", *tls, "--config", f"docker://{image}"]))
+    labels = config["config"]["Labels"]
+    if (labels.get("org.opencontainers.image.revision") != commit
+            or labels.get("io.lanectl.train.document") != str(args.document)):
+        raise ValueError("registry image does not match the checked commit and document")
+
+
+def verify_binding(args, binding, commit):
+    spec = json.loads(binding.read_text())
+    if (spec.get("commit") != commit or spec.get("port") != 18080
+            or spec.get("health_path") != "/document" or not isinstance(spec.get("image"), str)):
+        raise ValueError("published binding does not match this checked train")
+    verify_image(args, spec["image"], commit)
+
+
 def publish(args):
     commit = checked_commit(args)
     entry = git(args.repository, "ls-tree", commit, "--", str(args.document))
@@ -60,12 +81,15 @@ def publish(args):
     binding = args.bindings_directory / args.train / f"{commit}.json"
     binding.parent.mkdir(parents=True, exist_ok=True)
     if binding.exists():
-        raise FileExistsError(f"checked train binding already published: {binding}")
+        verify_binding(args, binding, commit)
+        print(binding)
+        return
     with TemporaryDirectory(prefix=".train-publish-", dir=binding.parent) as scratch:
         root = Path(scratch)
         doc = root / "document"
         doc.write_bytes(git(args.repository, "show", f"{commit}:{args.document}"))
         env = {**os.environ, "TRAIN_DOCUMENT": str(doc), "TRAIN_COMMIT": commit,
+               "TRAIN_DOCUMENT_PATH": str(args.document),
                "TRAIN_NIXPKGS_FLAKE": str(args.nixpkgs_flake.resolve(strict=True))}
         archive = subprocess.check_output(
             ["nix", "build", "--impure", "--no-link", "--print-out-paths", "--expr", IMAGE],
@@ -85,17 +109,16 @@ def publish(args):
         if not re.fullmatch(r"sha256:[0-9a-f]{64}", value):
             raise ValueError("registry copy did not return a valid digest")
         image = f"{args.registry}@{value}"
-        tls = [] if not args.insecure_registry else ["--tls-verify=false"]
-        config = json.loads(subprocess.check_output(
-            [*skopeo, "inspect", *tls, "--config", f"docker://{image}"]))
-        if config["config"]["Labels"]["org.opencontainers.image.revision"] != commit:
-            raise ValueError("registry image revision does not match the checked commit")
+        verify_image(args, image, commit)
         if checked_commit(args) != commit:
             raise ValueError("train changed before binding publication")
         result = {"commit": commit, "image": image, "port": 18080, "health_path": "/document"}
         staged = root / "binding.json"
         staged.write_text(json.dumps(result) + "\n")
-        os.link(staged, binding)
+        try:
+            os.link(staged, binding)
+        except FileExistsError:
+            verify_binding(args, binding, commit)
     print(binding)
 
 
