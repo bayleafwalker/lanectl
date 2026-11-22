@@ -32,7 +32,8 @@ def _run(cmd, cwd, run):
     return p.stdout.strip()
 
 
-def publish(repo, train_id, sha, *, run=subprocess.run, required_check=None):
+def publish(repo, train_id, sha, *, run=subprocess.run, required_check=None, verify_canonical=True,
+            submit_timeout_s=None):
     """Publish via one stable branch/PR and require its CI before merging.
 
     An ambiguous response is retried by querying the same head branch. Merge
@@ -46,10 +47,11 @@ def publish(repo, train_id, sha, *, run=subprocess.run, required_check=None):
         if runner.git(repo.path, "rev-parse", "--verify", f"refs/heads/train/{train_id}") != sha:
             raise RuntimeError("publication commit differs from the checked train ref")
         env = {"LANE_TRAIN_ID": train_id, "LANE_CHECKED_SHA": sha, "LANE_REPOSITORY": repo.name}
-        rc, _ = deploy._run(command, repo.path, env)
+        options = {} if submit_timeout_s is None else {"timeout_s": submit_timeout_s}
+        rc, _ = deploy._run(command, repo.path, env, **options)
         if rc:
             raise RuntimeError(f"publication owner command failed (exit {rc})")
-        if not work.merged(repo, sha, run):
+        if not verify_canonical or not work.merged(repo, sha, run, timeout_s=10):
             return f"{train_id}: awaiting canonical publication"
         return f"{train_id}: canonical PR merge verified"
 

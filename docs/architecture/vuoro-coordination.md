@@ -147,9 +147,13 @@ around a refused or uncertain operation.
 For an operator-reviewed single-attempt train using the local event log, use
 `lanectl land TRAIN_ID --resume-owner`. LANECTL checks the admitted release
 and Work binding and heartbeats the existing lease before landing. An expired
-or refused lease leaves the train unlanded. For repositories configured with
-`landing = "pr"`, merge the checked train through canonical CI, then use
-`lanectl work reconcile` to submit the outcome from the recorded landing.
+or refused lease leaves the train unlanded. For an Appservice repository with
+a checked publication hook, `lanectl land TRAIN_ID --resume-owner --publish`
+submits the reviewed train and keeps the existing lease current while waiting
+for canonical ancestry. This wait runs outside the event-log lock. Only fresh
+proof of the exact checked commit permits an owner outcome report. A pending
+result can be retried while the same lease is current. For other PR repositories,
+merge through canonical CI, then use `lanectl work reconcile`.
 Coordinated runs record the release and Work binding, plus gate names and
 verdicts, in owner evidence. Before landing a single-attempt train, LANECTL
 records its checked commit and the matching deploy receipt when one is required.

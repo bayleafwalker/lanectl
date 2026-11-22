@@ -1185,26 +1185,29 @@ def build_train(log: EventLog, repo_name: str, attempt_ids: list[str] | None = N
 
 def _serialized_landing(fn):
     @functools.wraps(fn)
-    def serialized(log, train_id, *, resume_owner=False):
+    def serialized(log, train_id, *, resume_owner=False, publish=False):
+        if publish and not resume_owner:
+            return f"{train_id}: publication requires owner resume"
+        if resume_owner:
+            return _land_with_owner(fn, log, train_id, publish=publish)
         with log.locked():
-            if resume_owner:
-                return _land_with_owner(fn, log, train_id)
             return fn(log, train_id)
     return serialized
 
 
-def _land_with_owner(land_checked, log, train_id):
-    from . import coordination
+def _land_with_owner(land_checked, log, train_id, *, publish=False):
+    from . import coordination, integrator
     from .remote_events import RemoteEventLog
 
     if isinstance(log, RemoteEventLog):
         return f"{train_id}: owner resume requires the single-writer local event log"
-    train = next((event["data"] for event in reversed(log.read())
+    events = log.read()
+    train = next((event["data"] for event in reversed(events)
                   if event["type"] == "train.built" and event["data"]["train_id"] == train_id), None)
     if not train or not train.get("passed") or len(train["attempts"]) != 1:
         return f"{train_id}: owner resume requires a passed single-attempt train"
     attempt, = train["attempts"]
-    claim = next((event for event in reversed(log.read())
+    claim = next((event for event in reversed(events)
                   if event["type"] == "item.claimed" and event["data"]["attempt_id"] == attempt), None)
     release = next((rel for rel in load_releases()
                     if claim and rel.id == claim["item_id"] and rel.repo == train["repo"]), None)
@@ -1212,9 +1215,21 @@ def _land_with_owner(land_checked, log, train_id):
             or claim["data"].get("release_revision") != release.revision
             or claim["data"].get("base_sha") != release.base_sha):
         return f"{train_id}: current release does not match the admitted Work release"
-    if not any(candidate["attempt_id"] == attempt for candidate in candidates(log, train["repo"])):
-        return f"{train_id}: attempt is no longer a candidate"
+
+    if publish:
+        repo = load_repos()[train["repo"]]
+        if repo.landing != "pr" or not repo.publication_cmd or not train.get("checked_sha"):
+            return f"{train_id}: reviewed publication requires a commit-bound owner publication hook"
+        frozen = delivery_policy.claim_binding(events, release.id, claim["data"])
+        if frozen is None:
+            return f"{train_id}: reviewed publication requires the admitted policy binding"
+        lane = delivery_policy.effective_lane(frozen, load_lane(claim["data"]["lane"]))
+        deadline = time.monotonic() + lane.timeout_s
+    if not (publish and _reviewed_landing(log, train, attempt, release)):
+        if not any(c["attempt_id"] == attempt for c in candidates(log, train["repo"])):
+            return f"{train_id}: attempt is no longer a candidate"
     result = None
+    cancel = threading.Event()
     try:
         owner = coordination.configured(train["repo"])
         if owner is None:
@@ -1222,21 +1237,71 @@ def _land_with_owner(land_checked, log, train_id):
         binding = owner.recorded_binding(attempt)
         if binding is None or release.work != f"{release.repo}#{binding['item_id']}":
             return f"{train_id}: recorded lease does not match the Work release"
-        with owner.guard(attempt) as guard:
-            previous = getattr(_owner_context, "guard", None)
-            previous_owner = getattr(_owner_context, "owner", None)
-            _owner_context.guard = guard
-            _owner_context.owner = owner
+        with owner.guard(attempt, on_lost=cancel.set) as guard:
+            with log.locked():
+                latest = next((event["data"] for event in reversed(log.read())
+                               if event["type"] == "train.built"
+                               and event["data"]["train_id"] == train_id), None)
+                if latest != train or release not in load_releases():
+                    return f"{train_id}: train or Work release changed during owner resume"
+                receipt = _reviewed_landing(log, train, attempt, release) if publish else None
+                if receipt is None:
+                    if not any(c["attempt_id"] == attempt for c in candidates(log, train["repo"])):
+                        return f"{train_id}: attempt is no longer a candidate"
+                    previous = getattr(_owner_context, "guard", None)
+                    previous_owner = getattr(_owner_context, "owner", None)
+                    _owner_context.guard = guard
+                    _owner_context.owner = owner
+                    try:
+                        result = land_checked(log, train_id)
+                    finally:
+                        _owner_context.guard = previous
+                        _owner_context.owner = previous_owner
+                    if not publish or not result.startswith("landed"):
+                        return result
+                    receipt = _reviewed_landing(log, train, attempt, release)
+            if receipt is None:
+                return f"{train_id}: exact local landing receipt is missing"
+            guard.assert_active()
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                return f"{train_id}: publication was not submitted within the remaining runtime budget"
+            sha = receipt["landed_sha"]
             try:
-                result = land_checked(log, train_id)
-            finally:
-                _owner_context.guard = previous
-                _owner_context.owner = previous_owner
+                integrator.publish(repo, train_id, sha, verify_canonical=False,
+                                   submit_timeout_s=min(40, remaining))
+            except (OSError, RuntimeError, ValueError, subprocess.SubprocessError) as exc:
+                return f"{train_id}: publication submission pending ({type(exc).__name__})"
+            if not _await_canonical_publication(
+                repo, sha, guard, cancel, timeout_s=max(0, deadline - time.monotonic())
+            ):
+                return f"{train_id}: canonical publication pending"
+            if _reviewed_landing(log, train, attempt, release) != receipt:
+                return f"{train_id}: local landing was withdrawn during publication"
+            owner.append_evidence(attempt, "landed", "Observation", receipt)
+        completed = work.report_owner_completion(owner, attempt, release, receipt)
+        log.append("work.synced", {"work": release.work, "train_id": train_id, "closed": completed,
+                   "ok": True, "owner_reported": True, "pending_owner": not completed}, item_id=release.id)
+        state = "settled" if completed else "awaiting owner verification"
+        return f"landed {train_id} on canonical main at {sha}; {state}"
     except coordination.CoordinationError as exc:
-        if result is not None and result.startswith("landed"):
+        if result is not None and result.startswith("landed") and not publish:
             return f"{result}; owner coordination lost after landing"
         return f"{train_id}: owner lease unavailable: {exc}"
-    return result
+
+
+def _reviewed_landing(log, train, attempt, release):
+    events = log.read()
+    view = project_items(events).get(release.id)
+    if not view or view.state != "landed" or not view.attempts or view.attempts[-1]["attempt_id"] != attempt:
+        return None
+    request = {key: getattr(release, key) for key in ("id", "repo", "work", "work_complete")}
+    return next((event["data"] for event in reversed(events)
+                 if event["type"] == "item.landed" and event["item_id"] == release.id
+                 and event["data"]["attempt_id"] == attempt
+                 and event["data"]["train_id"] == train["train_id"]
+                 and event["data"].get("landed_sha") == train["checked_sha"]
+                 and event["data"].get("work_request") == request), None)
 
 
 @_serialized_landing

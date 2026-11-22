@@ -106,12 +106,12 @@ def test_protected_publication_hook_never_substitutes_for_canonical_ancestry(tmp
         return 0, "publisher accepted request"
 
     monkeypatch.setattr(integrator.deploy, "_run", submit)
-    monkeypatch.setattr(integrator.work, "merged", lambda *args: False)
+    monkeypatch.setattr(integrator.work, "merged", lambda *args, timeout_s: timeout_s != 10)
     assert "awaiting canonical" in integrator.publish(repo, "train-proof", sha)
     assert calls == [("/protected/submit", tmp_path, {
         "LANE_TRAIN_ID": "train-proof", "LANE_CHECKED_SHA": sha, "LANE_REPOSITORY": "lanectl",
     })]
-    monkeypatch.setattr(integrator.work, "merged", lambda *args: True)
+    monkeypatch.setattr(integrator.work, "merged", lambda *args, timeout_s: timeout_s == 10)
     assert "merge verified" in integrator.publish(repo, "train-proof", sha)
     import pytest
 
