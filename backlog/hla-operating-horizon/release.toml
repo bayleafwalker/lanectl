@@ -1,7 +1,8 @@
 id = "hla-operating-horizon"
 repo = "homelab-analytics"
 base_sha = "b3fb3d750e561eabde492ebe9812fb50849c0e04"
-revision = 1
+revision = 2
+draft = true
 title = "Merge dated household actions in the seven-day operating horizon"
 task_class = "product-ui"
 size = "M"
@@ -19,7 +20,9 @@ authorization boundaries. Return a stable kind, date and display label per row
 and enough identity to keep distinct same-day actions. Sort by date with
 deterministic ties. Include today through today plus six days. Show unresolved
 pending approvals today as actionable now, without calling that date a deadline.
-Use a single server date boundary. Omit resolved proposals, automatic pulls,
+Return the API date boundary as start_date (YYYY-MM-DD), even when rows is
+empty. The page uses that date for all seven cells and does not recompute
+its own boundary. Omit resolved proposals, automatic pulls,
 undated exports, and dated rows outside the horizon. Preserve empty days and
 report an unavailable feed distinctly from an empty feed. Display each kind and
 show every same-day action, including existing amounts and currencies where

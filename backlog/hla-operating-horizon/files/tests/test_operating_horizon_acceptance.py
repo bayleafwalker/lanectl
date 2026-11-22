@@ -1,20 +1,19 @@
 """HTTP acceptance for the Operating Picture seven-day horizon (#1592)."""
+import subprocess
 from datetime import date, timedelta
 from pathlib import Path
-import subprocess
-
-from fastapi.testclient import TestClient
 
 from apps.api.app import create_app
+from control_plane_test_support import seed_source_asset_graph
+from fastapi.testclient import TestClient
 from packages.domains.finance.pipelines.account_transaction_service import AccountTransactionService
-from packages.pipelines.transformation_service import TransformationService
 from packages.pipelines.reporting_service import ReportingService
+from packages.pipelines.transformation_service import TransformationService
 from packages.platform.action_proposals import ActionProposalRegistry
 from packages.storage.duckdb_store import DuckDBStore
 from packages.storage.ingestion_catalog import SourceAssetCreate, SourceFreshnessConfigCreate
 from packages.storage.ingestion_config import IngestionConfigRepository
 from packages.storage.run_metadata import RunMetadataRepository
-from control_plane_test_support import seed_source_asset_graph
 
 
 def client_for(tmp_path: Path, *, reporting=None, proposals=None, config=None, admin=True):
@@ -43,6 +42,7 @@ def test_empty_operating_horizon_is_a_successful_read(tmp_path: Path):
         assert costs.json()["rows"] == []
         response = client.get("/control/operating-horizon")
         assert response.status_code == 200, f"Operating Picture horizon feed: {response.text}"
+        assert response.json()["start_date"] == date.today().isoformat()
         assert response.json()["rows"] == []
 
 

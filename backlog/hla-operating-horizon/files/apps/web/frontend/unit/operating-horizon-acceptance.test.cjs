@@ -1,9 +1,11 @@
 "use strict";
 
 const assert = require("node:assert/strict");
+const fs = require("node:fs");
 const Module = require("node:module");
 const path = require("node:path");
 const test = require("node:test");
+const vm = require("node:vm");
 const { buildSync } = require("esbuild");
 const React = require("react");
 const { renderToStaticMarkup } = require("react-dom/server");
@@ -64,4 +66,30 @@ test("the horizon renders every action and labels all four kinds", () => {
 test("an unavailable merged feed is distinct from an empty horizon", () => {
   assert.match(render([], { operatingHorizon: true }), /Horizon unavailable/);
   assert.doesNotMatch(render([{ dateLabel: "Mon 07", items: [] }]), /Horizon unavailable/);
+});
+
+test("the API start date determines all seven cells across frontend timezones", () => {
+  const page = fs.readFileSync("apps/web/frontend/app/operating-picture/page.js", "utf8");
+  const format = page.match(/^function localIsoDate\(.*?^\}/ms)?.[0] || "";
+  const build = page.match(/^function buildHorizonDays\(.*?^\}/ms)?.[0];
+  assert.ok(build, "Missing horizon day builder");
+
+  class FrontendDate extends Date {
+    constructor(...args) {
+      super(...(args.length ? args : ["2026-11-23T12:00:00Z"]));
+    }
+  }
+
+  const row = { id: "approval:cross-midnight", date: "2026-11-22", kind: "approval" };
+  const context = { Date: FrontendDate, rows: [row], boundary: "2026-11-22" };
+  vm.runInNewContext(
+    format + "\n" + build +
+      "\nfilled = buildHorizonDays(rows, boundary); empty = buildHorizonDays([], boundary);",
+    context,
+  );
+  assert.equal(context.filled.length, 7);
+  assert.equal(context.filled[0].items[0]?.id, row.id);
+  assert.equal(context.empty.length, 7);
+  assert.equal(context.filled[0].dateLabel, context.empty[0].dateLabel);
+  assert.ok(context.empty.every((day) => day.items.length === 0));
 });
