@@ -24,7 +24,9 @@ Use a single server date boundary. Omit resolved proposals, automatic pulls,
 undated exports, and dated rows outside the horizon. Preserve empty days and
 report an unavailable feed distinctly from an empty feed. Display each kind and
 show every same-day action, including existing amounts and currencies where
-present. Keep this feed read-only.
+present. Keep this feed read-only. The view accepts ordered horizon days as
+{dateLabel, items}, where items retain the API row fields. Expose the merged
+feed error to the view as unavailable.operatingHorizon.
 
 Acceptance exercises the HTTP surface with all four real source kinds, same-day
 ties, out-of-window rows, automatic pulls and resolved proposals, then verifies
@@ -36,6 +38,6 @@ access boundary and empty response. Fail on the base for the missing feed.
 paths = ["apps/api/**", "apps/web/frontend/**", "packages/application/**", "packages/pipelines/reporting_service.py", "tests/**"]
 
 [acceptance]
-files = ["tests/test_operating_horizon_acceptance.py"]
-exec = ["uv run --no-sync python -m pytest -q -p no:cacheprovider tests/test_operating_horizon_acceptance.py"]
+files = ["tests/test_operating_horizon_acceptance.py", "apps/web/frontend/unit/operating-horizon-acceptance.test.cjs"]
+exec = ["uv run --no-sync python -m pytest -q -p no:cacheprovider tests/test_operating_horizon_acceptance.py", "node --test apps/web/frontend/unit/operating-horizon-acceptance.test.cjs"]
 fail_on_base = true
