@@ -39,5 +39,5 @@ paths = ["apps/api/**", "apps/web/frontend/**", "packages/application/**", "pack
 
 [acceptance]
 files = ["tests/test_operating_horizon_acceptance.py", "apps/web/frontend/unit/operating-horizon-acceptance.test.cjs"]
-exec = ["uv run --no-sync python -m pytest -q -p no:cacheprovider tests/test_operating_horizon_acceptance.py", "node --test apps/web/frontend/unit/operating-horizon-acceptance.test.cjs"]
+exec = ["uv run --no-sync python -m pytest -q -p no:cacheprovider tests/test_operating_horizon_acceptance.py"]
 fail_on_base = true

@@ -1,6 +1,7 @@
 """HTTP acceptance for the Operating Picture seven-day horizon (#1592)."""
 from datetime import date, timedelta
 from pathlib import Path
+import subprocess
 
 from fastapi.testclient import TestClient
 
@@ -119,3 +120,21 @@ def test_operating_horizon_is_disabled_without_admin_access(tmp_path):
         response = client.get("/control/operating-horizon")
     assert response.status_code == 404
     assert response.json()["detail"].startswith("Unsafe admin routes are disabled")
+
+def test_operating_picture_renders_the_merged_horizon():
+    result = subprocess.run(
+        [
+            "bash", "-c",
+            'source tools/dev-env.sh && dev_prepare_env "$PWD" && '
+            'node --test apps/web/frontend/unit/operating-horizon-acceptance.test.cjs',
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=30,
+    )
+    if result.returncode not in (0, 1) or (
+        result.returncode and "code: 'ERR_ASSERTION'" not in result.stdout
+    ):
+        raise RuntimeError(f"Horizon renderer could not be exercised: {result.stdout}{result.stderr}")
+    assert result.returncode == 0, "Operating Picture did not render the merged horizon"
