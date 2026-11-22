@@ -29,5 +29,15 @@ The release journals are host-persistent under
 A subsequent actual release, `hla-operating-horizon`, claimed
 `homelab-analytics#1592` with the same scoped principal and acquired owner run
 `run_Z9DSPF8GHPAT7P2RRZ2MJPDB01`. The owner renewed its lease while the
-isolated OpenCode worker was active. Product landing and Work acceptance
-require their own evidence.
+isolated OpenCode worker was active. The isolated preview passed at checked
+commit `d5d24359e5732927f3123477d226f7bb7b26aa5b`, and LANECTL recorded
+successful teardown after landing. GitHub merged the checked commit into
+canonical `main` at `27d8c279385eae109fb2c26099159302127c7d9d` after
+all four checks passed. LANECTL reported the result to Vuoro. A fresh owner
+read confirmed Work #1592 was done with acceptance Decision 506.
+[homelab-analytics #91](https://github.com/bayleafwalker/homelab-analytics/pull/91)
+
+The [revision 3 release and acceptance files](2026-11-22-hla-operating-horizon/revision-3/)
+are retained unchanged outside the runnable backlog. The train and deployment
+journal is host-persistent under
+`/projects/dev/_artifacts/lanectl-horizon-release-20261122`.
