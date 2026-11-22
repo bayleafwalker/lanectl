@@ -63,11 +63,10 @@ Before making an inference, the worker durably writes a `<digest>.pending`
 marker. After a successful summary it writes the completed receipt and then
 removes the marker.
 
-If the model call or the receipt publication is uncertain, the marker remains
-and no completed receipt is produced. Later invocations for the same request
-refuse to continue, still leave the marker in place, and make no owner read or
-model call. The gateway has no idempotency key, so an uncertain call is not
-retried automatically.
+If the model call or receipt publication is uncertain, the marker remains.
+A retry first checks for a valid completed receipt and replays it if present.
+If only the marker remains, the retry makes no owner read or model call.
+The gateway has no idempotency key, so an uncertain call is not retried automatically.
 
 Investigate the marker and the gateway ledger before doing anything else.
 Only clear the marker after confirming that no inference ran. If an inference
