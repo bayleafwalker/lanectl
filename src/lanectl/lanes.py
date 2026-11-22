@@ -63,7 +63,7 @@ def rows(events: list[dict], root: Path | None = None,
             "max_attempts": lane.max_attempts,
             "timeout_s": lane.timeout_s,
             "routing": dict(lane.routing),
-            "caps": {cap: {"used": used.get(cap, 0), "limit": lane.caps.get(cap, 0)}
+            "caps": {cap: {"used": used.get(cap, 0), "limit": lane.caps.get(cap)}
                      for cap in CAPS},
         })
     return out
@@ -77,8 +77,10 @@ def render(row: dict) -> list[str]:
     """The three display lines for one lane."""
     routing = " ".join(f"{model}={_weight(weight)}"
                        for model, weight in sorted(row["routing"].items()))
-    caps = "  ".join(f"{cap} {row['caps'][cap]['used']}/{row['caps'][cap]['limit']}"
-                     for cap in CAPS)
+    caps = "  ".join(
+        f"{cap} {row['caps'][cap]['used']}/{row['caps'][cap]['limit']}"
+        for cap in CAPS if row["caps"][cap]["limit"] is not None
+    )
     return [
         f"{row['lane']}  r{row['revision']}  size_max={row['size_max']}  "
         f"max_attempts={row['max_attempts']}  timeout_s={row['timeout_s']}",

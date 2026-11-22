@@ -630,3 +630,26 @@ def test_legacy_consumers_follow_each_claims_retained_policy(estate, tmp_path, f
     result = evaluator.evaluate_attempt(evaluation_log, aid, rules)
     assert result["features"]["changed_lines_ratio"] == 0.8
     assert result["verdict"] == "accept"
+
+
+def test_omitting_daily_claim_quota_unblocks_work_published_with_old_quota(estate):
+    import os
+    from pathlib import Path
+    from lanectl import runner
+    from tests.seed.test_end_to_end import SUB_TEST
+
+    _, release, log = prospective(estate)
+    path = Path(os.environ["LANECTL_HOME"]) / "governance/lanes/implement.toml"
+    lines = path.read_text().splitlines(keepends=True)
+    old = "".join("items_per_day = 1\n" if line.startswith("items_per_day") else line
+                  for line in lines)
+    path.write_text(old)
+    release("first-daily-claim", SUB_TEST)
+    release("second-daily-claim", SUB_TEST)
+    first = runner.admit("implement", log, only="first-daily-claim")
+    assert not isinstance(first, str), first
+    blocked = runner.admit("implement", log, only="second-daily-claim")
+    assert "items_per_day 1/1" in blocked
+    path.write_text("".join(line for line in lines if not line.startswith("items_per_day")))
+    second = runner.admit("implement", log, only="second-daily-claim")
+    assert not isinstance(second, str), second

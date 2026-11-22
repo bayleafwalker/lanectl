@@ -415,7 +415,8 @@ def admit(lane_name: str, log: EventLog, only: str | None = None) -> Claim | str
 
         if running >= lane.caps["concurrency"]:
             return blocked(f"cap: concurrency {running}/{lane.caps['concurrency']}")
-        if claimed_today >= lane.caps["items_per_day"]:
+        daily_limit = lane.caps.get("items_per_day")
+        if daily_limit is not None and claimed_today >= daily_limit:
             return blocked(f"cap: items_per_day {claimed_today}/{lane.caps['items_per_day']}")
         if unlanded >= lane.caps["accepted_unlanded_max"]:
             return blocked(f"cap: accepted_unlanded {unlanded}/{lane.caps['accepted_unlanded_max']} "
@@ -423,7 +424,9 @@ def admit(lane_name: str, log: EventLog, only: str | None = None) -> Claim | str
         for rel, v in ready:
             binding = delivery_policy.resolve(events, rel.id)
             lane = delivery_policy.effective_lane(binding, load_lane(lane_name))
-            if (running >= lane.caps["concurrency"] or claimed_today >= lane.caps["items_per_day"]
+            daily_limit = lane.caps.get("items_per_day")
+            if (running >= lane.caps["concurrency"]
+                    or (daily_limit is not None and claimed_today >= daily_limit)
                     or unlanded >= lane.caps["accepted_unlanded_max"]):
                 skipped.append(f"{rel.id}: bound capacity limit")
                 continue
