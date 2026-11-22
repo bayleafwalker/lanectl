@@ -540,3 +540,15 @@ This closes the local owner-tool prerequisite. Exact-image service recovery in d
 HLA2908 used both original attempts. A1 timed out after its681-line source passed all five gates. A2 completed with651lines and passed all five gates, all53 frozen acceptance cases, full Make and55 unchanged UI checks. Seven specialist reviews plus actual source execution then exposed a valid-row contract violation: Python orders fullwidth U+FF21 before emoji U+1F600, while the browser helper reverses them. The literal route-size blocker also remains unresolved. Raw briefing coercion failures were reproduced only through the data provider seam; ordinary typed INTEGER publication reachability is not claimed.
 
 The integrator parked A2, served2908 is blocked, and verification reservation510 is released. Both source bundles were independently restored from base-only repositories and retained with original passing checks, review findings and factual counterexamples. [Complete closeout](../evidence/2026-11-15-product-contact/overview-priority-closeout/README.md). No repair, third attempt, gate/spec/budget reset, train or adoption occurred. Canonical integrator revision1 grants no model-error repair authority; PR7 remains an unactivated draft. Original1590/1593 outcomes remain incomplete.
+
+### November 22 hosted claim to outcome
+
+The scheduled Appservice public lane claimed Vuoro Work #1 and produced a
+checked train through the gateway. The train deployed and removed its preview.
+Following a reviewed owner handoff, the scoped publisher verified the broker's
+canonical merge and Vuoro independently returned the Work outcome as accepted.
+The November 21 proof separately covers off-node recovery, replacement-runner
+recovery and stale-runner refusal. See the
+[Appservice runtime record](../evidence/appservice-pilot-runtime.md).
+The cross-project coordination scenarios and lane-history authority retain
+their own verification scope. This run used operator review for the train.
