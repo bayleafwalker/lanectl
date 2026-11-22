@@ -126,6 +126,50 @@ def test_failed_generation_can_retry_without_losing_intake(tmp_path):
     assert closure.proposals(log.read())[0]['action']=='proposed'
 
 
+def test_retry_rejected_draft_keeps_original_and_reuses_completed_retry(tmp_path, monkeypatch):
+    import hashlib
+    import json
+    from types import SimpleNamespace
+
+    log = log_at(tmp_path, ruled('a1') + ruled('a2'))
+    row = closure.scan(log, record=True)[0]
+    monkeypatch.setenv('LANECTL_HOME', str(tmp_path))
+    monkeypatch.setattr(closure.specification, 'release_digest', lambda path: path.name)
+    monkeypatch.setattr(closure, 'load_release', lambda path: SimpleNamespace(id=path.name, draft=True))
+    calls = []
+
+    def create(release_id, **kwargs):
+        calls.append(kwargs['intent'])
+        path = tmp_path / 'backlog' / release_id
+        path.mkdir(parents=True)
+        (path / 'specification.json').write_text(json.dumps({
+            'intent_digest': hashlib.sha256(kwargs['intent'].encode()).hexdigest(),
+            'release_digest': release_id,
+            'review': {'verdict': 'revise', 'reason': 'No actual test assertions'},
+        }))
+        return path
+
+    def draft(**kwargs):
+        return closure.draft(log, row['fingerprint'], author_model='claude-opus-5-5',
+            reviewer_model='claude-fable-5-2', scope=['src/**'], draft_fn=create, **kwargs)
+
+    original = draft()
+    evidence = tmp_path / 'backlog' / original['release_id'] / 'specification.json'
+    before = evidence.read_bytes()
+    retry = draft(retry_rejected=original['release_id'])
+    assert retry['release_id'] != original['release_id']
+    assert retry['replaces_release_id'] == original['release_id']
+    assert 'No actual test assertions' in calls[1]
+    assert evidence.read_bytes() == before
+    assert draft(retry_rejected=original['release_id']) == retry
+    assert len(calls) == 2
+    approved = tmp_path / 'backlog' / retry['release_id'] / 'specification.json'
+    approved.write_text(approved.read_text().replace('"revise"', '"accept"'))
+    with pytest.raises(ValueError, match='rejected review'):
+        draft(retry_rejected=retry['release_id'])
+    assert len(calls) == 2
+
+
 def test_crash_after_draft_creation_recovers_without_another_model_call(tmp_path,monkeypatch):
     log=log_at(tmp_path,ruled('a1')+ruled('a2'))
     row=closure.scan(log,record=True)[0]

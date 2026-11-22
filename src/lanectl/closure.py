@@ -109,7 +109,7 @@ def _intent(row):
 
 
 def draft(log, fingerprint, *, author_model, reviewer_model, scope,
-          lane_name='restricted', draft_fn=None):
+          lane_name='restricted', retry_rejected=None, draft_fn=None):
     """Link one independently reviewed draft; retry safely after process failure."""
     if not _first_party(author_model) or not _first_party(reviewer_model):
         raise ValueError('telemetry-derived maintenance intents are restricted')
@@ -126,10 +126,32 @@ def draft(log, fingerprint, *, author_model, reviewer_model, scope,
         row = next((r for r in proposals(log.read()) if r['fingerprint'] == fingerprint), None)
         if row is None:
             raise ValueError('unknown closure proposal')
-        if row.get('action') == 'drafted':
-            return row
         release_id = f'closure-{fingerprint[:20]}'
         intent = _intent(row)
+        replacement = {}
+        if retry_rejected is not None:
+            if row.get('replaces_release_id') == retry_rejected:
+                return row
+            revision = row.get('draft_revision', 1)
+            prior_id = release_id if revision == 1 else f'{release_id}-r{revision}'
+            if (row.get('action') != 'drafted' or row.get('release_id') != prior_id
+                    or retry_rejected != prior_id):
+                raise ValueError('retry must name the current closure draft')
+            prior = home() / 'backlog' / prior_id
+            prior_release = load_release(prior)
+            evidence = json.loads((prior / specification.EVIDENCE_FILE).read_text())
+            review = evidence.get('review', {})
+            if (prior_release.id != prior_id or not prior_release.draft
+                    or evidence.get('release_digest') != specification.release_digest(prior)
+                    or review.get('verdict') != 'revise' or not isinstance(review.get('reason'), str)):
+                raise ValueError('retry requires an unchanged draft with a rejected review')
+            revision += 1
+            release_id = f'{release_id}-r{revision}'
+            intent += (f'\nPrior draft {prior_id} was rejected. Address this reviewer finding: '
+                       f'{review["reason"][:2000]}')
+            replacement = dict(draft_revision=revision, replaces_release_id=prior_id)
+        elif row.get('action') == 'drafted':
+            return row
         destination = home() / 'backlog' / release_id
         if destination.exists():
             # A crash may have happened after atomic draft creation but before
@@ -145,7 +167,7 @@ def draft(log, fingerprint, *, author_model, reviewer_model, scope,
                 repo_name=row['repo'], title=row['summary'], intent=intent, scope=scope,
                 author_model=author_model, reviewer_model=reviewer_model,
                 lane_name=lane_name, data_class='restricted', task_class='tooling')
-        result = dict(row, action='drafted', release_id=release_id, draft_path=str(path))
+        result = dict(row, action='drafted', release_id=release_id, draft_path=str(path), **replacement)
         with log.locked():
             log.append('triage.proposed', result)
         return result
@@ -163,6 +185,8 @@ def register(sub):
     draft_cmd.add_argument('--reviewer-model', required=True)
     draft_cmd.add_argument('--scope', action='append', required=True)
     draft_cmd.add_argument('--lane', default='restricted')
+    draft_cmd.add_argument('--retry-rejected', metavar='RELEASE_ID',
+                           help='regenerate the named rejected draft and retain its evidence')
     return {'closure': _cmd}
 
 
@@ -174,7 +198,8 @@ def _cmd(args, log):
             rows = proposals(log.read())
         else:
             rows = [draft(log, args.fingerprint, author_model=args.author_model,
-                reviewer_model=args.reviewer_model, scope=args.scope, lane_name=args.lane)]
+                reviewer_model=args.reviewer_model, scope=args.scope, lane_name=args.lane,
+                retry_rejected=args.retry_rejected)]
         print(json.dumps(rows, indent=2))
         return 0
     except (OSError, ValueError, KeyError) as exc:
