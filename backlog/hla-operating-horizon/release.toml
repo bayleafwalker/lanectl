@@ -2,7 +2,6 @@ id = "hla-operating-horizon"
 repo = "homelab-analytics"
 base_sha = "b3fb3d750e561eabde492ebe9812fb50849c0e04"
 revision = 3
-draft = true
 title = "Merge dated household actions in the seven-day operating horizon"
 task_class = "product-ui"
 size = "M"
