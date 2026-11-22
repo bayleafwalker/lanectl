@@ -257,6 +257,7 @@ def _build_parser():
     l = sub.add_parser("land", help="fast-forward main to a passed train (records events, moves main)")
     l.add_argument("train_id", help="train id from `lanectl train`")
     l.add_argument("--resume-owner", action="store_true", help="resume the existing lease for a single coordinated attempt")
+    l.add_argument("--publish", action="store_true", help="publish and settle the reviewed train under its current owner lease")
     _add_effect_flags(l)
     rj = sub.add_parser("reject", help="integrator rejects a candidate: requeue, or --park (records events)")
     rj.add_argument("attempt_id", help="attempt id from `lanectl candidates`")
@@ -364,13 +365,18 @@ def _dispatch(a, handlers) -> int:
         print(runner.build_train(log, a.repo, a.only))
         return 0
     if a.cmd == "land":
+        if a.publish and not a.resume_owner:
+            raise ValueError("--publish requires --resume-owner")
         tb = next((e["data"] for e in reversed(log.read())
                    if e["type"] == "train.built" and e["data"]["train_id"] == a.train_id), None)
         if tb is None:
             raise _not_found("train", a.train_id, "lanectl candidates   # then: lanectl train <repo>")
         plan = f"land train {a.train_id}: fast-forward {tb['repo']} main with attempts {tb['attempts']}"
+        if a.publish:
+            plan += "; publish through canonical CI and report the Work outcome"
         return _effect(a, f"Land train {a.train_id} on main", plan,
-                       lambda: _landed(runner.land(log, a.train_id, resume_owner=a.resume_owner)))
+                       lambda: _landed(runner.land(log, a.train_id, resume_owner=a.resume_owner,
+                                                   publish=a.publish)))
     if a.cmd == "approve":
         print(runner.approve(log, a.attempt_id, a.note))
         return 0

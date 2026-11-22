@@ -52,15 +52,15 @@ def _expires_at(ttl_s: int) -> str:
     return (datetime.now(timezone.utc) + timedelta(seconds=ttl_s)).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
-def _run(cmd: str, cwd: Path, env: dict[str, str]) -> tuple[int, str]:
+def _run(cmd: str, cwd: Path, env: dict[str, str], *, timeout_s: float = TIMEOUT_S) -> tuple[int, str]:
     """Run one deploy stage in its own process group; return (exit, combined output)."""
     try:
         p = subprocess.run(cmd, shell=True, cwd=cwd, env=env, capture_output=True,
-                           text=True, timeout=TIMEOUT_S)
+                           text=True, timeout=timeout_s)
     except subprocess.TimeoutExpired as exc:
         out = "".join(part if isinstance(part, str) else (part or b"").decode("utf-8", "replace")
                       for part in (exc.stdout, exc.stderr))
-        return 124, f"{out}\ntimed out after {TIMEOUT_S}s"
+        return 124, f"{out}\ntimed out after {timeout_s:g}s"
     return p.returncode, (p.stdout or "") + (p.stderr or "")
 
 

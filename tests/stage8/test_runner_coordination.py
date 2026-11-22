@@ -5,6 +5,8 @@ from pathlib import Path
 from types import SimpleNamespace
 import os
 
+import pytest
+
 from lanectl import coordination, integrator, runner, work
 from lanectl.adapters import AdapterResult
 from lanectl.events import project_items
@@ -328,3 +330,67 @@ def test_publication_probe_retries_uncertain_read_and_refuses_late_success(monke
     cancel = SimpleNamespace(wait=wait, is_set=lambda: False)
     assert not runner._await_canonical_publication(object(), "b" * 40, owner, cancel, timeout_s=12)
     assert observations == [10, 2]
+
+
+@pytest.mark.parametrize("withdraw", [False, True])
+def test_reviewed_train_publishes_only_under_current_matching_lease(estate, monkeypatch, withdraw):
+    _, release, log = estate
+    release("manual-publish", TEST)
+    _set_work("manual-publish", "target#12", True)
+    owner = configure(monkeypatch)
+    monkeypatch.setattr(owner, "recorded_binding", lambda _: {"item_id": 12}, raising=False)
+    monkeypatch.setattr(integrator, "_authority", lambda: {"autonomous_classes": []})
+    claim = runner.admit("implement", log)
+    assert "candidate" in runner.execute(claim, log, adapter_fn=good)
+    assert "PASSED" in runner.build_train(log, "target", [claim.attempt_id])
+    train = next(e["data"] for e in reversed(log.read()) if e["type"] == "train.built")
+    repo = replace(claim.repo, landing="pr", publication_cmd="submitted through broker")
+    monkeypatch.setattr(runner, "load_repos", lambda: {"target": repo})
+    monkeypatch.setattr(work, "merged", lambda *args, **kwargs: False)
+
+    submissions = []
+
+    def submit(actual_repo, train_id, sha, *, verify_canonical, submit_timeout_s):
+        assert actual_repo == repo and not verify_canonical
+        assert 0 < submit_timeout_s <= 40
+        assert sha == train["checked_sha"] and train_id == train["train_id"]
+        owner.assert_active()
+        submissions.append(sha)
+
+    monkeypatch.setattr(integrator, "publish", submit)
+    owner.active = False
+    assert "lease unavailable" in runner.land(log, train["train_id"], resume_owner=True, publish=True)
+    assert not submissions
+
+    owner.active = True
+    def unavailable(*args, **kwargs):
+        raise RuntimeError("publication endpoint unavailable")
+
+    with monkeypatch.context() as failure:
+        failure.setattr(integrator, "publish", unavailable)
+        assert "submission pending" in runner.land(log, train["train_id"], resume_owner=True, publish=True)
+    assert not [call for call in owner.calls if call[0] == "report"]
+
+    monkeypatch.setattr(runner, "_await_canonical_publication", lambda *args, **kwargs: False)
+    assert "publication pending" in runner.land(log, train["train_id"], resume_owner=True, publish=True)
+    assert not [call for call in owner.calls if call[0] == "report"]
+    if withdraw:
+        runner.integrator_reject(log, claim.attempt_id, "Superseded during review", park=True)
+        assert "no longer a candidate" in runner.land(
+            log, train["train_id"], resume_owner=True, publish=True
+        )
+        assert submissions == [train["checked_sha"]]
+        assert not [call for call in owner.calls if call[0] == "report"]
+        return
+
+    def verify(actual_repo, sha, guard, cancel, *, timeout_s):
+        assert actual_repo == repo and sha == train["checked_sha"]
+        assert guard is owner and not cancel.is_set() and timeout_s > 0
+        return True
+
+    monkeypatch.setattr(runner, "_await_canonical_publication", verify)
+    result = runner.land(log, train["train_id"], resume_owner=True, publish=True)
+    assert result.endswith("; settled"), result
+    assert submissions == [train["checked_sha"]] * 2
+    assert [call[0] for call in owner.calls][-2:] == ["evidence", "report"]
+    assert len([event for event in log.read() if event["type"] == "item.landed"]) == 1
