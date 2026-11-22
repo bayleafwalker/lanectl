@@ -30,6 +30,14 @@ present. Keep this feed read-only. The view accepts ordered horizon days as
 {dateLabel, items}, where items retain the API row fields. Expose the merged
 feed error to the view as unavailable.operatingHorizon.
 
+Reuse the completed revision-two implementation as the starting point. The
+isolated clone can read the candidate objects by SHA. Inspect and apply the
+implementation-only diff with:
+git diff --binary 0f8c3161640463d7bc06bdc02c64e8cf403dd278 4805bbf6866aacc7093f5b2813ffef8ed215e6f7 | git apply
+This diff excludes the older frozen acceptance files. Preserve the new frozen
+inputs and run the prescribed checks. The retry corrects planner-owned lint
+and independently checks one-clock export evaluation.
+
 Acceptance exercises the HTTP surface with all four real source kinds, same-day
 ties, out-of-window rows, automatic pulls and resolved proposals, then verifies
 the Operating Picture consumer renders the feed and each kind. Exercise the
