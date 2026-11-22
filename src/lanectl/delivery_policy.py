@@ -80,7 +80,8 @@ def effective_lane(binding, current):
     """Freeze quality rules without restoring a superseded authority grant.
 
     Incomparable sandbox/effect changes fail closed. Other boundaries intersect;
-    counters and timeouts take the more restrictive value.
+    configured counters and timeouts take the more restrictive value. An omitted
+    daily cap disables that counter even for older published work.
     """
     from dataclasses import replace
     bound = from_binding(binding)
@@ -95,7 +96,10 @@ def effective_lane(binding, current):
     return replace(bound,
         size_max=min((bound.size_max, current.size_max), key=order.get),
         routing={m: w for m, w in current.routing.items() if m in bound.routing},
-        caps={k: min(v, current.caps[k]) for k, v in bound.caps.items()},
+        caps={
+            name: min(limit, bound.caps.get(name, limit))
+            for name, limit in current.caps.items()
+        },
         protected_paths=combine(bound.protected_paths, current.protected_paths),
         dependency_manifests=combine(bound.dependency_manifests, current.dependency_manifests),
         test_globs=combine(bound.test_globs, current.test_globs),
