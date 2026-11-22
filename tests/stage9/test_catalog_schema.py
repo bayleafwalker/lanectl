@@ -204,3 +204,18 @@ def test_overdeep_data_fails_closed():
     value = "leaf"
     for _ in range(150): value = [value]
     assert not _valid(value, {})
+
+
+def test_shared_owner_lease_basis_revision_is_validated():
+    schema = {
+        "type": ["string", "null"],
+        "pattern": (
+            r"^item:[0-9a-fA-F-]{36}@description:v[0-9]+"
+            r"@sha256:[0-9a-f]{64}@revise:[0-9]+$"
+        ),
+    }
+    revision = "item:ee8a6c73-b2a3-4cb7-952a-374930bc9a23@description:v12@sha256:" + "a" * 64
+    assert _valid(revision + "@revise:2", schema)
+    assert _valid(None, schema)
+    assert not _valid(revision + "@revise:wrong", schema)
+    assert not _valid("unbound", schema)
