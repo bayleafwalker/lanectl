@@ -249,3 +249,82 @@ def test_manual_landing_resumes_only_the_admitted_owner_lease(estate, monkeypatc
     assert runner.land(log, train, resume_owner=True).startswith('landed')
     assert project_items(log.read())['owner-manual'].state == 'landed'
     assert not any(call[0] == 'report' for call in owner.calls)
+
+
+def test_publication_wait_rechecks_lease_after_canonical_merge(monkeypatch):
+    import pytest
+
+    owner = Owner()
+    owner.cancel = lambda: None
+    repo, sha = object(), "a" * 40
+    observations = []
+
+    def merged(actual_repo, actual_sha, *, timeout_s):
+        assert 0 < timeout_s <= 10
+        assert actual_repo is repo and actual_sha == sha
+        observations.append(actual_sha)
+        if len(observations) == 1:
+            return False
+        owner.active = False
+        return True
+
+    waits = []
+    cancel = SimpleNamespace(wait=lambda delay: waits.append(delay) or False, is_set=lambda: False)
+    monkeypatch.setattr(work, "merged", merged)
+    with pytest.raises(coordination.CoordinationError, match="lease revoked"):
+        runner._await_canonical_publication(repo, sha, owner, cancel, timeout_s=60)
+    assert observations == [sha, sha]
+    assert len(waits) == 1
+
+
+def test_coordinated_publication_waits_inside_original_guard(estate, monkeypatch):
+    _, release, log = estate
+    release("async-publication", TEST)
+    _set_work("async-publication", "target#12", True)
+    owner = configure(monkeypatch)
+    claim = runner.admit("implement", log)
+    repo = replace(claim.repo, landing="pr", publication_cmd="submit checked train")
+    claim = replace(claim, repo=repo)
+    sha = "a" * 40
+
+    def cycle(log, *, only_attempt):
+        assert only_attempt == claim.attempt_id
+        log.append("item.landed", {
+            "attempt_id": only_attempt, "train_id": "train-async", "landed_sha": sha,
+            "fix_commits": [],
+        }, item_id=claim.rel.id)
+
+    def await_publication(actual_repo, actual_sha, guard, cancel, *, timeout_s):
+        assert actual_repo is repo and actual_sha == sha
+        assert guard is owner and not cancel.is_set()
+        assert not any(kind == "report" for kind, _ in owner.calls)
+        owner.calls.append(("canonical", (actual_sha,)))
+        return True
+
+    monkeypatch.setattr(integrator, "cycle", cycle)
+    monkeypatch.setattr(runner, "_await_canonical_publication", await_publication, raising=False)
+    monkeypatch.setattr(work, "merged", lambda *args: False)
+    outcome = runner.execute(claim, log, adapter_fn=good)
+    assert [kind for kind, _ in owner.calls][-3:] == ["canonical", "evidence", "report"], outcome
+
+
+def test_publication_probe_retries_uncertain_read_and_refuses_late_success(monkeypatch):
+    owner = Owner()
+    now = [0]
+    monkeypatch.setattr(runner, "time", SimpleNamespace(monotonic=lambda: now[0]))
+    observations = []
+
+    def merged(_repo, _sha, *, timeout_s):
+        observations.append(timeout_s)
+        if len(observations) == 1:
+            raise work._SyncFailed("temporary fetch failure")
+        now[0] = 12
+        return True
+
+    def wait(delay):
+        now[0] += delay
+
+    monkeypatch.setattr(work, "merged", merged)
+    cancel = SimpleNamespace(wait=wait, is_set=lambda: False)
+    assert not runner._await_canonical_publication(object(), "b" * 40, owner, cancel, timeout_s=12)
+    assert observations == [10, 2]
