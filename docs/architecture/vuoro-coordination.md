@@ -96,6 +96,32 @@ the credential value out of command arguments, unit text and process environment
 It does not enable the timer or select a served event authority. Keep JSONL
 authoritative until the separate served-store qualification and cutover below.
 
+For the two Vuoro Shared repositories, add these entries to the workstation's
+local `governance/vuoro.toml`:
+
+```toml
+[repos.homelab-analytics]
+endpoint = "https://vuoro-shared.apps.kotona.app"
+repo_id = "homelab-analytics"
+expected_environment = "vuoro-shared"
+credential_name = "lanectl-homelab-analytics"
+
+[repos.vuoro-cloud]
+endpoint = "https://vuoro-shared.apps.kotona.app"
+repo_id = "vuoro-cloud"
+expected_environment = "vuoro-shared"
+credential_name = "lanectl-vuoro-cloud"
+```
+
+Vuoro Shared uses its owner-managed native identity registry. Each runner needs
+an explicit repository scope and Work read, claim and evidence authority.
+After confirming the identities can read their own repositories and receive a
+scope refusal for the other repository, install the optional
+`contrib/systemd/lanectl-tick-vuoro-shared.conf` alongside the existing drop-in.
+It loads the two repository credentials from the workstation credential
+directory. Keep the existing LANECTL Cloud binding and credential if that
+repository also runs on the workstation.
+
 Repository governance may explicitly select `train_isolation = "environment"`
 for uncoordinated repositories. This strips inherited secrets but preserves host
 ownership IDs; it provides no credential-file barrier. Sovite previously used
