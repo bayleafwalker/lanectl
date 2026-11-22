@@ -75,10 +75,11 @@ legacy identities are held. Recovered partial gates never become acceptance;
 a new attempt reruns them. Worker namespaces mount control logs and recovery
 journals read-only while retaining their own checkout for implementation.
 
-Promote a class through a reviewed policy revision after examining real product
-results. The ladder's week-long autonomous-operation and per-class product
-evidence clocks are operational qualification, not claims supplied by the test
-suite. Existing production-promotion decisions remain separate.
+A pilot operates with the ordinary product workflow. Record actual product
+results on first use and review them for fixes or routing changes. First-use
+observation has no fixed duration or separate promotion checkpoint. Size and
+concurrency bounds should reflect available machine resources, and commercial
+gateway limits should reflect the applicable provider allowance.
 
 ## Vuoro owner and served state
 
