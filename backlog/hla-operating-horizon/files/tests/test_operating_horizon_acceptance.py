@@ -3,9 +3,11 @@ import subprocess
 from datetime import date, timedelta
 from pathlib import Path
 
-from apps.api.app import create_app
 from control_plane_test_support import seed_source_asset_graph
 from fastapi.testclient import TestClient
+
+from apps.api.app import create_app
+from apps.api.routes import control_routes
 from packages.domains.finance.pipelines.account_transaction_service import AccountTransactionService
 from packages.pipelines.reporting_service import ReportingService
 from packages.pipelines.transformation_service import TransformationService
@@ -138,3 +140,23 @@ def test_operating_picture_renders_the_merged_horizon():
     ):
         raise RuntimeError(f"Horizon renderer could not be exercised: {result.stdout}{result.stderr}")
     assert result.returncode == 0, "Operating Picture did not render the merged horizon"
+
+def test_export_evaluation_uses_the_response_start_date(tmp_path, monkeypatch):
+    days = iter((date(2026, 11, 22), date(2026, 11, 23)))
+    observed_dates = []
+
+    class MidnightDate(date):
+        @classmethod
+        def today(cls):
+            return next(days)
+
+    def capture_views(*_, as_of, **__):
+        observed_dates.append(as_of.isoformat())
+        return []
+
+    monkeypatch.setattr(control_routes, "date", MidnightDate)
+    monkeypatch.setattr(control_routes, "build_source_freshness_views", capture_views)
+    with client_for(tmp_path) as client:
+        response = client.get("/control/operating-horizon")
+    assert response.status_code == 200, response.text
+    assert observed_dates == [response.json()["start_date"]], "Export dates must use the API window"
