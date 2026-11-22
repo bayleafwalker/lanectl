@@ -270,7 +270,8 @@ def reconcile_publications(args):
                     git(imported.repository, "remote", "add", "origin", canonical)
                     repo = argparse.Namespace(path=imported.repository, main="main")
                     if not work.merged(repo, intent["commit"]):
-                        integrator.publish(repo, intent["train"], intent["commit"], run=run)
+                        integrator.publish(repo, intent["train"], intent["commit"], run=run,
+                                           required_check=("ci", "tests"))
                         if not work.merged(repo, intent["commit"]):
                             raise RuntimeError("publication has no fresh canonical ancestry proof")
                 print(f"{name}: canonical PR merge verified")

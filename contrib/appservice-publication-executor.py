@@ -27,7 +27,7 @@ def pr_capability(args):
     if len(options) >= 3 and re.fullmatch(r"[1-9][0-9]*", options[0]) and options[1:3] == ["-R", REPOSITORY]:
         flags = options[3:]
         if action == "checks" and flags in (
-            ["--watch"], ["--required", "--json", "name,bucket,state"],
+            ["--watch"], ["--json", "workflow,name,bucket,state"],
         ):
             return "pr.read"
         if (action == "merge" and len(flags) == 3

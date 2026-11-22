@@ -118,7 +118,8 @@ def test_publication_inbox_processes_other_requests_and_demands_fresh_ancestry(t
 
     calls = []
 
-    def publish(repo, train, commit, *, run):
+    def publish(repo, train, commit, *, run, required_check):
+        assert required_check == ("ci", "tests")
         calls.append((train, commit))
         return "owner acknowledgement"
 
