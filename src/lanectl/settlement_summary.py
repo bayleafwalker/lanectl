@@ -184,7 +184,39 @@ def _owner_client(path):
     )
 
 
-def _complete_receipt(directory_fd, receipts, request, digest, vuoro_token_file):
+def owner_facts(client, request):
+    """Package scoped owner results for the separately credentialed model worker."""
+    return {
+        "owner": client.expected_environment,
+        "request_digest": hashlib.sha256(_canonical(request).encode("ascii")).hexdigest(),
+        "facts": settlements(client, request["work_ids"]),
+    }
+
+
+def _read_owner_facts(path, digest, work_ids):
+    with path.open("rb") as source:
+        raw = source.read(_MAX_REQUEST_BYTES + 1)
+    if len(raw) > _MAX_REQUEST_BYTES:
+        raise ValueError("settlement facts exceed the size bound")
+    value = json.loads(raw, object_pairs_hook=_unique_object)
+    if (not isinstance(value, dict) or set(value) != {"owner", "request_digest", "facts"}
+            or not isinstance(value["owner"], str)
+            or not re.fullmatch(r"[a-z0-9-]{1,128}", value["owner"])
+            or value["request_digest"] != digest
+            or not isinstance(value["facts"], list)
+            or len(value["facts"]) != len(work_ids)):
+        raise ValueError("settlement facts do not match the request")
+    for fact, work_id in zip(value["facts"], work_ids, strict=True):
+        if (not isinstance(fact, dict) or set(fact) != {"work_id", "title", "resolution"}
+                or type(fact["work_id"]) is not int or fact["work_id"] != work_id
+                or not isinstance(fact["title"], str) or len(fact["title"]) > 300
+                or not isinstance(fact["resolution"], str) or not fact["resolution"]
+                or len(fact["resolution"]) > 80):
+            raise ValueError("invalid settlement facts")
+    return value["facts"]
+
+
+def _complete_receipt(directory_fd, receipts, request, digest, vuoro_token_file, facts_file):
     name, pending = f"{digest}.json", f"{digest}.pending"
     expected = {**request, "request_digest": digest}
     completed = _read_receipt(directory_fd, name, expected)
@@ -204,7 +236,8 @@ def _complete_receipt(directory_fd, receipts, request, digest, vuoro_token_file)
 
     ids = request["work_ids"]
     if ids:
-        facts = settlements(_owner_client(vuoro_token_file), ids)
+        facts = (_read_owner_facts(facts_file, digest, ids) if facts_file is not None
+                 else settlements(_owner_client(vuoro_token_file), ids))
         # Persist intent before calling the model. An unknown result cannot be
         # retried automatically because the gateway has no idempotency key.
         _publish(directory_fd, pending, (_canonical(expected) + "\n").encode("ascii"))
@@ -228,7 +261,7 @@ def _complete_receipt(directory_fd, receipts, request, digest, vuoro_token_file)
     return output
 
 
-def settlement_receipt(request_path, receipts, vuoro_token_file=None):
+def settlement_receipt(request_path, receipts, vuoro_token_file=None, *, facts_file=None):
     request = _read_request(request_path)
     digest = hashlib.sha256(_canonical(request).encode("ascii")).hexdigest()
     receipts.mkdir(mode=0o700, exist_ok=True)
@@ -248,7 +281,7 @@ def settlement_receipt(request_path, receipts, vuoro_token_file=None):
             if not stat.S_ISREG(os.fstat(lock_fd).st_mode):
                 raise ValueError("settlement lock is not a regular file")
             fcntl.flock(lock_fd, fcntl.LOCK_EX)
-            return _complete_receipt(directory_fd, receipts, request, digest, vuoro_token_file)
+            return _complete_receipt(directory_fd, receipts, request, digest, vuoro_token_file, facts_file)
         finally:
             os.close(lock_fd)
     finally:
@@ -259,17 +292,23 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--vuoro-token-file", type=Path)
     parser.add_argument("--request", type=Path, help="Settlement batch JSON")
+    parser.add_argument("--facts-file", type=Path, help="Owner facts from the trusted scheduler")
     parser.add_argument("--receipt-dir", type=Path, help="Directory for durable request receipts")
     parser.add_argument("work_ids", type=int, nargs="*")
     args = parser.parse_args(argv)
     if args.request is not None:
         if args.receipt_dir is None or args.work_ids:
             parser.error("--request requires --receipt-dir and replaces positional work IDs")
-    elif args.receipt_dir is not None or not args.work_ids or args.vuoro_token_file is None:
+        if args.facts_file is not None and args.vuoro_token_file is not None:
+            parser.error("--facts-file and --vuoro-token-file are mutually exclusive")
+    elif (args.receipt_dir is not None or args.facts_file is not None
+          or not args.work_ids or args.vuoro_token_file is None):
         parser.error("provide --vuoro-token-file and work IDs, or --request and --receipt-dir")
     try:
         if args.request is not None:
-            sys.stdout.write(settlement_receipt(args.request, args.receipt_dir, args.vuoro_token_file))
+            sys.stdout.write(settlement_receipt(
+                args.request, args.receipt_dir, args.vuoro_token_file, facts_file=args.facts_file,
+            ))
         else:
             print(summarize(settlements(_owner_client(args.vuoro_token_file), args.work_ids)))
     except PendingReceiptError as error:

@@ -258,3 +258,28 @@ def test_positional_cli_still_returns_plain_text(monkeypatch, capsys):
     monkeypatch.setattr(summary, "summarize", lambda facts: "Plain summary")
     assert summary.main(["--vuoro-token-file", "/unused", "4"]) == 0
     assert capsys.readouterr().out == "Plain summary\n"
+
+
+def test_trusted_scheduler_facts_are_bound_to_the_exact_request(tmp_path, monkeypatch, capsys):
+    request, _, receipts = receipt_args(tmp_path, [4])
+    owner = Owner()
+    owner.expected_environment = "vuoro-cloud-ws-test"
+    facts = summary.owner_facts(owner, json.loads(request.read_text()))
+    path = tmp_path / "owner-facts.json"
+    path.write_text(json.dumps({**facts, "request_digest": "0" * 64}))
+    monkeypatch.setattr(summary, "VuoroClient", lambda *a, **kw: pytest.fail("worker fetched the owner"))
+    calls = []
+    monkeypatch.setattr(summary, "summarize", lambda facts: calls.append(facts) or "Accepted.")
+    args = ["--request", str(request), "--receipt-dir", str(receipts), "--facts-file", str(path)]
+    assert summary.main(args) == 1
+    assert not calls and not list(receipts.glob("*.pending"))
+    capsys.readouterr()
+
+    path.write_text(json.dumps(facts))
+    assert summary.main(args) == 0
+    result = capsys.readouterr().out
+    assert json.loads(result)["summary"] == "Accepted."
+    assert calls == [facts["facts"]]
+    path.unlink()
+    assert summary.main(args) == 0
+    assert capsys.readouterr().out == result and len(calls) == 1
