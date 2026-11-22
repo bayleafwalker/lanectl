@@ -17,6 +17,7 @@ _CATALOG_PATTERNS = {
     r"^lease_[0-9A-HJKMNP-TV-Z]{26}$",
     r"^outcome_[0-9A-HJKMNP-TV-Z]{26}$",
     r"^[0-9a-f]{64}$",
+    r"^item:[0-9a-fA-F-]{36}@description:v[0-9]+@sha256:[0-9a-f]{64}@revise:[0-9]+$",
     r"^(self-reported|checked|role-separated|identity-separated|human-authorized)(\+(self-reported|checked|role-separated|identity-separated|human-authorized))*$",
 }
 _ANNOTATIONS = {"title", "description", "default", "examples", "deprecated", "readOnly", "writeOnly"}
