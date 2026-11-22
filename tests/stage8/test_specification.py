@@ -43,6 +43,22 @@ def test_draft_has_independent_review_and_fails_on_real_base(estate):
     assert json.loads((d / 'specification.json').read_text())['review']['verdict'] == 'accept'
 
 
+def test_malformed_acceptance_reports_path_and_line_without_source(estate):
+    def adapter(**kwargs):
+        assert 'adversarial reviewer' not in kwargs['prompt']
+        payload = {'outcome': 'Add subtraction', 'tests': {
+            'tests/test_broken.py': 'def test_sub():\n    assert "restricted-line\n',
+        }}
+        response = Path(kwargs['worktree']) / '.lanectl-spec' / 'response.json'
+        response.write_text(json.dumps(payload))
+        return AdapterResult('done', 0, 'written', None)
+
+    with pytest.raises(ValueError, match=r'tests/test_broken\.py:2') as error:
+        make(estate, adapter_fn_override=adapter)
+    assert 'restricted-line' not in str(error.value)
+    assert not (Path(os.environ['LANECTL_HOME']) / 'backlog/spec-sub').exists()
+
+
 def test_base_lint_preserves_runner_credential_file_fence(estate, tmp_path, monkeypatch):
     from dataclasses import replace
     from lanectl.config import load_lane, load_repos

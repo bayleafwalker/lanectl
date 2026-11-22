@@ -160,7 +160,10 @@ def _proposal(raw, repo, base):
             entry = _git(repo.path, 'ls-tree', base, '--', prefix)
             if entry and (entry.startswith('120000') or i == len(path.parts)):
                 raise ValueError(f'acceptance path already exists or traverses a symlink: {name}')
-        compile(content, name, 'exec')
+        try:
+            compile(content, name, 'exec')
+        except SyntaxError as error:
+            raise ValueError(f'invalid acceptance test syntax: {name}:{error.lineno or 1}') from None
     return raw
 
 
