@@ -43,6 +43,21 @@ def test_draft_has_independent_review_and_fails_on_real_base(estate):
     assert json.loads((d / 'specification.json').read_text())['review']['verdict'] == 'accept'
 
 
+def test_reviewer_gets_new_acceptance_source_before_it_exists_on_base(estate):
+    def adapter(**kwargs):
+        if 'adversarial reviewer' in kwargs['prompt']:
+            tree = Path(kwargs['worktree'])
+            proposal = json.loads((tree / '.lanectl-spec' / 'proposal.json').read_text())
+            assert proposal['tests'] == {'tests/test_acc_spec.py': ACC}
+            assert not (tree / 'tests/test_acc_spec.py').exists()
+            assert 'expected to be absent from the base checkout' in kwargs['prompt']
+            assert 'Inspect the supplied test source' in kwargs['prompt']
+        return fake_adapter(**kwargs)
+
+    draft = make(estate, adapter_fn_override=adapter)
+    assert spec.validate_for_publish(draft) == []
+
+
 def test_malformed_acceptance_reports_path_and_line_without_source(estate):
     def adapter(**kwargs):
         assert 'adversarial reviewer' not in kwargs['prompt']

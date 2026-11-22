@@ -268,7 +268,11 @@ def draft_intent(release_id, *, repo_name, title, intent, scope, author_model,
         instructions + json.dumps(request), adapter_fn=fn, timeout_s=timeout_s)
     proposal = _proposal(proposal, repo, base)
     review_prompt = ('You are the adversarial reviewer, independent of the acceptance author. '
-        'Read .lanectl-spec/proposal.json and this repository. Try to pass the tests trivially '
+        'Read .lanectl-spec/proposal.json and this repository. The tests mapping holds the '
+        'complete source for proposed new files whose paths are expected to be absent from the base checkout. '
+        'Inspect the supplied test source against the base implementation. '
+        'The release owner runs the independent base check after review. '
+        'Try to pass the tests trivially '
         '(constant results, ignored inputs, mocks replacing the subject), identify missing '
         'outcome assertions and incorrect expected base failures. Do not change the proposal '
         'or repository or execute the generated tests. Write only .lanectl-spec/response.json '
