@@ -13,7 +13,9 @@ environment carries its own tracker credentials.
 from __future__ import annotations
 
 import json
+import os
 import subprocess
+import time
 
 DEFAULT_ROOT = "/projects/dev"
 
@@ -132,11 +134,19 @@ def sync(rel, train_id: str, landed_sha: str, repos, run=subprocess.run, *, skip
     return result
 
 
-def merged(repo, sha, run=subprocess.run):
+def merged(repo, sha, run=subprocess.run, *, timeout_s=None):
     """Refresh the declared canonical main before accepting ancestry as merge proof."""
+    deadline = time.monotonic() + timeout_s if timeout_s is not None else None
+
     def git(*args, allowed=(0,)):
-        p = run(["git", "-C", str(repo.path), *args], capture_output=True,
-                text=True, stdin=subprocess.DEVNULL)
+        command = ["git", "-C", str(repo.path), *args]
+        options = {}
+        if deadline is not None:
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise subprocess.TimeoutExpired(command, timeout_s)
+            options = {"timeout": remaining, "env": {**os.environ, "GIT_TERMINAL_PROMPT": "0"}}
+        p = run(command, capture_output=True, text=True, stdin=subprocess.DEVNULL, **options)
         if p.returncode not in allowed:
             raise _SyncFailed((p.stderr or "canonical repository check failed")[-ERROR_TAIL:])
         return p

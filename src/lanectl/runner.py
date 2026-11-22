@@ -696,11 +696,34 @@ def _coordination_park(c, log, error):
     return f"{c.attempt_id}: parked: owner coordination unavailable"
 
 
+def _await_canonical_publication(repo, sha, guard, cancel, *, timeout_s):
+    """Wait for the checked commit while the worker still owns its Work lease."""
+    deadline = time.monotonic() + timeout_s
+    while True:
+        guard.assert_active()
+        remaining = deadline - time.monotonic()
+        if remaining <= 0 or cancel.is_set():
+            return False
+        try:
+            merged = work.merged(repo, sha, timeout_s=min(10, remaining))
+        except (work._SyncFailed, OSError, subprocess.TimeoutExpired):
+            # Missing or uncertain canonical evidence never authorizes settlement.
+            merged = False
+        guard.assert_active()
+        remaining = deadline - time.monotonic()
+        if remaining <= 0 or cancel.is_set():
+            return False
+        if merged:
+            return True
+        cancel.wait(min(10, remaining))
+
+
 def _coordinate_execution(native):
     @functools.wraps(native)
     def execute(c: Claim, log: EventLog, adapter_fn=None, *, require_coordination=False,
                 expected_owner=None) -> str:
         from . import coordination, integrator
+        started = time.monotonic()
         try:
             owner = coordination.configured(c.repo.name)
             if owner is None:
@@ -770,8 +793,16 @@ def _coordinate_execution(native):
                             and e["data"]["attempt_id"] == c.attempt_id]
                 if landings and c.rel.work_complete:
                     receipt = landings[-1]["data"]
-                    if c.repo.landing == "pr" and not work.merged(c.repo, receipt["landed_sha"]):
-                        return out + "; owner completion awaits canonical merge"
+                    if c.repo.landing == "pr":
+                        if c.repo.publication_cmd:
+                            merged = _await_canonical_publication(
+                                c.repo, receipt["landed_sha"], guard, cancel,
+                                timeout_s=max(0, c.lane.timeout_s - (time.monotonic() - started)),
+                            )
+                        else:
+                            merged = work.merged(c.repo, receipt["landed_sha"])
+                        if not merged:
+                            return out + "; owner completion awaits canonical merge"
                     owner.append_evidence(c.attempt_id, "landed", "Observation", receipt)
                     settlement = receipt
             # Stop background heartbeats before settlement deactivates the lease.
