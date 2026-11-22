@@ -118,3 +118,38 @@ def test_protected_publication_hook_never_substitutes_for_canonical_ancestry(tmp
     with pytest.raises(RuntimeError, match="differs from the checked"):
         integrator.publish(repo, "train-proof", "b" * 40)
     assert len(calls) == 2
+
+
+def test_scoped_publication_requires_the_exact_workflow_job(tmp_path, monkeypatch):
+    import json
+    from types import SimpleNamespace
+
+    import pytest
+
+    sha = "b" * 40
+    repo = SimpleNamespace(path=tmp_path, main="main")
+    monkeypatch.setattr(runner, "git", lambda _, *args, **kwargs:
+                        "origin" if args[0] == "config" else "https://github.com/bayleafwalker/lanectl.git")
+    monkeypatch.setattr(integrator.work, "merged", lambda *args: True)
+
+    def publish(checks):
+        calls = []
+
+        def run(command, **kwargs):
+            calls.append(command)
+            output = ""
+            if command[2] == "list":
+                output = json.dumps([{"number": 1, "state": "OPEN", "headRefOid": sha}])
+            elif command[-2:] == ["--json", "workflow,name,bucket,state"]:
+                output = json.dumps(checks)
+            return SimpleNamespace(returncode=0, stdout=output, stderr="")
+
+        result = integrator.publish(repo, "train-proof", sha, run=run, required_check=("ci", "tests"))
+        assert calls[-1][-2:] == ["--match-head-commit", sha]
+        return result
+
+    passed = {"workflow": "ci", "name": "tests", "bucket": "pass", "state": "SUCCESS"}
+    for check in (passed | {"workflow": "other"}, passed | {"state": "SKIPPED"}):
+        with pytest.raises(RuntimeError, match="required CI checks"):
+            publish([check])
+    assert "merge verified" in publish([passed])

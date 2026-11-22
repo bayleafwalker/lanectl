@@ -32,7 +32,7 @@ def _run(cmd, cwd, run):
     return p.stdout.strip()
 
 
-def publish(repo, train_id, sha, *, run=subprocess.run):
+def publish(repo, train_id, sha, *, run=subprocess.run, required_check=None):
     """Publish via one stable branch/PR and require its CI before merging.
 
     An ambiguous response is retried by querying the same head branch. Merge
@@ -86,9 +86,17 @@ def publish(repo, train_id, sha, *, run=subprocess.run):
         pr = rows[0]
     number = str(pr['number'])
     _run(['gh', 'pr', 'checks', number, '-R', slug, '--watch'], repo.path, run)
-    checks = json.loads(_run(['gh', 'pr', 'checks', number, '-R', slug, '--required',
-                              '--json', 'name,bucket,state'], repo.path, run))
-    if not checks or any(c.get('bucket') != 'pass' for c in checks):
+    check_command = ['gh', 'pr', 'checks', number, '-R', slug]
+    if required_check is None:
+        check_command += ['--required', '--json', 'name,bucket,state']
+    else:
+        check_command += ['--json', 'workflow,name,bucket,state']
+    checks = json.loads(_run(check_command, repo.path, run))
+    if required_check is not None:
+        checks = [check for check in checks
+                  if (check.get('workflow'), check.get('name')) == required_check]
+    if not checks or any(c.get('bucket') != 'pass' or
+                         (required_check is not None and c.get('state') != 'SUCCESS') for c in checks):
         raise RuntimeError('required CI checks are absent or have not all passed')
     # --match-head-commit fences a concurrent PR update between checks and merge.
     _run(['gh', 'pr', 'merge', number, '-R', slug, '--merge', '--match-head-commit', sha], repo.path, run)
