@@ -322,7 +322,11 @@ A3 is parked and R2's two-attempt budget is exhausted. The
 keeps all passing checks, the raw counterexample and redirect controls, partial
 verification and source. No invalid source was adopted. Missing test coverage
 does not turn the clear requirement into a spec-gap or authorize a new revision.
-The permitted integrator fix classes are spec-gap and gate-gap, not model-error.
+At rejection, integrator authority revision1 permitted spec-gap and gate-gap,
+excluding model-error. The operator subsequently selected preparation of a
+[reviewed standing model-error policy proposal](../evidence/2026-11-14-product-contact/model-error-policy-proposal/README.md).
+It preserves empty autonomous classes and the cumulative30-line limit. A local
+repair measured34lines and remains unqualified; no attempt was reset or adopted.
 Normal train, dev and canonical delivery remain pending; no prerequisite or
 whole UI completion is claimed.
 

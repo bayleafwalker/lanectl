@@ -1,0 +1,147 @@
+diff --git a/.claude/skills/lane-integrator/SKILL.md b/.claude/skills/lane-integrator/SKILL.md
+index 738dddb..37ecd62 100644
+--- a/.claude/skills/lane-integrator/SKILL.md
++++ b/.claude/skills/lane-integrator/SKILL.md
+@@ -66,11 +66,23 @@ git commit -m "fix(<attempt_id>): [<fix_class>] <what> and why>"
+ lanectl recheck <train_id>               # records the passing check for the exact updated tip
+ ```
+ 
+-Budget from `governance/integrator.toml`: `fix_budget_lines` (default 30,
+-aggregate added + deleted per attempt) and `allowed_fix_classes` (default `spec-gap`, `gate-gap`).
+-Beyond either — too large, or a class such as `model-error` that is not
+-allowed — do not fix: `lanectl reject <attempt_id> "<reason>"` to requeue, and
+-leave the class on record for the planner to ratchet.
++Read the effective `governance/integrator.toml` before any repair. Revision2
++permits `spec-gap`, `gate-gap` and `model-error`, retains the30-line added +
++deleted repair cap, and keeps `autonomous_classes` empty. This is a standing
++class permission; it does not approve an individual source correction.
++
++The headless check measures labelled text repair commits in one train log.
++Interactive `land` does not enforce class or size. The coordinator must verify
++every repair commit's attempt/class, its full text diff and cumulative added +
++deleted lines, carrying totals across rebuilt trains and retries. Count worker
++tests/docs too; reject binary or unlabelled repairs instead of treating them as
++zero. Preserve the original failure, model-error attribution, frozen acceptance,
++worker diff cap and actual attempt count. A rebuild or revision renews no budget.
++
++If the class is unlisted or the cumulative repair exceeds30, do not adopt it.
++Record the true cause and return to design; do not requeue an exhausted outcome
++for an extra attempt. Any permitted correction still requires independent
++requalification and the normal exact-tip train, delivery and canonical gates.
+ 
+ ## 5. Land or reject the train
+ 
+diff --git a/docs/plans/2026-11-10-productive-life-ladder.md b/docs/plans/2026-11-10-productive-life-ladder.md
+index 1960848..611d15a 100644
+--- a/docs/plans/2026-11-10-productive-life-ladder.md
++++ b/docs/plans/2026-11-10-productive-life-ladder.md
+@@ -226,7 +226,11 @@ A3 is parked and R2's two-attempt budget is exhausted. The
+ keeps all passing checks, the raw counterexample and redirect controls, partial
+ verification and source. No invalid source was adopted. Missing test coverage
+ does not turn the clear requirement into a spec-gap or authorize a new revision.
+-The permitted integrator fix classes are spec-gap and gate-gap, not model-error.
++At rejection, integrator authority revision1 permitted spec-gap and gate-gap,
++excluding model-error. The operator subsequently selected preparation of a
++[reviewed standing model-error policy proposal](../evidence/2026-11-14-product-contact/model-error-policy-proposal/README.md).
++It preserves empty autonomous classes and the cumulative30-line limit. A local
++repair measured34lines and remains unqualified; no attempt was reset or adopted.
+ Normal train, dev and canonical delivery remain pending; no prerequisite or
+ whole UI completion is claimed.
+ 
+diff --git a/governance/integrator.toml b/governance/integrator.toml
+index af73f01..3b8e3f5 100644
+--- a/governance/integrator.toml
++++ b/governance/integrator.toml
+@@ -1,10 +1,14 @@
+-# Integrator authority v1 (planner-owned). Stage 4 runs the integrator in shadow:
++# Integrator authority v2 (planner-owned). Stage 4 runs the integrator in shadow:
+ # it plans landings; the operator (planner session) still lands.
+-revision = 1
++revision = 2
+ # Task classes whose landing the shadow integrator may plan as "land" on an
+ # evaluator accept. Empty = every plan is advisory; promotion is the operator's call.
+ autonomous_classes = []
+-# An integrator fix larger than this (added + deleted lines) should be a requeue instead.
++# Repair cap: added + deleted lines, cumulative per attempt and train.
++# Headless measurement covers one train log; coordinator carries totals across rebuilds.
+ fix_budget_lines = 30
+-# Fix classes the integrator may apply itself; anything else goes back to a lane.
+-allowed_fix_classes = ["spec-gap", "gate-gap"]
++# Classes and cumulative size are enforced by the headless integrator only.
++# Interactive land does not enforce them: the coordinator must verify both.
++# Operator-selected class permission is standing, not an attempt-only override.
++# The separate autonomous_classes list remains empty.
++allowed_fix_classes = ["spec-gap", "gate-gap", "model-error"]
+diff --git a/tests/stage8/test_model_error_repair_policy.py b/tests/stage8/test_model_error_repair_policy.py
+new file mode 100644
+index 0000000..3aebf9f
+--- /dev/null
++++ b/tests/stage8/test_model_error_repair_policy.py
+@@ -0,0 +1,67 @@
++"""The selected policy retains headless budget checks and closed autonomy."""
++from pathlib import Path
++from types import SimpleNamespace
++import subprocess
++import tomllib
++
++from lanectl import integrator, landing
++from lanectl.config import RepoSpec
++
++
++def authority():
++    root = Path(__file__).resolve().parents[2]
++    return tomllib.loads((root / 'governance/integrator.toml').read_text())
++
++
++def test_model_error_permission_keeps_budget_and_automatic_cycle_closed(monkeypatch, tmp_path):
++    policy = authority()
++    assert policy['revision'] == 2
++    assert policy['fix_budget_lines'] == 30
++    assert policy['autonomous_classes'] == []
++    assert policy['allowed_fix_classes'] == ['spec-gap', 'gate-gap', 'model-error']
++    event = {'type': 'integrator.fix', 'data': {
++        'attempt_id': 'fixture-a3', 'commit': 'f' * 40, 'fix_class': 'model-error'}}
++    assert landing.fix_budget([event], policy, {'f' * 40: 30}) == []
++    assert landing.fix_budget([event], policy, {'f' * 40: 31})
++    unlisted = dict(event, data=dict(event['data'], fix_class='unlisted'))
++    assert landing.fix_budget([unlisted], policy, {'f' * 40: 1})
++    effects = []
++    monkeypatch.setattr(integrator, '_authority', lambda: policy)
++    monkeypatch.setattr(integrator, '_cycle', lambda *a: effects.append(True) or ['effect admitted'])
++    log = SimpleNamespace(path=tmp_path / 'events.jsonl')
++    assert integrator.cycle(log) == []
++    assert effects == []
++    # The same cycle must reach the effect boundary if its class guard opens.
++    monkeypatch.setattr(integrator, '_authority', lambda: dict(policy, autonomous_classes=['fixture']))
++    assert integrator.cycle(log) == ['effect admitted']
++    assert effects == [True]
++
++
++def test_cumulative_model_error_repairs_cannot_each_spend_the_whole_budget(tmp_path):
++    root = tmp_path / 'repo'
++    root.mkdir()
++
++    def git(*args):
++        return subprocess.run(['git', '-C', str(root), *args], check=True,
++                              capture_output=True, text=True).stdout.strip()
++
++    git('init', '-b', 'main')
++    git('config', 'user.name', 'fixture')
++    git('config', 'user.email', 'fixture@example.invalid')
++    (root / 'base').write_text('base\n')
++    git('add', 'base')
++    git('commit', '-m', 'test: establish fixture base')
++    base = git('rev-parse', 'HEAD')
++    git('checkout', '-b', 'train/policy-fixture')
++    repo = RepoSpec('fixture', root, 'main', '', '', tmp_path / 'worktrees')
++    train = {'train_id': 'policy-fixture', 'base_sha': base}
++    for index, lines in enumerate((16, 15), 1):
++        path = root / f'correction-{index}'
++        path.write_text('fixture\n' * lines)
++        git('add', path.name)
++        git('commit', '-m', f'fix(fixture-a3): [model-error] correction {index}')
++        warnings = integrator._fix_warnings(repo, train, [], authority())
++        if index == 1:
++            assert warnings == []
++        else:
++            assert warnings and 'exceeds allowed class or size' in warnings[0]

@@ -66,11 +66,23 @@ git commit -m "fix(<attempt_id>): [<fix_class>] <what> and why>"
 lanectl recheck <train_id>               # records the passing check for the exact updated tip
 ```
 
-Budget from `governance/integrator.toml`: `fix_budget_lines` (default 30,
-aggregate added + deleted per attempt) and `allowed_fix_classes` (default `spec-gap`, `gate-gap`).
-Beyond either — too large, or a class such as `model-error` that is not
-allowed — do not fix: `lanectl reject <attempt_id> "<reason>"` to requeue, and
-leave the class on record for the planner to ratchet.
+Read the effective `governance/integrator.toml` before any repair. Revision2
+permits `spec-gap`, `gate-gap` and `model-error`, retains the30-line added +
+deleted repair cap, and keeps `autonomous_classes` empty. This is a standing
+class permission; it does not approve an individual source correction.
+
+The headless check measures labelled text repair commits in one train log.
+Interactive `land` does not enforce class or size. The coordinator must verify
+every repair commit's attempt/class, its full text diff and cumulative added +
+deleted lines, carrying totals across rebuilt trains and retries. Count worker
+tests/docs too; reject binary or unlabelled repairs instead of treating them as
+zero. Preserve the original failure, model-error attribution, frozen acceptance,
+worker diff cap and actual attempt count. A rebuild or revision renews no budget.
+
+If the class is unlisted or the cumulative repair exceeds30, do not adopt it.
+Record the true cause and return to design; do not requeue an exhausted outcome
+for an extra attempt. Any permitted correction still requires independent
+requalification and the normal exact-tip train, delivery and canonical gates.
 
 ## 5. Land or reject the train
 

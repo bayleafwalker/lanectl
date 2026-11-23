@@ -1,0 +1,1840 @@
+.F.F....F........FF.F................................................... [  6%]
+........................................................................ [ 12%]
+............F......F...........FF....................................... [ 19%]
+.....................................F...................FFF............ [ 25%]
+...F............................FFFFF................................... [ 32%]
+....................................FFF................................. [ 38%]
+..................................................FFFFFF................ [ 44%]
+.........................................................F.............. [ 51%]
+.FF.FF...F......................................F....FF........F........ [ 57%]
+...............F..........FFFFFFFFFFFF.................................. [ 64%]
+.............F......FFF.F.................FFF......FF.F.FF.............. [ 70%]
+............FFF......................................................... [ 77%]
+........................................................................ [ 83%]
+........................................................................ [ 89%]
+........................................................................ [ 96%]
+..............FF..........................                               [100%]
+=================================== FAILURES ===================================
+__________________ test_good_item_reaches_candidate_and_lands __________________
+
+estate = (PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_good_item_reaches_candida0/target'), <function estate.<locals>.release at 0x728219b68220>, <lanectl.events.EventLog object at 0x728219be3b60>)
+
+    def test_good_item_reaches_candidate_and_lands(estate):
+        repo, release, log = estate
+        release("add-sub", SUB_TEST)
+    
+        def good(wt):
+            (wt / "src" / "calc.py").write_text("def add(a, b):\n    return a + b\n\n\ndef sub(a, b):\n    return a - b\n")
+            (wt / "tests" / "test_sub_extra.py").write_text("from calc import sub\n\ndef test_neg():\n    assert sub(1, 2) == -1\n")
+    
+        c = runner.admit("implement", log)
+        assert not isinstance(c, str), c
+        out = runner.execute(c, log, adapter_fn=scripted(good))
+>       assert "-> candidate" in out, out
+E       AssertionError: add-sub-a1 [scripted/model] -> rejected: acceptance: exit 1: /projects/dev/_wt/lanectl-model-error-policy-20261114/.venv/bin/python -m pytest -q -p no:cacheprovider :: Failed to connect to user scope bus via local transport: $DBUS_SESSION_BUS_ADDRESS and $XDG_RUNTIME_DIR not defined (consider using --machine=<user>@.host --user to connect to bus of other user)
+E         
+E       assert '-> candidate' in 'add-sub-a1 [scripted/model] -> rejected: acceptance: exit 1: /projects/dev/_wt/lanectl-model-error-policy-20261114/.v...RESS and $XDG_RUNTIME_DIR not defined (consider using --machine=<user>@.host --user to connect to bus of other user)\n'
+
+tests/seed/test_end_to_end.py:100: AssertionError
+___________ test_test_that_passes_on_base_is_rejected_then_requeued ____________
+
+estate = (PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_test_that_passes_on_base_0/target'), <function estate.<locals>.release at 0x728219b90d60>, <lanectl.events.EventLog object at 0x728219ab5e50>)
+
+    def test_test_that_passes_on_base_is_rejected_then_requeued(estate):
+        repo, release, log = estate
+        release("vacuous", SUB_TEST)
+    
+        def vacuous(wt):
+            (wt / "src" / "calc.py").write_text("def add(a, b):\n    return a + b\n\n\ndef sub(a, b):\n    return a - b\n")
+            (wt / "tests" / "test_vacuous.py").write_text("def test_nothing():\n    assert 1 == 1\n")
+    
+        out = runner.execute(runner.admit("implement", log), log, adapter_fn=scripted(vacuous))
+>       assert "-> rejected" in out and "passes-on-base" in out, out
+E       AssertionError: vacuous-a1 [scripted/model] -> rejected: acceptance: exit 1: /projects/dev/_wt/lanectl-model-error-policy-20261114/.venv/bin/python -m pytest -q -p no:cacheprovider :: Failed to connect to user scope bus via local transport: $DBUS_SESSION_BUS_ADDRESS and $XDG_RUNTIME_DIR not defined (consider using --machine=<user>@.host --user to connect to bus of other user)
+E         
+E       assert ('-> rejected' in 'vacuous-a1 [scripted/model] -> rejected: acceptance: exit 1: /projects/dev/_wt/lanectl-model-error-policy-20261114/.v...RESS and $XDG_RUNTIME_DIR not defined (consider using --machine=<user>@.host --user to connect to bus of other user)\n' and 'passes-on-base' in 'vacuous-a1 [scripted/model] -> rejected: acceptance: exit 1: /projects/dev/_wt/lanectl-model-error-policy-20261114/.v...RESS and $XDG_RUNTIME_DIR not defined (consider using --machine=<user>@.host --user to connect to bus of other user)\n')
+
+tests/seed/test_end_to_end.py:130: AssertionError
+____________ test_main_change_under_sandbox_is_recorded_not_failed _____________
+
+estate = (PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_main_change_under_sandbox0/target'), <function estate.<locals>.release at 0x728219b91620>, <lanectl.events.EventLog object at 0x728219b446b0>)
+
+    def test_main_change_under_sandbox_is_recorded_not_failed(estate):
+        repo, release, log = estate
+        release("busy", SUB_TEST)
+    
+        def planner_busy(*, worktree, **_):
+            (Path(repo) / "notes.md").write_text("planner edit\n")    # integrator working on main meanwhile
+            (Path(worktree) / "src" / "calc.py").write_text("def add(a, b):\n    return a + b\n\n\ndef sub(a, b):\n    return a - b\n")
+            return AdapterResult("done", 0, "ok", None)
+    
+        out = runner.execute(runner.admit("implement", log), log, adapter_fn=planner_busy)
+>       assert "-> candidate" in out, out
+E       AssertionError: busy-a1 [scripted/model] -> rejected: acceptance: exit 1: /projects/dev/_wt/lanectl-model-error-policy-20261114/.venv/bin/python -m pytest -q -p no:cacheprovider :: Failed to connect to user scope bus via local transport: $DBUS_SESSION_BUS_ADDRESS and $XDG_RUNTIME_DIR not defined (consider using --machine=<user>@.host --user to connect to bus of other user)
+E         
+E       assert '-> candidate' in 'busy-a1 [scripted/model] -> rejected: acceptance: exit 1: /projects/dev/_wt/lanectl-model-error-policy-20261114/.venv...RESS and $XDG_RUNTIME_DIR not defined (consider using --machine=<user>@.host --user to connect to bus of other user)\n'
+
+tests/seed/test_end_to_end.py:196: AssertionError
+_____________ test_systemd_sandbox_blocks_writes_outside_checkout ______________
+
+tmp_path = PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_systemd_sandbox_blocks_wr0')
+
+    def test_systemd_sandbox_blocks_writes_outside_checkout(tmp_path):
+        ro, rw = tmp_path / "estate", tmp_path / "estate" / "attempt"
+        rw.mkdir(parents=True)
+        sb = Sandbox("systemd-run", readonly=(str(ro),), writable=(str(rw),), timeout_s=60)
+        cmd = sb.wrap_shell("touch inside && (touch ../outside 2>/dev/null && echo LEAK || echo BLOCKED)", rw)
+        out = subprocess.run(cmd, shell=True, cwd=rw, capture_output=True, text=True)
+>       assert "BLOCKED" in out.stdout, out
+E       AssertionError: CompletedProcess(args="/run/current-system/sw/bin/systemd-run --user --quiet --pipe --wait --collect -p RuntimeMaxSec=...ESS and $XDG_RUNTIME_DIR not defined (consider using --machine=<user>@.host --user to connect to bus of other user)
+E         ')
+E       assert 'BLOCKED' in ''
+E        +  where '' = CompletedProcess(args="/run/current-system/sw/bin/systemd-run --user --quiet --pipe --wait --collect -p RuntimeMaxSec=...ESS and $XDG_RUNTIME_DIR not defined (consider using --machine=<user>@.host --user to connect to bus of other user)\n').stdout
+
+tests/seed/test_sandbox.py:14: AssertionError
+______________________ test_shim_runs_tool_inside_sandbox ______________________
+
+tmp_path = PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_shim_runs_tool_inside_san0')
+
+    def test_shim_runs_tool_inside_sandbox(tmp_path):
+        ro, rw = tmp_path / "estate", tmp_path / "estate" / "attempt"
+        rw.mkdir(parents=True)
+        sb = Sandbox("systemd-run", readonly=(str(ro),), writable=(str(rw),), timeout_s=60)
+        shims = sb.shim_dir(tmp_path / "shims", ("sh",))
+        out = subprocess.run([str(shims / "sh"), "-c", "pwd; touch ../x 2>/dev/null && echo LEAK || echo BLOCKED"],
+                             cwd=rw, capture_output=True, text=True)
+>       assert out.stdout.split() == [str(rw), "BLOCKED"], out
+E       AssertionError: CompletedProcess(args=['/tmp/pytest-of-bayleaf/pytest-15234/test_shim_runs_tool_inside_san0/shims/sh', '-c', 'pwd; tou...ESS and $XDG_RUNTIME_DIR not defined (consider using --machine=<user>@.host --user to connect to bus of other user)
+E         ')
+E       assert [] == ['/tmp/pytest...t', 'BLOCKED']
+E         
+E         Right contains 2 more items, first extra item: '/tmp/pytest-of-bayleaf/pytest-15234/test_shim_runs_tool_inside_san0/estate/attempt'
+E         Use -v to get more diff
+
+tests/seed/test_sandbox.py:25: AssertionError
+___________________ test_opencode_shim_forces_private_server ___________________
+
+tmp_path = PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_opencode_shim_forces_priv0')
+
+    def test_opencode_shim_forces_private_server(tmp_path):
+        import stat
+        fake = tmp_path / "bin" / "opencode"
+        fake.parent.mkdir()
+        fake.write_text('#!/bin/sh\necho "$@"\n')
+        fake.chmod(fake.stat().st_mode | stat.S_IEXEC)
+        rw = tmp_path / "w"
+        rw.mkdir()
+        os.environ["PATH"] = f"{fake.parent}{os.pathsep}{os.environ['PATH']}"
+        sb = Sandbox("systemd-run", readonly=(), writable=(str(rw),), timeout_s=60)
+        shims = sb.shim_dir(tmp_path / "shims", ("opencode",))
+        run = subprocess.run([str(shims / "opencode"), "run", "--format", "json", "hi"], cwd=rw,
+                             capture_output=True, text=True).stdout.split()
+>       assert run == ["run", "--standalone", "--format", "json", "hi"]
+E       AssertionError: assert [] == ['run', '--st... 'json', 'hi']
+E         
+E         Right contains 5 more items, first extra item: 'run'
+E         Use -v to get more diff
+
+tests/seed/test_sandbox.py:46: AssertionError
+_______________________ test_approve_records_evaluation ________________________
+
+estate = (PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_approve_records_evaluatio0/target'), <function estate.<locals>.release at 0x728218ad2fc0>, <lanectl.events.EventLog object at 0x728219920410>)
+
+    def test_approve_records_evaluation(estate):
+        repo, release, log = estate
+        release("add-sub", SUB_TEST)
+        c = runner.admit("implement", log)
+>       assert "-> candidate" in runner.execute(c, log, adapter_fn=scripted(good))
+E       AssertionError: assert '-> candidate' in 'add-sub-a1 [scripted/model] -> rejected: acceptance: exit 1: /projects/dev/_wt/lanectl-model-error-policy-20261114/.v...RESS and $XDG_RUNTIME_DIR not defined (consider using --machine=<user>@.host --user to connect to bus of other user)\n'
+E        +  where 'add-sub-a1 [scripted/model] -> rejected: acceptance: exit 1: /projects/dev/_wt/lanectl-model-error-policy-20261114/.v...RESS and $XDG_RUNTIME_DIR not defined (consider using --machine=<user>@.host --user to connect to bus of other user)\n' = <function execute at 0x72821a8ca980>(Claim(rel=WorkRelease(id='add-sub', repo='target', base_sha='7a6d8e32ccf43693abd1093f15be64ed941337c4', title='add-sub...estricted=False, digest='sha256:777e7feb65fef249'), attempt_id='add-sub-a1', model='scripted/model', worker='scripted'), <lanectl.events.EventLog object at 0x728219920410>, adapter_fn=<function scripted.<locals>.fn at 0x728218ad3380>)
+E        +    where <function execute at 0x72821a8ca980> = runner.execute
+E        +    and   <function scripted.<locals>.fn at 0x728218ad3380> = scripted(good)
+
+tests/stage4/test_acc_evaluate_approved.py:27: AssertionError
+________________________ test_gated_attempt_is_decided _________________________
+
+estate = (PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_gated_attempt_is_decided0/target'), <function estate.<locals>.release at 0x728218ad3c40>, <lanectl.events.EventLog object at 0x728218ca41e0>)
+
+    def test_gated_attempt_is_decided(estate):
+        repo, release, log = estate
+        release("add-sub", SUB_TEST)
+        c = runner.admit("implement", log)
+>       assert "-> candidate" in runner.execute(c, log, adapter_fn=scripted(good))
+E       AssertionError: assert '-> candidate' in 'add-sub-a1 [scripted/model] -> rejected: acceptance: exit 1: /projects/dev/_wt/lanectl-model-error-policy-20261114/.v...RESS and $XDG_RUNTIME_DIR not defined (consider using --machine=<user>@.host --user to connect to bus of other user)\n'
+E        +  where 'add-sub-a1 [scripted/model] -> rejected: acceptance: exit 1: /projects/dev/_wt/lanectl-model-error-policy-20261114/.v...RESS and $XDG_RUNTIME_DIR not defined (consider using --machine=<user>@.host --user to connect to bus of other user)\n' = <function execute at 0x72821a8ca980>(Claim(rel=WorkRelease(id='add-sub', repo='target', base_sha='af87d1685f54d4aaba84df478e8a09dadcbace4d', title='add-sub...estricted=False, digest='sha256:777e7feb65fef249'), attempt_id='add-sub-a1', model='scripted/model', worker='scripted'), <lanectl.events.EventLog object at 0x728218ca41e0>, adapter_fn=<function scripted.<locals>.fn at 0x728218ad3ec0>)
+E        +    where <function execute at 0x72821a8ca980> = runner.execute
+E        +    and   <function scripted.<locals>.fn at 0x728218ad3ec0> = scripted(good)
+
+tests/stage4/test_acc_reap_undecided.py:31: AssertionError
+_________________ test_approved_park_lands_in_the_shadow_plan __________________
+
+estate = (PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_approved_park_lands_in_th0/target'), <function estate.<locals>.release at 0x72821870f740>, <lanectl.events.EventLog object at 0x728218d53020>)
+
+    def test_approved_park_lands_in_the_shadow_plan(estate):
+        repo, release, log = estate
+        release("add-sub", SUB_TEST)
+>       c = _parked_without_evaluation(log)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/stage4/test_evaluate_approved_extra.py:41: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+log = <lanectl.events.EventLog object at 0x728218d53020>
+
+    def _parked_without_evaluation(log):
+        """Run one attempt that reaches candidate, then park it and drop the evaluation."""
+        c = runner.admit("implement", log)
+>       assert "-> candidate" in runner.execute(c, log, adapter_fn=scripted(good))
+E       AssertionError: assert '-> candidate' in 'add-sub-a1 [scripted/model] -> rejected: acceptance: exit 1: /projects/dev/_wt/lanectl-model-error-policy-20261114/.v...RESS and $XDG_RUNTIME_DIR not defined (consider using --machine=<user>@.host --user to connect to bus of other user)\n'
+E        +  where 'add-sub-a1 [scripted/model] -> rejected: acceptance: exit 1: /projects/dev/_wt/lanectl-model-error-policy-20261114/.v...RESS and $XDG_RUNTIME_DIR not defined (consider using --machine=<user>@.host --user to connect to bus of other user)\n' = <function execute at 0x72821a8ca980>(Claim(rel=WorkRelease(id='add-sub', repo='target', base_sha='af87d1685f54d4aaba84df478e8a09dadcbace4d', title='add-sub...estricted=False, digest='sha256:777e7feb65fef249'), attempt_id='add-sub-a1', model='scripted/model', worker='scripted'), <lanectl.events.EventLog object at 0x728218d53020>, adapter_fn=<function scripted.<locals>.fn at 0x72821870fa60>)
+E        +    where <function execute at 0x72821a8ca980> = runner.execute
+E        +    and   <function scripted.<locals>.fn at 0x72821870fa60> = scripted(good)
+
+tests/stage4/test_evaluate_approved_extra.py:31: AssertionError
+________________ test_approving_again_keeps_a_single_evaluation ________________
+
+estate = (PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_approving_again_keeps_a_s0/target'), <function estate.<locals>.release at 0x72821870fec0>, <lanectl.events.EventLog object at 0x728218cb2cb0>)
+
+    def test_approving_again_keeps_a_single_evaluation(estate):
+        repo, release, log = estate
+        release("add-sub", SUB_TEST)
+>       c = _parked_without_evaluation(log)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/stage4/test_evaluate_approved_extra.py:53: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+log = <lanectl.events.EventLog object at 0x728218cb2cb0>
+
+    def _parked_without_evaluation(log):
+        """Run one attempt that reaches candidate, then park it and drop the evaluation."""
+        c = runner.admit("implement", log)
+>       assert "-> candidate" in runner.execute(c, log, adapter_fn=scripted(good))
+E       AssertionError: assert '-> candidate' in 'add-sub-a1 [scripted/model] -> rejected: acceptance: exit 1: /projects/dev/_wt/lanectl-model-error-policy-20261114/.v...RESS and $XDG_RUNTIME_DIR not defined (consider using --machine=<user>@.host --user to connect to bus of other user)\n'
+E        +  where 'add-sub-a1 [scripted/model] -> rejected: acceptance: exit 1: /projects/dev/_wt/lanectl-model-error-policy-20261114/.v...RESS and $XDG_RUNTIME_DIR not defined (consider using --machine=<user>@.host --user to connect to bus of other user)\n' = <function execute at 0x72821a8ca980>(Claim(rel=WorkRelease(id='add-sub', repo='target', base_sha='af87d1685f54d4aaba84df478e8a09dadcbace4d', title='add-sub...estricted=False, digest='sha256:777e7feb65fef249'), attempt_id='add-sub-a1', model='scripted/model', worker='scripted'), <lanectl.events.EventLog object at 0x728218cb2cb0>, adapter_fn=<function scripted.<locals>.fn at 0x72821873c220>)
+E        +    where <function execute at 0x72821a8ca980> = runner.execute
+E        +    and   <function scripted.<locals>.fn at 0x72821873c220> = scripted(good)
+
+tests/stage4/test_evaluate_approved_extra.py:31: AssertionError
+________________ test_evaluation_and_approval_record_acceptance ________________
+
+estate = (PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_evaluation_and_approval_r0/target'), <function estate.<locals>.release at 0x728212d58cc0>, <lanectl.events.EventLog object at 0x728218d6b070>)
+
+    def test_evaluation_and_approval_record_acceptance(estate):
+        repo, release, log = estate
+        release("add-sub", SUB_TEST)
+        c = runner.admit("implement", log)
+>       assert "-> candidate" in runner.execute(c, log, adapter_fn=scripted(good))
+E       AssertionError: assert '-> candidate' in 'add-sub-a1 [scripted/model] -> rejected: acceptance: exit 1: /projects/dev/_wt/lanectl-model-error-policy-20261114/.v...RESS and $XDG_RUNTIME_DIR not defined (consider using --machine=<user>@.host --user to connect to bus of other user)\n'
+E        +  where 'add-sub-a1 [scripted/model] -> rejected: acceptance: exit 1: /projects/dev/_wt/lanectl-model-error-policy-20261114/.v...RESS and $XDG_RUNTIME_DIR not defined (consider using --machine=<user>@.host --user to connect to bus of other user)\n' = <function execute at 0x72821a8ca980>(Claim(rel=WorkRelease(id='add-sub', repo='target', base_sha='f8615e6600ea5c073f61c4f216108cd416bd3d82', title='add-sub...estricted=False, digest='sha256:777e7feb65fef249'), attempt_id='add-sub-a1', model='scripted/model', worker='scripted'), <lanectl.events.EventLog object at 0x728218d6b070>, adapter_fn=<function scripted.<locals>.fn at 0x728212d5aca0>)
+E        +    where <function execute at 0x72821a8ca980> = runner.execute
+E        +    and   <function scripted.<locals>.fn at 0x728212d5aca0> = scripted(good)
+
+tests/stage7/test_acc_coverage_gaps.py:41: AssertionError
+_________________ test_merge_subject_passes_a_merge_only_hook __________________
+
+estate = (PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_merge_subject_passes_a_me0/target'), <function estate.<locals>.release at 0x7282193d6a20>, <lanectl.events.EventLog object at 0x728218d68f00>)
+
+    def test_merge_subject_passes_a_merge_only_hook(estate):
+        repo, release, log = estate
+        release("add-sub", SUB_TEST)
+        c = runner.admit("implement", log)
+>       assert "-> candidate" in runner.execute(c, log, adapter_fn=scripted(good))
+E       AssertionError: assert '-> candidate' in 'add-sub-a1 [scripted/model] -> rejected: acceptance: exit 1: /projects/dev/_wt/lanectl-model-error-policy-20261114/.v...RESS and $XDG_RUNTIME_DIR not defined (consider using --machine=<user>@.host --user to connect to bus of other user)\n'
+E        +  where 'add-sub-a1 [scripted/model] -> rejected: acceptance: exit 1: /projects/dev/_wt/lanectl-model-error-policy-20261114/.v...RESS and $XDG_RUNTIME_DIR not defined (consider using --machine=<user>@.host --user to connect to bus of other user)\n' = <function execute at 0x72821a8ca980>(Claim(rel=WorkRelease(id='add-sub', repo='target', base_sha='f9cd945871ae4947e0b59beb6059838f7bc893b7', title='add-sub...estricted=False, digest='sha256:777e7feb65fef249'), attempt_id='add-sub-a1', model='scripted/model', worker='scripted'), <lanectl.events.EventLog object at 0x728218d68f00>, adapter_fn=<function scripted.<locals>.fn at 0x7282193d4540>)
+E        +    where <function execute at 0x72821a8ca980> = runner.execute
+E        +    and   <function scripted.<locals>.fn at 0x7282193d4540> = scripted(good)
+
+tests/stage7/test_acc_train_merge_hooks.py:32: AssertionError
+_________________ test_hook_rejection_is_not_called_a_conflict _________________
+
+estate = (PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_hook_rejection_is_not_cal0/target'), <function estate.<locals>.release at 0x7282193d6700>, <lanectl.events.EventLog object at 0x728218d697c0>)
+
+    def test_hook_rejection_is_not_called_a_conflict(estate):
+        repo, release, log = estate
+        release("add-sub", SUB_TEST)
+        c = runner.admit("implement", log)
+        runner.execute(c, log, adapter_fn=scripted(good))
+        _hook(repo, 'echo "policy says no" >&2; exit 1\n')
+        runner.build_train(log, "target")
+>       ex = _train(log)["excluded"]
+             ^^^^^^^^^^^
+
+tests/stage7/test_acc_train_merge_hooks.py:46: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+log = <lanectl.events.EventLog object at 0x728218d697c0>
+
+    def _train(log):
+>       return [e["data"] for e in log.read() if e["type"] == "train.built"][-1]
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       IndexError: list index out of range
+
+tests/stage7/test_acc_train_merge_hooks.py:25: IndexError
+____________________ test_hook_needing_setup_output_passes _____________________
+
+estate = (PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_hook_needing_setup_output0/target'), <function estate.<locals>.release at 0x7282199f98a0>, <lanectl.events.EventLog object at 0x728218d6a030>)
+
+    def test_hook_needing_setup_output_passes(estate):
+        repo, release, log = estate
+        release("add-sub", SUB_TEST)
+        c = runner.admit("implement", log)
+>       assert "-> candidate" in runner.execute(c, log, adapter_fn=scripted(good))
+E       AssertionError: assert '-> candidate' in 'add-sub-a1 [scripted/model] -> rejected: acceptance: exit 1: /projects/dev/_wt/lanectl-model-error-policy-20261114/.v...RESS and $XDG_RUNTIME_DIR not defined (consider using --machine=<user>@.host --user to connect to bus of other user)\n'
+E        +  where 'add-sub-a1 [scripted/model] -> rejected: acceptance: exit 1: /projects/dev/_wt/lanectl-model-error-policy-20261114/.v...RESS and $XDG_RUNTIME_DIR not defined (consider using --machine=<user>@.host --user to connect to bus of other user)\n' = <function execute at 0x72821a8ca980>(Claim(rel=WorkRelease(id='add-sub', repo='target', base_sha='f9cd945871ae4947e0b59beb6059838f7bc893b7', title='add-sub...estricted=False, digest='sha256:777e7feb65fef249'), attempt_id='add-sub-a1', model='scripted/model', worker='scripted'), <lanectl.events.EventLog object at 0x728218d6a030>, adapter_fn=<function scripted.<locals>.fn at 0x7282199f8040>)
+E        +    where <function execute at 0x72821a8ca980> = runner.execute
+E        +    and   <function scripted.<locals>.fn at 0x7282199f8040> = scripted(good)
+
+tests/stage7/test_acc_train_setup_first.py:20: AssertionError
+___________ test_evaluator_proposal_carries_the_evaluation_revision ____________
+
+estate = (PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_evaluator_proposal_carrie0/target'), <function estate.<locals>.release at 0x72821937bce0>, <lanectl.events.EventLog object at 0x728218da84b0>)
+
+    def test_evaluator_proposal_carries_the_evaluation_revision(estate):
+        repo, release, log = estate
+        home = Path(os.environ["LANECTL_HOME"])
+        (home / "governance" / "evaluator.toml").write_text('revision = 3\ndefault = "accept"\n')
+        release("add-sub", SUB_TEST)
+        c = runner.admit("implement", log)
+    
+        runner.execute(c, log, adapter_fn=scripted(good))
+    
+        ev = _of(log, "evaluation.recorded")
+        prop = _dec(log, kind="acceptance", phase="proposed")
+>       assert len(ev) == 1 and len(prop) == 1
+E       assert (0 == 1)
+E        +  where 0 = len([])
+
+tests/stage7/test_decision_gaps_extra.py:98: AssertionError
+_______________________ test_merge_subject_is_git_style ________________________
+
+estate = (PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_merge_subject_is_git_styl0/target'), <function estate.<locals>.release at 0x728218aa1440>, <lanectl.events.EventLog object at 0x728218dabac0>)
+
+    def test_merge_subject_is_git_style(estate):
+        repo, release, log = estate
+>       c = _candidate(release, log)
+            ^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/stage7/test_train_merge_failure_reason.py:37: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+release = <function estate.<locals>.release at 0x728218aa1440>
+log = <lanectl.events.EventLog object at 0x728218dabac0>, name = 'add-sub'
+acc = 'from calc import sub\n\ndef test_sub():\n    assert sub(5, 3) == 2\n'
+edit = <function good at 0x72821a386160>
+
+    def _candidate(release, log, name="add-sub", acc=SUB_TEST, edit=good):
+        release(name, acc)
+        c = runner.admit("implement", log)
+        assert not isinstance(c, str), c
+>       assert "-> candidate" in runner.execute(c, log, adapter_fn=scripted(edit)), c
+E       AssertionError: Claim(rel=WorkRelease(id='add-sub', repo='target', base_sha='f4208d168bfe21f22a7deb53767769b302ad0cf2', title='add-sub...estricted=False, digest='sha256:777e7feb65fef249'), attempt_id='add-sub-a1', model='scripted/model', worker='scripted')
+E       assert '-> candidate' in 'add-sub-a1 [scripted/model] -> rejected: acceptance: exit 1: /projects/dev/_wt/lanectl-model-error-policy-20261114/.v...RESS and $XDG_RUNTIME_DIR not defined (consider using --machine=<user>@.host --user to connect to bus of other user)\n'
+E        +  where 'add-sub-a1 [scripted/model] -> rejected: acceptance: exit 1: /projects/dev/_wt/lanectl-model-error-policy-20261114/.v...RESS and $XDG_RUNTIME_DIR not defined (consider using --machine=<user>@.host --user to connect to bus of other user)\n' = <function execute at 0x72821a8ca980>(Claim(rel=WorkRelease(id='add-sub', repo='target', base_sha='f4208d168bfe21f22a7deb53767769b302ad0cf2', title='add-sub...estricted=False, digest='sha256:777e7feb65fef249'), attempt_id='add-sub-a1', model='scripted/model', worker='scripted'), <lanectl.events.EventLog object at 0x728218dabac0>, adapter_fn=<function scripted.<locals>.fn at 0x728218aa1580>)
+E        +    where <function execute at 0x72821a8ca980> = runner.execute
+E        +    and   <function scripted.<locals>.fn at 0x728218aa1580> = scripted(<function good at 0x72821a386160>)
+
+tests/stage7/test_train_merge_failure_reason.py:31: AssertionError
+___________________ test_rejection_reason_is_the_hook_stderr ___________________
+
+estate = (PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_rejection_reason_is_the_h0/target'), <function estate.<locals>.release at 0x728218ad3ce0>, <lanectl.events.EventLog object at 0x728218dabb10>)
+
+    def test_rejection_reason_is_the_hook_stderr(estate):
+        repo, release, log = estate
+>       _candidate(release, log)
+
+tests/stage7/test_train_merge_failure_reason.py:50: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+release = <function estate.<locals>.release at 0x728218ad3ce0>
+log = <lanectl.events.EventLog object at 0x728218dabb10>, name = 'add-sub'
+acc = 'from calc import sub\n\ndef test_sub():\n    assert sub(5, 3) == 2\n'
+edit = <function good at 0x72821a386160>
+
+    def _candidate(release, log, name="add-sub", acc=SUB_TEST, edit=good):
+        release(name, acc)
+        c = runner.admit("implement", log)
+        assert not isinstance(c, str), c
+>       assert "-> candidate" in runner.execute(c, log, adapter_fn=scripted(edit)), c
+E       AssertionError: Claim(rel=WorkRelease(id='add-sub', repo='target', base_sha='f4208d168bfe21f22a7deb53767769b302ad0cf2', title='add-sub...estricted=False, digest='sha256:777e7feb65fef249'), attempt_id='add-sub-a1', model='scripted/model', worker='scripted')
+E       assert '-> candidate' in 'add-sub-a1 [scripted/model] -> rejected: acceptance: exit 1: /projects/dev/_wt/lanectl-model-error-policy-20261114/.v...RESS and $XDG_RUNTIME_DIR not defined (consider using --machine=<user>@.host --user to connect to bus of other user)\n'
+E        +  where 'add-sub-a1 [scripted/model] -> rejected: acceptance: exit 1: /projects/dev/_wt/lanectl-model-error-policy-20261114/.v...RESS and $XDG_RUNTIME_DIR not defined (consider using --machine=<user>@.host --user to connect to bus of other user)\n' = <function execute at 0x72821a8ca980>(Claim(rel=WorkRelease(id='add-sub', repo='target', base_sha='f4208d168bfe21f22a7deb53767769b302ad0cf2', title='add-sub...estricted=False, digest='sha256:777e7feb65fef249'), attempt_id='add-sub-a1', model='scripted/model', worker='scripted'), <lanectl.events.EventLog object at 0x728218dabb10>, adapter_fn=<function scripted.<locals>.fn at 0x728218ad3560>)
+E        +    where <function execute at 0x72821a8ca980> = runner.execute
+E        +    and   <function scripted.<locals>.fn at 0x728218ad3560> = scripted(<function good at 0x72821a386160>)
+
+tests/stage7/test_train_merge_failure_reason.py:31: AssertionError
+_____________ test_rejection_reason_uses_last_stderr_line_clipped ______________
+
+estate = (PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_rejection_reason_uses_las0/target'), <function estate.<locals>.release at 0x728218ad2480>, <lanectl.events.EventLog object at 0x728218bdc640>)
+
+    def test_rejection_reason_uses_last_stderr_line_clipped(estate):
+        repo, release, log = estate
+>       _candidate(release, log)
+
+tests/stage7/test_train_merge_failure_reason.py:61: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+release = <function estate.<locals>.release at 0x728218ad2480>
+log = <lanectl.events.EventLog object at 0x728218bdc640>, name = 'add-sub'
+acc = 'from calc import sub\n\ndef test_sub():\n    assert sub(5, 3) == 2\n'
+edit = <function good at 0x72821a386160>
+
+    def _candidate(release, log, name="add-sub", acc=SUB_TEST, edit=good):
+        release(name, acc)
+        c = runner.admit("implement", log)
+        assert not isinstance(c, str), c
+>       assert "-> candidate" in runner.execute(c, log, adapter_fn=scripted(edit)), c
+E       AssertionError: Claim(rel=WorkRelease(id='add-sub', repo='target', base_sha='f4208d168bfe21f22a7deb53767769b302ad0cf2', title='add-sub...estricted=False, digest='sha256:777e7feb65fef249'), attempt_id='add-sub-a1', model='scripted/model', worker='scripted')
+E       assert '-> candidate' in 'add-sub-a1 [scripted/model] -> rejected: acceptance: exit 1: /projects/dev/_wt/lanectl-model-error-policy-20261114/.v...RESS and $XDG_RUNTIME_DIR not defined (consider using --machine=<user>@.host --user to connect to bus of other user)\n'
+E        +  where 'add-sub-a1 [scripted/model] -> rejected: acceptance: exit 1: /projects/dev/_wt/lanectl-model-error-policy-20261114/.v...RESS and $XDG_RUNTIME_DIR not defined (consider using --machine=<user>@.host --user to connect to bus of other user)\n' = <function execute at 0x72821a8ca980>(Claim(rel=WorkRelease(id='add-sub', repo='target', base_sha='f4208d168bfe21f22a7deb53767769b302ad0cf2', title='add-sub...estricted=False, digest='sha256:777e7feb65fef249'), attempt_id='add-sub-a1', model='scripted/model', worker='scripted'), <lanectl.events.EventLog object at 0x728218bdc640>, adapter_fn=<function scripted.<locals>.fn at 0x728218ad1620>)
+E        +    where <function execute at 0x72821a8ca980> = runner.execute
+E        +    and   <function scripted.<locals>.fn at 0x728218ad1620> = scripted(<function good at 0x72821a386160>)
+
+tests/stage7/test_train_merge_failure_reason.py:31: AssertionError
+______________________ test_unmerged_paths_are_a_conflict ______________________
+
+estate = (PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_unmerged_paths_are_a_conf0/target'), <function estate.<locals>.release at 0x728218ad3380>, <lanectl.events.EventLog object at 0x728218bdcdc0>)
+
+    def test_unmerged_paths_are_a_conflict(estate):
+        repo, release, log = estate
+        def edit(marker):
+            def fn(wt):
+                (wt / "src" / "calc.py").write_text(
+                    "def add(a, b):\n    return a + b\n\n\ndef sub(a, b):\n    return a - b\n\n"
+                    f"# {marker}\n")
+            return fn
+    
+>       _candidate(release, log, "left", SUB_TEST, edit("left"))
+
+tests/stage7/test_train_merge_failure_reason.py:78: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+release = <function estate.<locals>.release at 0x728218ad3380>
+log = <lanectl.events.EventLog object at 0x728218bdcdc0>, name = 'left'
+acc = 'from calc import sub\n\ndef test_sub():\n    assert sub(5, 3) == 2\n'
+edit = <function test_unmerged_paths_are_a_conflict.<locals>.edit.<locals>.fn at 0x728218ad2c00>
+
+    def _candidate(release, log, name="add-sub", acc=SUB_TEST, edit=good):
+        release(name, acc)
+        c = runner.admit("implement", log)
+        assert not isinstance(c, str), c
+>       assert "-> candidate" in runner.execute(c, log, adapter_fn=scripted(edit)), c
+E       AssertionError: Claim(rel=WorkRelease(id='left', repo='target', base_sha='6d59db0c08d45d15b47dfa4ef913678928688f9c', title='left', out...w_restricted=False, digest='sha256:777e7feb65fef249'), attempt_id='left-a1', model='scripted/model', worker='scripted')
+E       assert '-> candidate' in 'left-a1 [scripted/model] -> rejected: acceptance: exit 1: /projects/dev/_wt/lanectl-model-error-policy-20261114/.venv...RESS and $XDG_RUNTIME_DIR not defined (consider using --machine=<user>@.host --user to connect to bus of other user)\n'
+E        +  where 'left-a1 [scripted/model] -> rejected: acceptance: exit 1: /projects/dev/_wt/lanectl-model-error-policy-20261114/.venv...RESS and $XDG_RUNTIME_DIR not defined (consider using --machine=<user>@.host --user to connect to bus of other user)\n' = <function execute at 0x72821a8ca980>(Claim(rel=WorkRelease(id='left', repo='target', base_sha='6d59db0c08d45d15b47dfa4ef913678928688f9c', title='left', out...w_restricted=False, digest='sha256:777e7feb65fef249'), attempt_id='left-a1', model='scripted/model', worker='scripted'), <lanectl.events.EventLog object at 0x728218bdcdc0>, adapter_fn=<function scripted.<locals>.fn at 0x728218ad2980>)
+E        +    where <function execute at 0x72821a8ca980> = runner.execute
+E        +    and   <function scripted.<locals>.fn at 0x728218ad2980> = scripted(<function test_unmerged_paths_are_a_conflict.<locals>.edit.<locals>.fn at 0x728218ad2c00>)
+
+tests/stage7/test_train_merge_failure_reason.py:31: AssertionError
+____________ test_setup_precedes_first_hook_and_reruns_after_merges ____________
+
+estate = (PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_setup_precedes_first_hook0/target'), <function estate.<locals>.release at 0x728218ad2520>, <lanectl.events.EventLog object at 0x728218bdf070>)
+tmp_path = PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_setup_precedes_first_hook0')
+
+    def test_setup_precedes_first_hook_and_reruns_after_merges(estate, tmp_path):
+        repo, release, log = estate
+        release("add-sub", SUB_TEST)
+        c = runner.admit("implement", log)
+>       assert "-> candidate" in runner.execute(c, log, adapter_fn=scripted(good))
+E       AssertionError: assert '-> candidate' in 'add-sub-a1 [scripted/model] -> rejected: acceptance: exit 1: /projects/dev/_wt/lanectl-model-error-policy-20261114/.v...RESS and $XDG_RUNTIME_DIR not defined (consider using --machine=<user>@.host --user to connect to bus of other user)\n'
+E        +  where 'add-sub-a1 [scripted/model] -> rejected: acceptance: exit 1: /projects/dev/_wt/lanectl-model-error-policy-20261114/.v...RESS and $XDG_RUNTIME_DIR not defined (consider using --machine=<user>@.host --user to connect to bus of other user)\n' = <function execute at 0x72821a8ca980>(Claim(rel=WorkRelease(id='add-sub', repo='target', base_sha='6d59db0c08d45d15b47dfa4ef913678928688f9c', title='add-sub...estricted=False, digest='sha256:777e7feb65fef249'), attempt_id='add-sub-a1', model='scripted/model', worker='scripted'), <lanectl.events.EventLog object at 0x728218bdf070>, adapter_fn=<function scripted.<locals>.fn at 0x728218ad20c0>)
+E        +    where <function execute at 0x72821a8ca980> = runner.execute
+E        +    and   <function scripted.<locals>.fn at 0x728218ad20c0> = scripted(good)
+
+tests/stage7/test_train_setup_order.py:20: AssertionError
+_____________ test_passing_jobs_are_recorded_and_item_is_candidate _____________
+
+estate = (PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_passing_jobs_are_recorded0/target'), <function estate.<locals>.release at 0x72821870c7c0>, <lanectl.events.EventLog object at 0x728218d700a0>)
+
+    def test_passing_jobs_are_recorded_and_item_is_candidate(estate):
+        _, release, log = estate
+        release("aa-jobs", SUB_TEST)
+        _jobs('name = "first-ok"\ncmd = "true"\n', 'name = "sees-acceptance"\n'
+              'cmd = "test -f tests/test_acc_aa_jobs.py"\n')
+        out = runner.execute(runner.admit("implement", log), log, adapter_fn=_scripted(_good))
+>       assert "-> candidate" in out, out
+E       AssertionError: aa-jobs-a1 [scripted/model] -> rejected: acceptance: exit 1: /projects/dev/_wt/lanectl-model-error-policy-20261114/.venv/bin/python -m pytest -q -p no:cacheprovider :: Failed to connect to user scope bus via local transport: $DBUS_SESSION_BUS_ADDRESS and $XDG_RUNTIME_DIR not defined (consider using --machine=<user>@.host --user to connect to bus of other user)
+E         
+E       assert '-> candidate' in 'aa-jobs-a1 [scripted/model] -> rejected: acceptance: exit 1: /projects/dev/_wt/lanectl-model-error-policy-20261114/.v...RESS and $XDG_RUNTIME_DIR not defined (consider using --machine=<user>@.host --user to connect to bus of other user)\n'
+
+tests/stage8/test_acc_gate_jobs.py:49: AssertionError
+________________ test_failing_job_rejects_with_exit_and_output _________________
+
+estate = (PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_failing_job_rejects_with_0/target'), <function estate.<locals>.release at 0x72821870cfe0>, <lanectl.events.EventLog object at 0x728218dca300>)
+
+    def test_failing_job_rejects_with_exit_and_output(estate):
+        _, release, log = estate
+        release("bb-jobs", SUB_TEST)
+        _jobs('name = "lint"\ncmd = "echo lint-said-no; exit 3"\n')
+        out = runner.execute(runner.admit("implement", log), log, adapter_fn=_scripted(_good))
+>       assert "-> rejected" in out and "job:lint" in out, out
+E       AssertionError: bb-jobs-a1 [scripted/model] -> rejected: acceptance: exit 1: /projects/dev/_wt/lanectl-model-error-policy-20261114/.venv/bin/python -m pytest -q -p no:cacheprovider :: Failed to connect to user scope bus via local transport: $DBUS_SESSION_BUS_ADDRESS and $XDG_RUNTIME_DIR not defined (consider using --machine=<user>@.host --user to connect to bus of other user)
+E         
+E       assert ('-> rejected' in 'bb-jobs-a1 [scripted/model] -> rejected: acceptance: exit 1: /projects/dev/_wt/lanectl-model-error-policy-20261114/.v...RESS and $XDG_RUNTIME_DIR not defined (consider using --machine=<user>@.host --user to connect to bus of other user)\n' and 'job:lint' in 'bb-jobs-a1 [scripted/model] -> rejected: acceptance: exit 1: /projects/dev/_wt/lanectl-model-error-policy-20261114/.v...RESS and $XDG_RUNTIME_DIR not defined (consider using --machine=<user>@.host --user to connect to bus of other user)\n')
+
+tests/stage8/test_acc_gate_jobs.py:60: AssertionError
+_______________________ test_job_timeout_is_a_violation ________________________
+
+estate = (PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_job_timeout_is_a_violatio0/target'), <function estate.<locals>.release at 0x72821870c5e0>, <lanectl.events.EventLog object at 0x728218dc86e0>)
+
+    def test_job_timeout_is_a_violation(estate):
+        _, release, log = estate
+        release("cc-jobs", SUB_TEST)
+        _jobs('name = "slow"\ncmd = "sleep 5"\ntimeout_s = 1\n')
+        out = runner.execute(runner.admit("implement", log), log, adapter_fn=_scripted(_good))
+        assert "-> rejected" in out, out
+>       assert _gates(log)["job:slow"]["violations"] == ["timeout after 1s: slow"]
+               ^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'job:slow'
+
+tests/stage8/test_acc_gate_jobs.py:71: KeyError
+__________ test_deploy_passes_records_event_and_sees_only_allowed_env __________
+
+estate = (PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_deploy_passes_records_eve0/target'), <function estate.<locals>.release at 0x728218f831a0>, <lanectl.events.EventLog object at 0x728218dc8c30>)
+tmp_path = PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_deploy_passes_records_eve0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x728212d2da20>
+
+    def test_deploy_passes_records_event_and_sees_only_allowed_env(estate, tmp_path, monkeypatch):
+        out = _declare(tmp_path)
+        monkeypatch.setenv("SECRET_TOKEN", "leak")
+        monkeypatch.setenv("KEEP_ME", "kept")
+>       tb = _train(estate, "aa-dep")
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/stage8/test_acc_train_deploy.py:76: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+estate = (PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_deploy_passes_records_eve0/target'), <function estate.<locals>.release at 0x728218f831a0>, <lanectl.events.EventLog object at 0x728218dc8c30>)
+item = 'aa-dep'
+
+    def _train(estate, item):
+        repo, release, log = estate
+        release(item, SUB_TEST)
+        out = runner.execute(runner.admit("implement", log), log, adapter_fn=_scripted(_good))
+>       assert "-> candidate" in out, out
+E       AssertionError: aa-dep-a1 [scripted/model] -> rejected: acceptance: exit 1: /projects/dev/_wt/lanectl-model-error-policy-20261114/.venv/bin/python -m pytest -q -p no:cacheprovider :: Failed to connect to user scope bus via local transport: $DBUS_SESSION_BUS_ADDRESS and $XDG_RUNTIME_DIR not defined (consider using --machine=<user>@.host --user to connect to bus of other user)
+E         
+E       assert '-> candidate' in 'aa-dep-a1 [scripted/model] -> rejected: acceptance: exit 1: /projects/dev/_wt/lanectl-model-error-policy-20261114/.ve...RESS and $XDG_RUNTIME_DIR not defined (consider using --machine=<user>@.host --user to connect to bus of other user)\n'
+
+tests/stage8/test_acc_train_deploy.py:46: AssertionError
+______________ test_failed_health_records_failure_and_tears_down _______________
+
+estate = (PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_failed_health_records_fai0/target'), <function estate.<locals>.release at 0x728218f834c0>, <lanectl.events.EventLog object at 0x728218dbf480>)
+tmp_path = PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_failed_health_records_fai0')
+
+    def test_failed_health_records_failure_and_tears_down(estate, tmp_path):
+        out = _declare(tmp_path, health="exit 1")
+>       tid = _train(estate, "bb-dep")["train_id"]
+              ^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/stage8/test_acc_train_deploy.py:91: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+estate = (PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_failed_health_records_fai0/target'), <function estate.<locals>.release at 0x728218f834c0>, <lanectl.events.EventLog object at 0x728218dbf480>)
+item = 'bb-dep'
+
+    def _train(estate, item):
+        repo, release, log = estate
+        release(item, SUB_TEST)
+        out = runner.execute(runner.admit("implement", log), log, adapter_fn=_scripted(_good))
+>       assert "-> candidate" in out, out
+E       AssertionError: bb-dep-a1 [scripted/model] -> rejected: acceptance: exit 1: /projects/dev/_wt/lanectl-model-error-policy-20261114/.venv/bin/python -m pytest -q -p no:cacheprovider :: Failed to connect to user scope bus via local transport: $DBUS_SESSION_BUS_ADDRESS and $XDG_RUNTIME_DIR not defined (consider using --machine=<user>@.host --user to connect to bus of other user)
+E         
+E       assert '-> candidate' in 'bb-dep-a1 [scripted/model] -> rejected: acceptance: exit 1: /projects/dev/_wt/lanectl-model-error-policy-20261114/.ve...RESS and $XDG_RUNTIME_DIR not defined (consider using --machine=<user>@.host --user to connect to bus of other user)\n'
+
+tests/stage8/test_acc_train_deploy.py:46: AssertionError
+___________________ test_repo_without_deploy_records_nothing ___________________
+
+estate = (PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_repo_without_deploy_recor0/target'), <function estate.<locals>.release at 0x728218f83c40>, <lanectl.events.EventLog object at 0x728218dbc410>)
+
+    def test_repo_without_deploy_records_nothing(estate):
+>       tid = _train(estate, "cc-dep")["train_id"]
+              ^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/stage8/test_acc_train_deploy.py:102: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+estate = (PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_repo_without_deploy_recor0/target'), <function estate.<locals>.release at 0x728218f83c40>, <lanectl.events.EventLog object at 0x728218dbc410>)
+item = 'cc-dep'
+
+    def _train(estate, item):
+        repo, release, log = estate
+        release(item, SUB_TEST)
+        out = runner.execute(runner.admit("implement", log), log, adapter_fn=_scripted(_good))
+>       assert "-> candidate" in out, out
+E       AssertionError: cc-dep-a1 [scripted/model] -> rejected: acceptance: exit 1: /projects/dev/_wt/lanectl-model-error-policy-20261114/.venv/bin/python -m pytest -q -p no:cacheprovider :: Failed to connect to user scope bus via local transport: $DBUS_SESSION_BUS_ADDRESS and $XDG_RUNTIME_DIR not defined (consider using --machine=<user>@.host --user to connect to bus of other user)
+E         
+E       assert '-> candidate' in 'cc-dep-a1 [scripted/model] -> rejected: acceptance: exit 1: /projects/dev/_wt/lanectl-model-error-policy-20261114/.ve...RESS and $XDG_RUNTIME_DIR not defined (consider using --machine=<user>@.host --user to connect to bus of other user)\n'
+
+tests/stage8/test_acc_train_deploy.py:46: AssertionError
+_____________ test_land_requires_passed_deploy_then_tears_it_down ______________
+
+estate = (PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_land_requires_passed_depl0/target'), <function estate.<locals>.release at 0x728218baf880>, <lanectl.events.EventLog object at 0x72821a240cd0>)
+tmp_path = PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_land_requires_passed_depl0')
+
+    def test_land_requires_passed_deploy_then_tears_it_down(estate, tmp_path):
+        out = _declare(tmp_path)
+        repo = estate[0]
+>       tid = _train(estate, "dd-dep")["train_id"]
+              ^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/stage8/test_acc_train_deploy.py:110: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+estate = (PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_land_requires_passed_depl0/target'), <function estate.<locals>.release at 0x728218baf880>, <lanectl.events.EventLog object at 0x72821a240cd0>)
+item = 'dd-dep'
+
+    def _train(estate, item):
+        repo, release, log = estate
+        release(item, SUB_TEST)
+        out = runner.execute(runner.admit("implement", log), log, adapter_fn=_scripted(_good))
+>       assert "-> candidate" in out, out
+E       AssertionError: dd-dep-a1 [scripted/model] -> rejected: acceptance: exit 1: /projects/dev/_wt/lanectl-model-error-policy-20261114/.venv/bin/python -m pytest -q -p no:cacheprovider :: Failed to connect to user scope bus via local transport: $DBUS_SESSION_BUS_ADDRESS and $XDG_RUNTIME_DIR not defined (consider using --machine=<user>@.host --user to connect to bus of other user)
+E         
+E       assert '-> candidate' in 'dd-dep-a1 [scripted/model] -> rejected: acceptance: exit 1: /projects/dev/_wt/lanectl-model-error-policy-20261114/.ve...RESS and $XDG_RUNTIME_DIR not defined (consider using --machine=<user>@.host --user to connect to bus of other user)\n'
+
+tests/stage8/test_acc_train_deploy.py:46: AssertionError
+________________ test_land_without_deploy_declared_is_unchanged ________________
+
+estate = (PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_land_without_deploy_decla0/target'), <function estate.<locals>.release at 0x728218baf100>, <lanectl.events.EventLog object at 0x728218dbcb90>)
+
+    def test_land_without_deploy_declared_is_unchanged(estate):
+>       tid = _train(estate, "ee-dep")["train_id"]
+              ^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/stage8/test_acc_train_deploy.py:122: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+estate = (PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_land_without_deploy_decla0/target'), <function estate.<locals>.release at 0x728218baf100>, <lanectl.events.EventLog object at 0x728218dbcb90>)
+item = 'ee-dep'
+
+    def _train(estate, item):
+        repo, release, log = estate
+        release(item, SUB_TEST)
+        out = runner.execute(runner.admit("implement", log), log, adapter_fn=_scripted(_good))
+>       assert "-> candidate" in out, out
+E       AssertionError: ee-dep-a1 [scripted/model] -> rejected: acceptance: exit 1: /projects/dev/_wt/lanectl-model-error-policy-20261114/.venv/bin/python -m pytest -q -p no:cacheprovider :: Failed to connect to user scope bus via local transport: $DBUS_SESSION_BUS_ADDRESS and $XDG_RUNTIME_DIR not defined (consider using --machine=<user>@.host --user to connect to bus of other user)
+E         
+E       assert '-> candidate' in 'ee-dep-a1 [scripted/model] -> rejected: acceptance: exit 1: /projects/dev/_wt/lanectl-model-error-policy-20261114/.ve...RESS and $XDG_RUNTIME_DIR not defined (consider using --machine=<user>@.host --user to connect to bus of other user)\n'
+
+tests/stage8/test_acc_train_deploy.py:46: AssertionError
+____________________________ test_cli_run_and_down _____________________________
+
+estate = (PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_cli_run_and_down0/target'), <function estate.<locals>.release at 0x728218baeb60>, <lanectl.events.EventLog object at 0x728218dbed50>)
+tmp_path = PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_cli_run_and_down0')
+capsys = <_pytest.capture.CaptureFixture object at 0x7282188ef850>
+
+    def test_cli_run_and_down(estate, tmp_path, capsys):
+        _declare(tmp_path)
+>       tid = _train(estate, "ff-dep")["train_id"]
+              ^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/stage8/test_acc_train_deploy.py:128: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+estate = (PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_cli_run_and_down0/target'), <function estate.<locals>.release at 0x728218baeb60>, <lanectl.events.EventLog object at 0x728218dbed50>)
+item = 'ff-dep'
+
+    def _train(estate, item):
+        repo, release, log = estate
+        release(item, SUB_TEST)
+        out = runner.execute(runner.admit("implement", log), log, adapter_fn=_scripted(_good))
+>       assert "-> candidate" in out, out
+E       AssertionError: ff-dep-a1 [scripted/model] -> rejected: acceptance: exit 1: /projects/dev/_wt/lanectl-model-error-policy-20261114/.venv/bin/python -m pytest -q -p no:cacheprovider :: Failed to connect to user scope bus via local transport: $DBUS_SESSION_BUS_ADDRESS and $XDG_RUNTIME_DIR not defined (consider using --machine=<user>@.host --user to connect to bus of other user)
+E         
+E       assert '-> candidate' in 'ff-dep-a1 [scripted/model] -> rejected: acceptance: exit 1: /projects/dev/_wt/lanectl-model-error-policy-20261114/.ve...RESS and $XDG_RUNTIME_DIR not defined (consider using --machine=<user>@.host --user to connect to bus of other user)\n'
+
+tests/stage8/test_acc_train_deploy.py:46: AssertionError
+______ test_worker_cannot_overwrite_log_or_journal_but_can_write_attempt _______
+
+estate = (PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_worker_cannot_overwrite_l0/target'), <function estate.<locals>.release at 0x72820f3237e0>, <lanectl.events.EventLog object at 0x728218dbf0c0>)
+tmp_path = PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_worker_cannot_overwrite_l0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x72821a1c5400>
+
+    def test_worker_cannot_overwrite_log_or_journal_but_can_write_attempt(estate,tmp_path,monkeypatch):
+        _,release,log=estate
+        release('state-proof','from calc import sub\n\ndef test_sub():\n    assert sub(5,3)==2\n')
+        journal=state_dir()/'coordination.sqlite';journal.write_text('coordinator-journal\n')
+        native=tmp_path/'native-bin';native.mkdir()
+        tool=native/'claude'
+        tool.write_text('#!/bin/sh\n'+
+            f'if (printf corrupt > {shlex.quote(str(log.path))}) 2>/dev/null; then echo LOG_LEAK; else echo LOG_BLOCKED; fi\n'+
+            f'if (printf corrupt > {shlex.quote(str(journal))}) 2>/dev/null; then echo JOURNAL_LEAK; else echo JOURNAL_BLOCKED; fi\n'+
+            'printf %s '+shlex.quote('def add(a,b):\n    return a+b\n\ndef sub(a,b):\n    return a-b\n')+' > src/calc.py\n'+
+            'printf %s '+shlex.quote('from calc import sub\n\ndef test_negative():\n    assert sub(1,2)==-1\n')+' > tests/test_extra.py\n'+
+            'echo ATTEMPT_WRITTEN\n')
+        tool.chmod(0o755)
+        monkeypatch.setenv('PATH',str(native)+os.pathsep+os.environ['PATH'])
+        def probe(*,worktree,env,**kwargs):
+            shim=Path(env['PATH'].split(os.pathsep)[0])/'claude'
+            p=subprocess.run([str(shim)],cwd=worktree,env=env,capture_output=True,text=True)
+            assert p.returncode==0,p.stderr
+            assert p.stdout.split()==['LOG_BLOCKED','JOURNAL_BLOCKED','ATTEMPT_WRITTEN'],p.stdout
+            return AdapterResult('done',0,'isolated',None)
+        monkeypatch.setitem(adapters.ADAPTERS,'scripted',probe)
+        out=runner.execute(runner.admit('implement',log),log)
+>       assert 'candidate' in out,out
+E       AssertionError: state-proof-a1 [scripted/model] -> rejected: infra: worker failed without changing anything
+E       assert 'candidate' in 'state-proof-a1 [scripted/model] -> rejected: infra: worker failed without changing anything'
+
+tests/stage8/test_control_state_isolation.py:34: AssertionError
+_________________ test_expired_deploy_cannot_authorize_landing _________________
+
+estate = (PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_expired_deploy_cannot_aut0/target'), <function estate.<locals>.release at 0x728219087100>, <lanectl.events.EventLog object at 0x728218d656d0>)
+tmp_path = PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_expired_deploy_cannot_aut0')
+
+    def test_expired_deploy_cannot_authorize_landing(estate, tmp_path):
+        from tests.stage8.test_acc_train_deploy import _declare
+        repo, release, log=estate
+        release('expiry-proof','def test_ok():\n    assert True\n')
+        base=_head(repo)
+        _train(log,repo,'expiry-proof',base)
+        _declare(tmp_path)
+        log.append('train.deployed',{'train_id':'tt','repo':'target','namespace':'lane-dev-tt','passed':True,'expires_at':'2000-01-01T00:00:00Z','checked_sha':base})
+>       assert 'pass its health check' in runner.land(log,'tt')
+E       AssertionError: assert 'pass its health check' in 'tt: failed recheck; not landing'
+E        +  where 'tt: failed recheck; not landing' = <function land at 0x72821a8cb060>(<lanectl.events.EventLog object at 0x728218d656d0>, 'tt')
+E        +    where <function land at 0x72821a8cb060> = runner.land
+
+tests/stage8/test_delivery_completion.py:94: AssertionError
+_______________ test_landing_replay_does_not_duplicate_receipts ________________
+
+estate = (PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_landing_replay_does_not_d0/target'), <function estate.<locals>.release at 0x72820f3213a0>, <lanectl.events.EventLog object at 0x728218d66d50>)
+
+    def test_landing_replay_does_not_duplicate_receipts(estate):
+        repo, release, log=estate
+        release('replay-proof','def test_ok():\n    assert True\n')
+        _train(log,repo,'replay-proof',_head(repo))
+>       assert runner.land(log,'tt').startswith('landed')
+E       AssertionError: assert False
+E        +  where False = <built-in method startswith of str object at 0x728218d67cd0>('landed')
+E        +    where <built-in method startswith of str object at 0x728218d67cd0> = 'tt: failed recheck; not landing'.startswith
+E        +      where 'tt: failed recheck; not landing' = <function land at 0x72821a8cb060>(<lanectl.events.EventLog object at 0x728218d66d50>, 'tt')
+E        +        where <function land at 0x72821a8cb060> = runner.land
+
+tests/stage8/test_delivery_completion.py:102: AssertionError
+_____________ test_completed_deploy_landing_replays_after_teardown _____________
+
+estate = (PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_completed_deploy_landing_0/target'), <function estate.<locals>.release at 0x728219b0ccc0>, <lanectl.events.EventLog object at 0x728218d67070>)
+tmp_path = PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_completed_deploy_landing_0')
+
+    def test_completed_deploy_landing_replays_after_teardown(estate,tmp_path):
+        from tests.stage8.test_acc_train_deploy import _declare
+        repo,release,log=estate
+        release('done-proof','def test_ok():\n    assert True\n')
+        base=_head(repo);_train(log,repo,'done-proof',base);_declare(tmp_path)
+        log.append('train.deployed',{'train_id':'tt','repo':'target','namespace':'lane-dev-tt','passed':True,'expires_at':'2099-01-01T00:00:00Z','checked_sha':base})
+>       assert runner.land(log,'tt').startswith('landed')
+E       AssertionError: assert False
+E        +  where False = <built-in method startswith of str object at 0x728218d66d80>('landed')
+E        +    where <built-in method startswith of str object at 0x728218d66d80> = 'tt: failed recheck; not landing'.startswith
+E        +      where 'tt: failed recheck; not landing' = <function land at 0x72821a8cb060>(<lanectl.events.EventLog object at 0x728218d67070>, 'tt')
+E        +        where <function land at 0x72821a8cb060> = runner.land
+
+tests/stage8/test_delivery_completion.py:133: AssertionError
+_____________________ test_fixed_train_needs_fresh_recheck _____________________
+
+estate = (PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_fixed_train_needs_fresh_r0/target'), <function estate.<locals>.release at 0x728219b0d580>, <lanectl.events.EventLog object at 0x728218d676b0>)
+
+    def test_fixed_train_needs_fresh_recheck(estate):
+        repo,release,log=estate
+        release('fix-proof','def test_ok():\n    assert True\n')
+        base=_head(repo);_train(log,repo,'fix-proof',base)
+        train=[e['data'] for e in log.read() if e['type']=='train.built'][-1]
+        log.append('train.built',dict(train,checked_sha=base))
+        checkout=Path(train['worktree'])
+        subprocess.run(['git','-C',str(repo),'worktree','add',str(checkout),'train/tt'],check=True,capture_output=True)
+        (checkout/'notes.md').write_text('bounded fix\n')
+        subprocess.run(['git','-C',str(checkout),'add','notes.md'],check=True)
+        subprocess.run(['git','-C',str(checkout),'-c','user.name=test','-c','user.email=test@example.invalid','commit','-m','fix(fix-proof-a1): [spec-gap] note'],check=True,capture_output=True)
+        assert 'changed' in runner.land(log,'tt')
+>       assert 'PASSED' in runner.recheck_train(log,'tt')
+E       AssertionError: assert 'PASSED' in 'tt: FAILED recheck at bd5d0bebf388a71c1c275d27682c1c86c3032b27'
+E        +  where 'tt: FAILED recheck at bd5d0bebf388a71c1c275d27682c1c86c3032b27' = <function recheck_train at 0x72821a8cb380>(<lanectl.events.EventLog object at 0x728218d676b0>, 'tt')
+E        +    where <function recheck_train at 0x72821a8cb380> = runner.recheck_train
+
+tests/stage8/test_delivery_completion.py:150: AssertionError
+________________ test_failed_deploy_stage_is_recorded_with_tail ________________
+
+estate = (PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_failed_deploy_stage_is_re0/target'), <function estate.<locals>.release at 0x728218932a20>, <lanectl.events.EventLog object at 0x728218d664e0>)
+tmp_path = PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_failed_deploy_stage_is_re0')
+
+    def test_failed_deploy_stage_is_recorded_with_tail(estate, tmp_path):
+        out = _declare(tmp_path, cmd="echo boom >&2; exit 7")
+>       tid = _train(estate)
+              ^^^^^^^^^^^^^^
+
+tests/stage8/test_deploy_extra.py:61: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+estate = (PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_failed_deploy_stage_is_re0/target'), <function estate.<locals>.release at 0x728218932a20>, <lanectl.events.EventLog object at 0x728218d664e0>)
+item = 'gg-dep'
+
+    def _train(estate, item="gg-dep"):
+        repo, release, log = estate
+        release(item, SUB_TEST)
+        out = runner.execute(runner.admit("implement", log), log, adapter_fn=_scripted(_good))
+>       assert "-> candidate" in out, out
+E       AssertionError: gg-dep-a1 [scripted/model] -> rejected: acceptance: exit 1: /projects/dev/_wt/lanectl-model-error-policy-20261114/.venv/bin/python -m pytest -q -p no:cacheprovider :: Failed to connect to user scope bus via local transport: $DBUS_SESSION_BUS_ADDRESS and $XDG_RUNTIME_DIR not defined (consider using --machine=<user>@.host --user to connect to bus of other user)
+E         
+E       assert '-> candidate' in 'gg-dep-a1 [scripted/model] -> rejected: acceptance: exit 1: /projects/dev/_wt/lanectl-model-error-policy-20261114/.ve...RESS and $XDG_RUNTIME_DIR not defined (consider using --machine=<user>@.host --user to connect to bus of other user)\n'
+
+tests/stage8/test_deploy_extra.py:45: AssertionError
+________ test_intent_to_deployed_landing_replays_lost_ack_on_real_owner ________
+
+estate = (PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_intent_to_deployed_landin0/target'), <function estate.<locals>.release at 0x7282109f0860>, <lanectl.events.EventLog object at 0x728218d66710>)
+tmp_path = PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_intent_to_deployed_landin0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x728218bd6e40>
+
+    def test_intent_to_deployed_landing_replays_lost_ack_on_real_owner(estate, tmp_path, monkeypatch):
+        repo, _, _ = estate
+        base = _head(repo)
+        target = tmp_path/'disposable-deploy'
+        target.mkdir()
+        monkeypatch.setenv('PRIVATE_TEST_SENTINEL', 'must-not-reach-deploy')
+        governance = Path(os.environ['LANECTL_HOME'])/'governance/repos.toml'
+        governance.write_text(governance.read_text() + f'''
+    [repos.target.deploy]
+    cmd = "test -z ${{PRIVATE_TEST_SENTINEL:-}} && echo $LANE_NAMESPACE >> {target}/started && touch {target}/live"
+    health_cmd = "test -f {target}/live"
+    teardown_cmd = "rm -f {target}/live; echo down >> {target}/stopped"
+    ttl_s = 300
+    env_allow = ["PATH"]
+    ''')
+        database = tmp_path/'owner.sqlite'
+        initialize(database)
+        client = Client(StreamStore(database))
+        pending = tmp_path/'pending-lane-batch.json'
+        log = RemoteEventLog(client, pending)
+    
+        draft = specification.draft_intent('stack-sub', repo_name='target', title='Subtraction',
+            intent='Implement sub(a,b), preserving both arguments and their signs.',
+            scope=['src/**', 'tests/**'], author_model='scripted/spec-author',
+            reviewer_model='scripted/spec-reviewer', adapter_fn=_spec_model)
+        assert load_release(draft).draft
+        refused = runner.admit('implement', log)
+        assert isinstance(refused, str) and 'draft' in refused
+        assert not [e for e in log.read() if e['type']=='item.claimed']
+>       assert backlog._publish(SimpleNamespace(id='stack-sub'), log) == 0
+E       AssertionError: assert 1 == 0
+E        +  where 1 = <function _publish at 0x72821a56e700>(namespace(id='stack-sub'), <lanectl.remote_events.RemoteEventLog object at 0x728219b71a90>)
+E        +    where <function _publish at 0x72821a56e700> = backlog._publish
+E        +    and   namespace(id='stack-sub') = SimpleNamespace(id='stack-sub')
+
+tests/stage8/test_full_stack_e2e.py:89: AssertionError
+----------------------------- Captured stdout call -----------------------------
+specification: expected base failure unverified: ['spec-gap: tests/test_acc_stack_sub.py']
+_________________ test_repo_jobs_become_gates_after_acceptance _________________
+
+estate = (PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_repo_jobs_become_gates_af0/target'), <function estate.<locals>.release at 0x72821932ccc0>, <lanectl.events.EventLog object at 0x728218d22440>)
+
+    def test_repo_jobs_become_gates_after_acceptance(estate):
+        _, release, log = estate
+        release("ee-jobs", SUB_TEST)
+        _jobs('name = "sees-acceptance"\ncmd = "test -f tests/test_acc_ee_jobs.py"\n',
+              'name = "second"\ncmd = "true"\n')
+        out = runner.execute(runner.admit("implement", log), log, adapter_fn=_scripted(_good))
+>       assert "-> candidate" in out, out
+E       AssertionError: ee-jobs-a1 [scripted/model] -> rejected: acceptance: exit 1: /projects/dev/_wt/lanectl-model-error-policy-20261114/.venv/bin/python -m pytest -q -p no:cacheprovider :: Failed to connect to user scope bus via local transport: $DBUS_SESSION_BUS_ADDRESS and $XDG_RUNTIME_DIR not defined (consider using --machine=<user>@.host --user to connect to bus of other user)
+E         
+E       assert '-> candidate' in 'ee-jobs-a1 [scripted/model] -> rejected: acceptance: exit 1: /projects/dev/_wt/lanectl-model-error-policy-20261114/.v...RESS and $XDG_RUNTIME_DIR not defined (consider using --machine=<user>@.host --user to connect to bus of other user)\n'
+
+tests/stage8/test_gate_jobs_extra.py:73: AssertionError
+______________ test_failing_job_rejects_with_its_exit_and_output _______________
+
+estate = (PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_failing_job_rejects_with_1/target'), <function estate.<locals>.release at 0x728212c6cae0>, <lanectl.events.EventLog object at 0x728218d23e80>)
+
+    def test_failing_job_rejects_with_its_exit_and_output(estate):
+        _, release, log = estate
+        release("ff-jobs", SUB_TEST)
+        _jobs('name = "lint"\ncmd = "echo job-said-no; exit 7"\n')
+        out = runner.execute(runner.admit("implement", log), log, adapter_fn=_scripted(_good))
+>       assert "-> rejected" in out and "job:lint" in out, out
+E       AssertionError: ff-jobs-a1 [scripted/model] -> rejected: acceptance: exit 1: /projects/dev/_wt/lanectl-model-error-policy-20261114/.venv/bin/python -m pytest -q -p no:cacheprovider :: Failed to connect to user scope bus via local transport: $DBUS_SESSION_BUS_ADDRESS and $XDG_RUNTIME_DIR not defined (consider using --machine=<user>@.host --user to connect to bus of other user)
+E         
+E       assert ('-> rejected' in 'ff-jobs-a1 [scripted/model] -> rejected: acceptance: exit 1: /projects/dev/_wt/lanectl-model-error-policy-20261114/.v...RESS and $XDG_RUNTIME_DIR not defined (consider using --machine=<user>@.host --user to connect to bus of other user)\n' and 'job:lint' in 'ff-jobs-a1 [scripted/model] -> rejected: acceptance: exit 1: /projects/dev/_wt/lanectl-model-error-policy-20261114/.v...RESS and $XDG_RUNTIME_DIR not defined (consider using --machine=<user>@.host --user to connect to bus of other user)\n')
+
+tests/stage8/test_gate_jobs_extra.py:84: AssertionError
+______________ test_candidate_flows_through_train_land_and_replay ______________
+
+estate = (PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_candidate_flows_through_t0/target'), <function estate.<locals>.release at 0x7282195dd080>, <lanectl.events.EventLog object at 0x728218d22080>)
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x728218ec6270>
+
+    def test_candidate_flows_through_train_land_and_replay(estate, monkeypatch):
+        from pathlib import Path
+        from lanectl.adapters import AdapterResult
+        from lanectl.events import project_items
+        repo, release, log=estate
+        release('full-proof','from calc import sub\n\ndef test_sub():\n    assert sub(5,3)==2\n')
+        def worker(*,worktree,**kw):
+            wt=Path(worktree)
+            (wt/'src'/'calc.py').write_text('def add(a,b):\n    return a+b\n\ndef sub(a,b):\n    return a-b\n')
+            (wt/'tests'/'test_extra.py').write_text('from calc import sub\n\ndef test_negative():\n    assert sub(1,2)==-1\n')
+            return AdapterResult('done',0,'ok',None)
+>       assert 'candidate' in runner.execute(runner.admit('implement',log),log,adapter_fn=worker)
+E       AssertionError: assert 'candidate' in 'full-proof-a1 [scripted/model] -> rejected: acceptance: exit 1: /projects/dev/_wt/lanectl-model-error-policy-20261114...RESS and $XDG_RUNTIME_DIR not defined (consider using --machine=<user>@.host --user to connect to bus of other user)\n'
+E        +  where 'full-proof-a1 [scripted/model] -> rejected: acceptance: exit 1: /projects/dev/_wt/lanectl-model-error-policy-20261114...RESS and $XDG_RUNTIME_DIR not defined (consider using --machine=<user>@.host --user to connect to bus of other user)\n' = <function execute at 0x72821a8ca980>(Claim(rel=WorkRelease(id='full-proof', repo='target', base_sha='a0ba0c8a13b85be3894a6f0b4b0252b6dc934e55', title='full...ricted=False, digest='sha256:777e7feb65fef249'), attempt_id='full-proof-a1', model='scripted/model', worker='scripted'), <lanectl.events.EventLog object at 0x728218d22080>, adapter_fn=<function test_candidate_flows_through_train_land_and_replay.<locals>.worker at 0x7282195ddee0>)
+E        +    where <function execute at 0x72821a8ca980> = runner.execute
+E        +    and   Claim(rel=WorkRelease(id='full-proof', repo='target', base_sha='a0ba0c8a13b85be3894a6f0b4b0252b6dc934e55', title='full...ricted=False, digest='sha256:777e7feb65fef249'), attempt_id='full-proof-a1', model='scripted/model', worker='scripted') = <function admit at 0x72821a8c9f80>('implement', <lanectl.events.EventLog object at 0x728218d22080>)
+E        +      where <function admit at 0x72821a8c9f80> = runner.admit
+
+tests/stage8/test_integrator_cycle.py:59: AssertionError
+__________ test_actual_sandbox_makes_provider_configuration_readonly ___________
+
+tmp_path = PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_actual_sandbox_makes_prov0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x728219fd8ad0>
+
+    def test_actual_sandbox_makes_provider_configuration_readonly(tmp_path,monkeypatch):
+        import os
+        wt=tmp_path/'attempt';wt.mkdir()
+        bindir=tmp_path/'bin';bindir.mkdir()
+        opencode=bindir/'opencode'
+        opencode.write_text('''#!/bin/sh
+    if [ "$1" = --version ]; then echo 'opencode v2.2.5'; exit 0; fi
+    if touch "$OPENCODE_CONFIG_DIR/tamper" 2>/dev/null; then
+     printf '%s\\n' '{"type":"text","part":{"text":"LEAK"}}'
+    else
+     printf '%s\\n' '{"type":"text","part":{"text":"BLOCKED"}}'
+    fi
+    ''')
+        opencode.chmod(0o755)
+        helper=tmp_path/'lane.py'
+        helper.write_text('import subprocess,sys\nsys.exit(subprocess.call(sys.argv[sys.argv.index("--")+1:]))\n')
+        monkeypatch.setenv('PATH',str(bindir)+os.pathsep+os.environ['PATH'])
+        monkeypatch.setenv('LANECTL_LOCAL_BASE_URL','http://127.0.0.1:8020/v1')
+        monkeypatch.setenv('LANECTL_LOCAL_LANE_HELPER',str(helper))
+        sb=Sandbox('systemd-run',(str(tmp_path),),(str(wt),),30,unit='lanectl-local-config-proof.service')
+        result=local.run_local(model='local/worker-fast',worktree=wt,prompt='synthetic',
+            status_file=tmp_path/'status.json',timeout_s=20,external=False,sandbox=sb)
+>       assert result.outcome=='done',result.final_tail
+E       AssertionError: Failed to connect to user scope bus via local transport: $DBUS_SESSION_BUS_ADDRESS and $XDG_RUNTIME_DIR not defined (consider using --machine=<user>@.host --user to connect to bus of other user)
+E         
+E       assert 'failed' == 'done'
+E         
+E         - done
+E         + failed
+
+tests/stage8/test_local_adapter.py:129: AssertionError
+____________ test_stopped_namespace_command_is_failure[False-False] ____________
+
+estate = (PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_stopped_namespace_command0/target'), <function estate.<locals>.release at 0x728218dc79c0>, <lanectl.events.EventLog object at 0x728218bfff70>)
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x728219fd8980>
+tmp_path = PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_stopped_namespace_command0')
+trap = False, prestart = False
+
+    @pytest.mark.parametrize('trap,prestart', [(False, False), (True, False), (False, True)])
+    def test_stopped_namespace_command_is_failure(estate, monkeypatch, tmp_path, trap, prestart):
+        spec = runner.load_repos()['target']
+        checkout = tmp_path / 'checkout'
+        checkout.mkdir()
+        command, thread, stops, done = stop_during_check(
+            monkeypatch, tmp_path, trap=trap, prestart=prestart)
+        started = time.monotonic()
+        try:
+            result = runner._train_command(spec, checkout, command)
+        finally:
+            thread.join(25)
+        assert not thread.is_alive()
+>       assert stops == [0]
+E       assert [] == [0]
+E         
+E         Right contains one more item: 0
+E         Use -v to get more diff
+
+tests/stage8/test_namespace_completion.py:60: AssertionError
+____________ test_stopped_namespace_command_is_failure[True-False] _____________
+
+estate = (PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_stopped_namespace_command1/target'), <function estate.<locals>.release at 0x728218e876a0>, <lanectl.events.EventLog object at 0x728218bfd6d0>)
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x728218ec5da0>
+tmp_path = PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_stopped_namespace_command1')
+trap = True, prestart = False
+
+    @pytest.mark.parametrize('trap,prestart', [(False, False), (True, False), (False, True)])
+    def test_stopped_namespace_command_is_failure(estate, monkeypatch, tmp_path, trap, prestart):
+        spec = runner.load_repos()['target']
+        checkout = tmp_path / 'checkout'
+        checkout.mkdir()
+        command, thread, stops, done = stop_during_check(
+            monkeypatch, tmp_path, trap=trap, prestart=prestart)
+        started = time.monotonic()
+        try:
+            result = runner._train_command(spec, checkout, command)
+        finally:
+            thread.join(25)
+        assert not thread.is_alive()
+>       assert stops == [0]
+E       assert [] == [0]
+E         
+E         Right contains one more item: 0
+E         Use -v to get more diff
+
+tests/stage8/test_namespace_completion.py:60: AssertionError
+____________ test_stopped_namespace_command_is_failure[False-True] _____________
+
+estate = (PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_stopped_namespace_command2/target'), <function estate.<locals>.release at 0x728218e86980>, <lanectl.events.EventLog object at 0x728218bfde00>)
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x728218ec5cc0>
+tmp_path = PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_stopped_namespace_command2')
+trap = False, prestart = True
+
+    @pytest.mark.parametrize('trap,prestart', [(False, False), (True, False), (False, True)])
+    def test_stopped_namespace_command_is_failure(estate, monkeypatch, tmp_path, trap, prestart):
+        spec = runner.load_repos()['target']
+        checkout = tmp_path / 'checkout'
+        checkout.mkdir()
+        command, thread, stops, done = stop_during_check(
+            monkeypatch, tmp_path, trap=trap, prestart=prestart)
+        started = time.monotonic()
+        try:
+            result = runner._train_command(spec, checkout, command)
+        finally:
+            thread.join(25)
+        assert not thread.is_alive()
+>       assert stops == [0]
+E       assert [] == [0]
+E         
+E         Right contains one more item: 0
+E         Use -v to get more diff
+
+tests/stage8/test_namespace_completion.py:60: AssertionError
+__________ test_namespace_stop_kills_term_ignoring_child_within_bound __________
+
+estate = (PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_namespace_stop_kills_term0/target'), <function estate.<locals>.release at 0x728218e86f20>, <lanectl.events.EventLog object at 0x728218bfda90>)
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x728218ec5860>
+tmp_path = PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_namespace_stop_kills_term0')
+
+    def test_namespace_stop_kills_term_ignoring_child_within_bound(estate, monkeypatch, tmp_path):
+        checkout = tmp_path / 'checkout'
+        checkout.mkdir()
+        command, thread, stops, done = stop_during_check(monkeypatch, tmp_path, ignore=True)
+        started = time.monotonic()
+        try:
+            result = runner._train_command(runner.load_repos()['target'], checkout, command)
+        finally:
+            thread.join(25)
+        assert not thread.is_alive()
+>       assert stops == [0]
+E       assert [] == [0]
+E         
+E         Right contains one more item: 0
+E         Use -v to get more diff
+
+tests/stage8/test_namespace_completion.py:76: AssertionError
+____________ test_stopped_check_never_becomes_checked_train[build] _____________
+
+estate = (PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_stopped_check_never_becom0/target'), <function estate.<locals>.release at 0x728218e84900>, <lanectl.events.EventLog object at 0x728218bfc5a0>)
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x728218ec7620>
+tmp_path = PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_stopped_check_never_becom0')
+operation = 'build'
+
+    @pytest.mark.parametrize('operation', ['build', 'recheck', 'historical'])
+    def test_stopped_check_never_becomes_checked_train(estate, monkeypatch, tmp_path, operation):
+        from tests.stage8.test_work_sync_extra import _train, _head
+        repo, release, log = estate
+        release('stopped-check', 'def test_ok():\n    assert True\n')
+        claim = runner.admit('implement', log)
+        base = _head(repo)
+        command, thread, stops, done = stop_during_check(monkeypatch, tmp_path, trap=True)
+        original = runner.load_repos()['target']
+        monkeypatch.setattr(runner, 'load_repos', lambda: {
+            'target': replace(original, setup_cmd='', check_cmd=command)})
+        try:
+            if operation == 'build':
+                subprocess.run(['git', '-C', str(repo), 'branch', 'stopped-candidate', base], check=True)
+                monkeypatch.setattr(runner, 'candidates', lambda *a: [{
+                    'attempt_id': claim.attempt_id, 'branch': 'stopped-candidate', 'title': 'stop proof'}])
+                result = runner.build_train(log, 'target')
+                assert ': FAILED ' in result, result
+                assert not [e['data'] for e in log.read() if e['type'] == 'train.built'][-1]['passed']
+            else:
+                _train(log, repo, 'stopped-check', base)
+                if operation == 'recheck':
+                    worktree = Path([e['data'] for e in log.read()
+                                     if e['type'] == 'train.built'][-1]['worktree'])
+                    subprocess.run(['git', '-C', str(repo), 'worktree', 'add', '--detach',
+                                    str(worktree), base], check=True, capture_output=True)
+                if operation == 'historical':
+                    result = runner.land(log, 'tt')
+                    assert 'failed recheck; not landing' in result, result
+                    assert not [e for e in log.read() if e['type'] == 'item.landed']
+                    assert not [e['data'] for e in log.read() if e['type'] == 'train.built'][-1].get('checked_sha')
+                else:
+                    result = runner.recheck_train(log, 'tt')
+                    assert 'FAILED' in result, result
+                    assert not [e['data'] for e in log.read() if e['type'] == 'train.built'][-1]['passed']
+        finally:
+            thread.join(25)
+        assert not thread.is_alive()
+>       assert stops == [0]
+E       assert [] == [0]
+E         
+E         Right contains one more item: 0
+E         Use -v to get more diff
+
+tests/stage8/test_namespace_completion.py:120: AssertionError
+___________ test_stopped_check_never_becomes_checked_train[recheck] ____________
+
+estate = (PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_stopped_check_never_becom1/target'), <function estate.<locals>.release at 0x728218e84400>, <lanectl.events.EventLog object at 0x728218bff9d0>)
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x728219fd8910>
+tmp_path = PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_stopped_check_never_becom1')
+operation = 'recheck'
+
+    @pytest.mark.parametrize('operation', ['build', 'recheck', 'historical'])
+    def test_stopped_check_never_becomes_checked_train(estate, monkeypatch, tmp_path, operation):
+        from tests.stage8.test_work_sync_extra import _train, _head
+        repo, release, log = estate
+        release('stopped-check', 'def test_ok():\n    assert True\n')
+        claim = runner.admit('implement', log)
+        base = _head(repo)
+        command, thread, stops, done = stop_during_check(monkeypatch, tmp_path, trap=True)
+        original = runner.load_repos()['target']
+        monkeypatch.setattr(runner, 'load_repos', lambda: {
+            'target': replace(original, setup_cmd='', check_cmd=command)})
+        try:
+            if operation == 'build':
+                subprocess.run(['git', '-C', str(repo), 'branch', 'stopped-candidate', base], check=True)
+                monkeypatch.setattr(runner, 'candidates', lambda *a: [{
+                    'attempt_id': claim.attempt_id, 'branch': 'stopped-candidate', 'title': 'stop proof'}])
+                result = runner.build_train(log, 'target')
+                assert ': FAILED ' in result, result
+                assert not [e['data'] for e in log.read() if e['type'] == 'train.built'][-1]['passed']
+            else:
+                _train(log, repo, 'stopped-check', base)
+                if operation == 'recheck':
+                    worktree = Path([e['data'] for e in log.read()
+                                     if e['type'] == 'train.built'][-1]['worktree'])
+                    subprocess.run(['git', '-C', str(repo), 'worktree', 'add', '--detach',
+                                    str(worktree), base], check=True, capture_output=True)
+                if operation == 'historical':
+                    result = runner.land(log, 'tt')
+                    assert 'failed recheck; not landing' in result, result
+                    assert not [e for e in log.read() if e['type'] == 'item.landed']
+                    assert not [e['data'] for e in log.read() if e['type'] == 'train.built'][-1].get('checked_sha')
+                else:
+                    result = runner.recheck_train(log, 'tt')
+                    assert 'FAILED' in result, result
+                    assert not [e['data'] for e in log.read() if e['type'] == 'train.built'][-1]['passed']
+        finally:
+            thread.join(25)
+        assert not thread.is_alive()
+>       assert stops == [0]
+E       assert [] == [0]
+E         
+E         Right contains one more item: 0
+E         Use -v to get more diff
+
+tests/stage8/test_namespace_completion.py:120: AssertionError
+__________ test_stopped_check_never_becomes_checked_train[historical] __________
+
+estate = (PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_stopped_check_never_becom2/target'), <function estate.<locals>.release at 0x728218e87560>, <lanectl.events.EventLog object at 0x728218d7f0c0>)
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x728218bd5240>
+tmp_path = PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_stopped_check_never_becom2')
+operation = 'historical'
+
+    @pytest.mark.parametrize('operation', ['build', 'recheck', 'historical'])
+    def test_stopped_check_never_becomes_checked_train(estate, monkeypatch, tmp_path, operation):
+        from tests.stage8.test_work_sync_extra import _train, _head
+        repo, release, log = estate
+        release('stopped-check', 'def test_ok():\n    assert True\n')
+        claim = runner.admit('implement', log)
+        base = _head(repo)
+        command, thread, stops, done = stop_during_check(monkeypatch, tmp_path, trap=True)
+        original = runner.load_repos()['target']
+        monkeypatch.setattr(runner, 'load_repos', lambda: {
+            'target': replace(original, setup_cmd='', check_cmd=command)})
+        try:
+            if operation == 'build':
+                subprocess.run(['git', '-C', str(repo), 'branch', 'stopped-candidate', base], check=True)
+                monkeypatch.setattr(runner, 'candidates', lambda *a: [{
+                    'attempt_id': claim.attempt_id, 'branch': 'stopped-candidate', 'title': 'stop proof'}])
+                result = runner.build_train(log, 'target')
+                assert ': FAILED ' in result, result
+                assert not [e['data'] for e in log.read() if e['type'] == 'train.built'][-1]['passed']
+            else:
+                _train(log, repo, 'stopped-check', base)
+                if operation == 'recheck':
+                    worktree = Path([e['data'] for e in log.read()
+                                     if e['type'] == 'train.built'][-1]['worktree'])
+                    subprocess.run(['git', '-C', str(repo), 'worktree', 'add', '--detach',
+                                    str(worktree), base], check=True, capture_output=True)
+                if operation == 'historical':
+                    result = runner.land(log, 'tt')
+                    assert 'failed recheck; not landing' in result, result
+                    assert not [e for e in log.read() if e['type'] == 'item.landed']
+                    assert not [e['data'] for e in log.read() if e['type'] == 'train.built'][-1].get('checked_sha')
+                else:
+                    result = runner.recheck_train(log, 'tt')
+                    assert 'FAILED' in result, result
+                    assert not [e['data'] for e in log.read() if e['type'] == 'train.built'][-1]['passed']
+        finally:
+            thread.join(25)
+        assert not thread.is_alive()
+>       assert stops == [0]
+E       assert [] == [0]
+E         
+E         Right contains one more item: 0
+E         Use -v to get more diff
+
+tests/stage8/test_namespace_completion.py:120: AssertionError
+_ test_namespace_completion_preserves_shell_results[printf '%s\\n' 'a b' "quote'";\nprintf '%s' stderr >&2-0-a b\nquote'\n-stderr] _
+
+estate = (PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_namespace_completion_pres0/target'), <function estate.<locals>.release at 0x728218e867a0>, <lanectl.events.EventLog object at 0x728218d7c6e0>)
+tmp_path = PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_namespace_completion_pres0')
+command = 'printf \'%s\\n\' \'a b\' "quote\'";\nprintf \'%s\' stderr >&2'
+code = 0, out = "a b\nquote'\n", err = 'stderr'
+
+    @pytest.mark.parametrize('command,code,out,err', [
+        ("printf '%s\\n' 'a b' \"quote'\";\nprintf '%s' stderr >&2", 0, "a b\nquote'\n", 'stderr'),
+        ('exit 7', 7, '', ''),
+        ('exec /bin/sh -c "exit 9"', 9, '', ''),
+        ('timeout .1s sleep 10', 124, '', ''),
+        ('head -c 262144 /dev/zero | tr "\\0" x', 0, 'x' * 262144, ''),
+    ])
+    def test_namespace_completion_preserves_shell_results(estate, tmp_path, command, code, out, err):
+        checkout = tmp_path / 'checkout'
+        checkout.mkdir()
+        result = runner._train_command(runner.load_repos()['target'], checkout, command)
+>       assert (result.returncode, result.stdout, result.stderr) == (code, out, err)
+E       assert (1, '', 'Fail...ther user)\n') == (0, "a b\nquote'\n", 'stderr')
+E         
+E         At index 0 diff: 1 != 0
+E         Use -v to get more diff
+
+tests/stage8/test_namespace_completion.py:136: AssertionError
+________ test_namespace_completion_preserves_shell_results[exit 7-7--] _________
+
+estate = (PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_namespace_completion_pres1/target'), <function estate.<locals>.release at 0x728218e86c00>, <lanectl.events.EventLog object at 0x728218d7c140>)
+tmp_path = PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_namespace_completion_pres1')
+command = 'exit 7', code = 7, out = '', err = ''
+
+    @pytest.mark.parametrize('command,code,out,err', [
+        ("printf '%s\\n' 'a b' \"quote'\";\nprintf '%s' stderr >&2", 0, "a b\nquote'\n", 'stderr'),
+        ('exit 7', 7, '', ''),
+        ('exec /bin/sh -c "exit 9"', 9, '', ''),
+        ('timeout .1s sleep 10', 124, '', ''),
+        ('head -c 262144 /dev/zero | tr "\\0" x', 0, 'x' * 262144, ''),
+    ])
+    def test_namespace_completion_preserves_shell_results(estate, tmp_path, command, code, out, err):
+        checkout = tmp_path / 'checkout'
+        checkout.mkdir()
+        result = runner._train_command(runner.load_repos()['target'], checkout, command)
+>       assert (result.returncode, result.stdout, result.stderr) == (code, out, err)
+E       AssertionError: assert (1, '', 'Fail...ther user)\n') == (7, '', '')
+E         
+E         At index 0 diff: 1 != 7
+E         Use -v to get more diff
+
+tests/stage8/test_namespace_completion.py:136: AssertionError
+_ test_namespace_completion_preserves_shell_results[exec /bin/sh -c "exit 9"-9--] _
+
+estate = (PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_namespace_completion_pres2/target'), <function estate.<locals>.release at 0x728218e851c0>, <lanectl.events.EventLog object at 0x728218d7cff0>)
+tmp_path = PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_namespace_completion_pres2')
+command = 'exec /bin/sh -c "exit 9"', code = 9, out = '', err = ''
+
+    @pytest.mark.parametrize('command,code,out,err', [
+        ("printf '%s\\n' 'a b' \"quote'\";\nprintf '%s' stderr >&2", 0, "a b\nquote'\n", 'stderr'),
+        ('exit 7', 7, '', ''),
+        ('exec /bin/sh -c "exit 9"', 9, '', ''),
+        ('timeout .1s sleep 10', 124, '', ''),
+        ('head -c 262144 /dev/zero | tr "\\0" x', 0, 'x' * 262144, ''),
+    ])
+    def test_namespace_completion_preserves_shell_results(estate, tmp_path, command, code, out, err):
+        checkout = tmp_path / 'checkout'
+        checkout.mkdir()
+        result = runner._train_command(runner.load_repos()['target'], checkout, command)
+>       assert (result.returncode, result.stdout, result.stderr) == (code, out, err)
+E       AssertionError: assert (1, '', 'Fail...ther user)\n') == (9, '', '')
+E         
+E         At index 0 diff: 1 != 9
+E         Use -v to get more diff
+
+tests/stage8/test_namespace_completion.py:136: AssertionError
+_ test_namespace_completion_preserves_shell_results[timeout .1s sleep 10-124--] _
+
+estate = (PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_namespace_completion_pres3/target'), <function estate.<locals>.release at 0x728218e85120>, <lanectl.events.EventLog object at 0x728218d7f700>)
+tmp_path = PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_namespace_completion_pres3')
+command = 'timeout .1s sleep 10', code = 124, out = '', err = ''
+
+    @pytest.mark.parametrize('command,code,out,err', [
+        ("printf '%s\\n' 'a b' \"quote'\";\nprintf '%s' stderr >&2", 0, "a b\nquote'\n", 'stderr'),
+        ('exit 7', 7, '', ''),
+        ('exec /bin/sh -c "exit 9"', 9, '', ''),
+        ('timeout .1s sleep 10', 124, '', ''),
+        ('head -c 262144 /dev/zero | tr "\\0" x', 0, 'x' * 262144, ''),
+    ])
+    def test_namespace_completion_preserves_shell_results(estate, tmp_path, command, code, out, err):
+        checkout = tmp_path / 'checkout'
+        checkout.mkdir()
+        result = runner._train_command(runner.load_repos()['target'], checkout, command)
+>       assert (result.returncode, result.stdout, result.stderr) == (code, out, err)
+E       AssertionError: assert (1, '', 'Fail...ther user)\n') == (124, '', '')
+E         
+E         At index 0 diff: 1 != 124
+E         Use -v to get more diff
+
+tests/stage8/test_namespace_completion.py:136: AssertionError
+_ test_namespace_completion_preserves_shell_results[head -c 262144 /dev/zero | tr "\\0" x-0-out4-] _
+
+estate = (PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_namespace_completion_pres4/target'), <function estate.<locals>.release at 0x728218d467a0>, <lanectl.events.EventLog object at 0x728218d7e620>)
+tmp_path = PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_namespace_completion_pres4')
+command = 'head -c 262144 /dev/zero | tr "\\0" x', code = 0
+out = 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx...xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx'
+err = ''
+
+    @pytest.mark.parametrize('command,code,out,err', [
+        ("printf '%s\\n' 'a b' \"quote'\";\nprintf '%s' stderr >&2", 0, "a b\nquote'\n", 'stderr'),
+        ('exit 7', 7, '', ''),
+        ('exec /bin/sh -c "exit 9"', 9, '', ''),
+        ('timeout .1s sleep 10', 124, '', ''),
+        ('head -c 262144 /dev/zero | tr "\\0" x', 0, 'x' * 262144, ''),
+    ])
+    def test_namespace_completion_preserves_shell_results(estate, tmp_path, command, code, out, err):
+        checkout = tmp_path / 'checkout'
+        checkout.mkdir()
+        result = runner._train_command(runner.load_repos()['target'], checkout, command)
+>       assert (result.returncode, result.stdout, result.stderr) == (code, out, err)
+E       AssertionError: assert (1, '', 'Fail...ther user)\n') == (0, 'xxxxxxxx...xxxxxxxx', '')
+E         
+E         At index 0 diff: 1 != 0
+E         Use -v to get more diff
+
+tests/stage8/test_namespace_completion.py:136: AssertionError
+_____ test_owner_success_only_after_land_and_no_tracker_double_settlement ______
+
+estate = (PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_owner_success_only_after_0/target'), <function estate.<locals>.release at 0x72820f37ca40>, <lanectl.events.EventLog object at 0x728218d7c780>)
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x72821a013e70>
+
+    def test_owner_success_only_after_land_and_no_tracker_double_settlement(estate,monkeypatch):
+        _,release,log=estate
+        release('owner-proof',TEST);_set_work('owner-proof','target#12',True)
+        owner=configure(monkeypatch)
+        monkeypatch.setattr(integrator,'_authority',lambda:{'autonomous_classes':['glue'],'fix_budget_lines':30,'allowed_fix_classes':['spec-gap','gate-gap']})
+        monkeypatch.setattr(integrator,'_accepted',lambda *a:True)
+        runner.execute(runner.admit('implement',log),log,adapter_fn=good)
+>       assert project_items(log.read())['owner-proof'].state=='landed'
+E       AssertionError: assert 'requeued' == 'landed'
+E         
+E         - landed
+E         + requeued
+
+tests/stage8/test_runner_coordination.py:63: AssertionError
+_______ test_spec_model_cannot_overwrite_control_log_or_recovery_journal _______
+
+estate = (PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_spec_model_cannot_overwri0/target'), <function estate.<locals>.release at 0x72820f37c540>, <lanectl.events.EventLog object at 0x728218cbc4b0>)
+tmp_path = PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_spec_model_cannot_overwri0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x728219519080>
+
+    def test_spec_model_cannot_overwrite_control_log_or_recovery_journal(estate, tmp_path, monkeypatch):
+        repo, _, log = estate
+        journal = log.path.parent / 'owner-recovery.sqlite'
+        journal.write_text('coordinator-only')
+        original = log.path.read_bytes()
+        binary = tmp_path / 'bin'
+        binary.mkdir()
+        worker = binary / 'claude'
+        worker.write_text(f'#!{sys.executable}\nimport json\nfrom pathlib import Path\n'
+            f'targets = {list(map(str, [log.path, journal]))!r}\nblocked = []\n'
+            'for target in targets:\n'
+            '    try:\n        Path(target).write_text("corrupted")\n        blocked.append(False)\n'
+            '    except OSError:\n        blocked.append(True)\n'
+            'Path(".lanectl-spec/response.json").write_text(json.dumps({"blocked":blocked}))\n')
+        worker.chmod(0o755)
+        monkeypatch.setenv('PATH', str(binary) + os.pathsep + os.environ['PATH'])
+    
+        def adapter(**kwargs):
+            result = subprocess.run(['claude'], cwd=kwargs['worktree'], env=kwargs['env'],
+                                    capture_output=True, text=True)
+            assert result.returncode == 0, result.stderr
+            return AdapterResult('done', 0, '', None)
+    
+>       result, _ = specification._invoke(load_repos()['target'], load_lane('implement'),
+            specification._git(repo, 'rev-parse', 'HEAD'), 'claude-sonnet-5-5', 'synthetic', adapter_fn=adapter)
+
+tests/stage8/test_spec_local_route.py:53: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/lanectl/specification.py:97: in _invoke
+    result = fn(model=model, worktree=wt, prompt=prompt,
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+kwargs = {'model': 'claude-sonnet-5-5', 'worktree': PosixPath('/tmp/lanectl-spec-xk613oul/checkout'), 'prompt': 'synthetic', 'status_file': PosixPath('/tmp/lanectl-spec-xk613oul/runtime/status.json'), ...}
+
+    def adapter(**kwargs):
+        result = subprocess.run(['claude'], cwd=kwargs['worktree'], env=kwargs['env'],
+                                capture_output=True, text=True)
+>       assert result.returncode == 0, result.stderr
+E       AssertionError: Failed to connect to user scope bus via local transport: $DBUS_SESSION_BUS_ADDRESS and $XDG_RUNTIME_DIR not defined (consider using --machine=<user>@.host --user to connect to bus of other user)
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['claude'], returncode=1, stdout='', stderr='Failed to connect to user scope bus via local trans...ESS and $XDG_RUNTIME_DIR not defined (consider using --machine=<user>@.host --user to connect to bus of other user)\n').returncode
+
+tests/stage8/test_spec_local_route.py:50: AssertionError
+___________ test_draft_has_independent_review_and_fails_on_real_base ___________
+
+estate = (PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_draft_has_independent_rev0/target'), <function estate.<locals>.release at 0x7282109a54e0>, <lanectl.events.EventLog object at 0x728218cbf9d0>)
+
+    def test_draft_has_independent_review_and_fails_on_real_base(estate):
+        repo, _, _ = estate
+        d = make(estate)
+        rel = load_release(d)
+        assert rel.draft and rel.outcome == 'Add subtraction'
+        assert rel.acceptance.files == ('tests/test_acc_spec.py',)
+>       assert spec.validate_for_publish(d) == []
+E       assert ["specificati...cc_spec.py']"] == []
+E         
+E         Left contains one more item: "specification: expected base failure unverified: ['spec-gap: tests/test_acc_spec.py']"
+E         Use -v to get more diff
+
+tests/stage8/test_specification.py:38: AssertionError
+____________ test_base_lint_preserves_runner_credential_file_fence _____________
+
+estate = (PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_base_lint_preserves_runne0/target'), <function estate.<locals>.release at 0x7282109a4860>, <lanectl.events.EventLog object at 0x728218c19ef0>)
+tmp_path = PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_base_lint_preserves_runne0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x728212d23b60>
+
+    def test_base_lint_preserves_runner_credential_file_fence(estate, tmp_path, monkeypatch):
+        from dataclasses import replace
+        from lanectl.config import load_lane, load_repos
+        repo, release, _ = estate
+        credential = tmp_path / 'synthetic-credentials' / 'runner'
+        credential.parent.mkdir()
+        credential.write_text('synthetic-only')
+        observed = tmp_path / 'observed-lint-boundary'
+        monkeypatch.setenv('CREDENTIALS_DIRECTORY', str(credential.parent))
+        acceptance = (
+            'from pathlib import Path\n'
+            f'try: Path({str(credential)!r}).read_bytes()\n'
+            f'except (PermissionError, FileNotFoundError): Path({str(observed)!r}).write_text("blocked")\n'
+            f'else: Path({str(observed)!r}).write_text("leaked")\n' + ACC)
+        release('lint-secret-fence', acceptance)
+        path = Path(os.environ['LANECTL_HOME']) / 'backlog/lint-secret-fence'
+>       assert spec._base_lint(path, load_repos()['target'], load_lane('implement'), 30) == []
+E       AssertionError: assert ['spec-gap: t...ret_fence.py'] == []
+E         
+E         Left contains one more item: 'spec-gap: tests/test_acc_lint_secret_fence.py'
+E         Use -v to get more diff
+
+tests/stage8/test_specification.py:60: AssertionError
+_______________ test_valid_review_does_not_automatically_publish _______________
+
+estate = (PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_valid_review_does_not_aut0/target'), <function estate.<locals>.release at 0x72821878a660>, <lanectl.events.EventLog object at 0x728218c1a850>)
+
+    def test_valid_review_does_not_automatically_publish(estate):
+        d = make(estate)
+        assert load_release(d).draft
+>       assert cli.main(['backlog', 'publish', 'spec-sub']) == 0
+E       AssertionError: assert 1 == 0
+E        +  where 1 = <function main at 0x72821a6a5080>(['backlog', 'publish', 'spec-sub'])
+E        +    where <function main at 0x72821a6a5080> = cli.main
+
+tests/stage8/test_specification.py:80: AssertionError
+----------------------------- Captured stdout call -----------------------------
+specification: expected base failure unverified: ['spec-gap: tests/test_acc_spec.py']
+________________ test_native_shim_denies_source_checkout_write _________________
+
+estate = (PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_native_shim_denies_source0/target'), <function estate.<locals>.release at 0x728218f92020>, <lanectl.events.EventLog object at 0x728218cbca50>)
+tmp_path = PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_native_shim_denies_source0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x728212d22a50>
+
+    def test_native_shim_denies_source_checkout_write(estate,tmp_path,monkeypatch):
+        import subprocess
+        repo,_,_=estate
+        bin_dir=tmp_path/'bin';bin_dir.mkdir()
+        worker=bin_dir/'claude'
+        worker.write_text('#!/bin/sh\n'
+           f'touch {repo}/outside-attempt 2>/dev/null && exit 7\n'
+           'printf \'{"outcome":"sub","tests":{"tests/test_sub.py":"assert False"}}\' > .lanectl-spec/response.json\n')
+        worker.chmod(0o755)
+        monkeypatch.setenv('PATH',str(bin_dir)+os.pathsep+os.environ['PATH'])
+        def adapter(**kw):
+            p=subprocess.run(['claude'],cwd=kw['worktree'],env=kw['env'],capture_output=True,text=True)
+            assert p.returncode==0,p.stderr
+            return AdapterResult('done',0,'',None)
+        lane=spec.load_lane('implement');r=spec.load_repos()['target']
+>       result,_=spec._invoke(r,lane,backlog_head(repo),'claude-sonnet-5-5','test',adapter_fn=adapter)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/stage8/test_specification.py:204: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/lanectl/specification.py:97: in _invoke
+    result = fn(model=model, worktree=wt, prompt=prompt,
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+kw = {'model': 'claude-sonnet-5-5', 'worktree': PosixPath('/tmp/lanectl-spec-5ywr5p3m/checkout'), 'prompt': 'test', 'status_file': PosixPath('/tmp/lanectl-spec-5ywr5p3m/runtime/status.json'), ...}
+
+    def adapter(**kw):
+        p=subprocess.run(['claude'],cwd=kw['worktree'],env=kw['env'],capture_output=True,text=True)
+>       assert p.returncode==0,p.stderr
+E       AssertionError: Failed to connect to user scope bus via local transport: $DBUS_SESSION_BUS_ADDRESS and $XDG_RUNTIME_DIR not defined (consider using --machine=<user>@.host --user to connect to bus of other user)
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['claude'], returncode=1, stdout='', stderr='Failed to connect to user scope bus via local trans...ESS and $XDG_RUNTIME_DIR not defined (consider using --machine=<user>@.host --user to connect to bus of other user)\n').returncode
+
+tests/stage8/test_specification.py:201: AssertionError
+_____________ test_work_completion_intent_is_frozen_before_review ______________
+
+estate = (PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_work_completion_intent_is0/target'), <function estate.<locals>.release at 0x728218f91d00>, <lanectl.events.EventLog object at 0x728218c1a120>)
+
+    def test_work_completion_intent_is_frozen_before_review(estate):
+        d=make(estate,work='target#7',work_complete=True)
+        rel=load_release(d)
+        assert rel.work=='target#7' and rel.work_complete
+>       assert spec.validate_for_publish(d)==[]
+E       assert ["specificati...cc_spec.py']"] == []
+E         
+E         Left contains one more item: "specification: expected base failure unverified: ['spec-gap: tests/test_acc_spec.py']"
+E         Use -v to get more diff
+
+tests/stage8/test_specification.py:218: AssertionError
+___________ test_generated_base_test_cannot_write_to_source_checkout ___________
+
+estate = (PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_generated_base_test_canno0/target'), <function estate.<locals>.release at 0x728218f922a0>, <lanectl.events.EventLog object at 0x728218c1a260>)
+
+    def test_generated_base_test_cannot_write_to_source_checkout(estate):
+        repo,_,_=estate
+        source=f'''from pathlib import Path
+    from calc import add
+    
+    def test_protection():
+        p = Path({str(repo / 'leaked')!r})
+        try:
+            p.write_text('leak')
+        except OSError:
+            pass
+        assert add(1, 2) == 4
+    '''
+        def adapter(**kw):
+            result=fake_adapter(**kw)
+            if 'adversarial reviewer' not in kw['prompt']:
+                (kw['worktree']/'.lanectl-spec/response.json').write_text(json.dumps(
+                    {'outcome':'New result','tests':{'tests/test_acc_spec.py':source}}))
+            return result
+        d=make(estate,adapter_fn_override=adapter)
+>       assert spec.validate_for_publish(d)==[]
+E       assert ["specificati...cc_spec.py']"] == []
+E         
+E         Left contains one more item: "specification: expected base failure unverified: ['spec-gap: tests/test_acc_spec.py']"
+E         Use -v to get more diff
+
+tests/stage8/test_specification.py:241: AssertionError
+___________ test_actual_train_namespace_denies_synthetic_credentials ___________
+
+tmp_path = PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_actual_train_namespace_de0')
+
+    def test_actual_train_namespace_denies_synthetic_credentials(tmp_path):
+        env,paths=synthetic_environment(tmp_path)
+        work=tmp_path/'train';work.mkdir()
+        cmd=command_for_probe(work,paths)
+        git_config=Path(env['HOME'])/'.config/git/config'
+        git_config.parent.mkdir(parents=True);git_config.write_text('[core]\n')
+        cmd += ' && test -r '+shlex.quote(str(git_config))+' && echo GIT_CONFIG_READABLE'
+        sb=sandbox.for_train(readonly=(),writable=(str(work),),timeout_s=60,env=env)
+        p=subprocess.run(sb.wrap_shell(cmd,work),shell=True,cwd=work,capture_output=True,text=True)
+>       assert p.returncode==0,p.stdout+p.stderr
+E       AssertionError: Failed to connect to user scope bus via local transport: $DBUS_SESSION_BUS_ADDRESS and $XDG_RUNTIME_DIR not defined (consider using --machine=<user>@.host --user to connect to bus of other user)
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args='/run/current-system/sw/bin/systemd-run --user --quiet --pipe --wait --collect -p Type=oneshot -...ESS and $XDG_RUNTIME_DIR not defined (consider using --machine=<user>@.host --user to connect to bus of other user)\n').returncode
+
+tests/stage8/test_train_credential_isolation.py:65: AssertionError
+___________ test_train_setup_and_check_use_isolation_not_worker_none ___________
+
+estate = (PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_train_setup_and_check_use0/target'), <function estate.<locals>.release at 0x7282190d2d40>, <lanectl.events.EventLog object at 0x728218c185f0>)
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x728218ec5cc0>
+tmp_path = PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_train_setup_and_check_use0')
+
+    def test_train_setup_and_check_use_isolation_not_worker_none(estate,monkeypatch,tmp_path):
+        repo,release,log=estate
+        release('train-proof','def test_ok():\n    assert True\n')
+        c=runner.admit('implement',log)
+        subprocess.run(['git','-C',str(repo),'branch',c.rel.id+'-candidate',c.rel.base_sha],check=True)
+        monkeypatch.setattr(runner,'candidates',lambda *a:[{'attempt_id':c.attempt_id,'branch':c.rel.id+'-candidate','title':'proof'}])
+        secret=tmp_path/'synthetic-credentials'/'runner';secret.parent.mkdir();secret.write_text('synthetic-only')
+        monkeypatch.setenv('CREDENTIALS_DIRECTORY',str(secret.parent))
+        monkeypatch.setenv('FJ_TOKEN','synthetic-forge-token')
+        probe=f'test -z "${{CREDENTIALS_DIRECTORY+x}}" && test -z "${{FJ_TOKEN+x}}" && ! cat {shlex.quote(str(secret))} >/dev/null 2>&1'
+        repos=runner.load_repos();original=repos['target']
+        monkeypatch.setattr(runner,'load_repos',lambda:{'target':replace(original,setup_cmd=probe,check_cmd=probe)})
+        lane=Path(os.environ['LANECTL_HOME'])/'governance/lanes/implement.toml'
+        lane.write_text(lane.read_text().replace('mode = "systemd-run"','mode = "none"'))
+        out=runner.build_train(log,'target')
+>       assert ': PASSED ' in out,out
+E       AssertionError: train-20261114203635: FAILED included=['train-proof-a1'] excluded=[]
+E         worktree: /tmp/pytest-of-bayleaf/pytest-15234/test_train_setup_and_check_use0/wt/train-20261114203635
+E         Failed to connect to user scope bus via local transport: $DBUS_SESSION_BUS_ADDRESS and $XDG_RUNTIME_DIR not defined (consider using --machine=<user>@.host --user to connect to bus of other user)
+E         
+E       assert ': PASSED ' in "train-20261114203635: FAILED included=['train-proof-a1'] excluded=[]\nworktree: /tmp/pytest-of-bayleaf/pytest-15234/t...RESS and $XDG_RUNTIME_DIR not defined (consider using --machine=<user>@.host --user to connect to bus of other user)\n"
+
+tests/stage8/test_train_credential_isolation.py:91: AssertionError
+______ test_historical_land_reconstructs_exact_tip_without_writable_main _______
+
+estate = (PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_historical_land_reconstru0/target'), <function estate.<locals>.release at 0x7282190d02c0>, <lanectl.events.EventLog object at 0x728218c19220>)
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x728218ec79a0>
+tmp_path = PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_historical_land_reconstru0')
+
+    def test_historical_land_reconstructs_exact_tip_without_writable_main(estate,monkeypatch,tmp_path):
+        from tests.stage8.test_work_sync_extra import _train,_head
+        repo,release,log=estate
+        release('history-proof','def test_ok():\n    assert True\n')
+        base=_head(repo);_train(log,repo,'history-proof',base)
+        secret=tmp_path/'loaded-credentials'/'runner';secret.parent.mkdir();secret.write_text('synthetic-only')
+        monkeypatch.setenv('CREDENTIALS_DIRECTORY',str(secret.parent))
+        probe=f'test -z "${{CREDENTIALS_DIRECTORY+x}}" && ! cat {shlex.quote(str(secret))} >/dev/null 2>&1'
+        original=runner.load_repos()['target']
+        monkeypatch.setattr(runner,'load_repos',lambda:{'target':replace(original,setup_cmd=probe,check_cmd=probe)})
+        real=runner._train_command;locations=[]
+        def command(repo,checkout,cmd):
+            locations.append(checkout)
+            assert runner.git(checkout,'rev-parse','HEAD')==base
+            return real(repo,checkout,cmd)
+        monkeypatch.setattr(runner,'_train_command',command)
+>       assert runner.land(log,'tt').startswith('landed')
+E       AssertionError: assert False
+E        +  where False = <built-in method startswith of str object at 0x728218daf8c0>('landed')
+E        +    where <built-in method startswith of str object at 0x728218daf8c0> = 'tt: failed recheck; not landing'.startswith
+E        +      where 'tt: failed recheck; not landing' = <function land at 0x72821a8cb060>(<lanectl.events.EventLog object at 0x728218c19220>, 'tt')
+E        +        where <function land at 0x72821a8cb060> = runner.land
+
+tests/stage8/test_train_credential_isolation.py:125: AssertionError
+___________ test_worker_setup_does_not_inherit_credentials_directory ___________
+
+estate = (PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_worker_setup_does_not_inh0/target'), <function estate.<locals>.release at 0x7282109e2fc0>, <lanectl.events.EventLog object at 0x728218dae940>)
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x728212d227b0>
+tmp_path = PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_worker_setup_does_not_inh0')
+
+    def test_worker_setup_does_not_inherit_credentials_directory(estate,monkeypatch,tmp_path):
+        from lanectl.adapters import AdapterResult
+        repo,release,log=estate
+        release('worker-env-proof','from calc import sub\n\ndef test_sub():\n    assert sub(5,3)==2\n')
+        secret=tmp_path/'loaded-credentials';secret.mkdir()
+        secret_file=secret/'runner';secret_file.write_text('synthetic-only')
+        monkeypatch.setenv('CREDENTIALS_DIRECTORY',str(secret))
+        original=runner.load_repos()['target']
+        script=('import os,pathlib\n'
+                'readable=True\n'
+                f'try: pathlib.Path({str(secret_file)!r}).read_bytes()\n'
+                'except (PermissionError,FileNotFoundError): readable=False\n'
+                'pathlib.Path("tests/setup-env.txt").write_text(str(("CREDENTIALS_DIRECTORY" in os.environ,readable)))')
+        monkeypatch.setattr(runner,'load_repos',lambda:{'target':replace(original,setup_cmd=shlex.join([sys.executable,'-c',script]))})
+        observed=[]
+        def worker(*,worktree,env,**kwargs):
+            worktree=Path(worktree)
+            observed.append((worktree/'tests/setup-env.txt').read_text())
+            assert 'CREDENTIALS_DIRECTORY' not in env
+            (worktree/'src/calc.py').write_text('def add(a,b):\n    return a+b\n\ndef sub(a,b):\n    return a-b\n')
+            return AdapterResult('done',0,'ok',None)
+        runner.execute(runner.admit('implement',log),log,adapter_fn=worker)
+>       assert observed==['(False, False)']
+E       AssertionError: assert [] == ['(False, False)']
+E         
+E         Right contains one more item: '(False, False)'
+E         Use -v to get more diff
+
+tests/stage8/test_train_credential_isolation.py:172: AssertionError
+____ test_worker_namespace_hides_runner_credentials_but_keeps_provider_auth ____
+
+tmp_path = PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_worker_namespace_hides_ru0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x728218ec7d20>
+
+    def test_worker_namespace_hides_runner_credentials_but_keeps_provider_auth(tmp_path,monkeypatch):
+        env,all_paths=synthetic_environment(tmp_path)
+        for name in ('HOME','XDG_CONFIG_HOME','XDG_DATA_HOME','CREDENTIALS_DIRECTORY'):
+            monkeypatch.setenv(name,env[name])
+        runner_paths=[Path(env['HOME'])/'.config/vuoro/credentials/runner',
+                      Path(env['XDG_CONFIG_HOME'])/'vuoro/credentials/runner',
+                      Path(env['CREDENTIALS_DIRECTORY'])/'runner']
+        work=tmp_path/'worker';work.mkdir()
+        cmd=command_for_probe(work,runner_paths)
+        provider=Path(env['HOME'])/'.codex/auth.json'
+        cmd+=' && test -r '+shlex.quote(str(provider))+' && echo PROVIDER_AUTH_READABLE'
+        sb=sandbox.from_lane({'mode':'systemd-run'},(str(work),),60)
+        # This is also how the specification sandbox replaces other fields.
+        sb=replace(sb,readonly=tuple(sb.readonly))
+        p=subprocess.run(sb.wrap_shell(cmd,work),shell=True,cwd=work,capture_output=True,text=True)
+>       assert p.returncode==0,p.stdout+p.stderr
+E       AssertionError: Failed to connect to user scope bus via local transport: $DBUS_SESSION_BUS_ADDRESS and $XDG_RUNTIME_DIR not defined (consider using --machine=<user>@.host --user to connect to bus of other user)
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args="/run/current-system/sw/bin/systemd-run --user --quiet --pipe --wait --collect -p RuntimeMaxSec=...ESS and $XDG_RUNTIME_DIR not defined (consider using --machine=<user>@.host --user to connect to bus of other user)\n').returncode
+
+tests/stage8/test_train_credential_isolation.py:190: AssertionError
+_______________________ test_land_syncs_a_worked_release _______________________
+
+estate = (PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_land_syncs_a_worked_relea0/target'), <function estate.<locals>.release at 0x72820f35df80>, <lanectl.events.EventLog object at 0x728218cb8780>)
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x728219fa6a50>
+
+    def test_land_syncs_a_worked_release(estate, monkeypatch):
+        repo, release, log = estate
+        release("aa-work", "def test_ok():\n    assert True\n")
+        _set_work("aa-work", "target#12", True)
+        base = _head(repo)
+        attempt = _train(log, repo, "aa-work", base)
+        seen = []
+    
+        def fake_sync(rel, train_id, landed_sha, repos):
+            seen.append((rel.id, train_id, landed_sha, sorted(repos)))
+            return {"work": rel.work, "train_id": train_id, "closed": True, "ok": True}
+    
+        monkeypatch.setattr(runner.work, "sync", fake_sync)
+        out = runner.land(log, "tt")
+>       assert "landed" in out
+E       AssertionError: assert 'landed' in 'tt: failed recheck; not landing'
+
+tests/stage8/test_work_sync_extra.py:186: AssertionError
+____________________ test_land_skips_releases_without_work _____________________
+
+estate = (PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_land_skips_releases_witho0/target'), <function estate.<locals>.release at 0x72820f35e7a0>, <lanectl.events.EventLog object at 0x728218cbb390>)
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x728219fa66d0>
+
+    def test_land_skips_releases_without_work(estate, monkeypatch):
+        repo, release, log = estate
+        release("bb-plain", "def test_ok():\n    assert True\n")
+        base = _head(repo)
+        _train(log, repo, "bb-plain", base)
+        monkeypatch.setattr(runner.work, "sync", lambda *a, **kw: pytest.fail("synced unworked"))
+>       assert "landed" in runner.land(log, "tt")
+E       AssertionError: assert 'landed' in 'tt: failed recheck; not landing'
+E        +  where 'tt: failed recheck; not landing' = <function land at 0x72821a8cb060>(<lanectl.events.EventLog object at 0x728218cbb390>, 'tt')
+E        +    where <function land at 0x72821a8cb060> = runner.land
+
+tests/stage8/test_work_sync_extra.py:202: AssertionError
+______________________ test_land_survives_a_raising_sync _______________________
+
+estate = (PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_land_survives_a_raising_s0/target'), <function estate.<locals>.release at 0x72820f35f880>, <lanectl.events.EventLog object at 0x728218cbb7a0>)
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x728219492dd0>
+
+    def test_land_survives_a_raising_sync(estate, monkeypatch):
+        repo, release, log = estate
+        release("cc-work", "def test_ok():\n    assert True\n")
+        _set_work("cc-work", "target#12", False)
+        base = _head(repo)
+        _train(log, repo, "cc-work", base)
+    
+        def explode(*a, **kw):
+            raise RuntimeError("tracker down")
+    
+        monkeypatch.setattr(runner.work, "sync", explode)
+>       assert "landed" in runner.land(log, "tt")
+E       AssertionError: assert 'landed' in 'tt: failed recheck; not landing'
+E        +  where 'tt: failed recheck; not landing' = <function land at 0x72821a8cb060>(<lanectl.events.EventLog object at 0x728218cbb7a0>, 'tt')
+E        +    where <function land at 0x72821a8cb060> = runner.land
+
+tests/stage8/test_work_sync_extra.py:217: AssertionError
+__________ test_named_systemd_sandbox_cancellation_stops_late_writes ___________
+
+tmp_path = PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_named_systemd_sandbox_can0')
+
+    def test_named_systemd_sandbox_cancellation_stops_late_writes(tmp_path):
+        from lanectl.sandbox import from_lane
+        sb = from_lane({"mode": "systemd-run"}, (str(tmp_path),), 30,
+                       attempt_id="cancel-proof-" + str(os.getpid()))
+        marker = tmp_path / "late"
+        started = tmp_path / "started"
+        script = f"import pathlib,time;pathlib.Path({str(started)!r}).touch();time.sleep(2);pathlib.Path({str(marker)!r}).touch()"
+        proc = subprocess.Popen([*sb.prefix(tmp_path), sys.executable, "-c", script],
+                                stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        deadline = time.monotonic() + 5
+        while not started.exists() and proc.poll() is None and time.monotonic() < deadline:
+            time.sleep(.02)
+>       assert started.exists(), proc.communicate(timeout=5)
+E       AssertionError: ('', 'Failed to connect to user scope bus via local transport: $DBUS_SESSION_BUS_ADDRESS and $XDG_RUNTIME_DIR not defined (consider using --machine=<user>@.host --user to connect to bus of other user)
+E         ')
+E       assert False
+E        +  where False = exists()
+E        +    where exists = PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_named_systemd_sandbox_can0/started').exists
+
+tests/test_cancellation.py:47: AssertionError
+________ test_timeout_stops_sandbox_before_draining_its_inherited_pipes ________
+
+tmp_path = PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_timeout_stops_sandbox_bef0')
+
+    def test_timeout_stops_sandbox_before_draining_its_inherited_pipes(tmp_path):
+        from lanectl.sandbox import from_lane
+        sb = from_lane({"mode": "systemd-run"}, (str(tmp_path),), 30,
+                       attempt_id="timeout-proof-" + str(os.getpid()))
+        marker = tmp_path / "late"
+        started = tmp_path / "started"
+        script = f"import pathlib,time;pathlib.Path({str(started)!r}).touch();time.sleep(2);pathlib.Path({str(marker)!r}).touch()"
+        proc = subprocess.Popen([*sb.prefix(tmp_path), sys.executable, "-c", script], start_new_session=True,
+                                stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        deadline = time.monotonic() + 5
+        while not started.exists() and proc.poll() is None and time.monotonic() < deadline:
+            time.sleep(.02)
+>       assert started.exists(), proc.communicate(timeout=5)
+E       AssertionError: ('', 'Failed to connect to user scope bus via local transport: $DBUS_SESSION_BUS_ADDRESS and $XDG_RUNTIME_DIR not defined (consider using --machine=<user>@.host --user to connect to bus of other user)
+E         ')
+E       assert False
+E        +  where False = exists()
+E        +    where exists = PosixPath('/tmp/pytest-of-bayleaf/pytest-15234/test_timeout_stops_sandbox_bef0/started').exists
+
+tests/test_cancellation.py:66: AssertionError
+=========================== short test summary info ============================
+FAILED tests/seed/test_end_to_end.py::test_good_item_reaches_candidate_and_lands
+FAILED tests/seed/test_end_to_end.py::test_test_that_passes_on_base_is_rejected_then_requeued
+FAILED tests/seed/test_end_to_end.py::test_main_change_under_sandbox_is_recorded_not_failed
+FAILED tests/seed/test_sandbox.py::test_systemd_sandbox_blocks_writes_outside_checkout
+FAILED tests/seed/test_sandbox.py::test_shim_runs_tool_inside_sandbox - Asser...
+FAILED tests/seed/test_sandbox.py::test_opencode_shim_forces_private_server
+FAILED tests/stage4/test_acc_evaluate_approved.py::test_approve_records_evaluation
+FAILED tests/stage4/test_acc_reap_undecided.py::test_gated_attempt_is_decided
+FAILED tests/stage4/test_evaluate_approved_extra.py::test_approved_park_lands_in_the_shadow_plan
+FAILED tests/stage4/test_evaluate_approved_extra.py::test_approving_again_keeps_a_single_evaluation
+FAILED tests/stage7/test_acc_coverage_gaps.py::test_evaluation_and_approval_record_acceptance
+FAILED tests/stage7/test_acc_train_merge_hooks.py::test_merge_subject_passes_a_merge_only_hook
+FAILED tests/stage7/test_acc_train_merge_hooks.py::test_hook_rejection_is_not_called_a_conflict
+FAILED tests/stage7/test_acc_train_setup_first.py::test_hook_needing_setup_output_passes
+FAILED tests/stage7/test_decision_gaps_extra.py::test_evaluator_proposal_carries_the_evaluation_revision
+FAILED tests/stage7/test_train_merge_failure_reason.py::test_merge_subject_is_git_style
+FAILED tests/stage7/test_train_merge_failure_reason.py::test_rejection_reason_is_the_hook_stderr
+FAILED tests/stage7/test_train_merge_failure_reason.py::test_rejection_reason_uses_last_stderr_line_clipped
+FAILED tests/stage7/test_train_merge_failure_reason.py::test_unmerged_paths_are_a_conflict
+FAILED tests/stage7/test_train_setup_order.py::test_setup_precedes_first_hook_and_reruns_after_merges
+FAILED tests/stage8/test_acc_gate_jobs.py::test_passing_jobs_are_recorded_and_item_is_candidate
+FAILED tests/stage8/test_acc_gate_jobs.py::test_failing_job_rejects_with_exit_and_output
+FAILED tests/stage8/test_acc_gate_jobs.py::test_job_timeout_is_a_violation - ...
+FAILED tests/stage8/test_acc_train_deploy.py::test_deploy_passes_records_event_and_sees_only_allowed_env
+FAILED tests/stage8/test_acc_train_deploy.py::test_failed_health_records_failure_and_tears_down
+FAILED tests/stage8/test_acc_train_deploy.py::test_repo_without_deploy_records_nothing
+FAILED tests/stage8/test_acc_train_deploy.py::test_land_requires_passed_deploy_then_tears_it_down
+FAILED tests/stage8/test_acc_train_deploy.py::test_land_without_deploy_declared_is_unchanged
+FAILED tests/stage8/test_acc_train_deploy.py::test_cli_run_and_down - Asserti...
+FAILED tests/stage8/test_control_state_isolation.py::test_worker_cannot_overwrite_log_or_journal_but_can_write_attempt
+FAILED tests/stage8/test_delivery_completion.py::test_expired_deploy_cannot_authorize_landing
+FAILED tests/stage8/test_delivery_completion.py::test_landing_replay_does_not_duplicate_receipts
+FAILED tests/stage8/test_delivery_completion.py::test_completed_deploy_landing_replays_after_teardown
+FAILED tests/stage8/test_delivery_completion.py::test_fixed_train_needs_fresh_recheck
+FAILED tests/stage8/test_deploy_extra.py::test_failed_deploy_stage_is_recorded_with_tail
+FAILED tests/stage8/test_full_stack_e2e.py::test_intent_to_deployed_landing_replays_lost_ack_on_real_owner
+FAILED tests/stage8/test_gate_jobs_extra.py::test_repo_jobs_become_gates_after_acceptance
+FAILED tests/stage8/test_gate_jobs_extra.py::test_failing_job_rejects_with_its_exit_and_output
+FAILED tests/stage8/test_integrator_cycle.py::test_candidate_flows_through_train_land_and_replay
+FAILED tests/stage8/test_local_adapter.py::test_actual_sandbox_makes_provider_configuration_readonly
+FAILED tests/stage8/test_namespace_completion.py::test_stopped_namespace_command_is_failure[False-False]
+FAILED tests/stage8/test_namespace_completion.py::test_stopped_namespace_command_is_failure[True-False]
+FAILED tests/stage8/test_namespace_completion.py::test_stopped_namespace_command_is_failure[False-True]
+FAILED tests/stage8/test_namespace_completion.py::test_namespace_stop_kills_term_ignoring_child_within_bound
+FAILED tests/stage8/test_namespace_completion.py::test_stopped_check_never_becomes_checked_train[build]
+FAILED tests/stage8/test_namespace_completion.py::test_stopped_check_never_becomes_checked_train[recheck]
+FAILED tests/stage8/test_namespace_completion.py::test_stopped_check_never_becomes_checked_train[historical]
+FAILED tests/stage8/test_namespace_completion.py::test_namespace_completion_preserves_shell_results[printf '%s\\n' 'a b' "quote'";\nprintf '%s' stderr >&2-0-a b\nquote'\n-stderr]
+FAILED tests/stage8/test_namespace_completion.py::test_namespace_completion_preserves_shell_results[exit 7-7--]
+FAILED tests/stage8/test_namespace_completion.py::test_namespace_completion_preserves_shell_results[exec /bin/sh -c "exit 9"-9--]
+FAILED tests/stage8/test_namespace_completion.py::test_namespace_completion_preserves_shell_results[timeout .1s sleep 10-124--]
+FAILED tests/stage8/test_namespace_completion.py::test_namespace_completion_preserves_shell_results[head -c 262144 /dev/zero | tr "\\0" x-0-out4-]
+FAILED tests/stage8/test_runner_coordination.py::test_owner_success_only_after_land_and_no_tracker_double_settlement
+FAILED tests/stage8/test_spec_local_route.py::test_spec_model_cannot_overwrite_control_log_or_recovery_journal
+FAILED tests/stage8/test_specification.py::test_draft_has_independent_review_and_fails_on_real_base
+FAILED tests/stage8/test_specification.py::test_base_lint_preserves_runner_credential_file_fence
+FAILED tests/stage8/test_specification.py::test_valid_review_does_not_automatically_publish
+FAILED tests/stage8/test_specification.py::test_native_shim_denies_source_checkout_write
+FAILED tests/stage8/test_specification.py::test_work_completion_intent_is_frozen_before_review
+FAILED tests/stage8/test_specification.py::test_generated_base_test_cannot_write_to_source_checkout
+FAILED tests/stage8/test_train_credential_isolation.py::test_actual_train_namespace_denies_synthetic_credentials
+FAILED tests/stage8/test_train_credential_isolation.py::test_train_setup_and_check_use_isolation_not_worker_none
+FAILED tests/stage8/test_train_credential_isolation.py::test_historical_land_reconstructs_exact_tip_without_writable_main
+FAILED tests/stage8/test_train_credential_isolation.py::test_worker_setup_does_not_inherit_credentials_directory
+FAILED tests/stage8/test_train_credential_isolation.py::test_worker_namespace_hides_runner_credentials_but_keeps_provider_auth
+FAILED tests/stage8/test_work_sync_extra.py::test_land_syncs_a_worked_release
+FAILED tests/stage8/test_work_sync_extra.py::test_land_skips_releases_without_work
+FAILED tests/stage8/test_work_sync_extra.py::test_land_survives_a_raising_sync
+FAILED tests/test_cancellation.py::test_named_systemd_sandbox_cancellation_stops_late_writes
+FAILED tests/test_cancellation.py::test_timeout_stops_sandbox_before_draining_its_inherited_pipes
+70 failed, 1052 passed in 145.67s (0:02:25)
