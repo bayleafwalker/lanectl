@@ -24,6 +24,26 @@ def _digest(value):
     return hashlib.sha256(json.dumps(value, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
 
 
+def _fix_evidence(data):
+    return dict(attempt_id=data['attempt_id'], commit=data.get('commit'), fix_class=data['fix_class'])
+
+
+def _matched_fixes(events, refs):
+    if not isinstance(refs, list) or not refs or not all(isinstance(ref, str) for ref in refs):
+        raise ValueError('closure fix evidence could not be matched')
+    expected = set(refs)
+    matches = {}
+    for event in events:
+        if event['type'] == 'integrator.fix':
+            fix = _fix_evidence(event['data'])
+            digest = _digest(fix)
+            if digest in expected:
+                matches[digest] = fix
+    if expected != matches.keys():
+        raise ValueError('closure fix evidence could not be matched')
+    return [matches[ref] for ref in sorted(expected)]
+
+
 def proposals(events):
     """Latest durable state per closure proposal, ordered by fingerprint."""
     rows = {}
@@ -64,8 +84,7 @@ def from_flags(events, *, min_recurrence=2):
         key = (kind, task_class)
         if key in active:
             continue
-        evidence = dict(attempt_id=aid, commit=data.get('commit'), fix_class=data['fix_class'])
-        ref = _digest(evidence)
+        ref = _digest(_fix_evidence(data))
         if ref not in consumed:
             groups.setdefault(key, {})[ref] = aid
     rows = []
@@ -123,7 +142,8 @@ def draft(log, fingerprint, *, author_model, reviewer_model, scope,
             fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except BlockingIOError as exc:
             raise ValueError('closure proposal is already being drafted') from exc
-        row = next((r for r in proposals(log.read()) if r['fingerprint'] == fingerprint), None)
+        events = log.read()
+        row = next((r for r in proposals(events) if r['fingerprint'] == fingerprint), None)
         if row is None:
             raise ValueError('unknown closure proposal')
         release_id = f'closure-{fingerprint[:20]}'
@@ -152,12 +172,18 @@ def draft(log, fingerprint, *, author_model, reviewer_model, scope,
             replacement = dict(draft_revision=revision, replaces_release_id=prior_id)
         elif row.get('action') == 'drafted':
             return row
+        legacy_intent = intent
+        fixes = _matched_fixes(events, row.get('evidence_refs'))
+        intent += ('\nInspect these recorded fixes before proposing acceptance: '
+                   + json.dumps(fixes, sort_keys=True, separators=(',', ':')))
         destination = home() / 'backlog' / release_id
         if destination.exists():
             # A crash may have happened after atomic draft creation but before
             # linking it into the log. Never overwrite a different planner draft.
             evidence = json.loads((destination / specification.EVIDENCE_FILE).read_text())
-            if (evidence.get('intent_digest') != hashlib.sha256(intent.encode()).hexdigest()
+            intent_digests = {hashlib.sha256(candidate.encode()).hexdigest()
+                              for candidate in (intent, legacy_intent)}
+            if (evidence.get('intent_digest') not in intent_digests
                     or evidence.get('release_digest') != specification.release_digest(destination)
                     or load_release(destination).id != release_id):
                 raise ValueError('existing draft does not match closure source evidence')

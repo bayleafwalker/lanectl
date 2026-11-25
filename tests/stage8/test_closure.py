@@ -61,6 +61,8 @@ def test_record_is_idempotent_and_keeps_original_evidence(tmp_path):
 def test_draft_never_publishes_and_forces_restricted_data(tmp_path):
     log=log_at(tmp_path,ruled('a1')+ruled('a2'))
     row=closure.scan(log,record=True)[0]
+    for event in ruled('unrelated'):
+        log.append(event['type'], event['data'], item_id=event['item_id'])
     calls=[]
     def create(release_id,**kw):
         calls.append((release_id,kw));d=tmp_path/release_id;d.mkdir();return d
@@ -70,10 +72,29 @@ def test_draft_never_publishes_and_forces_restricted_data(tmp_path):
     assert calls[0][1]['data_class']=='restricted'
     assert calls[0][1]['lane_name']=='restricted'
     assert 'evidence' in calls[0][1]['intent']
+    assert '"attempt_id":"a1","commit":"a1","fix_class":"spec-gap"' in calls[0][1]['intent']
+    assert '"attempt_id":"a2","commit":"a2","fix_class":"spec-gap"' in calls[0][1]['intent']
+    assert 'unrelated' not in calls[0][1]['intent']
     assert result['action']=='drafted'
     assert closure.draft(log,row['fingerprint'],author_model='claude-opus-5-5',
           reviewer_model='claude-fable-5-2',scope=['src/**'],draft_fn=create)==result
     assert len(calls)==1
+
+
+@pytest.mark.parametrize('retained', [ruled('a1'), ruled('a1') + ruled('a2', commit='changed')])
+def test_draft_refuses_unmatched_fix_evidence(tmp_path, retained):
+    source = ruled('a1') + ruled('a2', commit='original')
+    row = closure.from_flags(source)[0]
+    log = log_at(tmp_path, retained)
+    log.append('triage.proposed', row)
+
+    def unexpected(*args, **kwargs):
+        raise AssertionError('unmatched evidence reached the model')
+
+    with pytest.raises(ValueError, match='closure fix evidence could not be matched'):
+        closure.draft(log, row['fingerprint'], author_model='claude-opus-5-5',
+                      reviewer_model='claude-fable-5-2', scope=['src/**'], draft_fn=unexpected)
+    assert closure.proposals(log.read()) == [row]
 
 
 def test_draft_refuses_unknown_proposal_and_external_route(tmp_path):
